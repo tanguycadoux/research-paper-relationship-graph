@@ -1,0 +1,37 @@
+.date-tick {
+    stroke: black;
+    stroke-width: 2;
+}
+
+.date-tick-0 {
+    stroke-width: 2;
+}
+
+.date-tick-1 {
+    stroke-width: 1;
+}
+
+#citation_plot_wrapper {
+    overflow: auto;
+}
+
+#citation_plot_dates {
+    display: flex;
+    justify-content: space-around;
+
+    &>p {
+        flex: 1 1 0;
+        overflow: hidden;
+        text-align: center;
+    }
+}
+
+.paper_svg_display_rect {
+    stroke: black;
+    stroke-width: 1;
+    fill: none;
+}
+
+#citation_plot_svg {
+    border: 1px solid black;
+}
