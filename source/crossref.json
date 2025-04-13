@@ -1,0 +1,415 @@
+[
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2025,
+            2,
+            21
+          ]
+        ],
+        "date-time": "2025-02-21T10:20:16Z",
+        "timestamp": 1740133216095,
+        "version": "3.37.3"
+      },
+      "reference-count": 12,
+      "publisher": "Institute of Electrical and Electronics Engineers (IEEE)",
+      "issue": "5",
+      "license": [
+        {
+          "start": {
+            "date-parts": [
+              [
+                2023,
+                8,
+                1
+              ]
+            ],
+            "date-time": "2023-08-01T00:00:00Z",
+            "timestamp": 1690848000000
+          },
+          "content-version": "vor",
+          "delay-in-days": 0,
+          "URL": "https://ieeexplore.ieee.org/Xplorehelp/downloads/license-information/IEEE.html"
+        },
+        {
+          "start": {
+            "date-parts": [
+              [
+                2023,
+                8,
+                1
+              ]
+            ],
+            "date-time": "2023-08-01T00:00:00Z",
+            "timestamp": 1690848000000
+          },
+          "content-version": "stm-asf",
+          "delay-in-days": 0,
+          "URL": "https://doi.org/10.15223/policy-029"
+        },
+        {
+          "start": {
+            "date-parts": [
+              [
+                2023,
+                8,
+                1
+              ]
+            ],
+            "date-time": "2023-08-01T00:00:00Z",
+            "timestamp": 1690848000000
+          },
+          "content-version": "stm-asf",
+          "delay-in-days": 0,
+          "URL": "https://doi.org/10.15223/policy-037"
+        }
+      ],
+      "funder": [
+        {
+          "name": "Agence Nationale de 308 la Recherche"
+        }
+      ],
+      "content-domain": {
+        "domain": [],
+        "crossmark-restriction": false
+      },
+      "short-container-title": [
+        "IEEE Trans. Appl. Supercond."
+      ],
+      "published-print": {
+        "date-parts": [
+          [
+            2023,
+            8
+          ]
+        ]
+      },
+      "DOI": "10.1109/tasc.2023.3260779",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2023,
+            3,
+            23
+          ]
+        ],
+        "date-time": "2023-03-23T17:53:04Z",
+        "timestamp": 1679593984000
+      },
+      "page": "1-5",
+      "source": "Crossref",
+      "is-referenced-by-count": 5,
+      "title": [
+        "Design of ASTERICS: A Superconducting 28 GHz ECR Ion Source Magnet for GANIL"
+      ],
+      "prefix": "10.1109",
+      "volume": "33",
+      "author": [
+        {
+          "ORCID": "https://orcid.org/0000-0001-9058-6698",
+          "authenticated-orcid": false,
+          "given": "D.",
+          "family": "Simon",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "ORCID": "https://orcid.org/0009-0003-1484-6197",
+          "authenticated-orcid": false,
+          "given": "T.",
+          "family": "Cadoux",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "ORCID": "https://orcid.org/0000-0002-5283-2613",
+          "authenticated-orcid": false,
+          "given": "E. Fernandez",
+          "family": "Mora",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "given": "B.",
+          "family": "Hervieu",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "ORCID": "https://orcid.org/0000-0003-1306-5682",
+          "authenticated-orcid": false,
+          "given": "C.",
+          "family": "Berriaud",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "ORCID": "https://orcid.org/0000-0001-9334-0036",
+          "authenticated-orcid": false,
+          "given": "M.",
+          "family": "Segreti",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "given": "G.",
+          "family": "Minier",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "ORCID": "https://orcid.org/0000-0002-8483-9107",
+          "authenticated-orcid": false,
+          "given": "E.",
+          "family": "Rochepault",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "ORCID": "https://orcid.org/0000-0001-9174-1872",
+          "authenticated-orcid": false,
+          "given": "R.",
+          "family": "Vallcorba",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "given": "A.",
+          "family": "Sinanna",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "given": "L.",
+          "family": "Gregoire",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "given": "N.",
+          "family": "Bakon",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA-Saclay, IRFU, Universit&#x00E9; Paris-Saclay, Gif-sur-Yvette CEDEX, France"
+            }
+          ]
+        },
+        {
+          "given": "T.",
+          "family": "Thuillier",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "University Grenoble Alpes, CNRS, Grenoble INP, Grenoble, France"
+            }
+          ]
+        },
+        {
+          "given": "A.",
+          "family": "Ghribi",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "GANIL, CNRS, Centre National d&#x0027;Ions Lourds, Caen, France"
+            }
+          ]
+        }
+      ],
+      "member": "263",
+      "reference": [
+        {
+          "volume-title": "NEWGAIN White Book-Science Requirements-Work Package Physics",
+          "year": "2021",
+          "author": "Ackermann",
+          "key": "ref1"
+        },
+        {
+          "key": "ref2",
+          "first-page": "2804",
+          "volume-title": "RF Commissioning of the SPIRAL2 RFQ in CW Mode and Beyond Nominal Field. JACoW-IPAC2019-WEPRB007",
+          "author": "Di Giacomo",
+          "year": "2019"
+        },
+        {
+          "key": "ref3",
+          "first-page": "1510",
+          "article-title": "RFQ NEWGAIN: RF and thermomechanical design",
+          "volume-title": "JACoW-IPAC2022-TUPOMS038",
+          "author": "Hamel",
+          "year": "2022"
+        },
+        {
+          "volume-title": "Electron Cyclotron Resonance Ion Sources - I",
+          "year": "2012",
+          "author": "Thuillier",
+          "key": "ref4"
+        },
+        {
+          "key": "ref5",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1063/1.1429313"
+        },
+        {
+          "key": "ref6",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/77.828215"
+        },
+        {
+          "key": "ref7",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2014.2377730"
+        },
+        {
+          "key": "ref8",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2014.2374420"
+        },
+        {
+          "key": "ref9",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/77.920313"
+        },
+        {
+          "key": "ref10",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1063/1.323913"
+        },
+        {
+          "volume-title": "Superconducting Magnets",
+          "year": "1983",
+          "author": "Wilson",
+          "key": "ref11"
+        },
+        {
+          "key": "ref12",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2022.3163076"
+        }
+      ],
+      "container-title": [
+        "IEEE Transactions on Applied Superconductivity"
+      ],
+      "original-title": [],
+      "link": [
+        {
+          "URL": "http://xplorestaging.ieee.org/ielx7/77/10025583/10079920.pdf?arnumber=10079920",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2024,
+            2,
+            13
+          ]
+        ],
+        "date-time": "2024-02-13T18:19:29Z",
+        "timestamp": 1707848369000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://ieeexplore.ieee.org/document/10079920/"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            2023,
+            8
+          ]
+        ]
+      },
+      "references-count": 12,
+      "journal-issue": {
+        "issue": "5"
+      },
+      "URL": "https://doi.org/10.1109/tasc.2023.3260779",
+      "relation": {},
+      "ISSN": [
+        "1051-8223",
+        "1558-2515",
+        "2378-7074"
+      ],
+      "issn-type": [
+        {
+          "type": "print",
+          "value": "1051-8223"
+        },
+        {
+          "type": "electronic",
+          "value": "1558-2515"
+        },
+        {
+          "type": "electronic",
+          "value": "2378-7074"
+        }
+      ],
+      "subject": [],
+      "published": {
+        "date-parts": [
+          [
+            2023,
+            8
+          ]
+        ]
+      }
+    }
+  }
+]
