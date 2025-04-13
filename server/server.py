@@ -61,12 +61,14 @@ class CustomHandler(BaseHTTPRequestHandler):
 
                 # Add only new DOIs
                 new_dois = [doi for doi in doi_list_from_frontend if doi not in saved_dois]
-                updated_dois = saved_dois + new_dois
+                updated_input_dois = saved_dois + new_dois
 
                 # Save the updated list
                 with open(INPUT_LIST_JSON, 'w') as f:
-                    json.dump(updated_dois, f, indent=2)
+                    json.dump(updated_input_dois, f, indent=2)
                 
+                # ---
+
                 # Load existing Crossref entries
                 crossref_entries = []
                 if os.path.exists(CROSSREF_JSON):
@@ -85,9 +87,38 @@ class CustomHandler(BaseHTTPRequestHandler):
                             new_entries.append(metadata)
                         except Exception as e:
                             new_entries.append({"error": str(e), "DOI": doi})
-
-                # Append new entries to list and save
+                
+                # Append new entries to list
                 crossref_entries.extend(new_entries)
+                
+                # Get DOIs of references
+                references = []
+                for doi in updated_input_dois:
+                    for entry in crossref_entries:
+                        if "message" in entry:
+                            if entry["message"]["DOI"].lower() == doi.lower():
+                                for input_ref in entry["message"]["reference"]:
+                                    if "DOI" in input_ref.keys():
+                                        if input_ref["DOI"] not in references:
+                                            references.append(input_ref["DOI"].lower())
+
+                # Track DOIs already saved in metadata
+                existing_crossref_dois = {entry.get("message", {}).get("DOI") for entry in crossref_entries if "message" in entry}
+
+                # Fetch metadata for new DOIs not already present
+                new_entries = []
+                for doi in references:
+                    if doi not in existing_crossref_dois:
+                        try:
+                            metadata = self.fetch_crossref_data(doi)
+                            new_entries.append(metadata)
+                        except Exception as e:
+                            new_entries.append({"error": str(e), "DOI": doi})
+                
+                # Append new entries to list
+                crossref_entries.extend(new_entries)
+                
+                # Save
                 with open(CROSSREF_JSON, 'w') as f:
                     json.dump(crossref_entries, f, indent=2)
                 
@@ -99,7 +130,9 @@ class CustomHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({
                     "status": "success",
                     "added": new_dois,
-                    "input_list": updated_dois,
+                    "input_list": updated_input_dois,
+                    "references_list": references,
+                    "crossref_data": crossref_entries,
                     "fetched_entries": len(new_entries)
                 }).encode('utf-8'))
 
