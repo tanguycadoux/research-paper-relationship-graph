@@ -1,12 +1,8 @@
+
 .date-tick {
     stroke: black;
     stroke-width: 2;
 }
-
-.date-tick-0 {
-    stroke-width: 2;
-}
-
 .date-tick-1 {
     stroke-width: 1;
 }
@@ -33,7 +29,7 @@
 }
 
 #citation_plot_svg {
-    border: 1px solid black;
+    border: 2px solid hsl(0, 0%, 75%);
 }
 
 #doiInput {
@@ -44,4 +40,8 @@
 .doi_list {
     list-style-type: none;
     padding: 0;
+
+    &>li>* {
+        display: inline;
+    }
 }

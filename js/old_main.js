@@ -215,7 +215,7 @@ function indexPapers(crossref_list) {
                 }
             }
             indexed_papers_list.push(
-                new Paper(
+                new Reference(
                     paper.message.title[0], paper.message.created["date-time"], paper.message.created["date-parts"][0], paper.message.created.timestamp,
                     paper.message.DOI, paper.message.URL, references
                 )
