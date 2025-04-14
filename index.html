@@ -7,13 +7,12 @@
 </head>
 
 <body>
-    <h2>Select a JSON file:</h2>
-    <input type="file" id="json_file" accept=".json" />
-    <button id="update_visualizer">Update</button>
-    <h2>Input list</h2>
-    <ul id="json_visualizer_input"></ul>
-    <h2>Sources list</h2>
-    <ul id="json_visualizer_references"></ul>
+    <h2>Papers input</h2>
+    <input id="doiInput" type="text" value="10.1109/TASC.2023.3260779"/>
+    <input type="button" value="Ajouter" onclick="addDOI()"/>
+    <ul id="json_visualizer_input" class="doi_list"></ul>
+    <h2>Untracked references</h2>
+    <ul id="json_visualizer_references" class="doi_list"></ul>
     <h2>Citation plot</h2>
     <div id="citation_plot_wrapper">
         <div id="citation_plot">

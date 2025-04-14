@@ -49,24 +49,6 @@ class CustomHandler(BaseHTTPRequestHandler):
                     self.send_error(400, "Expected a JSON array of DOIs.")
                     return
 
-                # Make sure directory exists
-                os.makedirs(os.path.dirname(INPUT_LIST_JSON), exist_ok=True)
-
-                # Load existing DOIs from file, or start a new list
-                if os.path.exists(INPUT_LIST_JSON):
-                    with open(INPUT_LIST_JSON, 'r') as f:
-                        saved_dois = json.load(f)
-                else:
-                    saved_dois = []
-
-                # Add only new DOIs
-                new_dois = [doi for doi in doi_list_from_frontend if doi not in saved_dois]
-                updated_input_dois = saved_dois + new_dois
-
-                # Save the updated list
-                with open(INPUT_LIST_JSON, 'w') as f:
-                    json.dump(updated_input_dois, f, indent=2)
-                
                 # ---
 
                 # Load existing Crossref entries
@@ -80,20 +62,21 @@ class CustomHandler(BaseHTTPRequestHandler):
 
                 # Fetch metadata for new DOIs not already present
                 new_entries = []
-                for doi in new_dois:
+                entries_errors = []
+                for doi in doi_list_from_frontend:
                     if doi not in existing_crossref_dois:
                         try:
                             metadata = self.fetch_crossref_data(doi)
                             new_entries.append(metadata)
                         except Exception as e:
-                            new_entries.append({"error": str(e), "DOI": doi})
+                            entries_errors.append({"error": str(e), "DOI": doi})
                 
                 # Append new entries to list
                 crossref_entries.extend(new_entries)
                 
                 # Get DOIs of references
                 references = []
-                for doi in updated_input_dois:
+                for doi in doi_list_from_frontend:
                     for entry in crossref_entries:
                         if "message" in entry:
                             if entry["message"]["DOI"].lower() == doi.lower():
@@ -113,7 +96,7 @@ class CustomHandler(BaseHTTPRequestHandler):
                             metadata = self.fetch_crossref_data(doi)
                             new_entries.append(metadata)
                         except Exception as e:
-                            new_entries.append({"error": str(e), "DOI": doi})
+                            entries_errors.append({"error": str(e), "DOI": doi})
                 
                 # Append new entries to list
                 crossref_entries.extend(new_entries)
@@ -129,10 +112,9 @@ class CustomHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({
                     "status": "success",
-                    "added": new_dois,
-                    "input_list": updated_input_dois,
                     "references_list": references,
                     "crossref_data": crossref_entries,
+                    "crossref_errors": entries_errors,
                     "fetched_entries": len(new_entries)
                 }).encode('utf-8'))
 

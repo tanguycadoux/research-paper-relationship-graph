@@ -35,3 +35,13 @@
 #citation_plot_svg {
     border: 1px solid black;
 }
+
+#doiInput {
+    width: 15em;
+    border: 1px solid black;
+}
+
+.doi_list {
+    list-style-type: none;
+    padding: 0;
+}
