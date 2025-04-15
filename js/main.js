@@ -5,18 +5,23 @@ class Reference {
         this.DOI = DOI;
         this.URL = URL;
         this.ref = ref;
+
+        const [year, month = 1, day = 1] = this.date_parts;
+        const date = new Date(year, month - 1, day);
+        this.timestamp = date.getTime();
     }
 
-    render(group) {
+    renderBox(group) {
         var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
 
         rect.setAttribute('x', this.xCenter - this.size / 2);
         rect.setAttribute('y', this.yCenter - this.size / 2);
+        rect.setAttribute('rx', 5);
+        rect.setAttribute('ry', 5);
         rect.setAttribute('width', this.size);
         rect.setAttribute('height', this.size);
         rect.setAttribute('class', 'paper_svg_display_rect');
-
 
         text.setAttribute('x', this.xCenter);
         text.setAttribute('y', this.yCenter);
@@ -26,7 +31,18 @@ class Reference {
 
         group.appendChild(rect);
         group.appendChild(text);
-        
+    }
+
+    renderLine(group, height) {
+        var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+
+        line.setAttribute('x1', this.xCenter);
+        line.setAttribute('y1', this.yCenter + this.size / 2);
+        line.setAttribute('x2', this.xCenter);
+        line.setAttribute('y2', height);
+        line.setAttribute('class', 'paper_svg_display_line')
+
+        group.appendChild(line);
     }
 }
 
@@ -45,7 +61,7 @@ class Tick {
         line.setAttribute('y1', 0);
         line.setAttribute('x2', this.position);
         line.setAttribute('y2', this.length * (1 - this.level / 2));
-        line.setAttribute('class', `date-tick date-tick-${this.level}`)
+        line.setAttribute('class', `date-tick date-tick-${this.level}`);
 
         group.appendChild(line);
 
@@ -179,39 +195,52 @@ async function updateDOI() {
     }
 }
 
-function drawTimescale(width) {
+function drawTimescale() {
     const tickHeight = 20;
+    const width = svgCanvas.getBoundingClientRect().width;
 
-    var years = new Set();
-    for (const paper of references) {
-        years.add(paper.date_parts[0]);
+    const xCenterList = references.map(ref => ref.xCenter);
+    const minXCenter = Math.min(...xCenterList);
+    const maxXCenter = Math.max(...xCenterList);
+    const timestampList = references.map(ref => ref.timestamp);
+    const minTimestamp = Math.min(...timestampList);
+    const maxTimestamp = Math.max(...timestampList);
+    const minTimestampBorder = mapTo(0, minXCenter, maxXCenter, minTimestamp, maxTimestamp);
+    const maxTimestampBorder = mapTo(width, minXCenter, maxXCenter, minTimestamp, maxTimestamp);
+    const minTickYear = new Date(minTimestampBorder).getFullYear() + 1;
+    const maxTickYear = new Date(maxTimestampBorder).getFullYear();
+
+    var tickYears = [];
+    for (let i = minTickYear; i < maxTickYear + 1; i++) {
+        tickYears.push(i);
     }
-
-    const minYear = Math.min(...Array.from(years));
-    const maxYear = Math.max(...Array.from(years));
-    for (let i = minYear; i < maxYear + 2; i++) {
-        years.add(i);
-    }
-
-    const yearsArray = Array.from(years);
-    yearsArray.sort();
 
     var ticks = [];
-    const year_in_ms = 31536000000;
-    const minYearTimestamp = new Date(String(Math.min(...yearsArray))).getTime() - year_in_ms / 2;
-    const maxYearTimestamp = new Date(String(Math.max(...yearsArray))).getTime() + year_in_ms / 2;
-    for (const year of yearsArray) {
+    const minYearTimestamp = new Date(String(Math.min(...tickYears))).getTime();
+    const maxYearTimestamp = new Date(String(Math.max(...tickYears))).getTime();
+    for (const year of tickYears) {
         var level = 0;
         if (year % 5) {
             level = 1;
         }
 
         const yearTimestamp = new Date(String(year)).getTime();
-        const xPos = (yearTimestamp - minYearTimestamp) / (maxYearTimestamp - minYearTimestamp) * width;
+        const xPos = mapTo(yearTimestamp, minTimestampBorder, maxTimestampBorder, 0, width);
         ticks.push(new Tick(year, xPos, tickHeight, level));
     }
 
     clearHTMLContent(svgTimescaleGroup);
+    
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+
+    line.setAttribute('x1', 0);
+    line.setAttribute('y1', 0);
+    line.setAttribute('x2', width);
+    line.setAttribute('y2', 0);
+    line.setAttribute('class', 'timescale-horizontal-line');
+
+    svgTimescaleGroup.appendChild(line);
+
     for (const tick of ticks) {
         tick.render(svgTimescaleGroup);
     }
@@ -219,37 +248,49 @@ function drawTimescale(width) {
     return [minYearTimestamp, maxYearTimestamp];
 }
 
-function drawReferences(timestampMin, timestampMax) {
-    const boxSize = 20;
-    const groupHeight = boxSize + boxSize * references.length;
-    const svgWidth = svgTimescaleGroup.getBoundingClientRect().width;
-    const minYCenter = boxSize;
-    const maxYCenter = groupHeight - boxSize;
+function drawReferences() {
+    const boxSize = 25;
+    const pad = 5;
+    const nbRef = references.length;
+    const groupHeight = 2 * pad + boxSize * nbRef + pad * (nbRef - 1);
+    const minYCenter = pad + boxSize / 2;
+    const maxYCenter = groupHeight - (pad + boxSize / 2);
 
+    svgCanvas.setAttribute("width", svgCanvas.parentElement.clientWidth);
+    const svgWidth = svgCanvas.getBoundingClientRect().width;
+
+    const timestampList = references.map(ref => ref.timestamp);
+    const minTimestamp = Math.min(...timestampList);
+    const maxTimestamp = Math.max(...timestampList);
+    const minXCenter = pad + boxSize / 2;
+    const maxXCenter = svgWidth - (pad + boxSize / 2);
     clearHTMLContent(svgReferencesGroup);
     for (const [i, ref] of references.entries()) {
-        const [year, month = 1, day = 1] = ref.date_parts;
-        const date = new Date(year, month - 1, day);
-        const timestamp = date.getTime();
-
-        ref.xCenter = (timestamp - timestampMin) / (timestampMax - timestampMin) * svgWidth;
-        ref.yCenter = minYCenter + (maxYCenter - minYCenter) * i / (references.length - 1);
+        ref.xCenter = mapTo(ref.timestamp, minTimestamp, maxTimestamp, minXCenter, maxXCenter);
+        ref.yCenter = minYCenter + (maxYCenter - minYCenter) * i / (nbRef - 1);
         ref.index = i;
         ref.size = boxSize;
-        ref.render(svgReferencesGroup);
+        ref.renderLine(svgReferencesGroup, groupHeight);
+    }
+    for (const ref of references) {
+        ref.renderBox(svgReferencesGroup);
     }
 
     return groupHeight;
 }
 
 function drawSVG() {
-    let timestampMinMax = drawTimescale(svgCanvas.getBoundingClientRect().width);
-    let referencesGroupHeight = drawReferences(timestampMinMax[0], timestampMinMax[1]);
+    let referencesGroupHeight = drawReferences();
+    drawTimescale();
 
     let timescaleGroupHeight = svgTimescaleGroup.getBoundingClientRect().height;
 
     svgCanvas.setAttribute("height", referencesGroupHeight + timescaleGroupHeight);
     svgTimescaleGroup.setAttribute("transform", `translate(0, ${referencesGroupHeight})`);
+}
+
+function mapTo(number, inMin, inMax, outMin, outMax) {
+    return (number - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 }
 
 var userInputDOIList = [];

@@ -25,11 +25,22 @@
 .paper_svg_display_rect {
     stroke: black;
     stroke-width: 1;
-    fill: none;
+    fill: white;
+}
+
+.paper_svg_display_line {
+    stroke: black;
+    stroke-width: 1;
+    stroke-dasharray: 5;
+}
+
+.timescale-horizontal-line{
+    stroke: black;
+    stroke-width: 1;
 }
 
 #citation_plot_svg {
-    border: 2px solid hsl(0, 0%, 75%);
+    background-color: hsl(0, 0%, 95%);
 }
 
 #doiInput {
