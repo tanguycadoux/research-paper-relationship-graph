@@ -7,18 +7,30 @@
 </head>
 
 <body>
-    <h2>User references</h2>
-    <input id="doiInput" type="text" value="10.1109/TASC.2023.3260779" />
-    <input type="button" value="Ajouter" onclick="addDOI()" />
-    <ul id="json_visualizer_input" class="doi_list"></ul>
-    <h2>Untracked references</h2>
-    <ul id="json_visualizer_references" class="doi_list"></ul>
-    <h2>Citation plot</h2>
-    <div id="citation_plot_wrapper">
-        <svg id="citation_plot_svg" width="500" height="100">
-            <g id="references_points"></g>
-            <g id="timescale"></g>
-        </svg>
+    <div class="divider" id="user_sources_divider">
+        <h2>User sources</h2>
+        <div>
+            <input id="doiInput" type="text" value="10.1109/TASC.2023.3260779" />
+            <input type="button" value="Ajouter" onclick="addDOI()" />    
+        </div>
+        <ul id="json_visualizer_input" class="doi_list"></ul>    
+    </div>
+    <div class="divider" id="selected_source_divider">
+        <h2>Selected source own references</h2>
+        <ul class="doi_list"></ul>    
+    </div>
+    <div class="divider">
+        <h2>Untracked references</h2>
+        <ul id="json_visualizer_references" class="doi_list"></ul>    
+    </div>
+    <div class="divider">
+        <h2>Citation plot</h2>
+        <div id="citation_plot_wrapper">
+            <svg id="citation_plot_svg" width="500" height="100">
+                <g id="references_points"></g>
+                <g id="timescale"></g>
+            </svg>
+        </div>
     </div>
 </body>
 

@@ -1,25 +1,50 @@
+body {
+    margin: 1em;
+    font-family: Arial;
+    display: grid;
+    gap: 1em;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+h2 {
+    margin: 0;
+}
+
+p {
+    margin: 0;
+}
+
+ul {
+    margin: 0;
+}
+
+/* --- */
+
+.divider {
+    background-color: hsl(0, 0%, 95%);
+    padding: 1em;
+    border-radius: 1em;
+    display: grid;
+    gap: 1em;
+    grid-column: 1/-1;
+}
+
+#selected_source_divider {
+    grid-column: 2;
+    display: none;
+}
 
 .date-tick {
     stroke: black;
     stroke-width: 2;
 }
+
 .date-tick-1 {
     stroke-width: 1;
 }
 
 #citation_plot_wrapper {
     overflow: auto;
-}
-
-#citation_plot_dates {
-    display: flex;
-    justify-content: space-around;
-
-    &>p {
-        flex: 1 1 0;
-        overflow: hidden;
-        text-align: center;
-    }
 }
 
 .paper_svg_display_rect {
@@ -34,13 +59,13 @@
     stroke-dasharray: 5;
 }
 
-.timescale-horizontal-line{
+.timescale-horizontal-line {
     stroke: black;
     stroke-width: 1;
 }
 
 #citation_plot_svg {
-    background-color: hsl(0, 0%, 95%);
+    background-color: white;
 }
 
 #doiInput {
@@ -51,8 +76,59 @@
 .doi_list {
     list-style-type: none;
     padding: 0;
+    display: grid;
 
-    &>li>* {
-        display: inline;
+    &>li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: .5em;
     }
+}
+
+input {
+    font-family: Arial;
+}
+
+.add_button,
+.remove_button {
+    padding: 0;
+    margin: .5em 0;
+    aspect-ratio: 1;
+    height: 1.3rem;
+    border: none;
+    border-radius: 100%;
+    font-size: 1em;
+    font-weight: bolder;
+    cursor: pointer;
+}
+
+.add_button {
+    background-color: hsl(120, 70%, 75%);
+}
+
+.remove_button {
+    background-color: hsl(0, 90%, 80%);
+}
+
+.doi_text_render {
+    font-style: italic;
+    font-size: .8em;
+    grid-column: 2;
+}
+
+.hidden_checkbox {
+    display: none;
+}
+
+input[type="checkbox"]:checked+label, .reference_text_render:hover {
+    background-color: hsl(0, 0%, 90%);
+}
+
+.reference_text_render {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 .5em;
+    padding: .5em;
+    border-radius: .5em;
+    cursor: pointer;
 }

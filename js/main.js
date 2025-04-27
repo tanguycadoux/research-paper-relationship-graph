@@ -171,23 +171,56 @@ async function updateDOI() {
     clearHTMLContent(HTMLReferences);
     for (const [index, paper] of references.entries()) {
         var li = document.createElement('li');
-        var input = document.createElement('input');
-        var p = document.createElement('p');
+        var input_add_remove = document.createElement('input');
+        var input_checkbox = document.createElement('input');
+        var p_title = document.createElement('p');
+        var p_doi = document.createElement('p');
+        var p_id = document.createElement('p');
+        var label = document.createElement('label');
 
-        input.type = 'button';
-        p.innerText = `[${index}] ${paper.title} (${paper.DOI})`;
+        input_add_remove.type = 'button';
 
-        li.appendChild(input);
-        li.appendChild(p);
+        p_id.innerText = `[${index}]`;
+
+        p_title.innerText = `${paper.title}`;
+
+        p_doi.innerText = `DOI: ${paper.DOI}`;
+        p_doi.className = "doi_text_render";
+
+        input_checkbox.type = 'checkbox';
+        input_checkbox.className = "hidden_checkbox";
+        input_checkbox.id = `checkbox_${paper.DOI}`;
+
+        label.htmlFor = `checkbox_${paper.DOI}`;
+        label.className = "reference_text_render";
+        label.id = `user_reference_${paper.DOI}`;
+
+        label.appendChild(p_id);
+        label.appendChild(p_title);
+        label.appendChild(p_doi);
+
+        li.appendChild(input_add_remove);
+        li.appendChild(input_checkbox);
+        li.appendChild(label);
+
         if (userInputDOIList.includes(paper.DOI)) {
-            input.value = '-';
-            input.onclick = () => {
+            input_add_remove.value = '-';
+            input_add_remove.className = 'remove_button';
+            input_add_remove.onclick = () => {
                 removeDOI(paper.DOI);
             };
             HTMLInput.appendChild(li);
+            label.onclick = () => {
+                let selected_source_divider = document.getElementById("selected_source_divider");
+                let user_sources_divider = document.getElementById("user_sources_divider");
+
+                selected_source_divider.style.display = "block";
+                user_sources_divider.style.gridColumn = "1";
+            };
         } else {
-            input.value = '+';
-            input.onclick = () => {
+            input_add_remove.value = '+';
+            input_add_remove.className = 'add_button';
+            input_add_remove.onclick = () => {
                 addDOI(paper.DOI);
             };
             HTMLReferences.appendChild(li);
