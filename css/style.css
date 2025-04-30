@@ -27,6 +27,7 @@ ul {
     display: grid;
     gap: 1em;
     grid-column: 1/-1;
+    height: fit-content;
 }
 
 #selected_source_divider {
@@ -110,10 +111,13 @@ input {
     background-color: hsl(0, 90%, 80%);
 }
 
-.doi_text_render {
+.reference_secundary_information {
     font-style: italic;
     font-size: .8em;
-    grid-column: 2;
+}
+
+.reference_doi {
+    display: none;
 }
 
 .hidden_checkbox {

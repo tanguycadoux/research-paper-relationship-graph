@@ -6111,5 +6111,3391 @@
         ]
       }
     }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2024,
+            3,
+            15
+          ]
+        ],
+        "date-time": "2024-03-15T17:47:50Z",
+        "timestamp": 1710524870018
+      },
+      "reference-count": 6,
+      "publisher": "AIP Publishing",
+      "issue": "5",
+      "content-domain": {
+        "domain": [
+          "pubs.aip.org"
+        ],
+        "crossmark-restriction": true
+      },
+      "short-container-title": [],
+      "published-print": {
+        "date-parts": [
+          [
+            1994,
+            5,
+            1
+          ]
+        ]
+      },
+      "abstract": "<jats:p>The Quadrumafios electron cyclotron resonance ion source (ECRIS) has been especially designed to permit physical studies of the plasma; this paper describes the source itself (which has been operated at 10 GHz in a first step), its preliminary performances, and the different diagnostics involved, which mainly concern the electron population (ECE, x rays, diamagnetism, microwave interferometer, and electron analyzer). The results are presented and discussed: There is of course a close relationship between the parameters of the plasma and the performances of the source; this point will be discussed in the article.</jats:p>",
+      "DOI": "10.1063/1.1144864",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2002,
+            7,
+            26
+          ]
+        ],
+        "date-time": "2002-07-26T13:58:11Z",
+        "timestamp": 1027691891000
+      },
+      "page": "1714-1717",
+      "update-policy": "http://dx.doi.org/10.1063/aip-crossmark-policy-page",
+      "source": "Crossref",
+      "is-referenced-by-count": 20,
+      "title": [
+        "The Quadrumafios electron cyclotron resonance ion source: Presentation and analysis of the resultsa)"
+      ],
+      "prefix": "10.1063",
+      "volume": "65",
+      "author": [
+        {
+          "given": "A.",
+          "family": "Girard",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "P.",
+          "family": "Briand",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "G.",
+          "family": "Gaudart",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "J. P.",
+          "family": "Klein",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "F.",
+          "family": "Bourg",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "J.",
+          "family": "Debernardi",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "J. M.",
+          "family": "Mathonnet",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "G.",
+          "family": "Melin",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        },
+        {
+          "given": "Y.",
+          "family": "Su",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "CEA/D\u00e9partment de Recherche Fondamentale sur la Mati\u00e8re Condens\u00e9e/PSI, CENG-85 X, 38041 Grenoble C\u00e9dex, France"
+            }
+          ]
+        }
+      ],
+      "member": "317",
+      "reference": [
+        {
+          "key": "2024021013320020600_r1",
+          "doi-asserted-by": "crossref",
+          "first-page": "613",
+          "DOI": "10.1063/1.1141934",
+          "volume": "61",
+          "year": "1990",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024021013320020600_r1a",
+          "first-page": "2889",
+          "volume": "63",
+          "year": "1991",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024021013320020600_r2",
+          "first-page": "2844",
+          "volume": "63",
+          "year": "1991",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024021013320020600_r3",
+          "first-page": "2676",
+          "volume": "63",
+          "year": "1991",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024021013320020600_r4"
+        },
+        {
+          "key": "2024021013320020600_r5"
+        }
+      ],
+      "container-title": [
+        "Review of Scientific Instruments"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "https://pubs.aip.org/aip/rsi/article-pdf/65/5/1714/19002878/1714_1_online.pdf",
+          "content-type": "application/pdf",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "https://pubs.aip.org/aip/rsi/article-pdf/65/5/1714/19002878/1714_1_online.pdf",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2024,
+            2,
+            10
+          ]
+        ],
+        "date-time": "2024-02-10T15:04:28Z",
+        "timestamp": 1707577468000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://pubs.aip.org/rsi/article/65/5/1714/450242/The-Quadrumafios-electron-cyclotron-resonance-ion"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            1994,
+            5,
+            1
+          ]
+        ]
+      },
+      "references-count": 6,
+      "journal-issue": {
+        "issue": "5",
+        "published-print": {
+          "date-parts": [
+            [
+              1994,
+              5,
+              1
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1063/1.1144864",
+      "relation": {},
+      "ISSN": [
+        "0034-6748",
+        "1089-7623"
+      ],
+      "issn-type": [
+        {
+          "value": "0034-6748",
+          "type": "print"
+        },
+        {
+          "value": "1089-7623",
+          "type": "electronic"
+        }
+      ],
+      "subject": [],
+      "published-other": {
+        "date-parts": [
+          [
+            1994,
+            5
+          ]
+        ]
+      },
+      "published": {
+        "date-parts": [
+          [
+            1994,
+            5,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2024,
+            6,
+            20
+          ]
+        ],
+        "date-time": "2024-06-20T18:38:38Z",
+        "timestamp": 1718908718269
+      },
+      "reference-count": 33,
+      "publisher": "AIP Publishing",
+      "issue": "5",
+      "content-domain": {
+        "domain": [
+          "pubs.aip.org"
+        ],
+        "crossmark-restriction": true
+      },
+      "short-container-title": [],
+      "published-print": {
+        "date-parts": [
+          [
+            1994,
+            9,
+            1
+          ]
+        ]
+      },
+      "abstract": "<jats:p>The hot electrons in the plasma of an electron-cyclotron-resonance ion source are investigated by three passive diagnostics: bremsstrahlung, electron cyclotron emission, and diamagnetism. For this type of plasma the feasibility of the second diagnostic is an innovative development, as is the simultaneous use of two independent plasma diagnostics for either steady-state or transient experiments. In the steady-state experiments the bremsstrahlung and the electron cyclotron emission are interpreted by comparing the experimental spectra with simulated spectra calculated for the first time from a non-Maxwellian electron distribution. The \u2018\u2018perpendicular temperatures\u2019\u2019 obtained by the two diagnostics are in good agreement. In the transient experiments the electron cyclotron emission and the diamagnetic signals are recorded to study the electron density and the electron lifetime. All these experiments performed using the Minimafios ion source working at 18 GHz with oxygen gas demonstrate trends and saturation effects when the gas injection pressure and the radio-frequency power are varied.</jats:p>",
+      "DOI": "10.1063/1.357563",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2002,
+            7,
+            26
+          ]
+        ],
+        "date-time": "2002-07-26T13:47:51Z",
+        "timestamp": 1027691271000
+      },
+      "page": "2662-2670",
+      "update-policy": "http://dx.doi.org/10.1063/aip-crossmark-policy-page",
+      "source": "Crossref",
+      "is-referenced-by-count": 66,
+      "title": [
+        "Investigation of hot electrons in electron-cyclotron-resonance ion sources"
+      ],
+      "prefix": "10.1063",
+      "volume": "76",
+      "author": [
+        {
+          "given": "C.",
+          "family": "Baru\u00e9",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "DRFMC/PSI, Centre d\u2019Etudes Nucl\u00e9aires, 85 X, 38041 Grenoble Cedex, France"
+            }
+          ]
+        },
+        {
+          "given": "M.",
+          "family": "Lamoureux",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "DRFMC/PSI, Centre d\u2019Etudes Nucl\u00e9aires, 85 X, 38041 Grenoble Cedex, France"
+            }
+          ]
+        },
+        {
+          "given": "P.",
+          "family": "Briand",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "DRFMC/PSI, Centre d\u2019Etudes Nucl\u00e9aires, 85 X, 38041 Grenoble Cedex, France"
+            }
+          ]
+        },
+        {
+          "given": "A.",
+          "family": "Girard",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "DRFMC/PSI, Centre d\u2019Etudes Nucl\u00e9aires, 85 X, 38041 Grenoble Cedex, France"
+            }
+          ]
+        },
+        {
+          "given": "G.",
+          "family": "Melin",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "DRFMC/PSI, Centre d\u2019Etudes Nucl\u00e9aires, 85 X, 38041 Grenoble Cedex, France"
+            }
+          ]
+        }
+      ],
+      "member": "317",
+      "reference": [
+        {
+          "key": "2024020213261455000_r1"
+        },
+        {
+          "key": "2024020213261455000_r1a",
+          "doi-asserted-by": "crossref",
+          "first-page": "659",
+          "DOI": "10.1063/1.1141898",
+          "volume": "61",
+          "year": "1990",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024020213261455000_r1b"
+        },
+        {
+          "key": "2024020213261455000_r2"
+        },
+        {
+          "key": "2024020213261455000_r2a"
+        },
+        {
+          "key": "2024020213261455000_r2b",
+          "doi-asserted-by": "crossref",
+          "first-page": "19",
+          "DOI": "10.1088/0031-8949/1983/T3/004",
+          "volume": "T3",
+          "year": "1983",
+          "journal-title": "Phys. Scri."
+        },
+        {
+          "key": "2024020213261455000_r3"
+        },
+        {
+          "key": "2024020213261455000_r3a",
+          "doi-asserted-by": "crossref",
+          "first-page": "2676",
+          "DOI": "10.1063/1.1143806",
+          "volume": "63",
+          "year": "1992",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024020213261455000_r4"
+        },
+        {
+          "key": "2024020213261455000_r4a",
+          "doi-asserted-by": "crossref",
+          "first-page": "2844",
+          "DOI": "10.1063/1.1142772",
+          "volume": "63",
+          "year": "1992",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2024020213261455000_r5"
+        },
+        {
+          "key": "2024020213261455000_r6",
+          "doi-asserted-by": "crossref",
+          "first-page": "1853",
+          "DOI": "10.1103/PhysRevLett.58.1853",
+          "volume": "58",
+          "year": "1987",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2024020213261455000_r7",
+          "doi-asserted-by": "crossref",
+          "first-page": "35",
+          "DOI": "10.1088/0029-5515/25/1/004",
+          "volume": "25",
+          "year": "1985",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2024020213261455000_r8",
+          "doi-asserted-by": "crossref",
+          "first-page": "131",
+          "DOI": "10.1103/PhysRevLett.14.131",
+          "volume": "14",
+          "year": "1965",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2024020213261455000_r9"
+        },
+        {
+          "key": "2024020213261455000_r10"
+        },
+        {
+          "key": "2024020213261455000_r11"
+        },
+        {
+          "key": "2024020213261455000_r12"
+        },
+        {
+          "key": "2024020213261455000_r13",
+          "doi-asserted-by": "crossref",
+          "first-page": "867",
+          "DOI": "10.1088/0032-1028/24/8/001",
+          "volume": "24",
+          "year": "1982",
+          "journal-title": "Plasma Phys."
+        },
+        {
+          "key": "2024020213261455000_r14",
+          "doi-asserted-by": "crossref",
+          "first-page": "1336",
+          "DOI": "10.1063/1.863147",
+          "volume": "23",
+          "year": "1980",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2024020213261455000_r15",
+          "doi-asserted-by": "crossref",
+          "first-page": "3497",
+          "DOI": "10.1063/1.864110",
+          "volume": "26",
+          "year": "1983",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2024020213261455000_r16"
+        },
+        {
+          "key": "2024020213261455000_r16a",
+          "first-page": "136",
+          "volume": "3",
+          "year": "1958",
+          "journal-title": "Sov. Phys. Dokl."
+        },
+        {
+          "key": "2024020213261455000_r17",
+          "doi-asserted-by": "crossref",
+          "first-page": "755",
+          "DOI": "10.1063/1.864199",
+          "volume": "26",
+          "year": "1983",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2024020213261455000_r18",
+          "doi-asserted-by": "crossref",
+          "first-page": "1902",
+          "DOI": "10.1063/1.860969",
+          "volume": "5",
+          "year": "1993",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2024020213261455000_r19"
+        },
+        {
+          "key": "2024020213261455000_r20",
+          "doi-asserted-by": "crossref",
+          "first-page": "862",
+          "DOI": "10.1063/1.859011",
+          "volume": "1",
+          "year": "1989",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2024020213261455000_r21",
+          "doi-asserted-by": "crossref",
+          "first-page": "1073",
+          "DOI": "10.1088/0032-1028/14/12/002",
+          "volume": "14",
+          "year": "1972",
+          "journal-title": "Plasma Phys."
+        },
+        {
+          "key": "2024020213261455000_r21a",
+          "doi-asserted-by": "crossref",
+          "first-page": "125",
+          "DOI": "10.1088/0032-1028/15/2/006",
+          "volume": "15",
+          "year": "1973",
+          "journal-title": "Plasma Phys."
+        },
+        {
+          "key": "2024020213261455000_r22",
+          "doi-asserted-by": "crossref",
+          "first-page": "137",
+          "DOI": "10.1063/1.859951",
+          "volume": "3",
+          "year": "1991",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2024020213261455000_r23",
+          "doi-asserted-by": "crossref",
+          "first-page": "1660",
+          "DOI": "10.1063/1.1694193",
+          "volume": "16",
+          "year": "1973",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2024020213261455000_r24",
+          "first-page": "242",
+          "volume": "2",
+          "year": "1990",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2024020213261455000_r25",
+          "doi-asserted-by": "crossref",
+          "first-page": "211",
+          "DOI": "10.1088/0032-1028/14/3/001",
+          "volume": "14",
+          "year": "1972",
+          "journal-title": "Plasma Phys."
+        }
+      ],
+      "container-title": [
+        "Journal of Applied Physics"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "https://pubs.aip.org/aip/jap/article-pdf/76/5/2662/18669644/2662_1_online.pdf",
+          "content-type": "application/pdf",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "https://pubs.aip.org/aip/jap/article-pdf/76/5/2662/18669644/2662_1_online.pdf",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2024,
+            2,
+            2
+          ]
+        ],
+        "date-time": "2024-02-02T14:09:45Z",
+        "timestamp": 1706882985000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://pubs.aip.org/jap/article/76/5/2662/1444/Investigation-of-hot-electrons-in-electron"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            1994,
+            9,
+            1
+          ]
+        ]
+      },
+      "references-count": 33,
+      "journal-issue": {
+        "issue": "5",
+        "published-print": {
+          "date-parts": [
+            [
+              1994,
+              9,
+              1
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1063/1.357563",
+      "relation": {},
+      "ISSN": [
+        "0021-8979",
+        "1089-7550"
+      ],
+      "issn-type": [
+        {
+          "value": "0021-8979",
+          "type": "print"
+        },
+        {
+          "value": "1089-7550",
+          "type": "electronic"
+        }
+      ],
+      "subject": [],
+      "published-other": {
+        "date-parts": [
+          [
+            1994,
+            9,
+            1
+          ]
+        ]
+      },
+      "published": {
+        "date-parts": [
+          [
+            1994,
+            9,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2025,
+            1,
+            3
+          ]
+        ],
+        "date-time": "2025-01-03T06:00:17Z",
+        "timestamp": 1735884017940,
+        "version": "3.32.0"
+      },
+      "reference-count": 13,
+      "publisher": "American Physical Society (APS)",
+      "issue": "18",
+      "license": [
+        {
+          "start": {
+            "date-parts": [
+              [
+                1987,
+                5,
+                4
+              ]
+            ],
+            "date-time": "1987-05-04T00:00:00Z",
+            "timestamp": 547084800000
+          },
+          "content-version": "vor",
+          "delay-in-days": 0,
+          "URL": "http://link.aps.org/licenses/aps-default-license"
+        }
+      ],
+      "content-domain": {
+        "domain": [],
+        "crossmark-restriction": false
+      },
+      "short-container-title": [
+        "Phys. Rev. Lett."
+      ],
+      "DOI": "10.1103/physrevlett.58.1821",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2002,
+            7,
+            27
+          ]
+        ],
+        "date-time": "2002-07-27T01:14:56Z",
+        "timestamp": 1027732496000
+      },
+      "page": "1821-1824",
+      "source": "Crossref",
+      "is-referenced-by-count": 67,
+      "title": [
+        "Bounds on right-handed currents from nuclear beta decay"
+      ],
+      "prefix": "10.1103",
+      "volume": "58",
+      "author": [
+        {
+          "given": "V. A.",
+          "family": "Wichers",
+          "sequence": "first",
+          "affiliation": []
+        },
+        {
+          "given": "T. R.",
+          "family": "Hageman",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "van Klinken",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "H. W.",
+          "family": "Wilschut",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "D.",
+          "family": "Atkinson",
+          "sequence": "additional",
+          "affiliation": []
+        }
+      ],
+      "member": "16",
+      "published-online": {
+        "date-parts": [
+          [
+            1987,
+            5,
+            4
+          ]
+        ]
+      },
+      "reference": [
+        {
+          "key": "PhysRevLett.58.1821Cc1R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "275",
+          "DOI": "10.1103/PhysRevD.10.275",
+          "volume": "10",
+          "author": "J. C. Pati",
+          "year": "1974",
+          "journal-title": "Phys. Rev. D"
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc1R2",
+          "doi-asserted-by": "crossref",
+          "first-page": "566",
+          "DOI": "10.1103/PhysRevD.11.566",
+          "volume": "11",
+          "author": "R. N. Mohapatra",
+          "year": "1975",
+          "journal-title": "Phys. Rev. D"
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc2R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "2114",
+          "DOI": "10.1103/PhysRevLett.55.2114",
+          "volume": "55",
+          "author": "G. Blewitt",
+          "year": "1985",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc3R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "1252",
+          "DOI": "10.1103/PhysRevLett.38.1252",
+          "volume": "38",
+          "author": "M. A. B. B\u00e9g",
+          "year": "1977",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc4R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "94",
+          "DOI": "10.1103/PhysRevLett.50.94",
+          "volume": "50",
+          "author": "J. van Klinken",
+          "year": "1983",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc5R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "708",
+          "DOI": "10.1103/PhysRevLett.49.708",
+          "volume": "49",
+          "author": "M. Skalsey",
+          "year": "1982",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc6R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "145",
+          "DOI": "10.1016/0029-5582(66)90753-X",
+          "volume": "75",
+          "author": "J. van Klinken",
+          "year": "1966",
+          "journal-title": "Nucl. Phys."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc7R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "627",
+          "DOI": "10.1103/PhysRevLett.51.627",
+          "volume": "51",
+          "author": "J. Carr",
+          "year": "1983",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc7R2",
+          "doi-asserted-by": "crossref",
+          "first-page": "1887",
+          "DOI": "10.1103/PhysRevLett.54.1887",
+          "volume": "54",
+          "author": "D. P. Stoker",
+          "year": "1985",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc8R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "1967",
+          "DOI": "10.1103/PhysRevD.34.1967",
+          "volume": "34",
+          "author": "A. Jodidio",
+          "year": "1986",
+          "journal-title": "Phys. Rev. D"
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc10R2",
+          "doi-asserted-by": "crossref",
+          "first-page": "2369",
+          "DOI": "10.1103/PhysRevD.16.2369",
+          "volume": "16",
+          "author": "B. R. Holstein",
+          "year": "1977",
+          "journal-title": "Phys. Rev. D"
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc11R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "753",
+          "DOI": "10.1103/PhysRevC.16.753",
+          "volume": "16",
+          "author": "B. R. Holstein",
+          "year": "1977",
+          "journal-title": "Phys. Rev. C"
+        },
+        {
+          "key": "PhysRevLett.58.1821Cc13R1",
+          "doi-asserted-by": "crossref",
+          "first-page": "433",
+          "DOI": "10.1016/0029-554X(78)90152-0",
+          "volume": "151",
+          "author": "J. van Klinken",
+          "year": "1978",
+          "journal-title": "Nucl. Instrum. Methods"
+        }
+      ],
+      "container-title": [
+        "Physical Review Letters"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "http://link.aps.org/article/10.1103/PhysRevLett.58.1821",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "http://harvest.aps.org/v2/journals/articles/10.1103/PhysRevLett.58.1821/fulltext",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2025,
+            1,
+            3
+          ]
+        ],
+        "date-time": "2025-01-03T02:56:19Z",
+        "timestamp": 1735872979000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://link.aps.org/doi/10.1103/PhysRevLett.58.1821"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            1987,
+            5,
+            4
+          ]
+        ]
+      },
+      "references-count": 13,
+      "journal-issue": {
+        "issue": "18",
+        "published-print": {
+          "date-parts": [
+            [
+              1987,
+              5
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1103/physrevlett.58.1821",
+      "relation": {},
+      "ISSN": [
+        "0031-9007"
+      ],
+      "issn-type": [
+        {
+          "type": "print",
+          "value": "0031-9007"
+        }
+      ],
+      "subject": [],
+      "published": {
+        "date-parts": [
+          [
+            1987,
+            5,
+            4
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2024,
+            5,
+            6
+          ]
+        ],
+        "date-time": "2024-05-06T10:35:47Z",
+        "timestamp": 1714991747709
+      },
+      "reference-count": 40,
+      "publisher": "AIP Publishing",
+      "issue": "3",
+      "content-domain": {
+        "domain": [
+          "pubs.aip.org"
+        ],
+        "crossmark-restriction": true
+      },
+      "short-container-title": [],
+      "published-print": {
+        "date-parts": [
+          [
+            1991,
+            3,
+            1
+          ]
+        ]
+      },
+      "abstract": "<jats:p>Multiply charged ions are studied in the Constance B quadrupole mirror experiment [Phys. Rev. Lett. 59, 1821 (1987)] in order to better understand the ion physics of electron cyclotron resonance (ECR) high charge-state ion sources. By measuring the ion densities and end loss fluxes, the parallel confinement times for the first five charge states of oxygen plasmas are determined. The parallel ion confinement times increase with charge state and peak on axis, both indications of an ion-confining potential dip created by the hot electrons. The radial profile of ion end loss is normally hollow, with the peak fluxes occurring at the edge of the ECR zone. An attempt is made to increase the end loss flux of a selected ion species by decreasing its parallel confinement time using minority ion cyclotron resonance heating (ICRH). In addition, an ion model is developed to predict the ion densities, end loss fluxes, and confinement times using the ion particle balance equations, the quasineutrality condition, and theoretical confinement time formulas. The model generally agrees with the experimental data to within experimental error.</jats:p>",
+      "DOI": "10.1063/1.859867",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2002,
+            7,
+            26
+          ]
+        ],
+        "date-time": "2002-07-26T12:46:28Z",
+        "timestamp": 1027687588000
+      },
+      "page": "705-714",
+      "update-policy": "http://dx.doi.org/10.1063/aip-crossmark-policy-page",
+      "source": "Crossref",
+      "is-referenced-by-count": 16,
+      "title": [
+        "Confinement of multiply charged ions in an electron cyclotron resonance heated mirror plasma"
+      ],
+      "prefix": "10.1063",
+      "volume": "3",
+      "author": [
+        {
+          "given": "C. C.",
+          "family": "Petty",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "Plasma Fusion Center, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139"
+            }
+          ]
+        },
+        {
+          "given": "D. L.",
+          "family": "Goodman",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Plasma Fusion Center, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139"
+            }
+          ]
+        },
+        {
+          "given": "D. L.",
+          "family": "Smatlak",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Plasma Fusion Center, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139"
+            }
+          ]
+        },
+        {
+          "given": "D. K.",
+          "family": "Smith",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Plasma Fusion Center, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139"
+            }
+          ]
+        }
+      ],
+      "member": "317",
+      "reference": [
+        {
+          "key": "2023080203145958700_r1",
+          "first-page": "904",
+          "volume": "NS-23",
+          "year": "1976",
+          "journal-title": "IEEE Trans. Nucl. Sci."
+        },
+        {
+          "key": "2023080203145958700_r2",
+          "first-page": "2120",
+          "volume": "NS-26",
+          "year": "1979",
+          "journal-title": "IEEE Trans. Nucl. Sci."
+        },
+        {
+          "key": "2023080203145958700_r3",
+          "doi-asserted-by": "crossref",
+          "first-page": "19",
+          "DOI": "10.1146/annurev.ns.31.120181.000315",
+          "volume": "31",
+          "year": "1981",
+          "journal-title": "Annu. Rev. Nucl. Part. Sci."
+        },
+        {
+          "key": "2023080203145958700_r4",
+          "doi-asserted-by": "crossref",
+          "first-page": "C1",
+          "DOI": "10.1051/jphys:019890050010R100",
+          "volume": "50",
+          "year": "1989",
+          "journal-title": "J. Phys. (Paris)"
+        },
+        {
+          "key": "2023080203145958700_r5",
+          "doi-asserted-by": "crossref",
+          "first-page": "1821",
+          "DOI": "10.1103/PhysRevLett.59.1821",
+          "volume": "59",
+          "year": "1987",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2023080203145958700_r6",
+          "doi-asserted-by": "crossref",
+          "first-page": "615",
+          "DOI": "10.1063/1.859121",
+          "volume": "1",
+          "year": "1989",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2023080203145958700_r7",
+          "doi-asserted-by": "crossref",
+          "first-page": "862",
+          "DOI": "10.1063/1.859011",
+          "volume": "1",
+          "year": "1989",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2023080203145958700_r8",
+          "first-page": "1511",
+          "volume": "31",
+          "year": "1986",
+          "journal-title": "Bull. Am. Phys. Soc."
+        },
+        {
+          "key": "2023080203145958700_r9",
+          "doi-asserted-by": "crossref",
+          "first-page": "1247",
+          "DOI": "10.1051/jphys:019810042090124700",
+          "volume": "42",
+          "year": "1981",
+          "journal-title": "J. Phys. (Paris)"
+        },
+        {
+          "key": "2023080203145958700_r10",
+          "unstructured": "See AIP Document No. PAPS  PFBPE-02-2173-34 for 34 pages of Y. Jongen, \u201cConfinement and charge state distribution in ECR sources,\u201d Laboratorie du Cyclotron report LC-8001, Univ. Cath. De Louvain, Belgium (1980). Order by PAPS number and journal reference from American Institute of Physics, Physics Auxiliary Publication Service, 335 East 45th Street, New York, NY 10017. The price is $1.50 for each microfiche (98 pages) or $5.00 for photocopies of up to 30 pages, and $0.15 for each additional page over 30 pages. Airmail additional. Make checks payable to the American Institute of Physics."
+        },
+        {
+          "key": "2023080203145958700_r11"
+        },
+        {
+          "key": "2023080203145958700_r12",
+          "doi-asserted-by": "crossref",
+          "first-page": "2173",
+          "DOI": "10.1063/1.859398",
+          "volume": "2",
+          "year": "1990",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2023080203145958700_r13",
+          "doi-asserted-by": "crossref",
+          "first-page": "1853",
+          "DOI": "10.1103/PhysRevLett.58.1853",
+          "volume": "58",
+          "year": "1987",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2023080203145958700_r14",
+          "doi-asserted-by": "crossref",
+          "first-page": "601",
+          "DOI": "10.1063/1.1139840",
+          "volume": "59",
+          "year": "1988",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080203145958700_r15",
+          "doi-asserted-by": "crossref",
+          "first-page": "149",
+          "DOI": "10.1016/0092-640X(85)90025-7",
+          "volume": "33",
+          "year": "1985",
+          "journal-title": "At. Data Nucl. Data Tables"
+        },
+        {
+          "key": "2023080203145958700_r16",
+          "doi-asserted-by": "crossref",
+          "first-page": "2835",
+          "DOI": "10.1063/1.1140667",
+          "volume": "60",
+          "year": "1989",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080203145958700_r17",
+          "doi-asserted-by": "crossref",
+          "first-page": "241",
+          "DOI": "10.1007/BF01392963",
+          "volume": "216",
+          "year": "1968",
+          "journal-title": "Z. Phys."
+        },
+        {
+          "key": "2023080203145958700_r18",
+          "first-page": "391",
+          "volume": "62A",
+          "year": "1977",
+          "journal-title": "Phys. Lett."
+        },
+        {
+          "key": "2023080203145958700_r19"
+        },
+        {
+          "key": "2023080203145958700_r20",
+          "unstructured": "See AIP Document No. PAPS  PFBPE-02-2173-16 for 16 pages of D. E. Baldwin, \u201cModel for ion confinement in a hot-electron tandem mirror anchor,\u201d Lawrence Livermore National Laboratory Report No. UCID-18802 (1980). Order by PAPS number and journal reference from American Institute of Physics, Physics Auxiliary Publication Service, 335 East 45th Street, New York, NY 10017. The price is $1.50 for each microfiche (98 pages) or $5.00 for photocopies of up to 30 pages, and $0.15 for each additional page over 30 pages. Airmail additional. Make checks payable to the American Institute of Physics."
+        },
+        {
+          "key": "2023080203145958700_r21",
+          "doi-asserted-by": "crossref",
+          "first-page": "3",
+          "DOI": "10.1088/0029-5515/14/1/001",
+          "volume": "14",
+          "year": "1974",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r22",
+          "doi-asserted-by": "crossref",
+          "first-page": "1229",
+          "DOI": "10.1088/0029-5515/18/9/005",
+          "volume": "18",
+          "year": "1978",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r23",
+          "doi-asserted-by": "crossref",
+          "first-page": "75",
+          "DOI": "10.1088/0029-5515/24/1/007",
+          "volume": "24",
+          "year": "1984",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r24",
+          "doi-asserted-by": "crossref",
+          "first-page": "1295",
+          "DOI": "10.1088/0029-5515/19/10/001",
+          "volume": "19",
+          "year": "1979",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r25",
+          "doi-asserted-by": "crossref",
+          "first-page": "1003",
+          "DOI": "10.1088/0029-5515/20/8/007",
+          "volume": "20",
+          "year": "1980",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r26",
+          "doi-asserted-by": "crossref",
+          "first-page": "223",
+          "DOI": "10.1088/0029-5515/22/2/004",
+          "volume": "22",
+          "year": "1982",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r27",
+          "doi-asserted-by": "crossref",
+          "first-page": "1049",
+          "DOI": "10.1063/1.1762220",
+          "volume": "10",
+          "year": "1967",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023080203145958700_r28",
+          "first-page": "242",
+          "volume": "2",
+          "year": "1990",
+          "journal-title": "Phys. Fluids B"
+        },
+        {
+          "key": "2023080203145958700_r29",
+          "doi-asserted-by": "crossref",
+          "first-page": "2093",
+          "DOI": "10.1088/0029-5515/28/11/009",
+          "volume": "28",
+          "year": "1988",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r30"
+        },
+        {
+          "key": "2023080203145958700_r31",
+          "doi-asserted-by": "crossref",
+          "first-page": "1660",
+          "DOI": "10.1063/1.1694193",
+          "volume": "16",
+          "year": "1973",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023080203145958700_r32",
+          "doi-asserted-by": "crossref",
+          "first-page": "3212",
+          "DOI": "10.1063/1.866496",
+          "volume": "30",
+          "year": "1987",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023080203145958700_r33",
+          "doi-asserted-by": "crossref",
+          "first-page": "1787",
+          "DOI": "10.1063/1.866667",
+          "volume": "31",
+          "year": "1988",
+          "journal-title": "Phys. Fluids."
+        },
+        {
+          "key": "2023080203145958700_r34",
+          "doi-asserted-by": "crossref",
+          "first-page": "3540",
+          "DOI": "10.1063/1.866436",
+          "volume": "30",
+          "year": "1987",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023080203145958700_r35",
+          "doi-asserted-by": "crossref",
+          "first-page": "2187",
+          "DOI": "10.1088/0029-5515/28/12/008",
+          "volume": "28",
+          "year": "1988",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023080203145958700_r36",
+          "doi-asserted-by": "crossref",
+          "first-page": "939",
+          "DOI": "10.1103/PhysRevLett.55.939",
+          "volume": "55",
+          "year": "1985",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2023080203145958700_r37",
+          "doi-asserted-by": "crossref",
+          "first-page": "3609",
+          "DOI": "10.1063/1.865317",
+          "volume": "28",
+          "year": "1985",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023080203145958700_r38",
+          "first-page": "Cl",
+          "volume": "50",
+          "year": "1989",
+          "journal-title": "J. Phys. (Paris)"
+        },
+        {
+          "key": "2023080203145958700_r39",
+          "doi-asserted-by": "crossref",
+          "first-page": "2264",
+          "DOI": "10.1063/1.864881",
+          "volume": "27",
+          "year": "1984",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023080203145958700_r40"
+        }
+      ],
+      "container-title": [
+        "Physics of Fluids B: Plasma Physics"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "https://pubs.aip.org/aip/pfb/article-pdf/3/3/705/12261109/705_1_online.pdf",
+          "content-type": "application/pdf",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "https://pubs.aip.org/aip/pfb/article-pdf/3/3/705/12261109/705_1_online.pdf",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2023,
+            8,
+            2
+          ]
+        ],
+        "date-time": "2023-08-02T03:16:47Z",
+        "timestamp": 1690946207000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://pubs.aip.org/pfb/article/3/3/705/941329/Confinement-of-multiply-charged-ions-in-an"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            1991,
+            3,
+            1
+          ]
+        ]
+      },
+      "references-count": 40,
+      "journal-issue": {
+        "issue": "3",
+        "published-print": {
+          "date-parts": [
+            [
+              1991,
+              3,
+              1
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1063/1.859867",
+      "relation": {},
+      "ISSN": [
+        "0899-8221"
+      ],
+      "issn-type": [
+        {
+          "value": "0899-8221",
+          "type": "print"
+        }
+      ],
+      "subject": [],
+      "published-other": {
+        "date-parts": [
+          [
+            1991,
+            3
+          ]
+        ]
+      },
+      "published": {
+        "date-parts": [
+          [
+            1991,
+            3,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2024,
+            2,
+            11
+          ]
+        ],
+        "date-time": "2024-02-11T13:59:43Z",
+        "timestamp": 1707659983577
+      },
+      "reference-count": 20,
+      "publisher": "AIP Publishing",
+      "issue": "12",
+      "content-domain": {
+        "domain": [
+          "pubs.aip.org"
+        ],
+        "crossmark-restriction": true
+      },
+      "short-container-title": [],
+      "published-print": {
+        "date-parts": [
+          [
+            1984,
+            12,
+            1
+          ]
+        ]
+      },
+      "abstract": "<jats:p>Experimental measurements of electron-cyclotron resonance heating (ECRH) of a highly ionized plasma in mirror geometry is compared to a two-dimensional, time-dependent, Fokker\u2013Planck simulation. Measurements of the absorption strength of the electrons and of the energy confinement of the ions helped to specify the parameters of the code. The electron energy distribution is measured with an end-loss analyzer and a target x-ray detector. These characterize a non-Maxwellian distribution consisting of \u2018\u2018passing\u2019\u2019 (10 eV&amp;lt;Te,p&amp;lt;30 eV), \u2018\u2018warm\u2019\u2019 (50 eV&amp;lt;Te,w&amp;lt;300 eV), and \u2018\u2018hot\u2019\u2019 (1.2 keV&amp;lt;Te,h&amp;lt;4.0 keV) electron populations. The temperature and fractional densities of the warm and hot populations depend on the absorbed power and total density. A similar distribution is calculated with the simulation program that reproduces the end-loss and x-ray signals. Both the experimental measurments and the simulation are described.</jats:p>",
+      "DOI": "10.1063/1.864605",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2003,
+            3,
+            7
+          ]
+        ],
+        "date-time": "2003-03-07T20:41:03Z",
+        "timestamp": 1047069663000
+      },
+      "page": "2899-2911",
+      "update-policy": "http://dx.doi.org/10.1063/aip-crossmark-policy-page",
+      "source": "Crossref",
+      "is-referenced-by-count": 41,
+      "title": [
+        "Electron-cyclotron heating in a pulsed mirror experiment"
+      ],
+      "prefix": "10.1063",
+      "volume": "27",
+      "author": [
+        {
+          "given": "M. E.",
+          "family": "Mauel",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "Plasma Fusion Center and Research Laboratory of Electronics, Massachusetts Institute of Technology, Cambridge, Massachusetts 02139"
+            }
+          ]
+        }
+      ],
+      "member": "317",
+      "reference": [
+        {
+          "key": "2023073020385578600_r1",
+          "first-page": "1051",
+          "volume": "19",
+          "year": "1976",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2023073020385578600_r2",
+          "doi-asserted-by": "crossref",
+          "first-page": "125",
+          "DOI": "10.1088/0032-1028/15/2/006",
+          "volume": "15",
+          "year": "1973",
+          "journal-title": "Plasma Phys."
+        },
+        {
+          "key": "2023073020385578600_r3",
+          "doi-asserted-by": "crossref",
+          "first-page": "1080",
+          "DOI": "10.1063/1.861994",
+          "volume": "20",
+          "year": "1977",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023073020385578600_r4",
+          "doi-asserted-by": "crossref",
+          "first-page": "205",
+          "DOI": "10.1017/S0022377800021504",
+          "volume": "20",
+          "year": "1978",
+          "journal-title": "J. Plasma Phys."
+        },
+        {
+          "key": "2023073020385578600_r5",
+          "doi-asserted-by": "crossref",
+          "first-page": "108",
+          "DOI": "10.1063/1.863227",
+          "volume": "24",
+          "year": "1981",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023073020385578600_r6",
+          "doi-asserted-by": "crossref",
+          "first-page": "213",
+          "DOI": "10.1088/0029-5515/23/2/008",
+          "volume": "23",
+          "year": "1983",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023073020385578600_r7"
+        },
+        {
+          "key": "2023073020385578600_r8",
+          "first-page": "893",
+          "volume": "26",
+          "year": "1981",
+          "journal-title": "Bull. Am. Phys. Soc."
+        },
+        {
+          "key": "2023073020385578600_r9",
+          "doi-asserted-by": "crossref",
+          "first-page": "1643",
+          "DOI": "10.1088/0029-5515/21/12/013",
+          "volume": "21",
+          "year": "1981",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023073020385578600_r10",
+          "doi-asserted-by": "crossref",
+          "first-page": "1660",
+          "DOI": "10.1063/1.1694193",
+          "volume": "16",
+          "year": "1973",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023073020385578600_r11",
+          "doi-asserted-by": "crossref",
+          "first-page": "771",
+          "DOI": "10.1103/PhysRevLett.40.771",
+          "volume": "40",
+          "year": "1978",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2023073020385578600_r12",
+          "doi-asserted-by": "crossref",
+          "first-page": "347",
+          "DOI": "10.1088/0029-5515/19/3/007",
+          "volume": "19",
+          "year": "1979",
+          "journal-title": "Nucl. Fusion"
+        },
+        {
+          "key": "2023073020385578600_r13"
+        },
+        {
+          "key": "2023073020385578600_r14",
+          "doi-asserted-by": "crossref",
+          "first-page": "585",
+          "DOI": "10.1063/1.1136258",
+          "volume": "51",
+          "year": "1980",
+          "journal-title": "Rev. Sci. Instr."
+        },
+        {
+          "key": "2023073020385578600_r15",
+          "first-page": "710",
+          "volume": "18",
+          "year": "1974",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023073020385578600_r16"
+        },
+        {
+          "key": "2023073020385578600_r17"
+        },
+        {
+          "key": "2023073020385578600_r18",
+          "doi-asserted-by": "crossref",
+          "first-page": "28",
+          "DOI": "10.1103/PhysRevLett.36.28",
+          "volume": "36",
+          "year": "1976",
+          "journal-title": "Phys. Rev. Lett."
+        },
+        {
+          "key": "2023073020385578600_r19",
+          "doi-asserted-by": "crossref",
+          "first-page": "1570",
+          "DOI": "10.1063/1.863947",
+          "volume": "25",
+          "year": "1982",
+          "journal-title": "Phys. Fluids"
+        },
+        {
+          "key": "2023073020385578600_r20"
+        }
+      ],
+      "container-title": [
+        "The Physics of Fluids"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "https://pubs.aip.org/aip/pfl/article-pdf/27/12/2899/12630787/2899_1_online.pdf",
+          "content-type": "application/pdf",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "https://pubs.aip.org/aip/pfl/article-pdf/27/12/2899/12630787/2899_1_online.pdf",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2023,
+            7,
+            30
+          ]
+        ],
+        "date-time": "2023-07-30T20:39:19Z",
+        "timestamp": 1690749559000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://pubs.aip.org/pfl/article/27/12/2899/895040/Electron-cyclotron-heating-in-a-pulsed-mirror"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            1984,
+            12,
+            1
+          ]
+        ]
+      },
+      "references-count": 20,
+      "journal-issue": {
+        "issue": "12",
+        "published-print": {
+          "date-parts": [
+            [
+              1984,
+              12,
+              1
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1063/1.864605",
+      "relation": {},
+      "ISSN": [
+        "0031-9171"
+      ],
+      "issn-type": [
+        {
+          "value": "0031-9171",
+          "type": "print"
+        }
+      ],
+      "subject": [],
+      "published-other": {
+        "date-parts": [
+          [
+            1984,
+            12
+          ]
+        ]
+      },
+      "published": {
+        "date-parts": [
+          [
+            1984,
+            12,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2022,
+            4,
+            3
+          ]
+        ],
+        "date-time": "2022-04-03T19:55:06Z",
+        "timestamp": 1649015706502
+      },
+      "reference-count": 15,
+      "publisher": "Institute of Electrical and Electronics Engineers (IEEE)",
+      "issue": "3",
+      "license": [
+        {
+          "start": {
+            "date-parts": [
+              [
+                2012,
+                6,
+                1
+              ]
+            ],
+            "date-time": "2012-06-01T00:00:00Z",
+            "timestamp": 1338508800000
+          },
+          "content-version": "vor",
+          "delay-in-days": 0,
+          "URL": "https://ieeexplore.ieee.org/Xplorehelp/downloads/license-information/USG.html"
+        }
+      ],
+      "content-domain": {
+        "domain": [],
+        "crossmark-restriction": false
+      },
+      "short-container-title": [
+        "IEEE Trans. Appl. Supercond."
+      ],
+      "published-print": {
+        "date-parts": [
+          [
+            2012,
+            6
+          ]
+        ]
+      },
+      "DOI": "10.1109/tasc.2011.2179404",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2011,
+            12,
+            13
+          ]
+        ],
+        "date-time": "2011-12-13T19:01:58Z",
+        "timestamp": 1323802918000
+      },
+      "page": "4901804-4901804",
+      "source": "Crossref",
+      "is-referenced-by-count": 11,
+      "title": [
+        "Mechanical Behavior of HQ01, a ${\\hbox{Nb}}_{3}\\hbox{Sn}$ Accelerator-Quality Quadrupole Magnet for the LHC Luminosity Upgrade"
+      ],
+      "prefix": "10.1109",
+      "volume": "22",
+      "author": [
+        {
+          "given": "P.",
+          "family": "Ferracin",
+          "sequence": "first",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Ambrosio",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Anerella",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "R.",
+          "family": "Bossert",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "S.",
+          "family": "Caspi",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Chlachidze",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "D. W.",
+          "family": "Cheng",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "D. R.",
+          "family": "Dietderich",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "H.",
+          "family": "Felice",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "A.",
+          "family": "Ghosh",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "A. R.",
+          "family": "Hafalia",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "Lizarazo",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Marchevsky",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "Joseph",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Sabbi",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "Schmalzle",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "P.",
+          "family": "Wanderer",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "X.",
+          "family": "Wang",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "A. V.",
+          "family": "Zlobin",
+          "sequence": "additional",
+          "affiliation": []
+        }
+      ],
+      "member": "263",
+      "reference": [
+        {
+          "key": "ref10",
+          "article-title": "Status and improvements of HQ01&#x2014;A 120 mm 15 T ${\\rm Nb}_{3}{\\rm Sn}$ quadrupole for LHC luminosity upgrade",
+          "author": "felice",
+          "year": "2011",
+          "journal-title": "22nd Int Conf Magn Technol"
+        },
+        {
+          "key": "ref11",
+          "article-title": "Test results of HQ01, a 120 mm bore LARP quadrupole magnet for the LHC luminosity upgrade",
+          "author": "marchevsky",
+          "year": "2011",
+          "journal-title": "22nd Int Conf Magn Technol"
+        },
+        {
+          "key": "ref12",
+          "author": "dietderich",
+          "year": "2010"
+        },
+        {
+          "key": "ref13",
+          "article-title": "Mechanical design, assembly and testing of an alternate structure for LARP ${\\rm Nb}_{3}{\\rm Sn}$ quadrupole magnets for LHC",
+          "author": "anerella",
+          "year": "2011",
+          "journal-title": "22nd Int Conf Magn Technol"
+        },
+        {
+          "key": "ref14",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2009.2019544"
+        },
+        {
+          "key": "ref15",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1088/1742-6596/234/3/032010"
+        },
+        {
+          "key": "ref4",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2010.2089586"
+        },
+        {
+          "key": "ref3",
+          "doi-asserted-by": "crossref",
+          "first-page": "1291",
+          "DOI": "10.1063/1.3422298",
+          "article-title": "LARP ${\\rm Nb}_{3}{\\rm Sn}$ quadrupole magnets for the LHC luminosity upgrade",
+          "volume": "1218",
+          "author": "ferracin",
+          "year": "2010",
+          "journal-title": "AIP Conf Proc"
+        },
+        {
+          "key": "ref6",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2010.2040147"
+        },
+        {
+          "key": "ref5",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2009.2019105"
+        },
+        {
+          "key": "ref8",
+          "first-page": "403",
+          "article-title": "Assembly and test of a 120 mm bore 15 T ${\\rm Nb}_{3}{\\rm Sn}$ quadrupole for the LHC upgrade",
+          "author": "felice",
+          "year": "2010",
+          "journal-title": "Proceedings of the International Particle Accelerator Conference 2010"
+        },
+        {
+          "key": "ref7",
+          "first-page": "280",
+          "article-title": "Design and construction of a 15 T, 120 mm bore IR quadrupole magnet for LARP",
+          "author": "caspi",
+          "year": "2009",
+          "journal-title": "2009 Particle Accelerator Conference"
+        },
+        {
+          "key": "ref2",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2009.2017917"
+        },
+        {
+          "key": "ref1",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2006.870786"
+        },
+        {
+          "key": "ref9",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2010.2087370"
+        }
+      ],
+      "container-title": [
+        "IEEE Transactions on Applied Superconductivity"
+      ],
+      "original-title": [],
+      "link": [
+        {
+          "URL": "http://xplorestaging.ieee.org/ielx5/77/6214630/06101598.pdf?arnumber=6101598",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2021,
+            10,
+            11
+          ]
+        ],
+        "date-time": "2021-10-11T01:37:49Z",
+        "timestamp": 1633916269000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "http://ieeexplore.ieee.org/document/6101598/"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            2012,
+            6
+          ]
+        ]
+      },
+      "references-count": 15,
+      "journal-issue": {
+        "issue": "3"
+      },
+      "URL": "https://doi.org/10.1109/tasc.2011.2179404",
+      "relation": {},
+      "ISSN": [
+        "1051-8223",
+        "1558-2515"
+      ],
+      "issn-type": [
+        {
+          "value": "1051-8223",
+          "type": "print"
+        },
+        {
+          "value": "1558-2515",
+          "type": "electronic"
+        }
+      ],
+      "subject": [],
+      "published": {
+        "date-parts": [
+          [
+            2012,
+            6
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2025,
+            4,
+            18
+          ]
+        ],
+        "date-time": "2025-04-18T23:42:42Z",
+        "timestamp": 1745019762171
+      },
+      "reference-count": 16,
+      "publisher": "AIP Publishing",
+      "issue": "2",
+      "content-domain": {
+        "domain": [
+          "pubs.aip.org"
+        ],
+        "crossmark-restriction": true
+      },
+      "short-container-title": [],
+      "published-print": {
+        "date-parts": [
+          [
+            2012,
+            2,
+            1
+          ]
+        ]
+      },
+      "abstract": "<jats:p>A fourth generation electron cyclotron resonance ion source with an operating frequency between 40 and 56 GHz has the potential to quadruple the heavy-ion beam currents and provide a cost effective upgrade path for heavy ion drivers in use or in the planning stage at radioactive beam facilities. Design studies show it is feasible to produce the required magnetic fields in the plasma chamber, 7 T axially and 4 T in the radial direction with a magnetic structure using commercially available Nb3Sn superconducting materials. In this paper we describe the design of such a magnet structure including a 3D analysis of the Lorentz forces generated by the magnetic fields and the necessary clamping structure to stabilize the conductor against these forces.</jats:p>",
+      "DOI": "10.1063/1.3655527",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2012,
+            2,
+            1
+          ]
+        ],
+        "date-time": "2012-02-01T23:14:09Z",
+        "timestamp": 1328138049000
+      },
+      "update-policy": "http://dx.doi.org/10.1063/aip-crossmark-policy-page",
+      "source": "Crossref",
+      "is-referenced-by-count": 22,
+      "title": [
+        "Concept for a fourth generation electron cyclotron resonance ion source"
+      ],
+      "prefix": "10.1063",
+      "volume": "83",
+      "author": [
+        {
+          "given": "C.",
+          "family": "Lyneis",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , Berkeley, California 94708, USA"
+            }
+          ]
+        },
+        {
+          "given": "P.",
+          "family": "Ferracin",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , Berkeley, California 94708, USA"
+            }
+          ]
+        },
+        {
+          "given": "S.",
+          "family": "Caspi",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , Berkeley, California 94708, USA"
+            }
+          ]
+        },
+        {
+          "given": "A.",
+          "family": "Hodgkinson",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , Berkeley, California 94708, USA"
+            }
+          ]
+        },
+        {
+          "given": "G. L.",
+          "family": "Sabbi",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , Berkeley, California 94708, USA"
+            }
+          ]
+        }
+      ],
+      "member": "317",
+      "published-online": {
+        "date-parts": [
+          [
+            2012,
+            2,
+            1
+          ]
+        ]
+      },
+      "reference": [
+        {
+          "key": "2023072808291407200_c1",
+          "first-page": "60",
+          "volume-title": "Proceedings of PAC09",
+          "year": "2009"
+        },
+        {
+          "key": "2023072808291407200_c2",
+          "first-page": "14",
+          "volume-title": "Proceedings of the 19th International Workshop on ECR Ion Sources (ECRIS\u201910)",
+          "year": "2010"
+        },
+        {
+          "key": "2023072808291407200_c3",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A315",
+          "DOI": "10.1063/1.2804900",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023072808291407200_c4a",
+          "first-page": "17",
+          "volume-title": "Proceedings of the International Conference on ECR Ion Sources and Their Applications"
+        },
+        {
+          "key": "2023072808291407200_c4b",
+          "unstructured": "NSCL Report No. MSUCP-47, 1987, edited by J.\u2008Parker."
+        },
+        {
+          "key": "2023072808291407200_c5",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A321",
+          "DOI": "10.1063/1.2816793",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023072808291407200_c6",
+          "doi-asserted-by": "publisher",
+          "article-title": "A new structure of superconducting magnetic system for 50 GHz operations (invited)",
+          "volume-title": "Rev. Sci. Instrum.",
+          "DOI": "10.1063/1.3655530"
+        },
+        {
+          "issue": "2",
+          "key": "2023072808291407200_c7",
+          "doi-asserted-by": "publisher",
+          "first-page": "1035",
+          "DOI": "10.1109/TASC.2007.897289",
+          "volume": "17",
+          "year": "2007",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "issue": "3",
+          "key": "2023072808291407200_c8",
+          "doi-asserted-by": "publisher",
+          "first-page": "1336",
+          "DOI": "10.1109/TASC.2009.2017719",
+          "volume": "19",
+          "year": "2009",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "key": "2023072808291407200_c9",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A309",
+          "DOI": "10.1063/1.3259234",
+          "volume": "81",
+          "year": "2010",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "issue": "1",
+          "key": "2023072808291407200_c10",
+          "doi-asserted-by": "publisher",
+          "first-page": "224",
+          "DOI": "10.1109/77.828215",
+          "volume": "10",
+          "year": "2000",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "issue": "1",
+          "key": "2023072808291407200_c11",
+          "doi-asserted-by": "publisher",
+          "first-page": "2272",
+          "DOI": "10.1109/77.920313",
+          "volume": "11",
+          "year": "2001",
+          "journal-title": "IEEE Trans. Appl. Superconduct."
+        },
+        {
+          "issue": "3",
+          "key": "2023072808291407200_c12",
+          "doi-asserted-by": "publisher",
+          "first-page": "1849",
+          "DOI": "10.1109/TASC.2010.2090116",
+          "volume": "21",
+          "year": "2011",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "key": "2023072808291407200_c13",
+          "doi-asserted-by": "publisher",
+          "article-title": "Recent progress on the superconducting ion source VENUS",
+          "volume-title": "Rev. Sci. Instrum.",
+          "DOI": "10.1063/1.3662119"
+        },
+        {
+          "key": "2023072808291407200_c14",
+          "first-page": "90",
+          "volume-title": "Proceedings of the 19th International Workshop on ECR Ion Sources (ECRIS\u201910)",
+          "year": "2010"
+        },
+        {
+          "key": "2023072808291407200_c15",
+          "doi-asserted-by": "publisher",
+          "first-page": "1262",
+          "DOI": "10.1109/TASC.2003.812635",
+          "volume": "13",
+          "year": "2003",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        }
+      ],
+      "container-title": [
+        "Review of Scientific Instruments"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "https://pubs.aip.org/aip/rsi/article-pdf/doi/10.1063/1.3655527/15747364/02a301_1_online.pdf",
+          "content-type": "application/pdf",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "https://pubs.aip.org/aip/rsi/article-pdf/doi/10.1063/1.3655527/15747364/02a301_1_online.pdf",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2023,
+            7,
+            28
+          ]
+        ],
+        "date-time": "2023-07-28T08:53:52Z",
+        "timestamp": 1690534432000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://pubs.aip.org/rsi/article/83/2/02A301/842265/Concept-for-a-fourth-generation-electron-cyclotron"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            2012,
+            2,
+            1
+          ]
+        ]
+      },
+      "references-count": 16,
+      "journal-issue": {
+        "issue": "2",
+        "published-print": {
+          "date-parts": [
+            [
+              2012,
+              2,
+              1
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1063/1.3655527",
+      "relation": {},
+      "ISSN": [
+        "0034-6748",
+        "1089-7623"
+      ],
+      "issn-type": [
+        {
+          "value": "0034-6748",
+          "type": "print"
+        },
+        {
+          "value": "1089-7623",
+          "type": "electronic"
+        }
+      ],
+      "subject": [],
+      "published-other": {
+        "date-parts": [
+          [
+            2012,
+            2
+          ]
+        ]
+      },
+      "published": {
+        "date-parts": [
+          [
+            2012,
+            2,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2025,
+            4,
+            25
+          ]
+        ],
+        "date-time": "2025-04-25T21:43:01Z",
+        "timestamp": 1745617381139
+      },
+      "reference-count": 18,
+      "publisher": "Institute of Electrical and Electronics Engineers (IEEE)",
+      "issue": "3",
+      "license": [
+        {
+          "start": {
+            "date-parts": [
+              [
+                2013,
+                6,
+                1
+              ]
+            ],
+            "date-time": "2013-06-01T00:00:00Z",
+            "timestamp": 1370044800000
+          },
+          "content-version": "vor",
+          "delay-in-days": 0,
+          "URL": "https://ieeexplore.ieee.org/Xplorehelp/downloads/license-information/IEEE.html"
+        }
+      ],
+      "content-domain": {
+        "domain": [],
+        "crossmark-restriction": false
+      },
+      "short-container-title": [
+        "IEEE Trans. Appl. Supercond."
+      ],
+      "published-print": {
+        "date-parts": [
+          [
+            2013,
+            6
+          ]
+        ]
+      },
+      "DOI": "10.1109/tasc.2013.2237941",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2013,
+            3,
+            19
+          ]
+        ],
+        "date-time": "2013-03-19T18:03:18Z",
+        "timestamp": 1363716198000
+      },
+      "page": "4002204-4002204",
+      "source": "Crossref",
+      "is-referenced-by-count": 14,
+      "title": [
+        "Test Results and Analysis of LQS03 Third Long $ \\hbox{Nb}_{3}\\hbox{Sn}$ Quadrupole by LARP"
+      ],
+      "prefix": "10.1109",
+      "volume": "23",
+      "author": [
+        {
+          "given": "G.",
+          "family": "Ambrosio",
+          "sequence": "first",
+          "affiliation": []
+        },
+        {
+          "given": "N.",
+          "family": "Andreev",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Anerella",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "E.",
+          "family": "Barzi",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "R.",
+          "family": "Bossert",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Buehler",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Chlachidze",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "D.",
+          "family": "Dietderich",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "DiMarco",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "Escallier",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "H.",
+          "family": "Felice",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "P.",
+          "family": "Ferracin",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "A.",
+          "family": "Ghosh",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "A.",
+          "family": "Godeke",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "R.",
+          "family": "Hafalia",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Jochen",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M. J.",
+          "family": "Kim",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "P.",
+          "family": "Kovach",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Lamm",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Marchevsky",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "Muratore",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "F.",
+          "family": "Nobrega",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "D.",
+          "family": "Orris",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "E.",
+          "family": "Prebys",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "S.",
+          "family": "Prestemon",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G. L.",
+          "family": "Sabbi",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "J.",
+          "family": "Schmalzle",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "C.",
+          "family": "Sylvester",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Tartaglia",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "D.",
+          "family": "Turrioni",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Velev",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "P.",
+          "family": "Wanderer",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "X.",
+          "family": "Wang",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "G.",
+          "family": "Whitson",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "M.",
+          "family": "Yu",
+          "sequence": "additional",
+          "affiliation": []
+        },
+        {
+          "given": "A. V.",
+          "family": "Zlobin",
+          "sequence": "additional",
+          "affiliation": []
+        }
+      ],
+      "member": "263",
+      "reference": [
+        {
+          "key": "ref10",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2010.2089586"
+        },
+        {
+          "key": "ref11",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2009.2017919"
+        },
+        {
+          "key": "ref12",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2011.2175894"
+        },
+        {
+          "key": "ref13",
+          "doi-asserted-by": "crossref",
+          "first-page": "100r",
+          "DOI": "10.1088/0953-2048/19/10/R02",
+          "volume": "19",
+          "author": "godeke",
+          "year": "2006",
+          "journal-title": "Supercond Sci Technol"
+        },
+        {
+          "key": "ref14",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1088/1742-6596/234/3/032010"
+        },
+        {
+          "key": "ref15",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2010.2042045"
+        },
+        {
+          "key": "ref16",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2010.2097571"
+        },
+        {
+          "key": "ref17",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/PAC.1997.753220"
+        },
+        {
+          "key": "ref18",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2012.2217492"
+        },
+        {
+          "key": "ref4",
+          "article-title": "LHC upgrade plans: Options and strategy",
+          "author": "rossi",
+          "year": "2011",
+          "journal-title": "iPACE"
+        },
+        {
+          "key": "ref3",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2005.864259"
+        },
+        {
+          "key": "ref6",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2013.2248314"
+        },
+        {
+          "key": "ref5",
+          "first-page": "1455",
+          "article-title": "Development of long Nb3Sn quadrupoles by the US LHC accelerator research program",
+          "author": "sabbi",
+          "year": "2011",
+          "journal-title": "Proc Part Accel Conf"
+        },
+        {
+          "key": "ref8",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2009.2018276"
+        },
+        {
+          "key": "ref7",
+          "doi-asserted-by": "publisher",
+          "DOI": "10.1109/TASC.2009.2018511"
+        },
+        {
+          "key": "ref2",
+          "first-page": "30",
+          "article-title": "Observation of a new boson at a mass of 125 GeV with the CMS experiment at the LHC",
+          "volume": "b716",
+          "year": "2012",
+          "journal-title": "Letter"
+        },
+        {
+          "key": "ref1",
+          "first-page": "1",
+          "article-title": "Observation of a new particle in the search for the standard model Higgs boson with the ATLAS detector at the LHC",
+          "volume": "b716",
+          "year": "2012",
+          "journal-title": "Phys Lett"
+        },
+        {
+          "key": "ref9",
+          "author": "ambrosio",
+          "year": "0",
+          "journal-title": "Long Quadrupole Design Report"
+        }
+      ],
+      "container-title": [
+        "IEEE Transactions on Applied Superconductivity"
+      ],
+      "original-title": [],
+      "link": [
+        {
+          "URL": "http://xplorestaging.ieee.org/ielx5/77/6366257/06407796.pdf?arnumber=6407796",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2021,
+            11,
+            29
+          ]
+        ],
+        "date-time": "2021-11-29T20:38:56Z",
+        "timestamp": 1638218336000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "http://ieeexplore.ieee.org/document/6407796/"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            2013,
+            6
+          ]
+        ]
+      },
+      "references-count": 18,
+      "journal-issue": {
+        "issue": "3"
+      },
+      "URL": "https://doi.org/10.1109/tasc.2013.2237941",
+      "relation": {},
+      "ISSN": [
+        "1051-8223",
+        "1558-2515"
+      ],
+      "issn-type": [
+        {
+          "value": "1051-8223",
+          "type": "print"
+        },
+        {
+          "value": "1558-2515",
+          "type": "electronic"
+        }
+      ],
+      "subject": [],
+      "published": {
+        "date-parts": [
+          [
+            2013,
+            6
+          ]
+        ]
+      }
+    }
+  },
+  {
+    "status": "ok",
+    "message-type": "work",
+    "message-version": "1.0.0",
+    "message": {
+      "indexed": {
+        "date-parts": [
+          [
+            2024,
+            4,
+            30
+          ]
+        ],
+        "date-time": "2024-04-30T06:01:12Z",
+        "timestamp": 1714456872712
+      },
+      "reference-count": 16,
+      "publisher": "AIP Publishing",
+      "issue": "2",
+      "content-domain": {
+        "domain": [
+          "pubs.aip.org"
+        ],
+        "crossmark-restriction": true
+      },
+      "short-container-title": [],
+      "published-print": {
+        "date-parts": [
+          [
+            2010,
+            2,
+            1
+          ]
+        ]
+      },
+      "abstract": "<jats:p>Electron cyclotron resonance (ECR) ion sources are an essential component of heavy-ion accelerators. Over the past few decades advances in magnet technology and an improved understanding of the ECR ion source plasma physics have led to remarkable performance improvements of ECR ion sources. Currently third generation high field superconducting ECR ion sources operating at frequencies around 28 GHz are the state of the art ion injectors and several devices are either under commissioning or under design around the world. At the same time, the demand for increased intensities of highly charged heavy ions continues to grow, which makes the development of even higher performance ECR ion sources a necessity. To extend ECR ion sources to frequencies well above 28 GHz, new magnet technology will be needed in order to operate at higher field and force levels. The superconducting magnet program at LBNL has been developing high field superconducting magnets for particle accelerators based on Nb3Sn superconducting technology for several years. At the moment, Nb3Sn is the only practical conductor capable of operating at the 15 T field level in the relevant configurations. Recent design studies have been focused on the possibility of using Nb3Sn in the next generation of ECR ion sources. In the past, LBNL has worked on the VENUS ECR, a 28 GHz source with solenoids and a sextupole made with NbTi operating at fields of 6\u20137 T. VENUS has now been operating since 2004. We present in this paper the design of a Nb3Sn ECR ion source optimized to operate at an rf frequency of 56 GHz with conductor peak fields of 13\u201315 T. Because of the brittleness and strain sensitivity of Nb3Sn, particular care is required in the design of the magnet support structure, which must be capable of providing support to the coils without overstressing the conductor. In this paper, we present the main features of the support structure, featuring an external aluminum shell pretensioned with water-pressurized bladders, and we analyze the expected coil stresses with a two-dimensional finite element mechanical model.</jats:p>",
+      "DOI": "10.1063/1.3259234",
+      "type": "journal-article",
+      "created": {
+        "date-parts": [
+          [
+            2010,
+            2,
+            8
+          ]
+        ],
+        "date-time": "2010-02-08T23:21:22Z",
+        "timestamp": 1265671282000
+      },
+      "update-policy": "http://dx.doi.org/10.1063/aip-crossmark-policy-page",
+      "source": "Crossref",
+      "is-referenced-by-count": 8,
+      "title": [
+        "Nb\n                  3\n                Sn\n           superconducting magnets for electron cyclotron resonance ion sources"
+      ],
+      "prefix": "10.1063",
+      "volume": "81",
+      "author": [
+        {
+          "given": "P.",
+          "family": "Ferracin",
+          "sequence": "first",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "S.",
+          "family": "Caspi",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "H.",
+          "family": "Felice",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "D.",
+          "family": "Leitner",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "C. M.",
+          "family": "Lyneis",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "S.",
+          "family": "Prestemon",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "G. L.",
+          "family": "Sabbi",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        },
+        {
+          "given": "D. S.",
+          "family": "Todd",
+          "sequence": "additional",
+          "affiliation": [
+            {
+              "name": "Lawrence Berkeley National Laboratory , 1 Cyclotron Road, Berkeley, California 94705, USA"
+            }
+          ]
+        }
+      ],
+      "member": "317",
+      "published-online": {
+        "date-parts": [
+          [
+            2010,
+            2,
+            8
+          ]
+        ]
+      },
+      "reference": [
+        {
+          "key": "2023080820075973300_c1",
+          "doi-asserted-by": "publisher",
+          "first-page": "02C710",
+          "DOI": "10.1063/1.2816790",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080820075973300_c2",
+          "doi-asserted-by": "publisher",
+          "first-page": "03A333",
+          "DOI": "10.1063/1.2149307",
+          "volume": "77",
+          "year": "2006",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080820075973300_c3",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A302",
+          "DOI": "10.1063/1.2804863",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080820075973300_c4",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A327",
+          "DOI": "10.1063/1.2801683",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080820075973300_c5",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A326",
+          "DOI": "10.1063/1.2812336",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080820075973300_c6",
+          "first-page": "400",
+          "year": "2008"
+        },
+        {
+          "key": "2023080820075973300_c7",
+          "doi-asserted-by": "publisher",
+          "first-page": "1217",
+          "DOI": "10.1109/TASC.2007.897845",
+          "volume": "17",
+          "year": "2007",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "key": "2023080820075973300_c8",
+          "first-page": "433",
+          "year": "2008"
+        },
+        {
+          "key": "2023080820075973300_c9",
+          "doi-asserted-by": "publisher",
+          "first-page": "02A321",
+          "DOI": "10.1063/1.2816793",
+          "volume": "79",
+          "year": "2008",
+          "journal-title": "Rev. Sci. Instrum."
+        },
+        {
+          "key": "2023080820075973300_c10",
+          "doi-asserted-by": "crossref",
+          "first-page": "2610",
+          "DOI": "10.1109/TASC.2009.2018473",
+          "volume": "19",
+          "year": "2009",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "key": "2023080820075973300_c11",
+          "doi-asserted-by": "publisher",
+          "first-page": "1336",
+          "DOI": "10.1109/TASC.2009.2017719",
+          "volume": "19",
+          "year": "2009",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "key": "2023080820075973300_c12",
+          "year": "2009"
+        },
+        {
+          "key": "2023080820075973300_c13",
+          "year": "2009"
+        },
+        {
+          "key": "2023080820075973300_c14",
+          "doi-asserted-by": "publisher",
+          "first-page": "1235",
+          "DOI": "10.1109/TASC.2009.2019105",
+          "volume": "19",
+          "year": "2009",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        },
+        {
+          "key": "2023080820075973300_c15",
+          "year": "2009"
+        },
+        {
+          "key": "2023080820075973300_c16",
+          "doi-asserted-by": "publisher",
+          "first-page": "2272",
+          "DOI": "10.1109/77.920313",
+          "volume": "11",
+          "year": "2001",
+          "journal-title": "IEEE Trans. Appl. Supercond."
+        }
+      ],
+      "container-title": [
+        "Review of Scientific Instruments"
+      ],
+      "original-title": [],
+      "language": "en",
+      "link": [
+        {
+          "URL": "https://pubs.aip.org/aip/rsi/article-pdf/doi/10.1063/1.3259234/13932668/02a309_1_online.pdf",
+          "content-type": "application/pdf",
+          "content-version": "vor",
+          "intended-application": "syndication"
+        },
+        {
+          "URL": "https://pubs.aip.org/aip/rsi/article-pdf/doi/10.1063/1.3259234/13932668/02a309_1_online.pdf",
+          "content-type": "unspecified",
+          "content-version": "vor",
+          "intended-application": "similarity-checking"
+        }
+      ],
+      "deposited": {
+        "date-parts": [
+          [
+            2023,
+            8,
+            8
+          ]
+        ],
+        "date-time": "2023-08-08T20:08:04Z",
+        "timestamp": 1691525284000
+      },
+      "score": 1,
+      "resource": {
+        "primary": {
+          "URL": "https://pubs.aip.org/rsi/article/81/2/02A309/1071761/Nb3Sn-superconducting-magnets-for-electron"
+        }
+      },
+      "subtitle": [],
+      "short-title": [],
+      "issued": {
+        "date-parts": [
+          [
+            2010,
+            2,
+            1
+          ]
+        ]
+      },
+      "references-count": 16,
+      "journal-issue": {
+        "issue": "2",
+        "published-print": {
+          "date-parts": [
+            [
+              2010,
+              2,
+              1
+            ]
+          ]
+        }
+      },
+      "URL": "https://doi.org/10.1063/1.3259234",
+      "relation": {},
+      "ISSN": [
+        "0034-6748",
+        "1089-7623"
+      ],
+      "issn-type": [
+        {
+          "value": "0034-6748",
+          "type": "print"
+        },
+        {
+          "value": "1089-7623",
+          "type": "electronic"
+        }
+      ],
+      "subject": [],
+      "published-other": {
+        "date-parts": [
+          [
+            2010,
+            2
+          ]
+        ]
+      },
+      "published": {
+        "date-parts": [
+          [
+            2010,
+            2,
+            1
+          ]
+        ]
+      }
+    }
   }
 ]

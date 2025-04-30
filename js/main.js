@@ -1,10 +1,11 @@
 class Reference {
-    constructor(title, date_parts, DOI, URL, ref, xCenter = 0, yCenter = 0, index = 0, size = 0) {
+    constructor(title, date_parts, DOI, URL, ref, isUserSource = false, xCenter = 0, yCenter = 0, index = 0, size = 0) {
         this.title = title;
         this.date_parts = date_parts;
         this.DOI = DOI;
         this.URL = URL;
         this.ref = ref;
+        this.isUserSource = isUserSource;
 
         const [year, month = 1, day = 1] = this.date_parts;
         const date = new Date(year, month - 1, day);
@@ -43,6 +44,27 @@ class Reference {
         line.setAttribute('class', 'paper_svg_display_line')
 
         group.appendChild(line);
+    }
+
+    getHTMLRender() {
+        var p_title = document.createElement('p');
+        var p_date = document.createElement('p');
+        var p_doi = document.createElement('p');
+        var div = document.createElement('div');
+
+        p_title.innerText = `${this.title}`;
+
+        p_date.innerText = `${this.date_parts[0]}-${this.date_parts[1]}`;
+        p_date.className = "reference_secundary_information";
+
+        p_doi.innerText = `DOI: ${this.DOI}`;
+        p_doi.className = "reference_secundary_information reference_doi";
+
+        div.appendChild(p_title);
+        div.appendChild(p_date);
+        div.appendChild(p_doi);
+
+        return div;
     }
 }
 
@@ -167,14 +189,21 @@ async function updateDOI() {
         }
     }
 
+    for (const ref of references) {
+        if (userInputDOIList.includes(ref.DOI)) {
+            ref.isUserSource = true;
+        }
+        else {
+            ref.isUserSource = false;
+        }
+    }
+
     clearHTMLContent(HTMLInput);
     clearHTMLContent(HTMLReferences);
     for (const [index, paper] of references.entries()) {
         var li = document.createElement('li');
         var input_add_remove = document.createElement('input');
         var input_checkbox = document.createElement('input');
-        var p_title = document.createElement('p');
-        var p_doi = document.createElement('p');
         var p_id = document.createElement('p');
         var label = document.createElement('label');
 
@@ -182,42 +211,36 @@ async function updateDOI() {
 
         p_id.innerText = `[${index}]`;
 
-        p_title.innerText = `${paper.title}`;
-
-        p_doi.innerText = `DOI: ${paper.DOI}`;
-        p_doi.className = "doi_text_render";
-
         input_checkbox.type = 'checkbox';
-        input_checkbox.className = "hidden_checkbox";
+        input_checkbox.className = "hidden_checkbox reference_checkbox";
         input_checkbox.id = `checkbox_${paper.DOI}`;
+        input_checkbox.onchange = function () {
+            toggleReferenceSelection(this, paper.DOI);
+        };
 
         label.htmlFor = `checkbox_${paper.DOI}`;
         label.className = "reference_text_render";
         label.id = `user_reference_${paper.DOI}`;
 
         label.appendChild(p_id);
-        label.appendChild(p_title);
-        label.appendChild(p_doi);
+        label.appendChild(paper.getHTMLRender());
 
-        li.appendChild(input_add_remove);
-        li.appendChild(input_checkbox);
-        li.appendChild(label);
-
-        if (userInputDOIList.includes(paper.DOI)) {
+        if (paper.isUserSource) {
+            li.appendChild(input_add_remove);
+            li.appendChild(input_checkbox);
+            li.appendChild(label);
+    
             input_add_remove.value = '-';
             input_add_remove.className = 'remove_button';
             input_add_remove.onclick = () => {
                 removeDOI(paper.DOI);
             };
             HTMLInput.appendChild(li);
-            label.onclick = () => {
-                let selected_source_divider = document.getElementById("selected_source_divider");
-                let user_sources_divider = document.getElementById("user_sources_divider");
-
-                selected_source_divider.style.display = "block";
-                user_sources_divider.style.gridColumn = "1";
-            };
         } else {
+            li.appendChild(input_add_remove);
+            li.appendChild(input_checkbox);
+            li.appendChild(label);
+    
             input_add_remove.value = '+';
             input_add_remove.className = 'add_button';
             input_add_remove.onclick = () => {
@@ -225,6 +248,58 @@ async function updateDOI() {
             };
             HTMLReferences.appendChild(li);
         }
+    }
+}
+
+function toggleReferenceSelection(element, DOI) {
+    let selectedSourceDivider = document.getElementById("selected_source_divider");
+    let userSourcesDivider = document.getElementById("user_sources_divider");
+    let referencesList = document.getElementById("selected_source_doi_list");
+
+    if (element.checked) {
+        document.querySelectorAll('.reference_checkbox').forEach(cb => {
+            if (cb !== element) cb.checked = false;
+        });
+
+        let selected_paper = null;
+        for (const paper of references) {
+            if (paper.DOI == DOI) {
+                selected_paper = paper;
+            }
+        }
+
+        if (selected_paper.isUserSource) {
+            selectedSourceDivider.style.display = "grid";
+            userSourcesDivider.style.gridColumn = "1";
+    
+            clearHTMLContent(referencesList);
+            for (const ref of selected_paper.ref) {
+                var p_key = document.createElement('p');
+                var p_doi = document.createElement('p');
+                var div = document.createElement('div');
+                var li = document.createElement('li');
+
+                p_key.innerText = `${ref.key}`;
+
+                p_doi.innerText = `DOI: ${ref.DOI}`;
+                p_doi.className = "reference_secundary_information";
+
+                div.appendChild(p_key);
+                div.appendChild(p_doi);
+
+                li.appendChild(div);
+
+                referencesList.appendChild(li);
+            }
+        }
+        else {
+            selectedSourceDivider.style.display = "none";
+            userSourcesDivider.style.gridColumn = "1/-1";
+        }
+    }
+    else {
+        selectedSourceDivider.style.display = "none";
+        userSourcesDivider.style.gridColumn = "1/-1";
     }
 }
 
@@ -263,7 +338,7 @@ function drawTimescale() {
     }
 
     clearHTMLContent(svgTimescaleGroup);
-    
+
     var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
 
     line.setAttribute('x1', 0);
