@@ -21,9 +21,20 @@ ul {
 /* --- */
 
 .divider {
-    background-color: hsl(0, 0%, 95%);
+    --shadow_length: 1em;
+    --shadow_angle: 75deg;
+    --shadow_blur: 2em;
+    --shadow_color: hsla(0deg, 0%, 0%, 5%);
+
+    background-color: hsl(0deg, 0%, 95%);
     padding: 1em;
     border-radius: 1em;
+    border: 1px solid hsl(0deg, 0%, 70%);
+    box-shadow:
+        calc(var(--shadow_length)*cos(var(--shadow_angle)))
+        calc(var(--shadow_length)*sin(var(--shadow_angle)))
+        var(--shadow_blur)
+        var(--shadow_color);
     display: grid;
     gap: 1em;
     grid-column: 1/-1;
@@ -84,6 +95,10 @@ ul {
         grid-template-columns: auto 1fr;
         gap: .5em;
     }
+}
+
+.doi_list:empty {
+    display: none;
 }
 
 input {
