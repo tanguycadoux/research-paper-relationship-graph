@@ -11,9 +11,8 @@ from urllib.parse import urlparse, parse_qs
 HOST = 'localhost'
 PORT = 8000
 
-REPO_ROOT =       os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-INPUT_LIST_JSON = os.path.join(REPO_ROOT, 'source', 'input_papers.json')
-CROSSREF_JSON =   os.path.join(REPO_ROOT, 'source',     'crossref.json')
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+STATIC_ROOT = os.path.join(REPO_ROOT, 'client')
 
 class CustomHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -24,6 +23,7 @@ class CustomHandler(BaseHTTPRequestHandler):
         # API routing
         self.routes = {
             '/get_publications': self.handle_get_active_publications,
+            '/get_publication': self.handle_get_publication,
         }
 
         if path in self.routes:
@@ -36,9 +36,9 @@ class CustomHandler(BaseHTTPRequestHandler):
         if requested_path == '/':
             requested_path = '/index.html'
 
-        file_path = os.path.abspath(os.path.join(REPO_ROOT, requested_path.strip('/')))
+        file_path = os.path.abspath(os.path.join(STATIC_ROOT, requested_path.strip('/')))
 
-        if not file_path.startswith(REPO_ROOT):
+        if not file_path.startswith(STATIC_ROOT):
             self.send_error(403, 'Forbidden')
             return
 
@@ -86,17 +86,29 @@ class CustomHandler(BaseHTTPRequestHandler):
         doi = data['doi']
 
         try:
+            if db.is_doi_in_publication_table(doi):
+                return
+            
             crossref_data = self.fetch_crossref_data(doi)
 
             message = crossref_data['message']
             title = message['title'][0]
             date = parse_crossref_date(message)
+            authors = message['author']
 
             try:
-                db.insert_publication(doi, title, date)
+                publication_id = db.insert_publication(doi, title, date)
             except:
-                self.send_error(500, 'Error while updating database')
+                self.send_error(500, 'Error while creating publication')
                 return
+
+            for order, author in enumerate(authors):
+                author_name = f'{author["given"]} {author["family"]}'
+                try:
+                    author_id = db.insert_author(author_name)
+                    db.link_author_to_publication(publication_id, author_id, order)
+                except:
+                    self.send_error(500, 'Error while creating author')
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -117,15 +129,31 @@ class CustomHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(500, f'Error while retrieving publications: {str(e)}')
 
+    def handle_get_publication(self, params):
+        try:
+            publication_id = params["id"][0]
+            publication = db.get_publication_by_id(publication_id)
+            authors = db.get_authors_by_publication_id(publication_id)
+
+            publication["authors"] = authors
+
+            print(publication)
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(publication).encode())
+        except Exception as e:
+            self.send_error(500, f'Error while retrieving publication: {str(e)}')
+
 
 def parse_crossref_date(item):
-    parts = item['published']['date-parts'][0]
+    parts = item.get('published', {}).get('date-parts', [[]])[0]
 
-    year = parts[0]
-    month = parts[1] if len(parts) > 1 else 1
-    day = parts[2] if len(parts) > 2 else 1
+    if not parts:
+        return None
 
-    return date(year, month, day).isoformat()
+    return '-'.join(f"{p:02}" for p in parts)
 
                 
 if __name__ == '__main__':

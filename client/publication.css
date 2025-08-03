@@ -1,0 +1,13 @@
+.publication{
+    display: grid;
+    gap: 1em;
+}
+
+.publication__title{
+    font-size: 2em;
+}
+
+.publication__date{
+    font-size: 1em;
+    text-transform: capitalize;
+}
