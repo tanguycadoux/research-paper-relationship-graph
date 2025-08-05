@@ -22,7 +22,8 @@ class CustomHandler(BaseHTTPRequestHandler):
 
         # API routing
         self.routes = {
-            '/get_publications': self.handle_get_active_publications,
+            '/get_publications': self.handle_get_user_publications,
+            '/get_references': self.handle_get_user_references,
             '/get_publication': self.handle_get_publication,
         }
 
@@ -97,7 +98,7 @@ class CustomHandler(BaseHTTPRequestHandler):
             authors = message['author']
 
             try:
-                publication_id = db.insert_publication(doi, title, date)
+                publication_id = db.insert_publication(doi, title, date, 1)
             except:
                 self.send_error(500, 'Error while creating publication')
                 return
@@ -110,6 +111,26 @@ class CustomHandler(BaseHTTPRequestHandler):
                 except:
                     self.send_error(500, 'Error while creating author')
 
+            for ref in message['reference']:
+                ref_params = {
+                    'order': int(ref['key'][3:]),
+                    'DOI': None,
+                    'volume-title': None,
+                    'year': None
+                }
+
+                keys = ['DOI', 'volume-title', 'year']
+                for key in keys:
+                    if key in ref.keys():
+                        ref_params[key] = ref[key]
+
+                try:
+                    reference_id = db.insert_publication(ref_params['DOI'], ref_params['volume-title'], ref_params['year'], 0)
+                    db.link_reference_to_publication(publication_id, reference_id, ref_params['order'])
+                except:
+                    self.send_error(500, 'Error while adding reference')
+                    return
+
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -119,9 +140,19 @@ class CustomHandler(BaseHTTPRequestHandler):
             self.send_error(502, 'Failed to fetch Crossref data')
             return
 
-    def handle_get_active_publications(self, params):
+    def handle_get_user_publications(self, params):
         try:
-            publications = db.get_active_publications()
+            publications = db.get_user_publications()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(publications).encode())
+        except Exception as e:
+            self.send_error(500, f'Error while retrieving publications: {str(e)}')
+
+    def handle_get_user_references(self, params):
+        try:
+            publications = db.get_user_publications_references()
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()

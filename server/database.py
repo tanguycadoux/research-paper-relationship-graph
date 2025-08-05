@@ -11,7 +11,7 @@ def init_db():
             doi TEXT UNIQUE,
             title TEXT,
             published DATE,
-            active INTEGER
+            is_a_user_source INTEGER
         )
     ''')
     cursor.execute('''
@@ -30,28 +30,68 @@ def init_db():
             FOREIGN KEY (author_id) REFERENCES authors(id)
         );
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS publication_reference (
+            publication_id INTEGER,
+            reference_id INTEGER,
+            reference_order INTEGER,
+            PRIMARY KEY (publication_id, reference_id),
+            FOREIGN KEY (publication_id) REFERENCES publications(id),
+            FOREIGN KEY (reference_id) REFERENCES publications(id)
+        )
+    ''')
     conn.commit()
     conn.close()
 
 ''' Fonctions pour publications '''
 
-def insert_publication(doi, title, date):
+def insert_publication(doi, title, date, is_a_user_source):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR IGNORE INTO publications (doi, title, published, active)
-        VALUES (?, ?, ?, 1)
-    ''', (doi, title, date))
+    try:
+        cursor.execute('''
+            INSERT OR IGNORE INTO publications (doi, title, published, is_a_user_source)
+            VALUES (?, ?, ?, ?)
+        ''', (doi, title, date, is_a_user_source))
+        conn.commit()
+    except sqlite3.IntegrityError as e:
+        print(f"IntegrityError for DOI {doi}: {e}")
+    except Exception as e:
+        print(f"Failed to insert {doi}: {e}")
+    finally:
+        conn.close()
     publication_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
 
     return publication_id
 
-def get_active_publications():
+def get_user_publications():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, doi, title, published FROM publications WHERE active = 1')
+    cursor.execute('SELECT id, doi, title, published FROM publications WHERE is_a_user_source = 1')
+    rows = cursor.fetchall()
+    conn.close()
+
+    publications = []
+    for row in rows:
+        publications.append({
+            'id': row[0],
+            'doi': row[1],
+            'title': row[2],
+            'published': row[3]
+        })
+
+    return publications
+
+def get_user_publications_references():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''SELECT DISTINCT p2.id, p2.doi, p2.title, p2.published
+                    FROM publication_reference pr
+                    JOIN publications p1 ON pr.publication_id = p1.id
+                    JOIN publications p2 ON pr.reference_id = p2.id
+                    WHERE p1.is_a_user_source = 1
+                    AND p2.is_a_user_source != 1;
+                   ''')
     rows = cursor.fetchall()
     conn.close()
 
@@ -131,3 +171,15 @@ def get_authors_by_publication_id(publication_id):
     conn.close()
 
     return authors
+
+''' Fonctions pour lien publication references '''
+
+def link_reference_to_publication(publication_id, reference_id, order):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR IGNORE INTO publication_reference (publication_id, reference_id, reference_order)
+        VALUES (?, ?, ?)
+    ''', (publication_id, reference_id, order))
+    conn.commit()
+    conn.close()
