@@ -9,13 +9,15 @@
 <body>
     <div class="divider" id="user_sources_divider">
         <h2>User sources</h2>
-        <div>
-            <input id="doi_input" type="text" value="10.1109/TASC.2023.3260779" />
-            <input type="button" value="Ajouter" onclick="addDOI()" />    
+        <div class="input-add-wrapper">
+            <input id="doi_input" class="input-add-wrapper__text-input" type="text" value="10.1109/TASC.2023.3260779" />
+            <div class="input-add-wrapper__add-button" onclick="addDOI()">
+                <span class="input-add-wrapper__add-button-plus" >+</span>
+            </div>    
         </div>
-        <ul id="publications_list" class="doi_list"></ul>
+        <table id="publications_table" class="doi_table"></table>
         <h2>References</h2>
-        <ul id="references_list" class="doi_list"></ul>
+        <table id="references_table" class="doi_table"></table>
     </div>
 </body>
 

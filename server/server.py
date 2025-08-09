@@ -73,45 +73,11 @@ class CustomHandler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, 'Path not found.')
 
-    def fetch_crossref_data(self, doi):
-        url = f"https://api.crossref.org/works/{doi}"
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f"Failed to fetch Crossref data for DOI: {doi}. Status code: {response.status_code}")
-
     def handle_add_publication(self, data):
-        db.init_db()
-        doi = data['doi']
-
         try:
-            if db.is_doi_in_publication_table(doi):
-                return
-            
-            crossref_data = self.fetch_crossref_data(doi)
+            publication_id, crossref_message = self.add_publication_from_crossref(data['doi'])
 
-            message = crossref_data['message']
-            title = message['title'][0]
-            date = parse_crossref_date(message)
-            authors = message['author']
-
-            try:
-                publication_id = db.insert_publication(doi, title, date, 1)
-            except:
-                self.send_error(500, 'Error while creating publication')
-                return
-
-            for order, author in enumerate(authors):
-                author_name = f'{author["given"]} {author["family"]}'
-                try:
-                    author_id = db.insert_author(author_name)
-                    db.link_author_to_publication(publication_id, author_id, order)
-                except:
-                    self.send_error(500, 'Error while creating author')
-
-            for ref in message['reference']:
+            for ref in crossref_message['reference']:
                 ref_params = {
                     'order': int(ref['key'][3:]),
                     'DOI': None,
@@ -123,21 +89,31 @@ class CustomHandler(BaseHTTPRequestHandler):
                 for key in keys:
                     if key in ref.keys():
                         ref_params[key] = ref[key]
-
+                
                 try:
-                    reference_id = db.insert_publication(ref_params['DOI'], ref_params['volume-title'], ref_params['year'], 0)
-                    db.link_reference_to_publication(publication_id, reference_id, ref_params['order'])
-                except:
+                    if (ref_params['DOI'] != None):
+                        reference_id, _ = self.add_publication_from_crossref(ref_params['DOI'], 0)
+                    else:
+                        reference_id = db.insert_publication(ref_params['DOI'], ref_params['volume-title'], ref_params['year'], 0)
+                except Exception as e:
                     self.send_error(500, 'Error while adding reference')
+                    self.log_message(f'{str(e)}')
+                    return
+                try:
+                    db.link_reference_to_publication(publication_id, reference_id, ref_params['order'])
+                except Exception as e:
+                    self.send_error(500, 'Error while linking reference')
+                    self.log_message(f'{str(e)}')
                     return
 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            response = {'status': 'success', 'message': 'Publication stored', 'DOI': doi, 'Crossref message': message}
+            response = {'status': 'success', 'message': 'Publication stored', 'DOI': data['doi']}
             self.wfile.write(json.dumps(response).encode())
-        except:
-            self.send_error(502, 'Failed to fetch Crossref data')
+        except Exception as e :
+            self.send_error(502, 'Failed to add publication')
+            self.log_message(f'{str(e)}')
             return
 
     def handle_get_user_publications(self, params):
@@ -177,6 +153,36 @@ class CustomHandler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(500, f'Error while retrieving publication: {str(e)}')
 
+    def add_publication_from_crossref(self, doi, is_user_input=1):
+        if db.is_doi_in_publication_table(doi):
+            return None, None
+        
+        crossref_data = fetch_crossref_data(doi)
+
+        message = crossref_data['message']
+        title = message['title'][0]
+        date = parse_crossref_date(message)
+        authors = message['author']
+
+        try:
+            publication_id = db.insert_publication(doi, title, date, is_user_input)
+        except Exception as e:
+            self.send_error(500, 'Error while creating publication')
+            self.log_message(f'str({e})')
+            return None, None
+    
+        for order, author in enumerate(authors):
+            author_name = f'{author["given"]} {author["family"]}'
+            try:
+                author_id = db.insert_author(author_name)
+                db.link_author_to_publication(publication_id, author_id, order)
+            except Exception as e:
+                self.send_error(500, 'Error while creating author')
+                self.log_message(f'str({e})')
+        
+        return publication_id, message
+
+
 
 def parse_crossref_date(item):
     parts = item.get('published', {}).get('date-parts', [[]])[0]
@@ -186,8 +192,19 @@ def parse_crossref_date(item):
 
     return '-'.join(f"{p:02}" for p in parts)
 
-                
+
+def fetch_crossref_data(doi):
+    url = f"https://api.crossref.org/works/{doi}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        raise Exception(f"Failed to fetch Crossref data for DOI: {doi}. Status code: {response.status_code}")
+
+
 if __name__ == '__main__':
+    db.init_db()
     server = HTTPServer((HOST, PORT), CustomHandler)
     print(f"Serving your repo at http://{HOST}:{PORT}")
     server.serve_forever()

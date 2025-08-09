@@ -1,7 +1,3 @@
-window.onload = async (event) => {
-    await updatePublicationsAndReferencesList();
-}
-
 function clearHTMLContent(nodeDOM) {
     nodeDOM.innerHTML = "";
     while (nodeDOM.lastElementChild) {
@@ -51,50 +47,76 @@ async function updatePublicationsAndReferencesList() {
     const publications = await getPublications();
     const references = await getReferences();
 
-    let publications_list = document.getElementById('publications_list');
-    let references_list = document.getElementById('references_list');
+    renderPublicationsTable(publications, publicationsTable);
+    renderPublicationsTable(references,   referencesTable);
+}
 
-    console.log(references)
+function renderPublicationsTable(publications, table){
+    console.log(table)
+    clearHTMLContent(table);
 
-    clearHTMLContent(publications_list);
-    clearHTMLContent(references_list);
+    // Table definition
+    let tableHeader = document.createElement('thead');
+    let tableBody   = document.createElement('tbody');
 
-    for (const publication of publications) {
-        let listEntry = document.createElement('li');
+    table.appendChild(tableHeader);
+    table.appendChild(tableBody);
+
+    // Header
+    let headRow      = document.createElement('tr');
+    let headInfoCol  = document.createElement('th');
+    let headTitleCol = document.createElement('th');
+    let headDOICol   = document.createElement('th');
+    let headDateCol  = document.createElement('th');
+
+    headTitleCol.innerText = "Title";
+    headDOICol.innerText   = "DOI";
+    headDateCol.innerText  = "Date";
+
+    headRow.appendChild(headInfoCol);
+    headRow.appendChild(headTitleCol);
+    headRow.appendChild(headDOICol);
+    headRow.appendChild(headDateCol);
+    tableHeader.appendChild(headRow);
+
+    for (const pub of publications) {
         let anchor = document.createElement('a');
 
-        let pubTitle = "Missing title";
-        let pubDOI = "Missing DOI";
+        let row       = document.createElement('tr');
+        let infoCell  = document.createElement('td');
+        let titleCell = document.createElement('td');
+        let DOICell   = document.createElement('td');
+        let dateCell  = document.createElement('td');
 
-        if (publication.title != null) {
-            pubTitle = publication.title;
+        row.appendChild(infoCell);
+        row.appendChild(titleCell);
+        row.appendChild(DOICell);
+        row.appendChild(dateCell);
+        
+        if (pub.title != null) {
+            anchor.innerText = pub.title;
+            anchor.href = "/publication.html?id=" + pub.id;
+            titleCell.appendChild(anchor);
         }
-        if (publication.doi != null) {
-            pubDOI = publication.doi;
+        if (pub.doi == null) {
+            infoCell.innerText = "/!\\";
         }
-        anchor.innerText = pubTitle + ' - ' + pubDOI;
-        anchor.href = "/publication.html?id=" + publication.id;
-
-        listEntry.appendChild(anchor);
-        publications_list.appendChild(listEntry);
+        else{
+            infoCell.innerText = "+";
+            DOICell.innerHTML = pub.doi;
+        }
+        if (pub.published != null) {
+            dateCell.innerHTML = pub.published;
+        }
+        
+        tableBody.appendChild(row);
     }
-    for (const ref of references) {
-        let list_entry = document.createElement('li');
-        let anchor = document.createElement('a');
+}
 
-        let refTitle = "Missing title";
-        let refDOI = "Missing DOI";
 
-        if (ref.title != null) {
-            refTitle = ref.title;
-        }
-        if (ref.doi != null) {
-            refDOI = ref.doi;
-        }
-        anchor.innerText = refTitle + ' - ' + refDOI;
-        anchor.href = "/publication.html?id=" + ref.id;
+const publicationsTable = document.getElementById('publications_table');
+const referencesTable   = document.getElementById('references_table');
 
-        list_entry.appendChild(anchor);
-        references_list.appendChild(list_entry);
-    }
+window.onload = async (event) => {
+    await updatePublicationsAndReferencesList();
 }

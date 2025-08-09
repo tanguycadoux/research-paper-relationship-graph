@@ -5,6 +5,29 @@ body {
     gap: 1em
 }
 
+:root {
+    --shadow_length_lv_1: .5em;
+    --shadow_length_lv_2: .2em;
+    --shadow_blur_lv_1: calc(3*var(--shadow_length_lv_1));
+    --shadow_blur_lv_2: calc(3*var(--shadow_length_lv_2));
+    --shadow_angle: 75deg;
+    --shadow_color: hsla(0deg, 0%, 0%, 5%);
+    --shadow_X_lv_1: calc(var(--shadow_length_lv_1)*cos(var(--shadow_angle)));
+    --shadow_Y_lv_1: calc(var(--shadow_length_lv_1)*sin(var(--shadow_angle)));
+    --shadow_X_lv_2: calc(var(--shadow_length_lv_2)*cos(var(--shadow_angle)));
+    --shadow_Y_lv_2: calc(var(--shadow_length_lv_2)*sin(var(--shadow_angle)));
+
+    --main-background-color: hsl(30, 50%, 95%);
+    --main-background-color--darker: hsl(30, 40%, 85%);
+
+    --main-input-color: hsl(0, 0%, 100%);
+    --main-input-color--darker: hsl(0, 0%, 85%);
+
+    --main-button-color: hsl(220, 40%, 90%);
+    --main-button-color--darker: hsl(220, 40%, 70%);
+    --main-button-color--darkest: hsl(220, 40%, 60%);
+}
+
 /* || RESET ||*/
 
 h1 {
@@ -26,24 +49,67 @@ ul {
 /* --- */
 
 .divider {
-    --shadow_length: 1em;
-    --shadow_angle: 75deg;
-    --shadow_blur: 2em;
-    --shadow_color: hsla(0deg, 0%, 0%, 5%);
-
-    background-color: hsl(0deg, 0%, 95%);
+    background-color: var(--main-background-color);
     padding: 1em;
     border-radius: 1em;
-    border: 1px solid hsl(0deg, 0%, 70%);
+    border: 1px solid var(--main-background-color--darker);
     box-shadow:
-        calc(var(--shadow_length)*cos(var(--shadow_angle)))
-        calc(var(--shadow_length)*sin(var(--shadow_angle)))
-        var(--shadow_blur)
+        var(--shadow_X_lv_1)
+        var(--shadow_Y_lv_1)
+        var(--shadow_blur_lv_1)
         var(--shadow_color);
     display: grid;
     gap: 1em;
     grid-column: 1/-1;
     height: fit-content;
+}
+
+.input-add-wrapper{
+    display: flex;
+	padding: .2em;
+	border-radius: 99em;
+    border: 1px solid var(--main-input-color--darker);
+    width: fit-content;
+    background-color: var(--main-input-color);
+    gap: .2em;
+    box-shadow:
+        var(--shadow_X_lv_2)
+        var(--shadow_Y_lv_2)
+        var(--shadow_blur_lv_2)
+        var(--shadow_color);
+}
+
+.input-add-wrapper__text-input{
+	padding: .5em;
+    font-size: 1em;
+	width: 20em;
+    background-color: inherit;
+    border: none;
+    overflow: hidden;
+    border-radius: inherit;
+}
+
+.input-add-wrapper__add-button{
+    position: relative;
+    background-color: var(--main-button-color);
+    aspect-ratio: 1;
+	border-radius: 99em;
+    border: 1px solid var(--main-button-color--darker);
+    cursor: pointer;
+}
+
+.input-add-wrapper__add-button:not(:active):hover{
+    filter: brightness(105%);
+}
+
+.input-add-wrapper__add-button-plus {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 2em;
+	color: var(--main-button-color--darkest);
+    user-select: none
 }
 
 #selected_source_divider {
@@ -106,9 +172,37 @@ ul {
     display: none;
 }
 
+.doi_table:has(thead:empty):has(tbody:empty) {
+    display: none;
+}
+
 input {
     font-family: Arial;
 }
+
+.references-list__item{
+    display: flex;
+    gap: .5em;
+    align-items: center;
+    width: fit-content;
+}
+
+.references-list__item-doi-wrapper--doi-missing{
+	border: 1px solid hsl(0, 0%, 50%);
+	padding: .1em .2em;
+	background-color: hsl(0, 0%, 70%);
+	border-radius: .2em;
+}
+
+.references-list__item-doi--doi-missing,.references-list__item-doi--doi-missing:visited{
+	color: initial;
+    text-decoration: none;
+	font-size: .8em;
+	font-style: italic;
+	font-weight: bold;
+}
+
+/*OLD*/
 
 .add_button,
 .remove_button {
