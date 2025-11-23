@@ -1,0 +1,35 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h1>Liste des références</h1>
+
+    <a href="{% url 'publication_add' %}">Ajouter une publication</a>
+
+    {% if publications %}
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Titre</th>
+                    <th scope="col">Date de publication</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for publication in publications %}
+                    <tr>
+                        <th scope="row"><a href="{% url 'publication_detail' publication.pk %}">{{ publication.title }}</a></th>
+                        <td>{{ publication.date }}</td>
+                        <td>
+                            <a href="{% url 'publication_crossref' publication.pk %}" target="_blank">JSON CrossRef</a>
+                            <a href="{% url 'publication_parse_crossref_json' publication.pk %}">Parse CrossRef data</a>
+                            <a href="{% url 'publication_edit' publication.pk %}">Éditer</a>
+                            <a href="{% url 'publication_delete' publication.pk %}">Supprimer</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Aucune publication pour l'instant.</p>
+    {% endif %}
+{% endblock content %}

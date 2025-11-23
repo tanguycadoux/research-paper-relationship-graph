@@ -1,0 +1,57 @@
+/* | RESET | */
+
+body{
+    margin: 0;
+}
+
+h1, h2{
+    margin: 0;
+}
+
+/* | BASE | */
+
+body{
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    height: 100vh;
+    position: relative;
+}
+
+body > div{
+    padding: 1em;
+}
+
+nav, .admin-side-panel{
+    background-color: lightgray;
+    padding: 1em;
+}
+
+nav > ul{
+    padding-left: 1em;
+    margin-top: 0;
+}
+
+table{
+    border: 1px solid;
+    border-collapse: collapse;
+}
+
+th, td{
+    border: 1px solid;
+    padding: .2em .5em;
+}
+
+thead th{
+    background-color: lightgray;
+}
+
+.messages{
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 1em;
+    max-height: 30%;
+    background-color: lightsteelblue;
+    overflow-y: auto;
+    padding: 1em;
+}

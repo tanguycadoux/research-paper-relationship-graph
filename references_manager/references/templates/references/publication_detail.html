@@ -1,0 +1,12 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h1>{{ publication.title }}</h1>
+    <h2><a href="{% url 'publication_crossref' publication.pk %}" target="_blank">{{ publication.doi }}</a></h2>
+
+    {% for ap in publication.authorpublication_set.all %}
+        {{ ap.author }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+
+    <a href="{% url 'publications_list' %}">Retour à la liste</a>
+{% endblock %}

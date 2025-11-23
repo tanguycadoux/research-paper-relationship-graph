@@ -1,4 +1,4 @@
-# Research apper relationship graph
+# Gestionnaire de références
 
 Nouvelle branche "nouveau-depart-django" pour une refonte plus propre du système.
 

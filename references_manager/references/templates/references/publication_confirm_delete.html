@@ -1,0 +1,20 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h1>Supprimer la publication</h1>
+    
+    <p>Voulez-vous vraiment supprimer : 
+        {% if publication.title|default:publication.doi %}
+            "{{ publication.title|default:publication.doi }}"
+        {% else %}
+            "PK {{ publication.pk }}"
+        {% endif %}
+     ?</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Supprimer</button>
+    </form>
+
+    <a href="{% url 'publications_list' %}">Annuler</a>
+{% endblock %}
