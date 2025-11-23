@@ -1,19 +1,28 @@
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
-import requests
+from datetime import date
 
 from .forms import PublicationForm
-from .models import Publication, Author, AuthorPublication
+from .models import Publication
+from .services.importer import import_publication
 
 
 class PublicationListView(ListView):
     model = Publication
     template_name = 'references/publications_list.html'
     context_object_name = 'publications'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["publications_lvl0"] = Publication.objects.filter(reference_level=0)
+        context["publications_lvl1"] = Publication.objects.filter(reference_level=1)
+
+        return context
 
 class PublicationDetailView(DetailView):
     model = Publication
@@ -39,55 +48,21 @@ def index(request):
 def fetch_crossref(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
 
-    if not pub.crossref_json and pub.doi:
-        url = f"https://api.crossref.org/works/{pub.doi}"
-        response = requests.get(url)
-        if response.status_code == 200:
-            pub.crossref_json = response.json()
-            pub.save()
+    try:
+        return JsonResponse(pub.crossref_json)
+    except:
+        raise Http404(f'404 : JSON CrossRef non récupéré pour la publication id={pk}')
 
-    return JsonResponse(pub.crossref_json)
-
-def parse_crossref_json(request, pk):
+def trigger_import_publication(request, pk):
+    """
+    Vue pour déclencher manuellement l'import CrossRef pour le debug.
+    """
     pub = get_object_or_404(Publication, pk=pk)
 
     try:
-        message = pub.crossref_json.get("message")
-
-        titles = message.get("title", [])
-        if titles:
-            pub.title = titles[0]
-        pub.save()
-
-        authors_data = message.get("author", [])
-
-        for index, a in enumerate(authors_data):
-            first_name = a.get("given")
-            last_name = a.get("family")
-            orcid = a.get("ORCID")
-
-            if orcid:
-                orcid = orcid.replace("https://orcid.org/", "").strip()
-
-            author, created = Author.objects.get_or_create(
-                first_name=first_name,
-                last_name=last_name,
-                orcid=orcid,
-            )
-
-            AuthorPublication.objects.create(
-                publication=pub,
-                author=author,
-                order=index
-            )
-
-            if created:
-                messages.success(request, f"Auteur créé : {author}")
-            else:
-                messages.info(request, f"Auteur existant lié : {author}")
-
-        messages.success(request, "Données Crossref mises à jour.")
+        import_publication(pub, parse_references=True, force_fetch=False)
+        messages.success(request, f"Import CrossRef terminé pour {pub}")
     except Exception as e:
-        messages.error(request, f'Erreur dans le parsing CrossRef : {e}')
+        messages.error(request, f"Erreur lors de l'import : {e}")
 
-    return redirect("publications_list")
+    return redirect("publication_detail", pk=pub.pk)

@@ -2,11 +2,41 @@
 
 {% block content %}
     <h1>{{ publication.title }}</h1>
-    <h2><a href="{% url 'publication_crossref' publication.pk %}" target="_blank">{{ publication.doi }}</a></h2>
 
-    {% for ap in publication.authorpublication_set.all %}
-        {{ ap.author }}{% if not forloop.last %}, {% endif %}
-    {% endfor %}
+    <p><a href="{% url 'publication_crossref' publication.pk %}" target="_blank">{{ publication.doi }}</a></p>
+    <p><small>{{ publication.publication_date }}</small></p>
+    <p>
+        {% for ap in publication.authorpublication_set.all %}
+            {{ ap.author }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    </p>
+
+    <a href="{% url 'publication_trigger_import' publication.pk %}">Déclencher l'import</a>
+    <a href="{% url 'publication_edit' publication.pk %}">Editer</a>
+    <a href="{% url 'publication_delete' publication.pk %}">Supprimer</a>
+
+    <h2>Références</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Ordre</th>
+                <th scope="col">Titre</th>
+                <th scope="col">Date de publication</th>
+                <th scope="col">DOI</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ref in publication.outgoing_references.all %}
+                <tr>
+                    <th scope="row">{{ ref.ref_key }}</th>
+                    <td><a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target.title }}</a></td>
+                    <td>{{ ref.target.publication_date }}</td>
+                    <td>{{ ref.target.doi }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
     <a href="{% url 'publications_list' %}">Retour à la liste</a>
 {% endblock %}

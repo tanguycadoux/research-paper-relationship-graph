@@ -12,7 +12,12 @@ class Publication(models.Model):
         related_name="publications",
         blank=True
     )
-    # references = models.ManyToManyField('self', blank=True)
+    references = models.ManyToManyField(
+        "self",
+        through="PublicationReference",
+        symmetrical=False,
+        related_name="cited_by",
+    )
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     reference_level = models.PositiveIntegerField(default=0)
@@ -48,3 +53,23 @@ class AuthorPublication(models.Model):
 
     def __str__(self):
         return f"{self.order} – {self.author}"
+
+class PublicationReference(models.Model):
+    source = models.ForeignKey(
+        "Publication",
+        related_name="outgoing_references",
+        on_delete=models.CASCADE
+    )
+    target = models.ForeignKey(
+        "Publication",
+        related_name="incoming_references",
+        on_delete=models.CASCADE
+    )
+    ref_key = models.PositiveIntegerField()
+    
+    class Meta:
+        unique_together = ("source", "target")
+        ordering = ["ref_key"]
+
+    def __str__(self):
+        return f"{self.source} → {self.target} (ref {self.ref_key})"
