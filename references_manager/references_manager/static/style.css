@@ -1,0 +1,33 @@
+/* | RESET | */
+
+body{
+    margin: 0;
+}
+
+/* | BASE | */
+
+body{
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    height: 100vh;
+    position: relative;
+}
+
+body > div{
+    padding: 1em;
+    height: 100%;
+}
+
+nav, .admin-side-panel{
+    background-color: lightgray;
+    padding: 1em;
+}
+
+nav > p{
+    margin: 0 0 .5em;
+}
+
+nav > ul{
+    padding-left: 1em;
+    margin-top: 0;
+}

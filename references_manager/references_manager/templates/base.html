@@ -3,16 +3,22 @@
 <head>
     <title>Gestionnaire de références</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'references/style.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}">
     {% block head %}{% endblock head %}
 </head>
 
 <body>
     <nav>
-        <ul>
-            <li><a href="{% url 'index' %}">Accueil</a></li>
-            <li><a href="{% url 'publications_list' %}">Publications</a></li>
-        </ul>
+        {% if user.is_authenticated %}
+            <p>Bonjour {{ user.username }}</p>
+            <a href="{% url 'logout' %}">Se déconnecter</a>
+        {% else %}
+            <a href="{% url 'login' %}">Se connecter</a>
+        {% endif %}
+
+        <hr>
+
+        {% block nav %}{% endblock nav %}
     </nav>
     <div>
         {% block content %}{% endblock content %}

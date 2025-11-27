@@ -1,5 +1,17 @@
 {% extends 'base.html' %}
 
+{% block head %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'references/style.css' %}">
+{% endblock head %}
+
+{% block nav %}
+    <ul>
+        <li><a href="{% url 'index' %}">Accueil</a></li>
+        <li><a href="{% url 'publications_list' %}">Publications</a></li>
+    </ul>
+{% endblock nav %}
+
 {% block content %}
     <h1>{{ publication.title }}</h1>
 
