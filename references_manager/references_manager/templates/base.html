@@ -11,12 +11,21 @@
     <nav>
         {% if user.is_authenticated %}
             <p>Bonjour {{ user.username }}</p>
-            <a href="{% url 'logout' %}">Se déconnecter</a>
+            
+            <form action="{% url 'logout' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit">
+                    Se déconnecter
+                </button>
+            </form>
         {% else %}
             <a href="{% url 'login' %}">Se connecter</a>
+            <a href="{% url 'register' %}">Créer un compte</a>
         {% endif %}
 
         <hr>
+
+
 
         {% block nav %}{% endblock nav %}
     </nav>

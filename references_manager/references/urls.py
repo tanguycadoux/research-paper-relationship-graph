@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import (index, fetch_crossref, trigger_import_publication,
-                    PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView)
+                    PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView, RegisterView)
 
 
 urlpatterns = [
@@ -13,4 +13,5 @@ urlpatterns = [
     path('publication/<int:pk>/delete/', PublicationDeleteView.as_view(), name='publication_delete'),
     path('publication/<int:pk>/crossref/', fetch_crossref, name='publication_crossref'),
     path('publication/<int:pk>/trigger_import/', trigger_import_publication, name='publication_trigger_import'),
+    path("accounts/register/", RegisterView.as_view(), name="register"),
 ]
