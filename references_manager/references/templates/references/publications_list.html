@@ -1,67 +1,40 @@
-{% extends 'base.html' %}
-
-{% block head %}
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'references/style.css' %}">
-{% endblock head %}
-
-{% block nav %}
-    <ul>
-        <li><a href="{% url 'index' %}">Accueil</a></li>
-        <li><a href="{% url 'publications_list' %}">Publications</a></li>
-    </ul>
-{% endblock nav %}
+{% extends 'references/base.html' %}
 
 {% block content %}
     <h1>Liste des références</h1>
 
-    <a href="{% url 'publication_add' %}">Ajouter une publication</a>
-
-    {% if publications_lvl0 %}
+    {% if publications %}
         <table>
             <thead>
                 <tr>
+                    {% if user.is_authenticated %}
+                        <th scope="col">Action</th>
+                    {% endif %}
                     <th scope="col">Titre</th>
                     <th scope="col">DOI</th>
-                    <th scope="col">Niveau</th>
                     <th scope="col">Date de publication</th>
                 </tr>
             </thead>
             <tbody>
-                {% for pub in publications_lvl0 %}
+                {% for pub in publications %}
                     <tr>
-                        <th scope="row"><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></th>
+                        {% if user.is_authenticated %}
+                            <td>
+                                {% if pub.id in user_pub_ids %}
+                                    <a href="{% url 'remove_publication_from_my_refs' pub.pk %}">- Enlever</a>
+                                {% else %}
+                                    <a href="{% url 'add_publication_to_my_refs' pub.pk %}">+ Ajouter</a>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                        <td><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></td>
                         <td><a href="{% url 'publication_crossref' pub.pk %}" target="_blank">{{ pub.doi }}</a></td>
-                        <td>{{ pub.reference_level }}</td>
                         <td>{{ pub.publication_date }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
     {% else %}
-        <p>Aucune publication pour l'instant.</p>
-    {% endif %}
-
-    {% if publications_lvl1 %}
-        <table>
-            <thead>
-                <tr>
-                    <th scope="col">Titre</th>
-                    <th scope="col">DOI</th>
-                    <th scope="col">Niveau</th>
-                    <th scope="col">Date de publication</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pub in publications_lvl1 %}
-                    <tr>
-                        <th scope="row"><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></th>
-                        <td><a href="{% url 'publication_crossref' pub.pk %}" target="_blank">{{ pub.doi }}</a></td>
-                        <td>{{ pub.reference_level }}</td>
-                        <td>{{ pub.publication_date }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <p>Base de données vide.</p>
     {% endif %}
 {% endblock content %}

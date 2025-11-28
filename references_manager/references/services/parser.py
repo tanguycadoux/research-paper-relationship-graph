@@ -59,20 +59,20 @@ def parse_authors(pub, message):
     authors_data = message.get("author", [])
     if not authors_data:
         return
-
+    
     AuthorPublication.objects.filter(publication=pub).delete()
 
     for index, author_json in enumerate(authors_data):
-        first_name = author_json.get("given")
-        last_name = author_json.get("family")
+        first_name = author_json.get("given", "")
+        last_name = author_json.get("family", "")
         orcid = author_json.get("ORCID", "").replace("https://orcid.org/", "").strip()
 
-        author, created = Author.objects.get_or_create(
+        author, _ = Author.objects.get_or_create(
+            orcid=orcid,
             first_name=first_name,
             last_name=last_name,
-            orcid=orcid,
         )
-
+        
         AuthorPublication.objects.create(
             publication=pub,
             author=author,
@@ -100,23 +100,19 @@ def parse_references_list(pub, message):
             ref_key = 0
 
         normalized_doi = doi.lower().strip()
-        new_level = pub.reference_level + 1
         if normalized_doi:
             target_pub, created_pub = Publication.objects.get_or_create(
                 doi=normalized_doi,
-                title=title,
-                defaults={"reference_level": new_level}
+                defaults={
+                    "title": title,
+                    "parse_references": False,
+                }
             )
-
-            if not created_pub and new_level < target_pub.reference_level:
-                target_pub.reference_level = new_level
-                target_pub.save(update_fields=["reference_level"])
-
         else:
             target_pub = Publication.objects.create(
                 doi="",
                 title=title,
-                reference_level=new_level
+                parse_references=False,
             )
             created_pub = True
 

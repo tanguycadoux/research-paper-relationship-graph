@@ -6,7 +6,7 @@ from .models import Publication
 class PublicationForm(forms.ModelForm):
     class Meta:
         model = Publication
-        fields = ['doi', 'title', 'publication_date', 'reference_level']
+        fields = ['doi', 'title', 'publication_date']
         widgets = {
             'publication_date': forms.DateInput(attrs={'type': 'date'})
         }

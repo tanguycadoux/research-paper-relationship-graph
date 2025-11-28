@@ -12,7 +12,4 @@ def auto_import_on_create(sender, instance, created, **kwargs):
     on déclenche automatiquement le pipeline d'import.
     """
     if created and instance.doi:
-        if instance.reference_level == 0:
-            import_publication(instance, parse_references=True)
-        else:
-            import_publication(instance, parse_references=False)
+        import_publication(instance, parse_references=instance.parse_references)

@@ -1,0 +1,21 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h1>Mes références</h1>
+
+    <form method="post" action="{% url 'add_publication_to_user_refs_by_doi' %}">
+        {% csrf_token %}
+        <input type="text" name="doi" placeholder="Entrez un DOI…" required>
+        <button type="submit">Ajouter</button>
+    </form>
+
+    {% if publications %}
+        <ul>
+            {% for pub in publications %}
+                <li><a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Aucune publication enregistrée.</p>
+    {% endif %}
+{% endblock content %}
