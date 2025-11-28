@@ -1,0 +1,28 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h1>Liste des auteurs</h1>
+
+    {% if authors %}
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Prénom</th>
+                    <th scope="col">Nom</th>
+                    <th scope="col">ORCID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for author in authors %}
+                    <tr>
+                        <th scope="row"><a href="">{{ author.first_name }}</a></th>
+                        <td>{{ author.last_name }}</td>
+                        <td>{{ author.orcid }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Base de données vide.</p>
+    {% endif %}
+{% endblock content %}

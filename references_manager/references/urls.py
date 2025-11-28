@@ -2,12 +2,15 @@ from django.urls import path
 
 from .views import (index, fetch_crossref, trigger_import_publication,
                     add_to_user_refs, remove_from_user_refs, my_references, add_publication_to_user_refs_by_doi,
-                    PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView, RegisterView)
+                    PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView, RegisterView, AuthorListView)
 
 
 urlpatterns = [
     path('', index, name="index"),
+
     path('publications/', PublicationListView.as_view(), name='publications_list'),
+    path('authors/', AuthorListView.as_view(), name='authors_list'),
+
     path('publication/<int:pk>/', PublicationDetailView.as_view(), name='publication_detail'),
     path('publication/add/', PublicationCreateView.as_view(), name='publication_add'),
     path('publication/<int:pk>/edit/', PublicationUpdateView.as_view(), name='publication_edit'),

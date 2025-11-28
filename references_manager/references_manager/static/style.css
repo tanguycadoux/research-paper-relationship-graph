@@ -16,6 +16,7 @@ body{
 body > div{
     padding: 1em;
     height: 100%;
+    box-sizing: border-box;
 }
 
 nav, .admin-side-panel{

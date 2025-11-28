@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
 from .forms import PublicationForm
-from .models import Publication, UserPublication
+from .models import Publication, UserPublication, Author
 from .services.importer import import_publication
 
 class RegisterView(CreateView):
@@ -68,6 +68,21 @@ class PublicationUpdateView(LoginRequiredMixin, UpdateView):
 class PublicationDeleteView(LoginRequiredMixin, DeleteView):
     model = Publication
     success_url = reverse_lazy('publications_list')
+
+class AuthorListView(ListView):
+    model = Author
+    template_name = 'references/authors_list.html'
+    context_object_name = 'authors'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        authors = Author.objects.all()
+        authors = authors.order_by('last_name')
+
+        context["authors"] = authors
+
+        return context
 
 
 def index(request):
