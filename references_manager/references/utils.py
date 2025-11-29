@@ -17,9 +17,9 @@ def build_user_refs_graph(user):
         refs = pub.outgoing_references.all()
         for ref in refs:
             target = ref.target
-            G.add_node(target.pk, publication=target)
-            G.add_edge(pub.pk, target.pk)
-
+            incoming_refs = len(target.incoming_references.all())
+            G.add_node(target.pk, publication=target, cited_by_nb=incoming_refs)
+            G.add_edge(pub.pk, target.pk)       
     return G
 
 def plotly_graph_from_nx(G, user_pub_ids):
@@ -51,11 +51,25 @@ def plotly_graph_from_nx(G, user_pub_ids):
         y_counter += 1
 
     node_colors = []
+    cited_by_data = {
+        'min': len(G.nodes()),
+        'max': 0,
+    }
+    for node in G.nodes():
+        if node not in user_pub_ids:
+            cited_by_data['min'] = min(G.nodes[node]['cited_by_nb'], cited_by_data['min'])
+            cited_by_data['max'] = max(G.nodes[node]['cited_by_nb'], cited_by_data['max'])
+    print(cited_by_data)
+            
     for node in G.nodes():
         if node in user_pub_ids:
             node_colors.append("lightgreen")
         else:
-            node_colors.append("lightblue")
+            node_colors.append(
+                f"hsl(240, 80%, {map_value(G.nodes[node]['cited_by_nb'],
+                                            cited_by_data['min'], cited_by_data['max'],
+                                            25, 75)}%)"
+                                            )
     
     edge_x, edge_y = [], []
     for edge in G.edges():
@@ -67,7 +81,7 @@ def plotly_graph_from_nx(G, user_pub_ids):
         edge_y.extend([y0, y1, None])
 
     edge_trace = go.Scatter(x=edge_x, y=edge_y,
-                            line=dict(width=1, color='#888'),
+                            line=dict(width=1.5, color='black'),
                             hoverinfo='none', mode='lines')
     node_trace = go.Scatter(
         x=node_x, y=node_y,
@@ -78,7 +92,10 @@ def plotly_graph_from_nx(G, user_pub_ids):
         marker=dict(
             size=20,
             color=node_colors,
-            line_width=2
+                line=dict(
+                color='black',
+                width=1.5,
+            ),
         ),
         textposition='top center'
     )
@@ -97,12 +114,12 @@ def plotly_graph_from_nx(G, user_pub_ids):
     max_year = max_date.year+1
 
     interp_step = 5
-    interp_start_year = min_year - min_year%interp_step + interp_step
+    interp_start_year = min_year - min_year%interp_step
     interp_end_year   = max_year - max_year%interp_step
 
     x_ticks = [
-        [null_year, min_year],
-        ["Non défini", min_year]
+        [null_year],
+        ["Non défini"]
     ]
     for year in range(interp_start_year, interp_end_year+interp_step, interp_step):
         x_ticks[0].append(year)
@@ -118,7 +135,8 @@ def plotly_graph_from_nx(G, user_pub_ids):
     fig.update_layout(
         plot_bgcolor='white',
         xaxis=dict(
-            showgrid=False,
+            showgrid=True,
+            gridcolor='#CCC',
             showline=True,
             linecolor='black',
             type='date'
@@ -131,3 +149,6 @@ def plotly_graph_from_nx(G, user_pub_ids):
         )
     )
     return fig
+
+def map_value(value, from_min, from_max, to_min, to_max):
+    return (value - from_min) * (to_max - to_min) / (from_max - from_min) + to_min

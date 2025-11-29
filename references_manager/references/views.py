@@ -103,7 +103,15 @@ def my_refs_graph(request):
     )
 
     fig = plotly_graph_from_nx(G, user_pub_ids)
-    plot_div = plot(fig, output_type='div', include_plotlyjs=True, config={'responsive': True})
+    plot_div = plot(
+        fig,
+        output_type='div',
+        include_plotlyjs=True,
+        config={
+            'responsive': True,
+            'displayModeBar': False
+        }
+    )
 
     return render(request, "references/user_references_graph.html", {"plot_div": plot_div})
 
