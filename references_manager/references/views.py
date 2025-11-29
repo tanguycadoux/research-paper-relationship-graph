@@ -8,9 +8,13 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 
+from plotly.offline import plot
+
 from .forms import PublicationForm
 from .models import Publication, UserPublication, Author
 from .services.importer import import_publication
+from .utils import build_user_refs_graph, plotly_graph_from_nx
+
 
 class RegisterView(CreateView):
     form_class = UserCreationForm
@@ -88,6 +92,20 @@ class AuthorListView(ListView):
 def index(request):
     return render(request, "references/index.html", {})
 
+
+@login_required
+def my_refs_graph(request):
+    G = build_user_refs_graph(request.user)
+    user_pub_ids = set(
+        UserPublication.objects
+        .filter(user=request.user)
+        .values_list('publication_id', flat=True)
+    )
+
+    fig = plotly_graph_from_nx(G, user_pub_ids)
+    plot_div = plot(fig, output_type='div', include_plotlyjs=True, config={'responsive': True})
+
+    return render(request, "references/user_references_graph.html", {"plot_div": plot_div})
 
 @login_required
 def add_to_user_refs(request, pk):

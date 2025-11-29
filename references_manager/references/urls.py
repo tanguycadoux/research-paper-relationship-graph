@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import (index, fetch_crossref, trigger_import_publication,
-                    add_to_user_refs, remove_from_user_refs, my_references, add_publication_to_user_refs_by_doi,
+                    add_to_user_refs, remove_from_user_refs, my_references, add_publication_to_user_refs_by_doi, my_refs_graph,
                     PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView, RegisterView, AuthorListView)
 
 
@@ -22,6 +22,7 @@ urlpatterns = [
     path('publication/<int:pk>/remove_from_my_refs/', remove_from_user_refs, name='remove_publication_from_my_refs'),
     path('publication/add_to_my_refs_by_doi/', add_publication_to_user_refs_by_doi, name='add_publication_to_user_refs_by_doi'),
     path('my_references/', my_references, name='my_references'),
+    path('my_references_graph/', my_refs_graph, name='my_refs_graph'),
 
     path("accounts/register/", RegisterView.as_view(), name="register"),
 ]

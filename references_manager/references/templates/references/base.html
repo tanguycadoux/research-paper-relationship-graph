@@ -10,6 +10,7 @@
         <li><a href="{% url 'index' %}">Accueil</a></li>
         {% if user.is_authenticated %}
             <li><a href="{% url 'my_references' %}">Mes références</a></li>
+            <li><a href="{% url 'my_refs_graph' %}">Mon graph</a></li>
         {% endif %}
     </ul>
     
