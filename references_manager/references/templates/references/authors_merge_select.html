@@ -1,0 +1,38 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h2>Fusionner des auteurs</h2>
+
+    <p>Sélectionnez les auteurs que vous souhaitez fusionner.</p>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <p>Veuillez sélectionner au moins deux auteurs.</p>
+        {% endif %}
+
+        <button type="submit">
+            Continuer
+        </button>
+
+        <p>Auteurs :</p>
+
+        <div>
+            {% for subwidget in form.authors %}
+                {% with author=subwidget.author_obj %}
+                    {{ subwidget.value.value }}
+                    <div>
+                        {{ subwidget.tag }}
+                        <label for="{{ subwidget.id_for_label }}">
+                            {{ subwidget.choice_label }}
+                            {% if author.orcid %}
+                                <span>(ORCID: {{ author.orcid }})</span>
+                            {% endif %}
+                        </label>
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+    </form>
+{% endblock content %}

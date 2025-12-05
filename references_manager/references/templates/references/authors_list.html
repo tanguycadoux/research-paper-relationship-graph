@@ -15,7 +15,7 @@
             <tbody>
                 {% for author in authors %}
                     <tr>
-                        <th scope="row"><a href="">{{ author.first_name }}</a></th>
+                        <th scope="row"><a href="{% url 'author_detail' author.pk %}">{{ author.first_name }}</a></th>
                         <td>{{ author.last_name }}</td>
                         <td>{{ author.orcid }}</td>
                     </tr>

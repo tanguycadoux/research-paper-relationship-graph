@@ -2,14 +2,14 @@ from django.urls import path
 
 from .views import (index, fetch_crossref, trigger_import_publication,
                     add_to_user_refs, remove_from_user_refs, my_references, add_publication_to_user_refs_by_doi, my_refs_graph,
-                    PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView, RegisterView, AuthorListView)
+                    PublicationCreateView, PublicationDeleteView, PublicationDetailView, PublicationListView, PublicationUpdateView, RegisterView,
+                    AuthorListView, AuthorDetailView, AuthorUpdateView, author_merge_select_view, author_merge_confirm_view)
 
 
 urlpatterns = [
     path('', index, name="index"),
 
     path('publications/', PublicationListView.as_view(), name='publications_list'),
-    path('authors/', AuthorListView.as_view(), name='authors_list'),
 
     path('publication/<int:pk>/', PublicationDetailView.as_view(), name='publication_detail'),
     path('publication/add/', PublicationCreateView.as_view(), name='publication_add'),
@@ -23,6 +23,14 @@ urlpatterns = [
     path('publication/add_to_my_refs_by_doi/', add_publication_to_user_refs_by_doi, name='add_publication_to_user_refs_by_doi'),
     path('my_references/', my_references, name='my_references'),
     path('my_references_graph/', my_refs_graph, name='my_refs_graph'),
+
+    path('authors/', AuthorListView.as_view(), name='authors_list'),
+    
+    path('author/<int:pk>/', AuthorDetailView.as_view(), name='author_detail'),
+    path('author/<int:pk>/edit/', AuthorUpdateView.as_view(), name='author_edit'),
+    path("authors/merge/", author_merge_select_view, name="authors_merge_select"),
+    path("authors/merge/confirm/<str:ids>/", author_merge_confirm_view, name="author_merge_confirm"),
+
 
     path("accounts/register/", RegisterView.as_view(), name="register"),
 ]

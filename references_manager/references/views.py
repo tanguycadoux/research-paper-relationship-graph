@@ -10,7 +10,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 
 from plotly.offline import plot
 
-from .forms import PublicationForm
+from .forms import PublicationForm, AuthorMergeSelectForm, AuthorMergeConfirmForm
 from .models import Publication, UserPublication, Author
 from .services.importer import import_publication
 from .utils import build_user_refs_graph, plotly_graph_from_nx
@@ -87,6 +87,13 @@ class AuthorListView(ListView):
         context["authors"] = authors
 
         return context
+
+class AuthorDetailView(DetailView):
+    model = Author
+
+class AuthorUpdateView(LoginRequiredMixin, UpdateView):
+    model = Author
+    success_url = reverse_lazy('author_detail')
 
 
 def index(request):
@@ -167,7 +174,6 @@ def my_references(request):
     }
     return render(request, "references/user_references.html", context)
 
-
 @login_required
 def fetch_crossref(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
@@ -191,3 +197,52 @@ def trigger_import_publication(request, pk):
         messages.error(request, f"Erreur lors de l'import : {e}")
 
     return redirect("publication_detail", pk=pub.pk)
+
+@login_required
+def author_merge_select_view(request):
+    if request.method == "POST":
+        form = AuthorMergeSelectForm(request.POST)
+        if form.is_valid():
+            ids = [a.id for a in form.cleaned_data["authors"]]
+            return redirect("author_merge_confirm", ids=",".join(map(str, ids)))
+    else:
+        form = AuthorMergeSelectForm()
+
+    return render(request, "references/authors_merge_select.html", {"form": form})
+
+@login_required
+def author_merge_confirm_view(request, ids):
+    ids = [int(i) for i in ids.split(",")]
+    authors = list(Author.objects.filter(id__in=ids))
+
+    if len(authors) < 2:
+        messages.error(request, "Il faut au moins deux auteurs.")
+        return redirect("merge_select")
+
+    pivot = authors[0]
+
+    if request.method == "POST":
+        form = AuthorMergeConfirmForm(request.POST)
+        if form.is_valid():
+            pivot.first_name = form.cleaned_data["first_name"]
+            pivot.last_name  = form.cleaned_data["last_name"]
+            pivot.orcid      = form.cleaned_data["orcid"]
+            pivot.save()
+
+            pivot.merge_with([a for a in authors if a != pivot])
+
+            messages.success(request, "Les auteurs ont été fusionnés.")
+            return redirect("author_detail", pk=pivot.pk)
+
+    else:
+        form = AuthorMergeConfirmForm(initial={
+            "first_name": pivot.first_name,
+            "last_name": pivot.last_name,
+            "orcid": pivot.orcid,
+        })
+
+    return render(request, "references/authors_merge_confirm.html", {
+        "form": form,
+        "authors": authors,
+        "pivot": pivot,
+    })

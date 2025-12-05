@@ -1,0 +1,30 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <h1>{{ author }}</h1>
+
+    <p>ORCID : {{ author.orcid }}</p>
+
+    <a href="{% url 'author_edit' author.pk %}">Editer</a>
+
+    <h2>Publications</h2>
+    
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Titre</th>
+                <th scope="col">Date de publication</th>
+                <th scope="col">DOI</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pub in author.publications.all %}
+                <tr>
+                    <td scope="row"><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></td>
+                    <td>{{ pub.publication_date }}</td>
+                    <td>{{ pub.doi }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
