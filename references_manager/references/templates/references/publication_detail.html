@@ -23,6 +23,7 @@
 
     <hr>
 
+    <a href="{% url 'publication_graph' publication.pk %}">Graphe</a>
     <a href="{% url 'publication_trigger_import' publication.pk %}">Déclencher l'import</a>
     <a href="{% url 'publication_edit' publication.pk %}">Editer</a>
     <a href="{% url 'publication_delete' publication.pk %}">Supprimer</a>

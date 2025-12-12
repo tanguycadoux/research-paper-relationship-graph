@@ -7,23 +7,46 @@
 
 {% block nav %}
     <ul>
-        <li><a href="{% url 'index' %}">Accueil</a></li>
+
+        {% url 'index' as this_url %}
+        <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+            Accueil
+        </a></li>
         {% if user.is_authenticated %}
-            <li><a href="{% url 'my_references' %}">Mes références</a></li>
-            <li><a href="{% url 'my_refs_graph' %}">Mon graph</a></li>
+
+            {% url 'my_references' as this_url %}
+            <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+                Mes références
+            </a></li>
+
+            {% url 'my_refs_graph' as this_url %}
+            <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+                Mon graph
+            </a></li>
         {% endif %}
     </ul>
     
     <hr>
     
     <ul>
-        <li><a href="{% url 'publications_list' %}">Les publications</a></li>
+        {% url 'publications_list' as this_url %}
+        <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+            Les publications
+        </a></li>
     </ul>
 
     <hr>
     
     <ul>
-        <li><a href="{% url 'authors_list' %}">Les auteurs</a></li>
-        <li><a href="{% url 'authors_merge_select' %}">Combiner des auteurs</a></li>
+        {% url 'authors_list' as this_url %}
+        <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+            Les auteurs
+        </a></li>
+
+        {% url 'authors_merge_select' as this_url %}
+        <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+            Combiner des auteurs
+        </a></li>
+
     </ul>
 {% endblock nav %}

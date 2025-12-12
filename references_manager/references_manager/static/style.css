@@ -7,29 +7,68 @@ body{
 /* | BASE | */
 
 body{
+    font-family: Arial;
     display: grid;
     grid-template-columns: auto 1fr auto;
     height: 100vh;
     position: relative;
 }
 
+a{
+    --color: oklch(40% 0.2 260);
+    color: var(--color);
+}
+
+a:hover{
+    --color: oklch(55% 0.2 260);
+}
+
+a:visited{
+    --color: oklch(40% 0.2 260);
+}
+
 body > div{
-    padding: 1em;
+    padding: 1rem;
     height: 100%;
     box-sizing: border-box;
     overflow: auto;
 }
 
-nav, .admin-side-panel{
-    background-color: lightgray;
-    padding: 1em;
+nav{
+    background-color: oklch(90% 0 0);
+    padding: 1rem;
 }
 
 nav > p{
-    margin: 0 0 .5em;
+    margin: 0 0 .5rem;
 }
 
 nav > ul{
-    padding-left: 1em;
-    margin-top: 0;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.nav-link{
+    --color: black;
+    --bg-color: none;
+
+    background-color: var(--bg-color);
+    display: block;
+    padding: .4rem;
+    border-radius: .6rem;
+    text-decoration: none;
+}
+
+.nav-link:hover, 
+.nav-link--active{
+    --color: black;
+    --bg-color: oklch(95% 0 0);
+}
+
+/* | BLOCK | */
+
+.admin-side-panel{
+    background-color: oklch(90% 0 0);
+    padding: 1rem;
 }

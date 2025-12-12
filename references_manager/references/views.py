@@ -13,7 +13,7 @@ from plotly.offline import plot
 from .forms import PublicationForm, AuthorMergeSelectForm, AuthorMergeConfirmForm
 from .models import Publication, UserPublication, Author
 from .services.importer import import_publication
-from .utils import build_user_refs_graph, plotly_graph_from_nx
+from .utils import build_user_refs_graph, build_pub_graph, plotly_graph_from_nx
 
 
 class RegisterView(CreateView):
@@ -98,6 +98,23 @@ class AuthorUpdateView(LoginRequiredMixin, UpdateView):
 
 def index(request):
     return render(request, "references/index.html", {})
+
+def pub_graph(request, pk):
+    pub = get_object_or_404(Publication, pk=pk)
+
+    G = build_pub_graph(pub)
+    fig = plotly_graph_from_nx(G, [pub.pk])
+    plot_div = plot(
+        fig,
+        output_type='div',
+        include_plotlyjs=True,
+        config={
+            'responsive': True,
+            'displayModeBar': False
+        }
+    )
+
+    return render(request, "references/publication_graph.html", {"plot_div": plot_div})
 
 
 @login_required
