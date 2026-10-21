@@ -155,6 +155,10 @@ identiques, ou une initiale qui correspond à la première lettre de l'autre («
 membres : sinon, « J. » relierait « John » et « James ». Deux ORCID différents ne sont
 jamais regroupés. Les groupes qui comptent exactement un ORCID viennent en premier. La
 page renvoie vers la fusion habituelle, après qu'on a éventuellement décoché des auteurs.
+On peut aussi déclarer les auteurs cochés comme **personnes différentes**
+(`AuthorDistinction`, paire stockée une fois, avec qui l'a déclarée et quand) : la paire
+n'est plus jamais proposée, comme deux ORCID différents. Lors d'une fusion, les
+distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
 
 ## Livres et ISBN
 

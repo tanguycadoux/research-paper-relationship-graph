@@ -7,7 +7,8 @@
             <p>
                 Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
                 Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
-                auteurs à écarter, puis passez à la fusion.
+                auteurs à écarter, puis passez à la fusion, ou indiquez que les auteurs cochés
+                sont des personnes différentes : ils ne seront plus proposés ensemble.
             </p>
         </header>
 
@@ -33,6 +34,9 @@
                         </ul>
                     </fieldset>
                     <button type="submit">Fusionner…</button>
+                    <button type="submit" formaction="{% url 'author_duplicates_dismiss' %}">
+                        Ce ne sont pas les mêmes
+                    </button>
                 </form>
             </section>
         {% empty %}
