@@ -77,3 +77,51 @@ class WithoutMailtoTests(SimpleTestCase):
         kwargs = get_session.return_value.get.call_args.kwargs
         self.assertIsNone(kwargs["params"])
         self.assertNotIn("mailto", kwargs["headers"]["User-Agent"])
+
+
+def list_response(dois):
+    return make_response(200, {"message": {"items": [{"DOI": doi} for doi in dois]}})
+
+
+@override_settings(CROSSREF_MAILTO="")
+@patch("references.services.crossref_api.time.sleep")
+@patch("references.services.crossref_api._get_session")
+class FetchCrossrefWorksTests(SimpleTestCase):
+    def fetch_works(self, get_session, responses, dois):
+        get_session.return_value.get.side_effect = responses
+        with self.assertLogs(LOGGER, level="INFO"):
+            return crossref_api.fetch_crossref_works(dois)
+
+    def test_requests_are_batched(self, get_session, sleep):
+        dois = [f"10.1000/{i}" for i in range(120)]
+        responses = [
+            list_response(dois[:50]),
+            list_response(dois[50:100]),
+            list_response(dois[100:]),
+        ]
+        works = self.fetch_works(get_session, responses, dois)
+
+        calls = get_session.return_value.get.call_args_list
+        self.assertEqual([call.kwargs["params"]["rows"] for call in calls], [50, 50, 20])
+        self.assertTrue(
+            calls[0].kwargs["params"]["filter"].startswith("doi:10.1000/0,doi:10.1000/1")
+        )
+        self.assertEqual(len(works), 120)
+
+    def test_results_are_wrapped_like_a_single_work(self, get_session, sleep):
+        works = self.fetch_works(get_session, [list_response(["10.1000/a"])], ["10.1000/a"])
+        self.assertEqual(works["10.1000/a"]["message"], {"DOI": "10.1000/a"})
+
+    def test_returned_doi_case_does_not_matter(self, get_session, sleep):
+        works = self.fetch_works(get_session, [list_response(["10.1000/ABC"])], ["10.1000/abc"])
+        self.assertIsNotNone(works["10.1000/abc"])
+
+    def test_doi_missing_from_the_answer_is_none(self, get_session, sleep):
+        works = self.fetch_works(
+            get_session, [list_response(["10.1000/a"])], ["10.1000/a", "10.1000/ghost"]
+        )
+        self.assertIsNone(works["10.1000/ghost"])
+
+    def test_failed_batch_is_absent_from_the_result(self, get_session, sleep):
+        works = self.fetch_works(get_session, [make_response(503)] * 3, ["10.1000/a"])
+        self.assertEqual(works, {})

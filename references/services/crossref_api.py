@@ -6,15 +6,18 @@ from urllib.parse import quote
 import requests
 from django.conf import settings
 
+from .doi import normalize_doi
+
 logger = logging.getLogger(__name__)
 
-CROSSREF_WORKS_URL = "https://api.crossref.org/works/"
+CROSSREF_WORKS_URL = "https://api.crossref.org/works"
 PROJECT_URL = "https://github.com/tanguycadoux/research-paper-relationship-graph"
 USER_AGENT = "references-manager/0.1"
 REQUEST_TIMEOUT = 10
 MAX_ATTEMPTS = 3
 MAX_RETRY_DELAY = 60
 RETRY_STATUSES = {429, 500, 502, 503, 504}
+BATCH_SIZE = 50
 
 
 def fetch_crossref_json(doi):
@@ -24,23 +27,52 @@ def fetch_crossref_json(doi):
     """
     if not doi:
         return None
+    return _get_json("/" + quote(doi, safe="/"), {}, f"DOI {doi}")
 
+
+def fetch_crossref_works(dois):
+    """
+    Fetch several DOIs with one list request per batch of BATCH_SIZE.
+    Return {doi: json or None}: None when Crossref answered without this DOI.
+    DOIs of a batch whose request failed are absent from the result.
+    """
+    works = {}
+    for start in range(0, len(dois), BATCH_SIZE):
+        works.update(_fetch_batch(dois[start : start + BATCH_SIZE]))
+    return works
+
+
+def _fetch_batch(dois):
+    params = {"filter": ",".join(f"doi:{doi}" for doi in dois), "rows": len(dois)}
+    data = _get_json("", params, f"batch of {len(dois)} DOIs")
+    if data is None:
+        return {}
+    found = {normalize_doi(item["DOI"]): item for item in data["message"]["items"]}
+    return {doi: _as_single_work(found[doi]) if doi in found else None for doi in dois}
+
+
+def _as_single_work(item):
+    """Wrap a list item like the response of /works/{doi}, the stored format."""
+    return {"status": "ok", "message-type": "work", "message": item}
+
+
+def _get_json(path, params, subject):
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        response = _request_work(doi)
+        response = _request(path, params, subject)
         if response is not None and response.status_code == 200:
-            return _parse_json(doi, response)
+            return _parse_json(subject, response)
         if not _should_retry(response) or attempt == MAX_ATTEMPTS:
-            _log_failure(doi, response)
+            _log_failure(subject, response)
             return None
         _wait_before_retry(response, attempt)
     return None
 
 
-def _parse_json(doi, response):
+def _parse_json(subject, response):
     try:
         return response.json()
     except ValueError:
-        logger.error("Crossref returned invalid JSON for DOI %s", doi)
+        logger.error("Crossref returned invalid JSON for %s", subject)
         return None
 
 
@@ -49,23 +81,25 @@ def _get_session():
     return requests.Session()
 
 
-def _request_work(doi):
+def _request(path, params, subject):
     """
     Send one request to Crossref. Return None on network error.
     """
     mailto = settings.CROSSREF_MAILTO
-    if not mailto:
+    if mailto:
+        params = {**params, "mailto": mailto}
+    else:
         _warn_missing_mailto()
-    logger.info("Crossref request for DOI %s", doi)
+    logger.info("Crossref request for %s", subject)
     try:
         return _get_session().get(
-            CROSSREF_WORKS_URL + quote(doi, safe="/"),
-            params={"mailto": mailto} if mailto else None,
+            CROSSREF_WORKS_URL + path,
+            params=params or None,
             headers={"User-Agent": _user_agent(mailto)},
             timeout=REQUEST_TIMEOUT,
         )
     except requests.RequestException as error:
-        logger.warning("Crossref network error for DOI %s: %s", doi, error)
+        logger.warning("Crossref network error for %s: %s", subject, error)
         return None
 
 
@@ -101,12 +135,12 @@ def _retry_after(response):
         return None
 
 
-def _log_failure(doi, response):
+def _log_failure(subject, response):
     if response is None:
-        logger.error("Crossref unreachable for DOI %s", doi)
+        logger.error("Crossref unreachable for %s", subject)
     elif response.status_code == 404:
-        logger.info("DOI %s is unknown to Crossref", doi)
+        logger.info("%s is unknown to Crossref", subject)
     elif response.status_code == 403:
         logger.error("Crossref refused access (403): the client may be blocked")
     else:
-        logger.error("Crossref returned %s for DOI %s", response.status_code, doi)
+        logger.error("Crossref returned %s for %s", response.status_code, subject)
