@@ -156,3 +156,31 @@ def cited_publications(dois, refs):
     missing = [Publication(doi=doi, title=titles[doi]) for doi in valid - existing.keys()]
     Publication.objects.bulk_create(missing)
     return existing | {pub.doi: pub for pub in missing}
+
+
+def parse_openlibrary(pub):
+    """Fill a Publication from its stored Open Library search result."""
+    if not pub.openlibrary_json:
+        return
+    message = openlibrary_message(pub.openlibrary_json)
+    parse_title(pub, message)
+    parse_publication_date(pub, message)
+    parse_authors(pub, message)
+    pub.save()
+
+
+def openlibrary_message(doc):
+    """Express an Open Library search result like a Crossref message."""
+    title = ": ".join(part for part in (doc.get("title"), doc.get("subtitle")) if part)
+    year = doc.get("first_publish_year")
+    return {
+        "title": [title] if title else [],
+        "issued": {"date-parts": [[year]]} if year else {},
+        "author": [split_full_name(name) for name in doc.get("author_name", [])],
+    }
+
+
+def split_full_name(name):
+    """'Ian Goodfellow' -> given 'Ian', family 'Goodfellow' (no ORCID in Open Library)."""
+    given, _, family = name.strip().rpartition(" ")
+    return {"given": given, "family": family}

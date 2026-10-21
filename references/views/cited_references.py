@@ -20,23 +20,32 @@ def identify_reference(request, pk, position):
 def initial_values(ref):
     return {
         "doi": ref.doi,
+        "isbn": ref.raw.get("ISBN", ""),
         "title": identification.suggested_title(ref),
         "year": identification.suggested_year(ref),
     }
 
 
 def apply_identification(request, ref, data):
-    if data["method"] == IdentifyReferenceForm.METHOD_DOI:
+    method = data["method"]
+    if method == IdentifyReferenceForm.METHOD_DOI:
         pub, imported = identification.identify_by_doi(ref, data["doi"], request.user)
-        if not imported:
-            messages.warning(
-                request,
-                f"Référence reliée au DOI {pub.doi}, mais ses données n'ont pas pu être "
-                "récupérées sur Crossref.",
-            )
-            return
+    elif method == IdentifyReferenceForm.METHOD_ISBN:
+        pub, imported = identification.identify_by_isbn(ref, data["isbn"], request.user)
     else:
         pub = identification.identify_without_identifier(
             ref, data["title"], data["year"], request.user
         )
-    messages.success(request, f"Référence n° {ref.position + 1} identifiée : « {pub} ».")
+        imported = True
+    report_identification(request, ref, pub, imported)
+
+
+def report_identification(request, ref, pub, imported):
+    if imported:
+        messages.success(request, f"Référence n° {ref.position + 1} identifiée : « {pub} ».")
+    else:
+        messages.warning(
+            request,
+            f"Référence n° {ref.position + 1} reliée à « {pub} », mais ses données n'ont pas "
+            "pu être récupérées (identifiant inconnu ou service injoignable).",
+        )

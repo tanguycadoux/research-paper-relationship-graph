@@ -3,7 +3,12 @@
 {% block content %}
     <h1>{{ publication.title }}</h1>
 
-    <p><a href="{% url 'publication_crossref' publication.pk %}" target="_blank">{{ publication.doi }}</a></p>
+    {% if publication.doi %}
+        <p>DOI : <a href="{% url 'publication_crossref' publication.pk %}" target="_blank">{{ publication.doi }}</a></p>
+    {% endif %}
+    {% if publication.isbn %}
+        <p>ISBN : {{ publication.isbn }}</p>
+    {% endif %}
     <p><small>{{ publication.publication_date }}</small></p>
     <p>
         {% for ap in publication.authorpublication_set.all %}

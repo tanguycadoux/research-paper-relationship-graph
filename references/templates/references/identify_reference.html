@@ -43,6 +43,16 @@
             </fieldset>
 
             <fieldset>
+                <legend>Par ISBN</legend>
+                <p>
+                    <label for="{{ form.isbn.id_for_label }}">{{ form.isbn.label }}</label>
+                    {{ form.isbn }}
+                </p>
+                {{ form.isbn.errors }}
+                <p><small>Recherché dans Crossref, puis dans Open Library.</small></p>
+            </fieldset>
+
+            <fieldset>
                 <legend>Sans identifiant</legend>
                 <p>
                     <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>

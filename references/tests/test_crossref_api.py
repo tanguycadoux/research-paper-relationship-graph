@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, override_settings
 
 from references.services import crossref_api
 
-LOGGER = "references.services.crossref_api"
+LOGGER = "references.services"
 
 
 def make_response(status_code, payload=None, headers=None):
@@ -15,8 +15,8 @@ def make_response(status_code, payload=None, headers=None):
 
 
 @override_settings(CROSSREF_MAILTO="someone@example.org")
-@patch("references.services.crossref_api.time.sleep")
-@patch("references.services.crossref_api._get_session")
+@patch("references.services.http.time.sleep")
+@patch("references.services.http._get_session")
 class FetchCrossrefJsonTests(SimpleTestCase):
     def fetch(self, get_session, responses, doi="10.1000/abc"):
         get_session.return_value.get.side_effect = responses
@@ -68,7 +68,7 @@ class FetchCrossrefJsonTests(SimpleTestCase):
 
 
 @override_settings(CROSSREF_MAILTO="")
-@patch("references.services.crossref_api._get_session")
+@patch("references.services.http._get_session")
 class WithoutMailtoTests(SimpleTestCase):
     def test_uses_public_pool_without_mailto(self, get_session):
         get_session.return_value.get.return_value = make_response(200, {})
@@ -84,8 +84,8 @@ def list_response(dois):
 
 
 @override_settings(CROSSREF_MAILTO="")
-@patch("references.services.crossref_api.time.sleep")
-@patch("references.services.crossref_api._get_session")
+@patch("references.services.http.time.sleep")
+@patch("references.services.http._get_session")
 class FetchCrossrefWorksTests(SimpleTestCase):
     def fetch_works(self, get_session, responses, dois):
         get_session.return_value.get.side_effect = responses

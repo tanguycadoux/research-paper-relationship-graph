@@ -23,8 +23,12 @@ references/          application principale
   models.py          modèle de données
   views/             une vue par domaine : home, publications, authors, corpus, graphs
   services/          logique métier, sans dépendance aux vues
-    crossref_api.py  client HTTP Crossref (polite pool, nouvelles tentatives)
-    doi.py           normalisation et validation des DOI
+    http.py          requêtes JSON communes (session, nouvelles tentatives, journalisation)
+    crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN)
+    openlibrary_api.py  client Open Library (recherche par ISBN)
+    doi.py, isbn.py  normalisation et validation des identifiants
+    books.py         livres identifiés par ISBN (Crossref, puis Open Library)
+    identification.py  identification manuelle des références
     importer.py      orchestration : récupération puis analyse
     parser.py        JSON Crossref vers modèles
     graph.py         construction des données des graphes
@@ -60,7 +64,7 @@ erDiagram
 
 | Modèle | Rôle |
 |---|---|
-| `Publication` | Un article. DOI unique quand il est renseigné. Le JSON Crossref est stocké tel quel, avec sa date de récupération `crossref_fetched_at`. |
+| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. La réponse d'Open Library est stockée de la même façon (`openlibrary_json`, `openlibrary_fetched_at`). Le JSON Crossref est stocké tel quel, avec sa date de récupération `crossref_fetched_at`. |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Elle est conservée au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
 | `Author` | Une personne (entité résolue). |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
@@ -105,6 +109,19 @@ Le client (`crossref_api.py`) s'identifie avec `CROSSREF_MAILTO` pour accéder a
 *polite pool*. Il respecte `Retry-After` sur les erreurs 429, retente les 5xx et les
 erreurs réseau, et ne retente jamais une 404 ni une 403.
 
+## Livres et ISBN
+
+Un livre souvent cité sans DOI peut être identifié par son ISBN. On cherche d'abord dans
+**Crossref** (`/works?filter=isbn:…`), qui connaît les livres académiques ayant un DOI.
+On se replie ensuite sur **Open Library** (`/search.json?isbn=…`, gratuit et sans clé) :
+un seul appel donne le titre, l'année et les noms des auteurs. Ces noms passent par la
+même résolution que ceux de Crossref, mais sans ORCID. Les données stockées ne sont
+jamais redemandées. Les deux clients partagent `services/http.py`, et donc les mêmes
+règles de nouvelles tentatives.
+
+Limite connue : Open Library mélange parfois auteurs et contributeurs (directeur de
+collection…). On corrige alors par fusion ou par correction d'auteur.
+
 ## Graphes
 
 **Décision : le serveur fournit les données, le navigateur dessine.**
@@ -128,4 +145,6 @@ erreurs réseau, et ne retente jamais une 404 ni une 403.
 | 2026-10-21 | Graphes en JSON avec Cytoscape.js | Pages légères, interactivité côté client, cohérent avec la refonte Tailwind (M8). |
 | 2026-10-21 | Cytoscape.js embarqué plutôt que chargé depuis un CDN | Fonctionne hors ligne, sans dépendance externe à l'exécution. Fichier léger (435 Ko). |
 | 2026-10-21 | Adresse Crossref dans une variable d'environnement | Le dépôt est public. |
+| 2026-10-21 | Pas de rapprochement automatique des références au texte identique | Sans DOI ni ISBN, rien ne prouve qu'il s'agit du même ouvrage : on identifie à la main, ou on fusionne des publications (#67). |
+| 2026-10-21 | ISBN : Crossref d'abord, puis Open Library (titre, année, auteurs) | Gratuit, sans clé, un appel par livre. |
 | 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |
