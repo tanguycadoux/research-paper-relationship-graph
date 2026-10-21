@@ -30,15 +30,14 @@ pip install -r requirements.txt
 
 ## Lancement du serveur
 
-Une fois le venv activé :
+Une fois le venv activé, depuis la racine du dépôt :
 
 ```bash
-cd references_manager
 python manage.py migrate
 python manage.py runserver
 ```
 
 L'application est alors accessible sur http://127.0.0.1:8000/.
 
-La base `references_manager/db.sqlite3` est locale et n'est pas versionnée.
+La base `db.sqlite3` est locale et n'est pas versionnée.
 Pour récupérer ses données sur une autre machine, il faut la copier à la main.
