@@ -39,17 +39,12 @@ class Author(models.Model):
         return f"{self.first_name or ''} {self.last_name or ''}".strip()
 
     def merge_with(self, others: list["Author"]):
-        from .models import AuthorPublication  # éviter les imports circulaires
-
+        """
+        Move the publications of the other authors to this one, then delete them.
+        """
         for other in others:
             AuthorPublication.objects.filter(author=other).update(author=self)
-
-            # Ici éventuellement fusionner les ORCID, emails, affiliations etc.
-            # Selon ce que tu décideras.
-
-            # Puis supprimer l'ancien auteur
             other.delete()
-        return None
 
 
 class AuthorPublication(models.Model):

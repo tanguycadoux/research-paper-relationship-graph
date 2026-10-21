@@ -7,7 +7,7 @@ from .doi import is_valid_doi, normalize_doi
 
 def parse_publication(pub, parse_references=True):
     """
-    Parse un objet Publication à partir de pub.crossref_json.
+    Fill a Publication from its stored Crossref JSON.
     """
     json_data = pub.crossref_json
     if not json_data:
@@ -27,7 +27,7 @@ def parse_publication(pub, parse_references=True):
 
 def parse_title(pub, message):
     """
-    Extrait le titre dans CrossRef.
+    Extract the title.
     """
     titles = message.get("title", [])
     if titles and isinstance(titles, list):
@@ -36,7 +36,7 @@ def parse_title(pub, message):
 
 def parse_publication_date(pub, message):
     """
-    Extrait la date de publication depuis CrossRef
+    Extract the publication date (missing month or day default to 1).
     """
     issued = message.get("issued", {})
     date_parts = issued.get("date-parts", [])
@@ -59,7 +59,7 @@ def parse_publication_date(pub, message):
 
 def parse_authors(pub, message):
     """
-    Extrait les auteurs depuis le message CrossRef et les lie à la publication.
+    Extract the authors and link them to the publication, in order.
     """
     authors_data = message.get("author", [])
     if not authors_data:
@@ -83,7 +83,7 @@ def parse_authors(pub, message):
 
 def parse_references_list(pub, message):
     """
-    Extrait les références depuis CrossRef et crée les liens PublicationReference.
+    Extract the cited references and create the PublicationReference links.
     """
     refs_data = message.get("reference", [])
     if not refs_data:
