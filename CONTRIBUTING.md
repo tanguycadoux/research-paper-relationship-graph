@@ -53,6 +53,7 @@ Les templates suivent HTML5 : `lang="fr"`, balises sémantiques (`<header>`, `<n
 - Structure de page : `templates/base.html` (en-tête, navigation, `<main>`). Chaque page commence par un `<header>` qui porte son unique `<h1>`, et ses titres se suivent sans saut de niveau.
 - Styles : classes Tailwind dans les templates. Les styles par défaut des éléments (titres, liens, tableaux, champs de formulaire) sont définis une seule fois, dans la couche `base` de `assets/css/source.css` : un template n'ajoute que ce qui diffère. Pas de nouvelle classe CSS propre au projet.
 - Composants (`{% load ui %}`) : `button` (un lien quand il reçoit une `url`), `badge`, `alert`, `card`, `icon`. Les variantes sont définies dans `references/templatetags/ui.py`.
+- Liens vers un autre site : toujours `{% external_link url libellé %}`, qui ouvre un nouvel onglet et le signale (icône et texte pour les lecteurs d'écran). Un test refuse les `href="http…"` écrits à la main.
 - Navigation : elle est décrite dans `references/templatetags/navigation.py`. Une nouvelle page s'y ajoute si elle doit apparaître dans le menu.
 - Icônes : `python manage.py add_icon <nom>` (noms de https://fonts.google.com/icons).
 

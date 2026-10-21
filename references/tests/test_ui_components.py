@@ -1,5 +1,7 @@
+from pathlib import Path
 from unittest.mock import Mock, patch
 
+from django.conf import settings
 from django.core.management import CommandError, call_command
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import SimpleTestCase
@@ -189,3 +191,25 @@ class AddIconCommandTests(SimpleTestCase):
         with patch.object(icons.requests, "get") as get, self.assertRaises(CommandError):
             call_command("add_icon", "../x")
         get.assert_not_called()
+
+
+class ExternalLinkTests(SimpleTestCase):
+    def test_opens_a_new_tab_and_says_so(self):
+        html = render(
+            '{% external_link "https://doi.org/"|add:doi doi class="break-all" %}', doi="10.1/a&b"
+        )
+        self.assertIn('href="https://doi.org/10.1/a&amp;b"', html)
+        self.assertIn('target="_blank" rel="noopener noreferrer" class="break-all"', html)
+        self.assertIn('<span class="sr-only"> (nouvel onglet)</span>', html)
+        self.assertIn("<svg", html)
+
+    def test_templates_link_to_other_sites_only_through_it(self):
+        templates = [
+            path
+            for folder in ("templates", "references/templates", "accounts/templates")
+            for path in Path(settings.BASE_DIR, folder).rglob("*.html")
+        ]
+        self.assertTrue(templates)
+        for path in templates:
+            with self.subTest(template=path.name):
+                self.assertNotRegex(path.read_text(encoding="utf-8"), r'href="https?:')
