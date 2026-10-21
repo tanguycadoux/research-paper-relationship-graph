@@ -33,4 +33,4 @@ def resolve_conflict_view(request, pk):
         messages.error(request, "Cette décision n'est pas possible pour ce conflit.")
     else:
         messages.success(request, f"Conflit tranché : {conflict.get_status_display().lower()}.")
-    return redirect("conflicts")
+    return redirect("conflict_list")

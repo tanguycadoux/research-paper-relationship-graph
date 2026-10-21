@@ -24,18 +24,18 @@ class AccessTests(TestCase):
 
     def test_private_pages_redirect_to_login(self):
         pages = [
-            ("publication_add", []),
+            ("publication_create", []),
             ("publication_edit", [self.pub.pk]),
             ("publication_metadata", [self.pub.pk]),
             ("publication_merge", [self.pub.pk]),
             ("reference_identify", [self.pub.pk, 0]),
             ("author_edit", [self.author.pk]),
-            ("authors_merge_select", []),
+            ("author_merge_select", []),
             ("author_merge_confirm", [f"{self.author.pk},{self.other_author.pk}"]),
             ("author_duplicates", []),
-            ("conflicts", []),
-            ("my_references", []),
-            ("my_refs_graph", []),
+            ("conflict_list", []),
+            ("corpus", []),
+            ("corpus_graph", []),
         ]
         for name, args in pages:
             with self.subTest(page=name):
@@ -44,11 +44,11 @@ class AccessTests(TestCase):
 
     def test_actions_redirect_to_login_without_changing_anything(self):
         actions = [
-            ("add_publication_to_my_refs", [self.pub.pk], {}),
-            ("remove_publication_from_my_refs", [self.pub.pk], {}),
-            ("add_publication_to_user_refs_by_doi", [], {"doi": "10.1000/new"}),
-            ("publication_trigger_import", [self.pub.pk], {}),
-            ("resolve_conflict", [1], {}),
+            ("corpus_add", [self.pub.pk], {}),
+            ("corpus_remove", [self.pub.pk], {}),
+            ("corpus_add_by_doi", [], {"doi": "10.1000/new"}),
+            ("publication_refresh", [self.pub.pk], {}),
+            ("conflict_resolve", [1], {}),
             ("author_duplicates_dismiss", [], {}),
         ]
         for name, args, data in actions:
@@ -81,17 +81,34 @@ class CorpusIsolationTests(TestCase):
         self.client.force_login(self.alice)
 
     def test_my_references_lists_only_my_publications(self):
-        response = self.client.get(reverse("my_references"))
+        response = self.client.get(reverse("corpus"))
         self.assertEqual(list(response.context["publications"]), [self.mine])
 
+    def test_my_references_are_sorted_by_year_newest_first(self):
+        UserPublication.objects.create(
+            user=self.alice,
+            publication=Publication.objects.create(
+                title="Récent", publication_date=date(2024, 1, 1)
+            ),
+        )
+        UserPublication.objects.create(
+            user=self.alice,
+            publication=Publication.objects.create(
+                title="Ancien", publication_date=date(1999, 1, 1)
+            ),
+        )
+        response = self.client.get(reverse("corpus"))
+        titles = [pub.title for pub in response.context["publications"]]
+        self.assertEqual(titles, ["Récent", "Ancien", "Article d'Alice"])
+
     def test_my_graph_holds_only_my_corpus(self):
-        response = self.client.get(reverse("my_refs_graph"))
+        response = self.client.get(reverse("corpus_graph"))
         node_ids = [node["data"]["id"] for node in response.context["graph"]["nodes"]]
         self.assertEqual(node_ids, [str(self.mine.pk)])
 
     def test_removing_does_not_touch_the_corpus_of_others(self):
         UserPublication.objects.create(user=self.alice, publication=self.theirs)
-        self.client.post(reverse("remove_publication_from_my_refs", args=[self.theirs.pk]))
+        self.client.post(reverse("corpus_remove", args=[self.theirs.pk]))
         self.assertEqual(self.theirs.userpublication_set.get().user.username, "bob")
 
 
@@ -105,7 +122,7 @@ class EditionTests(TestCase):
             reverse("publication_edit", args=[pub.pk]),
             {"title": "Titre corrigé", "publication_date": "2026-08-01"},
         )
-        self.assertRedirects(response, reverse("publications_list"))
+        self.assertRedirects(response, reverse("publication_list"))
         pub.refresh_from_db()
         self.assertEqual((pub.title, pub.publication_date), ("Titre corrigé", date(2026, 8, 1)))
 

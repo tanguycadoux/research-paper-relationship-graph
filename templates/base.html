@@ -1,49 +1,58 @@
-{% load static tailwind_cli %}
+{% load static tailwind_cli ui navigation %}
 <!DOCTYPE html>
 <html lang="fr">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Gestionnaire de références</title>
+        <title>{% block title %}{% endblock title %}Gestionnaire de références</title>
         {% tailwind_css %}
-        <link rel="stylesheet" href="{% static 'style.css' %}">
         {% block head %}{% endblock head %}
     </head>
-    <body>
-        <header class="site-header">
-            {% if user.is_authenticated %}
-                <p>Bonjour {{ user.username }}</p>
-                <form action="{% url 'logout' %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit">Se déconnecter</button>
-                </form>
-            {% else %}
-                <a href="{% url 'login' %}">Se connecter</a>
-                <a href="{% url 'register' %}">Créer un compte</a>
-            {% endif %}
-            <hr>
-            <nav aria-label="Navigation principale">
-                {% block nav %}{% endblock nav %}
-            </nav>
+    <body class="flex min-h-screen flex-col bg-gray-50 text-gray-900 antialiased">
+        <a href="#contenu"
+           class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:shadow">Aller au contenu</a>
+        <header class="border-b border-gray-200 bg-white">
+            <div class="flex h-14 items-center justify-between gap-4 px-4">
+                <a href="{% url 'index' %}"
+                   class="flex items-center gap-2 font-semibold text-gray-900 no-underline">
+                    {% icon "hub" class="size-6 text-blue-700" %}
+                    <span class="sm:hidden">Références</span>
+                    <span class="hidden sm:inline">Gestionnaire de références</span>
+                </a>
+                <div class="flex items-center gap-2 text-sm">
+                    {% if user.is_authenticated %}
+                        {% url 'admin:index' as admin_url %}
+                        <span class="hidden text-gray-600 sm:inline">{{ user.username }}</span>
+                        {% if user.is_staff %}
+                            {% button "Administration" url=admin_url variant="secondary" icon="admin_panel_settings" icon_only=True %}
+                        {% endif %}
+                        <form action="{% url 'logout' %}" method="post">
+                            {% csrf_token %}
+                            {% button "Se déconnecter" variant="secondary" icon="logout" %}
+                        </form>
+                    {% else %}
+                        {% url 'login' as login_url %}
+                        {% url 'register' as register_url %}
+                        {% button "Se connecter" url=login_url variant="secondary" icon="login" %}
+                        {% button "Créer un compte" url=register_url icon="person_add" %}
+                    {% endif %}
+                </div>
+            </div>
         </header>
-        <main>
-            {% if messages %}
-                <section class="messages" aria-labelledby="messages-title">
-                    <h2 id="messages-title">Messages</h2>
-                    <ul>
-                        {% for message in messages %}
-                            <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>
-                                {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important :{% endif %}
-                                {{ message }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </section>
-            {% endif %}
-            {% block content %}{% endblock content %}
-        </main>
-        <aside class="admin-side-panel" aria-label="Administration">
-            <a href="{% url 'admin:index' %}" target="_blank">Admin</a>
-        </aside>
+        <div class="flex flex-1 flex-col md:flex-row">
+            {% main_navigation %}
+            <main id="contenu" class="flex min-w-0 flex-1 flex-col p-4 md:p-8">
+                <div class="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+                    {% if messages %}
+                        <div class="mb-6 space-y-2">
+                            {% for message in messages %}
+                                {% message_alert message %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% block content %}{% endblock content %}
+                </div>
+            </main>
+        </div>
     </body>
 </html>

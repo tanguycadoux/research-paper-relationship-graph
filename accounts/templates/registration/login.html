@@ -1,14 +1,22 @@
 {% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Connexion · {% endblock title %}
 
 {% block content %}
-
-    <h1>Connexion</h1>
-
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_div }}
-
-        <button type="submit">Se connecter</button>
-    </form>
-
-{% endblock %}
+    <div class="mx-auto max-w-md">
+        <header class="mb-6">
+            <h1>Connexion</h1>
+        </header>
+        {% card %}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {{ form.as_div }}
+                {% button "Se connecter" icon="login" %}
+            </form>
+        {% endcard %}
+        <p class="mt-4 text-sm text-gray-600">
+            Pas encore de compte ? <a href="{% url 'register' %}">Créer un compte</a>
+        </p>
+    </div>
+{% endblock content %}

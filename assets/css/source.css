@@ -2,6 +2,79 @@
 @layer theme, base, components, utilities;
 
 @import "tailwindcss/theme.css" layer(theme);
-/* Preflight (tailwindcss/preflight.css, layer base) comes with the template migration (#34):
-   until then, the current pages keep the browser defaults they are styled on. */
+@import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
+
+/* Default look of the content elements: the templates only add what differs. */
+@layer base {
+    h1 {
+        @apply text-2xl leading-tight font-semibold text-balance;
+    }
+
+    h2 {
+        @apply text-lg font-semibold;
+    }
+
+    a {
+        @apply text-blue-700 hover:underline;
+    }
+
+    table {
+        @apply w-full text-left text-sm;
+    }
+
+    thead {
+        @apply border-b border-gray-200 bg-gray-50 text-gray-600;
+    }
+
+    th,
+    td {
+        @apply px-3 py-2 align-top;
+    }
+
+    th {
+        @apply font-medium;
+    }
+
+    tbody tr + tr {
+        @apply border-t border-gray-100;
+    }
+
+    caption {
+        @apply px-3 py-2 text-left text-sm text-gray-500;
+    }
+}
+
+/* Default look of the form elements, whatever renders them (Django widgets included);
+   utilities in the templates still override it. */
+@layer base {
+    input:where(:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"])),
+    select,
+    textarea {
+        @apply block w-full max-w-xl rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm shadow-xs;
+        @apply focus:border-blue-600 focus:outline-2 focus:outline-blue-600/30;
+    }
+
+    input[type="file"] {
+        @apply block text-sm file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+        @apply size-4 accent-blue-700;
+    }
+
+    label,
+    legend {
+        @apply mb-1 block text-sm font-medium text-gray-800;
+    }
+
+    /* Django: help texts and error lists */
+    .helptext {
+        @apply mt-1 text-xs text-gray-500;
+    }
+
+    .errorlist {
+        @apply mt-1 text-sm text-red-700;
+    }
+}

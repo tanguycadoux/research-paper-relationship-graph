@@ -1,74 +1,88 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Fusionner des auteurs · {% endblock title %}
 
 {% block content %}
-    <article>
-        <header>
-            <h1>Fusionner {{ authors|length }} auteurs</h1>
-            <p>
-                Toutes leurs publications seront rattachées à un seul auteur. Les noms tels
-                que publiés restent conservés sur chaque publication, si bien que la fusion
-                résiste aux ré-imports.
-            </p>
-        </header>
+    <header class="mb-6">
+        <p class="text-sm text-gray-500">
+            <a href="{% url 'author_merge_select' %}">Combiner des auteurs</a>
+        </p>
+        <h1 class="mt-1">Fusionner {{ authors|length }} auteurs</h1>
+        <p class="mt-2 max-w-3xl text-gray-600">
+            Toutes leurs publications seront rattachées à un seul auteur. Les noms tels
+            que publiés restent conservés sur chaque publication, si bien que la fusion
+            résiste aux ré-imports.
+        </p>
+    </header>
 
+    <div class="space-y-8">
         <section aria-labelledby="merged-authors-title">
-            <h2 id="merged-authors-title">Auteurs fusionnés</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Auteur</th>
-                        <th scope="col">ORCID</th>
-                        <th scope="col">Publications</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for author in authors %}
+            <h2 id="merged-authors-title" class="mb-3">Auteurs fusionnés</h2>
+            {% card flush=True %}
+                <table>
+                    <thead>
                         <tr>
-                            <th scope="row">
-                                <a href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
-                            </th>
-                            <td>{{ author.orcid }}</td>
-                            <td>{{ author.publication_count }}</td>
+                            <th scope="col">Auteur</th>
+                            <th scope="col">ORCID</th>
+                            <th scope="col">Publications</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for author in authors %}
+                            <tr>
+                                <th scope="row" class="font-normal">
+                                    <a href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
+                                </th>
+                                <td class="text-gray-600">{{ author.orcid }}</td>
+                                <td>{{ author.publication_count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endcard %}
         </section>
 
         <section aria-labelledby="merged-identity-title">
             <h2 id="merged-identity-title">Identité après fusion</h2>
-            <p>Pour chaque champ, choisissez la valeur à conserver. La plus complète est proposée par défaut.</p>
-            <form method="post">
-                {% csrf_token %}
-                {{ form.non_field_errors }}
-                {% for choice, other in form.field_groups %}
-                    <fieldset>
-                        <legend>{{ choice.label }}</legend>
-                        {{ choice }}
-                        <p>
-                            <label for="{{ other.id_for_label }}">{{ other.label }}</label>
-                            {{ other }}
-                        </p>
-                        {{ choice.errors }}
-                    </fieldset>
-                {% endfor %}
-                {% if form.confirm_orcid_conflict %}
-                    <fieldset>
-                        <legend>ORCID différents</legend>
-                        <p>
-                            Ces auteurs ont des ORCID différents : ce sont en général deux personnes
-                            distinctes.
-                        </p>
-                        <p>
-                            {{ form.confirm_orcid_conflict }}
-                            <label for="{{ form.confirm_orcid_conflict.id_for_label }}">{{ form.confirm_orcid_conflict.label }}</label>
-                        </p>
-                        {{ form.confirm_orcid_conflict.errors }}
-                    </fieldset>
-                {% endif %}
-                <button type="submit">Fusionner</button>
-                <a href="{% url 'authors_merge_select' %}">Annuler</a>
-            </form>
+            <p class="mt-1 mb-3 text-sm text-gray-500">
+                Pour chaque champ, choisissez la valeur à conserver. La plus complète est proposée par défaut.
+            </p>
+            {% card %}
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {% for choice, other in form.field_groups %}
+                        <fieldset class="space-y-2">
+                            <legend>{{ choice.label }}</legend>
+                            <div class="text-sm">{{ choice }}</div>
+                            <div>
+                                <label for="{{ other.id_for_label }}" class="font-normal text-gray-600">{{ other.label }}</label>
+                                {{ other }}
+                            </div>
+                            {{ choice.errors }}
+                        </fieldset>
+                    {% endfor %}
+                    {% if form.confirm_orcid_conflict %}
+                        <fieldset class="space-y-2">
+                            <legend>ORCID différents</legend>
+                            {% alert "Ces auteurs ont des ORCID différents : ce sont en général deux personnes distinctes." variant="warning" %}
+                            <div class="flex items-center gap-2">
+                                {{ form.confirm_orcid_conflict }}
+                                <label for="{{ form.confirm_orcid_conflict.id_for_label }}" class="mb-0 font-normal">
+                                    {{ form.confirm_orcid_conflict.label }}
+                                </label>
+                            </div>
+                            {{ form.confirm_orcid_conflict.errors }}
+                        </fieldset>
+                    {% endif %}
+                    <div class="flex gap-2">
+                        {% button "Fusionner" icon="merge" %}
+                        {% url 'author_merge_select' as cancel_url %}
+                        {% button "Annuler" url=cancel_url variant="secondary" %}
+                    </div>
+                </form>
+            {% endcard %}
         </section>
-    </article>
+    </div>
 {% endblock content %}

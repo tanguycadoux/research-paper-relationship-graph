@@ -1,7 +1,14 @@
 {% extends "references/base.html" %}
 
+{% block title %}Graphe · {{ publication }} · {% endblock title %}
+
 {% block content %}
-    <h1>Graphe : {{ publication }}</h1>
+    <header class="mb-6">
+        <p class="text-sm text-gray-500">
+            <a href="{% url 'publication_detail' publication.pk %}">{{ publication }}</a>
+        </p>
+        <h1 class="mt-1">Graphe des citations</h1>
+    </header>
 
     {% include "references/_citation_graph.html" %}
 {% endblock content %}

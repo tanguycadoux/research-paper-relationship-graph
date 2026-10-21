@@ -1,7 +1,10 @@
 {% load static %}
 {% if graph.edges %}
-    <div id="citation-graph" class="citation-graph" role="img" aria-label="Graphe des citations"></div>
-    <p class="citation-graph__legend">
+    <div id="citation-graph"
+         class="min-h-96 flex-1 rounded-lg border border-gray-200 bg-white shadow-sm"
+         role="img"
+         aria-label="Graphe des citations"></div>
+    <p class="mt-2 text-sm text-gray-500">
         Axe horizontal : date de publication. En vert : articles sources ; en bleu : articles cités
         (plus clair = plus cité). Survolez un article pour voir son titre, cliquez pour l'ouvrir.
     </p>
@@ -9,5 +12,5 @@
     <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
     <script src="{% static 'references/citation_graph.js' %}"></script>
 {% else %}
-    <p>Aucune référence identifiée : rien à afficher.</p>
+    <p class="text-gray-600">Aucune référence identifiée : rien à afficher.</p>
 {% endif %}

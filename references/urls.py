@@ -15,8 +15,10 @@ from .views import (
 urlpatterns = [
     path("", home.index, name="index"),
     # Publications
-    path("publications/", publications.PublicationListView.as_view(), name="publications_list"),
-    path("publications/add/", publications.PublicationCreateView.as_view(), name="publication_add"),
+    path("publications/", publications.PublicationListView.as_view(), name="publication_list"),
+    path(
+        "publications/new/", publications.PublicationCreateView.as_view(), name="publication_create"
+    ),
     path(
         "publications/<int:pk>/",
         publications.PublicationDetailView.as_view(),
@@ -33,9 +35,9 @@ urlpatterns = [
         name="publication_metadata",
     ),
     path(
-        "publications/<int:pk>/import/",
+        "publications/<int:pk>/refresh/",
         publications.trigger_import_publication,
-        name="publication_trigger_import",
+        name="publication_refresh",
     ),
     path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
     path(
@@ -49,10 +51,10 @@ urlpatterns = [
         name="reference_identify",
     ),
     # Authors
-    path("authors/", authors.AuthorListView.as_view(), name="authors_list"),
+    path("authors/", authors.AuthorListView.as_view(), name="author_list"),
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
     path("authors/<int:pk>/edit/", authors.AuthorUpdateView.as_view(), name="author_edit"),
-    path("authors/merge/", authors.author_merge_select_view, name="authors_merge_select"),
+    path("authors/merge/", authors.author_merge_select_view, name="author_merge_select"),
     path("authors/duplicates/", authors.author_duplicates_view, name="author_duplicates"),
     path(
         "authors/duplicates/dismiss/",
@@ -60,34 +62,32 @@ urlpatterns = [
         name="author_duplicates_dismiss",
     ),
     path(
-        "authors/merge/confirm/<str:ids>/",
+        "authors/merge/<str:ids>/",
         authors.author_merge_confirm_view,
         name="author_merge_confirm",
     ),
     # Contradictions between sources
-    path("conflicts/", conflicts.conflicts_view, name="conflicts"),
-    path("conflicts/<int:pk>/resolve/", conflicts.resolve_conflict_view, name="resolve_conflict"),
+    path("conflicts/", conflicts.conflicts_view, name="conflict_list"),
+    path("conflicts/<int:pk>/resolve/", conflicts.resolve_conflict_view, name="conflict_resolve"),
     # Corpus of the current user
-    path("my-references/", corpus.my_references, name="my_references"),
-    path("my-references/graph/", graphs.my_refs_graph, name="my_refs_graph"),
-    path("my-references/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
+    path("corpus/", corpus.my_references, name="corpus"),
+    path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
+    path("corpus/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
+    path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
+    path("corpus/import/", corpus_transfer.import_json, name="corpus_import"),
     path(
-        "my-references/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"
-    ),
-    path("my-references/import/", corpus_transfer.import_json, name="corpus_import"),
-    path(
-        "my-references/add-by-doi/",
+        "corpus/add/",
         corpus.add_publication_to_user_refs_by_doi,
-        name="add_publication_to_user_refs_by_doi",
+        name="corpus_add_by_doi",
     ),
     path(
-        "my-references/<int:pk>/add/",
+        "corpus/<int:pk>/add/",
         corpus.add_to_user_refs,
-        name="add_publication_to_my_refs",
+        name="corpus_add",
     ),
     path(
-        "my-references/<int:pk>/remove/",
+        "corpus/<int:pk>/remove/",
         corpus.remove_from_user_refs,
-        name="remove_publication_from_my_refs",
+        name="corpus_remove",
     ),
 ]

@@ -59,7 +59,7 @@ class PublicationDetailView(DetailView):
 class PublicationCreateView(LoginRequiredMixin, CreateView):
     model = Publication
     form_class = PublicationForm
-    success_url = reverse_lazy("publications_list")
+    success_url = reverse_lazy("publication_list")
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -71,7 +71,7 @@ class PublicationCreateView(LoginRequiredMixin, CreateView):
 class PublicationUpdateView(LoginRequiredMixin, UpdateView):
     model = Publication
     form_class = PublicationForm
-    success_url = reverse_lazy("publications_list")
+    success_url = reverse_lazy("publication_list")
 
 
 @login_required

@@ -1,0 +1,19 @@
+{% load ui %}
+<nav aria-label="Navigation principale"
+     class="flex gap-1 overflow-x-auto border-b border-gray-200 bg-white px-3 py-2 md:block md:w-60 md:shrink-0 md:overflow-visible md:border-r md:border-b-0 md:py-4">
+    {% for title, links in groups %}
+        <p class="hidden px-2 pb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase md:block">{{ title }}</p>
+        <ul class="flex gap-1 md:block md:space-y-0.5 {% if not forloop.last %}md:mb-4{% endif %}">
+            {% for link in links %}
+                <li>
+                    <a href="{{ link.url }}"
+                       class="{{ link.classes }}"
+                       {% if link.current %}aria-current="{{ link.current }}"{% endif %}>
+                        {% icon link.icon %}
+                        {{ link.label }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</nav>

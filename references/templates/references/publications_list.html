@@ -1,52 +1,20 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Publications · {% endblock title %}
 
 {% block content %}
-    <h1>Liste des références</h1>
-
-    {% if user.is_authenticated %}
-        <p><a href="{% url 'publication_add' %}">Ajouter une publication</a></p>
-    {% endif %}
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1>Publications</h1>
+        {% if user.is_authenticated %}
+            {% url 'publication_create' as create_url %}
+            {% button "Ajouter une publication" url=create_url icon="add" %}
+        {% endif %}
+    </header>
 
     {% if publications %}
-        <table>
-            <thead>
-                <tr>
-                    {% if user.is_authenticated %}
-                        <th scope="col">Action</th>
-                    {% endif %}
-                    <th scope="col">Titre</th>
-                    <th scope="col">DOI</th>
-                    <th scope="col">Date de publication</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pub in publications %}
-                    <tr>
-                        {% if user.is_authenticated %}
-                            <td>
-                                {% if pub.id in user_pub_ids %}
-                                    <form method="post" action="{% url 'remove_publication_from_my_refs' pub.pk %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                        <button type="submit">- Enlever</button>
-                                    </form>
-                                {% else %}
-                                    <form method="post" action="{% url 'add_publication_to_my_refs' pub.pk %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                        <button type="submit">+ Ajouter</button>
-                                    </form>
-                                {% endif %}
-                            </td>
-                        {% endif %}
-                        <td><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></td>
-                        <td><a href="{% url 'publication_metadata' pub.pk %}" target="_blank">{{ pub.doi }}</a></td>
-                        <td>{{ pub.publication_date|default:"" }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% include "references/_publication_table.html" with caption="Publications de la base commune, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated %}
     {% else %}
-        <p>Base de données vide.</p>
+        <p class="text-gray-600">Aucune publication dans la base.</p>
     {% endif %}
 {% endblock content %}

@@ -1,30 +1,32 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Combiner des auteurs · {% endblock title %}
 
 {% block content %}
-    <h1>Fusionner des auteurs</h1>
+    <header class="mb-6">
+        <h1>Combiner des auteurs</h1>
+        <p class="mt-1 text-gray-600">Sélectionnez au moins deux auteurs à fusionner en un seul.</p>
+    </header>
 
-    <p>Sélectionnez les auteurs que vous souhaitez fusionner.</p>
-
-    <form method="post">
+    <form method="post" class="space-y-4">
         {% csrf_token %}
-
         {% if form.errors %}
-            <p>Veuillez sélectionner au moins deux auteurs.</p>
+            {% alert "Veuillez sélectionner au moins deux auteurs." variant="danger" %}
         {% endif %}
-
-        <button type="submit">
-            Continuer
-        </button>
-
-        <p>Auteurs :</p>
-
-        <div>
-            {% for subwidget in form.authors %}
-                <div>
-                    {{ subwidget.tag }}
-                    <label for="{{ subwidget.id_for_label }}">{{ subwidget.choice_label }}</label>
-                </div>
-            {% endfor %}
-        </div>
+        {% card flush=True %}
+            <fieldset>
+                <legend class="sr-only">Auteurs</legend>
+                <ul class="divide-y divide-gray-100 text-sm">
+                    {% for subwidget in form.authors %}
+                        <li class="flex items-center gap-3 px-4 py-2">
+                            {{ subwidget.tag }}
+                            <label for="{{ subwidget.id_for_label }}" class="mb-0 font-normal">{{ subwidget.choice_label }}</label>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </fieldset>
+        {% endcard %}
+        {% button "Continuer" icon="merge" %}
     </form>
 {% endblock content %}

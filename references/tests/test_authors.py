@@ -62,7 +62,7 @@ class AuthorMergeTests(AuthorViewsTestCase):
 
     def test_select_page_redirects_to_confirmation(self):
         response = self.client.post(
-            reverse("authors_merge_select"), {"authors": [self.ada.pk, self.ada_initial.pk]}
+            reverse("author_merge_select"), {"authors": [self.ada.pk, self.ada_initial.pk]}
         )
         self.assertRedirects(response, self.confirm_url, fetch_redirect_response=False)
 
@@ -117,4 +117,4 @@ class AuthorMergeTests(AuthorViewsTestCase):
 
     def test_less_than_two_valid_authors(self):
         url = reverse("author_merge_confirm", args=[f"{self.ada.pk},abc"])
-        self.assertRedirects(self.client.get(url), reverse("authors_merge_select"))
+        self.assertRedirects(self.client.get(url), reverse("author_merge_select"))

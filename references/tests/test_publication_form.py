@@ -21,7 +21,7 @@ class PublicationFormTests(TestCase):
 
     def test_creation_page_refuses_an_empty_form(self):
         self.client.force_login(get_user_model().objects.create_user("alice"))
-        response = self.client.post(reverse("publication_add"), {})
+        response = self.client.post(reverse("publication_create"), {})
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Publication.objects.exists())
 
@@ -31,19 +31,19 @@ class ListViewsTests(TestCase):
         Publication.objects.create(title="Ancien", publication_date=date(2000, 1, 1))
         Publication.objects.create(title="Récent", publication_date=date(2020, 1, 1))
         Publication.objects.create(doi="10.1000/untitled")
-        response = self.client.get(reverse("publications_list"))
+        response = self.client.get(reverse("publication_list"))
         self.assertEqual([str(p) for p in response.context["publications"]], ["Récent", "Ancien"])
 
     def test_creation_page_is_linked_for_logged_in_users(self):
-        url = reverse("publication_add")
-        self.assertNotContains(self.client.get(reverse("publications_list")), url)
+        url = reverse("publication_create")
+        self.assertNotContains(self.client.get(reverse("publication_list")), url)
         self.client.force_login(get_user_model().objects.create_user("alice"))
-        self.assertContains(self.client.get(reverse("publications_list")), url)
+        self.assertContains(self.client.get(reverse("publication_list")), url)
 
     def test_authors_are_listed_by_last_name(self):
         Author.objects.create(first_name="Alan", last_name="Turing")
         Author.objects.create(first_name="Ada", last_name="Lovelace")
-        response = self.client.get(reverse("authors_list"))
+        response = self.client.get(reverse("author_list"))
         self.assertEqual([a.last_name for a in response.context["authors"]], ["Lovelace", "Turing"])
 
 

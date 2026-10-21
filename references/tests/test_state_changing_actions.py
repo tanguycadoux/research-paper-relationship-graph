@@ -24,9 +24,9 @@ class StateChangingActionsTests(TestCase):
         return [
             reverse(name, args=[self.pub.pk])
             for name in (
-                "add_publication_to_my_refs",
-                "remove_publication_from_my_refs",
-                "publication_trigger_import",
+                "corpus_add",
+                "corpus_remove",
+                "publication_refresh",
             )
         ]
 
@@ -40,33 +40,33 @@ class StateChangingActionsTests(TestCase):
         self.assertTrue(UserPublication.objects.filter(user=self.user).exists())
 
     def test_add_returns_to_the_publication(self, add_to_corpus, import_publication):
-        response = self.client.post(reverse("add_publication_to_my_refs", args=[self.pub.pk]))
+        response = self.client.post(reverse("corpus_add", args=[self.pub.pk]))
         self.assertRedirects(response, reverse("publication_detail", args=[self.pub.pk]))
         add_to_corpus.assert_called_once_with(self.user, self.pub)
 
     def test_remove_returns_to_the_page_holding_the_button(self, add_to_corpus, import_publication):
         UserPublication.objects.create(user=self.user, publication=self.pub)
         response = self.client.post(
-            reverse("remove_publication_from_my_refs", args=[self.pub.pk]),
-            {"next": reverse("publications_list")},
+            reverse("corpus_remove", args=[self.pub.pk]),
+            {"next": reverse("publication_list")},
         )
-        self.assertRedirects(response, reverse("publications_list"))
+        self.assertRedirects(response, reverse("publication_list"))
         self.assertFalse(UserPublication.objects.filter(user=self.user).exists())
 
     def test_external_next_url_is_ignored(self, add_to_corpus, import_publication):
         response = self.client.post(
-            reverse("add_publication_to_my_refs", args=[self.pub.pk]),
+            reverse("corpus_add", args=[self.pub.pk]),
             {"next": "https://example.org/"},
         )
         self.assertRedirects(response, reverse("publication_detail", args=[self.pub.pk]))
 
     def test_refresh_imports_again(self, add_to_corpus, import_publication):
-        self.client.post(reverse("publication_trigger_import", args=[self.pub.pk]))
+        self.client.post(reverse("publication_refresh", args=[self.pub.pk]))
         import_publication.assert_called_once()
 
     def test_pages_hold_forms_instead_of_links(self, add_to_corpus, import_publication):
-        add_url = reverse("add_publication_to_my_refs", args=[self.pub.pk])
-        for name, args in (("publication_detail", [self.pub.pk]), ("publications_list", [])):
+        add_url = reverse("corpus_add", args=[self.pub.pk])
+        for name, args in (("publication_detail", [self.pub.pk]), ("publication_list", [])):
             with self.subTest(page=name):
                 response = self.client.get(reverse(name, args=args))
                 self.assertContains(response, f'<form method="post" action="{add_url}">')

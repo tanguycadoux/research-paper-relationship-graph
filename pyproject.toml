@@ -32,3 +32,5 @@ known-first-party = ["accounts", "config", "references"]
 
 [tool.djlint]
 profile = "django"
+# Block tags of references/templatetags/ui.py, indented like the built-in ones.
+custom_blocks = "card"

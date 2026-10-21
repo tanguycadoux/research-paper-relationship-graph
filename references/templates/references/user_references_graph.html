@@ -1,7 +1,12 @@
 {% extends "references/base.html" %}
 
+{% block title %}Mon graphe · {% endblock title %}
+
 {% block content %}
-    <h1>Mon graphe</h1>
+    <header class="mb-6">
+        <h1>Mon graphe</h1>
+        <p class="mt-1 text-gray-600">Les publications de mon corpus et celles qu'elles citent.</p>
+    </header>
 
     {% include "references/_citation_graph.html" %}
 {% endblock content %}

@@ -1,51 +1,56 @@
 {% extends "references/base.html" %}
-
+{% load ui %}
+{% block title %}Doublons probables · {% endblock title %}
 {% block content %}
-    <article>
-        <header>
-            <h1>Doublons probables</h1>
-            <p>
-                Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
-                Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
-                auteurs à écarter, puis passez à la fusion, ou indiquez que les auteurs cochés
-                sont des personnes différentes : ils ne seront plus proposés ensemble.
-            </p>
-        </header>
-
+    <header class="mb-6">
+        <h1>Doublons probables</h1>
+        <p class="mt-2 max-w-3xl text-gray-600">
+            Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
+            Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
+            auteurs à écarter, puis passez à la fusion, ou indiquez que les auteurs cochés
+            sont des personnes différentes : ils ne seront plus proposés ensemble.
+        </p>
+    </header>
+    <div class="space-y-6">
         {% for group in groups %}
-            <section aria-labelledby="duplicates-{{ forloop.counter }}-title">
-                <h2 id="duplicates-{{ forloop.counter }}-title">{{ group.0.last_name }}</h2>
-                <form method="post" action="{% url 'authors_merge_select' %}">
+            {% card title=group.0.last_name %}
+                <form method="post"
+                      action="{% url 'author_merge_select' %}"
+                      class="space-y-3">
                     {% csrf_token %}
                     {% if group.shared_organizations %}
-                        <p>
-                            <small>Tutelle commune à plusieurs d'entre eux : {{ group.shared_organizations|join:", " }}</small>
+                        <p class="text-sm text-gray-500">
+                            Tutelle commune à plusieurs d'entre eux : {{ group.shared_organizations|join:", " }}
                         </p>
                     {% endif %}
                     <fieldset>
-                        <legend>{{ group|length }} auteurs</legend>
-                        <ul>
+                        <legend class="sr-only">{{ group|length }} auteurs</legend>
+                        <ul class="space-y-1 text-sm">
                             {% for author in group %}
-                                <li>
-                                    <input type="checkbox" name="authors" value="{{ author.pk }}"
-                                           id="duplicate-{{ author.pk }}" checked>
-                                    <label for="duplicate-{{ author.pk }}">{{ author }}</label>
-                                    {% if author.orcid %}<small>(ORCID {{ author.orcid }})</small>{% endif %}
-                                    <small>
-                                        — <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize }}</a>
-                                    </small>
+                                <li class="flex flex-wrap items-center gap-2">
+                                    <input type="checkbox"
+                                           name="authors"
+                                           value="{{ author.pk }}"
+                                           id="duplicate-{{ author.pk }}"
+                                           checked>
+                                    <label for="duplicate-{{ author.pk }}" class="mb-0 font-normal">{{ author }}</label>
+                                    {% if author.orcid %}<span class="text-gray-500">ORCID {{ author.orcid }}</span>{% endif %}
+                                    <span class="text-gray-500">·
+                                        <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize }}</a>
+                                    </span>
                                 </li>
                             {% endfor %}
                         </ul>
                     </fieldset>
-                    <button type="submit">Fusionner…</button>
-                    <button type="submit" formaction="{% url 'author_duplicates_dismiss' %}">
-                        Ce ne sont pas les mêmes
-                    </button>
+                    <div class="flex flex-wrap gap-2">
+                        {% button "Fusionner…" icon="merge" %}
+                        {% url 'author_duplicates_dismiss' as dismiss_url %}
+                        {% button "Ce ne sont pas les mêmes" variant="secondary" formaction=dismiss_url %}
+                    </div>
                 </form>
-            </section>
+            {% endcard %}
         {% empty %}
-            <p>Aucun doublon probable.</p>
+            <p class="text-gray-600">Aucun doublon probable.</p>
         {% endfor %}
-    </article>
+    </div>
 {% endblock content %}
