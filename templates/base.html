@@ -1,10 +1,11 @@
-{% load static %}
+{% load static tailwind_cli %}
 <!DOCTYPE html>
 <html lang="fr">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Gestionnaire de références</title>
+        {% tailwind_css %}
         <link rel="stylesheet" href="{% static 'style.css' %}">
         {% block head %}{% endblock head %}
     </head>
