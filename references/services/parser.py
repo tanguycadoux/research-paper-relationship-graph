@@ -7,6 +7,7 @@ from .author_resolution import resolve_authors
 from .doi import is_valid_doi, normalize_doi
 from .metadata_formats import metadata_message
 from .orcid import normalize_orcid
+from .titles import clean_title
 
 
 def parse_publication(pub, parse_references=True):
@@ -35,7 +36,7 @@ def parse_title(pub, message):
     """
     titles = message.get("title", [])
     if titles and isinstance(titles, list):
-        pub.title = titles[0].strip()
+        pub.title = clean_title(titles[0])
 
 
 def parse_publication_date(pub, message):
@@ -153,7 +154,9 @@ def cited_publications(dois, refs):
     Return {doi: Publication} for the valid cited DOIs, creating the missing ones.
     Without a valid DOI, a reference stays unresolved (no empty Publication).
     """
-    titles = {doi: ref.get("article-title", "") for doi, ref in zip(dois, refs, strict=True)}
+    titles = {
+        doi: clean_title(ref.get("article-title", "")) for doi, ref in zip(dois, refs, strict=True)
+    }
     valid = {doi for doi in dois if is_valid_doi(doi)}
     existing = {pub.doi: pub for pub in Publication.objects.filter(doi__in=valid)}
     missing = [Publication(doi=doi, title=titles[doi]) for doi in valid - existing.keys()]
