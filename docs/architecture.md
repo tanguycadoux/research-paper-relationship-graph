@@ -297,3 +297,5 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Settings sensibles dans l'environnement, mode debug désactivé par défaut | Le dépôt est public ; un oubli de configuration doit échouer plutôt que tourner en debug avec une clé connue. |
 | 2026-10-21 | Suppression des publications uniquement depuis l'administration Django | Les publications sont communes à tous ; l'admin liste déjà ce qui part en cascade, sans code à maintenir (#77). |
 | 2026-10-21 | Références importées dès qu'une publication est dans au moins un corpus, conservées quand elle en sort | Elles font partie de la base commune et la réajouter ne coûte aucun appel (#23). |
+| 2026-10-21 | Export du corpus en JSON (identifiants, réimportable) et en BibTeX (export seul) | Le corpus d'un utilisateur se résume à ses DOI et ISBN ; les corrections appartiennent à la base commune. BibTeX pour Zotero et LaTeX, sans parseur à maintenir (#29). |
+| 2026-10-21 | LaTeX des titres conservé tel quel ; entités HTML et balisage JATS retirés | Aucune perte, utile à l'export BibTeX ; le rendu à l'écran relève de M9 (#107). |

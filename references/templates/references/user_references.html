@@ -9,6 +9,28 @@
         <button type="submit">Ajouter</button>
     </form>
 
+    <section aria-labelledby="transfer-title">
+        <h2 id="transfer-title">Exporter et importer</h2>
+        <p>
+            Exporter mon corpus :
+            <a href="{% url 'corpus_export_json' %}" download>JSON (réimportable)</a>,
+            <a href="{% url 'corpus_export_bibtex' %}" download>BibTeX</a>
+        </p>
+        {% if not_exportable %}
+            <p>
+                {{ not_exportable }} publication{{ not_exportable|pluralize }} sans DOI ni ISBN
+                ne figure{{ not_exportable|pluralize:"nt" }} pas dans les exports.
+            </p>
+        {% endif %}
+        <form method="post" action="{% url 'corpus_import' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="corpus-file">Importer un export JSON</label>
+            <input type="file" id="corpus-file" name="file" accept=".json,application/json" required>
+            <button type="submit">Importer</button>
+        </form>
+    </section>
+
+    <h2>Publications</h2>
     {% if publications %}
         <ul>
             {% for pub in publications %}

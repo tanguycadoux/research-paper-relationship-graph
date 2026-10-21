@@ -64,5 +64,6 @@ def my_references(request):
     pubs = Publication.objects.filter(userpublication__user=request.user)
     context = {
         "publications": pubs,
+        "not_exportable": pubs.filter(doi="", isbn="").count(),
     }
     return render(request, "references/user_references.html", context)
