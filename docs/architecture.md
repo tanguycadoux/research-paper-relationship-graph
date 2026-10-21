@@ -163,7 +163,10 @@ identiques, ou une initiale qui correspond à la première lettre de l'autre («
 membres : sinon, « J. » relierait « John » et « James ». Deux ORCID différents ne sont
 jamais regroupés, et deux auteurs qui ont le **même** ORCID le sont toujours, quelle que
 soit l'écriture de leurs noms. Les noms de famille sont comparés sans tenir compte des
-tirets ni de la ponctuation (« Correia-Machado » = « Correia Machado »). Les groupes qui comptent exactement un ORCID viennent en premier. La
+tirets ni de la ponctuation (« Correia-Machado » = « Correia Machado »). Une **tutelle commune** (organisation de plus haut niveau, par exemple le CEA)
+déclarée par au moins deux auteurs d'un groupe est affichée et fait remonter le groupe.
+Ce n'est qu'un indice : des organisations différentes ne séparent jamais deux auteurs,
+car les chercheurs changent de laboratoire. Les groupes qui comptent exactement un ORCID viennent en premier. La
 page renvoie vers la fusion habituelle, après qu'on a éventuellement décoché des auteurs.
 On peut aussi déclarer les auteurs cochés comme **personnes différentes**
 (`AuthorDistinction`, paire stockée une fois, avec qui l'a déclarée et quand) : la paire
