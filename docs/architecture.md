@@ -72,14 +72,18 @@ Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
 
 ## Import Crossref
 
-Cible (M3 : #7, #6, #51) :
-
-1. Une vue appelle **explicitement** le service d'import. Il n'y a plus de signal
-   `post_save` (#7).
-2. L'article est récupéré s'il n'a jamais été importé. On ne refait pas d'appel si
-   `crossref_fetched_at` est renseigné, sauf rafraîchissement demandé (#6).
-3. Les DOI cités, absents de la base, sont récupérés **par lots de 50** en une requête
-   (`/works?filter=doi:A,doi:B,…`, #51). Un article à 100 références coûte ainsi environ
+1. Les vues appellent **explicitement** les services : `services/corpus.add_to_corpus`
+   pour un ajout au corpus, quel que soit le chemin, et `services/importer.import_publication`
+   dans les autres cas. Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
+   de signal.
+2. Les métadonnées d'un article ne sont récupérées que si `crossref_fetched_at` est vide.
+   Le seul moyen de rappeler Crossref pour un article déjà récupéré est le bouton
+   « Rafraîchir depuis Crossref » (`force_fetch`).
+3. Pour un article du corpus, les références sont analysées, puis les articles cités
+   jamais récupérés sont importés, sans leurs propres références : on ne descend que d'un
+   niveau.
+4. **(cible, #51)** Ces articles cités sont récupérés **par lots de 50** en une requête
+   (`/works?filter=doi:A,doi:B,…`). Un article à 100 références coûtera ainsi environ
    3 requêtes au lieu de 101.
 
 **Décision : l'import est synchrone.** Grâce aux lots, il ne prend que quelques secondes
