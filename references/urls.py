@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import authors, cited_references, corpus, graphs, home, publications
+from .views import authors, cited_references, corpus, graphs, home, publication_merge, publications
 
 urlpatterns = [
     path("", home.index, name="index"),
@@ -33,6 +33,11 @@ urlpatterns = [
         name="publication_trigger_import",
     ),
     path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
+    path(
+        "publications/<int:pk>/merge/",
+        publication_merge.merge_publication,
+        name="publication_merge",
+    ),
     path(
         "publications/<int:pk>/references/<int:position>/identify/",
         cited_references.identify_reference,

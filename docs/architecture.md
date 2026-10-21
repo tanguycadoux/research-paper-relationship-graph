@@ -29,6 +29,7 @@ references/          application principale
     doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
     identification.py  identification manuelle des références
+    publication_merge.py  fusion d'une publication sans identifiant dans une autre
     importer.py      orchestration : récupération puis analyse
     parser.py        JSON Crossref vers modèles
     graph.py         construction des données des graphes
@@ -108,6 +109,16 @@ bien qu'il pourra passer en tâche de fond plus tard sans toucher au reste.
 Le client (`crossref_api.py`) s'identifie avec `CROSSREF_MAILTO` pour accéder au
 *polite pool*. Il respecte `Retry-After` sur les erreurs 429, retente les 5xx et les
 erreurs réseau, et ne retente jamais une 404 ni une 403.
+
+## Corrections manuelles
+
+- **Identifier une référence** (`identification.py`) : par DOI, par ISBN, ou en créant une
+  publication sans identifiant. La correction est tracée et survit aux ré-imports.
+- **« Cette publication est en fait… »** (`publication_merge.py`) : une publication sans
+  DOI ni ISBN peut être fusionnée dans une autre, désignée par un DOI, un ISBN ou le lien
+  de sa page. Ses citations sont reportées et marquées comme corrections manuelles, ses
+  entrées de corpus sont reportées sans doublon, puis elle est supprimée. Une publication
+  identifiée ne peut pas être fusionnée de cette façon.
 
 ## Livres et ISBN
 

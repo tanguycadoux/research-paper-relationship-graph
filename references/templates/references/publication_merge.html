@@ -1,0 +1,59 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <article>
+        <header>
+            <h1>Cette publication est en fait…</h1>
+            <p>
+                Publication sans identifiant :
+                <a href="{% url 'publication_detail' duplicate.pk %}">{{ duplicate }}</a>
+            </p>
+        </header>
+
+        {% if target %}
+            <section aria-labelledby="merge-summary-title">
+                <h2 id="merge-summary-title">Confirmer la fusion</h2>
+                <p>
+                    « {{ duplicate }} » sera fusionnée dans
+                    <a href="{% url 'publication_detail' target.pk %}">{{ target }}</a>
+                    {% if target.doi %}(DOI {{ target.doi }}){% elif target.isbn %}(ISBN {{ target.isbn }}){% endif %}.
+                </p>
+                <ul>
+                    <li>{{ summary.citations }} citation(s) pointeront vers cette publication ;</li>
+                    <li>{{ summary.corpus_entries }} entrée(s) de corpus seront reportées ;</li>
+                    {% if summary.own_references or summary.authors %}
+                        <li>
+                            seront perdus : {{ summary.own_references }} référence(s) et
+                            {{ summary.authors }} auteur(s) propres à la publication fusionnée ;
+                        </li>
+                    {% endif %}
+                    <li>la publication sans identifiant sera supprimée.</li>
+                </ul>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="target" value="{{ form.cleaned_data.target }}">
+                    <input type="hidden" name="confirm" value="True">
+                    <button type="submit">Fusionner</button>
+                    <a href="{% url 'publication_merge' duplicate.pk %}">Choisir une autre publication</a>
+                </form>
+            </section>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <p>
+                    <label for="{{ form.target.id_for_label }}">{{ form.target.label }}</label>
+                    {{ form.target }}
+                </p>
+                {{ form.target.errors }}
+                <p>
+                    <small>
+                        Un DOI ou un ISBN inconnu de la base est d'abord importé (Crossref, ou
+                        Open Library pour un ISBN). Pour une publication de l'application, collez
+                        le lien de sa page.
+                    </small>
+                </p>
+                <button type="submit">Continuer</button>
+            </form>
+        {% endif %}
+    </article>
+{% endblock content %}
