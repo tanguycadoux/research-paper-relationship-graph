@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from ..forms import PublicationForm
 from ..models import Publication, UserPublication
 from ..services.importer import import_publication
+from ..services.publication_details import crossref_details
 
 
 class PublicationListView(ListView):
@@ -49,6 +50,7 @@ class PublicationDetailView(DetailView):
             context["belongs_to_user"] = False
 
         context["cited_references"] = pub.cited_references.select_related("target")
+        context["details"] = crossref_details(pub)
         return context
 
 

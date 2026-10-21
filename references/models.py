@@ -156,13 +156,20 @@ class CitedReference(models.Model):
         """Best human-readable description of the cited work."""
         if self.target:
             return str(self.target)
-        return (
-            self.unstructured
-            or self.raw.get("article-title")
-            or self.raw.get("volume-title")
-            or self.raw.get("journal-title")
-            or self.key
-        )
+        return self.unstructured or self.structured_description() or "Référence sans description"
+
+    def structured_description(self):
+        """'Author (year). Title. Journal volume, p. page' from the Crossref fields."""
+        raw = self.raw
+        title = raw.get("article-title") or raw.get("volume-title") or raw.get("series-title")
+        source = " ".join(filter(None, [raw.get("journal-title"), raw.get("volume")]))
+        if raw.get("first-page"):
+            source = ", ".join(filter(None, [source, f"p. {raw['first-page']}"]))
+        year = f"({raw['year']})" if raw.get("year") else ""
+        author = raw.get("author", "")
+        if author:
+            return ". ".join(filter(None, [f"{author} {year}".strip(), title, source]))
+        return " ".join(filter(None, [". ".join(filter(None, [title, source])), year]))
 
 
 class UserPublication(models.Model):
