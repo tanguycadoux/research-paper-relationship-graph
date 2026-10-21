@@ -27,11 +27,6 @@ urlpatterns = [
         name="publication_edit",
     ),
     path(
-        "publications/<int:pk>/delete/",
-        publications.PublicationDeleteView.as_view(),
-        name="publication_delete",
-    ),
-    path(
         "publications/<int:pk>/metadata/",
         publications.publication_metadata,
         name="publication_metadata",

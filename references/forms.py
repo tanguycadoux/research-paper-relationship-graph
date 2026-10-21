@@ -21,6 +21,12 @@ class PublicationForm(forms.ModelForm):
         for field in self.fields.values():
             field.required = False
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if not any(cleaned_data.get(name) for name in ("doi", "isbn", "title")):
+            raise forms.ValidationError("Indiquez au moins un DOI, un ISBN ou un titre.")
+        return cleaned_data
+
     def clean_isbn(self):
         isbn = normalize_isbn(self.cleaned_data["isbn"])
         if isbn and not is_valid_isbn(isbn):

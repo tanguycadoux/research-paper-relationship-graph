@@ -3,6 +3,10 @@
 {% block content %}
     <h1>Liste des références</h1>
 
+    {% if user.is_authenticated %}
+        <p><a href="{% url 'publication_add' %}">Ajouter une publication</a></p>
+    {% endif %}
+
     {% if publications %}
         <table>
             <thead>
@@ -21,9 +25,17 @@
                         {% if user.is_authenticated %}
                             <td>
                                 {% if pub.id in user_pub_ids %}
-                                    <a href="{% url 'remove_publication_from_my_refs' pub.pk %}">- Enlever</a>
+                                    <form method="post" action="{% url 'remove_publication_from_my_refs' pub.pk %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit">- Enlever</button>
+                                    </form>
                                 {% else %}
-                                    <a href="{% url 'add_publication_to_my_refs' pub.pk %}">+ Ajouter</a>
+                                    <form method="post" action="{% url 'add_publication_to_my_refs' pub.pk %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit">+ Ajouter</button>
+                                    </form>
                                 {% endif %}
                             </td>
                         {% endif %}
