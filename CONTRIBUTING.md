@@ -10,9 +10,31 @@
 ## Organisation du travail
 
 - Tout problème repéré et toute fonctionnalité à ajouter fait l'objet d'une issue.
-- Les issues sont regroupées par milestone. Pendant le travail sur une milestone, on peut y ajouter des issues si elles servent son objectif, mais on reste dans son sujet.
+- Les issues sont regroupées par milestone. Le titre d'une milestone est préfixé par son numéro d'ordre (`M1 - …`, `M2 - …`). Pendant le travail sur une milestone, on peut y ajouter des issues si elles servent son objectif, mais on reste dans son sujet.
 - On ne pousse jamais directement sur `main`. Chaque issue est traitée dans une branche (`fix/…`, `feat/…`, `chore/…`), puis fusionnée par une pull request qui la référence (`Closes #n`).
 - Des branches peuvent avancer en parallèle si elles ne touchent pas les mêmes fichiers, pour éviter les conflits de merge.
+- `main` est protégée : pas de push direct, la CI doit passer, et une branche doit être à jour avec `main` avant le merge (bouton « Update branch »).
+
+## Messages de commit
+
+Les messages suivent [Conventional Commits](https://www.conventionalcommits.org/fr/). Le type et la portée sont en anglais, la description en français :
+
+```
+<type>(<portée optionnelle>): <description>
+
+<corps optionnel>
+
+Closes #n
+```
+
+Types utilisés : `feat` (fonctionnalité), `fix` (correction de bug), `refactor`, `test`, `docs`, `style` (mise en forme sans changement de code), `chore` (outillage, dépendances, dépôt), `ci`, `perf`.
+
+Exemples :
+- `feat(crossref): identifier l'application via mailto`
+- `fix(authors): éviter l'IntegrityError lors d'une fusion`
+- `chore: retirer .venv du suivi git`
+
+Un changement incompatible est signalé par `!` après le type (`feat!: …`), avec une ligne `BREAKING CHANGE: …` dans le corps.
 
 ## Linter
 
