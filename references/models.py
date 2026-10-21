@@ -46,6 +46,7 @@ class ExternalRecord(models.Model):
     class Source(models.TextChoices):
         CROSSREF = "crossref", "Crossref"
         DATACITE = "datacite", "DataCite"
+        OPENALEX = "openalex", "OpenAlex"
         OPENLIBRARY = "openlibrary", "Open Library"
 
     publication = models.ForeignKey(

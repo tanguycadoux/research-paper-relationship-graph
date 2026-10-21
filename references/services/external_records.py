@@ -17,6 +17,11 @@ def store_record(pub, source, data):
     )
 
 
+def has_record(pub, source):
+    """True if the source already answered about pub (even 'unknown')."""
+    return pub.external_records.filter(source=source).exists()
+
+
 def has_metadata(pub):
     return pub.external_records.filter(data__isnull=False).exists()
 
