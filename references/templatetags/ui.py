@@ -4,7 +4,7 @@ Interface components: {% load ui %}, then
     {% button "Fusionner" %}
     {% button "Supprimer" variant="danger" icon="delete" %}
     {% button "Fermer" icon="close" icon_only=True type="button" %}
-    {% button_link "Voir la fiche" url=… variant="secondary" %}
+    {% button "Voir la fiche" url=… variant="secondary" %}   (a link: <a href>)
     {% badge "12 à identifier" variant="warning" %}
     {% alert "Import terminé." variant="success" %}
     {% card title="Informations" %}…{% endcard %}
@@ -88,35 +88,39 @@ def icon(name, **attrs):
     )
 
 
-def labelled_content(label, icon_name, icon_only):
-    """Context shared by buttons and button links: an icon alone needs an accessible label."""
-    if not label:
-        raise template.TemplateSyntaxError("Un bouton a toujours un libellé.")
-    if icon_only and not icon_name:
-        raise template.TemplateSyntaxError("icon_only demande une icône.")
-    return {"label": label, "icon": icon_name, "icon_only": icon_only}
+BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value")
 
 
 @register.inclusion_tag("components/button.html")
-def button(
-    label, variant="primary", icon=None, icon_only=False, type="submit", formaction="", **attrs
-):
+def button(label, url="", variant="primary", icon=None, icon_only=False, **attrs):
+    """
+    A button, or a link styled as a button when it has a url: <a> navigates,
+    <button> acts. type (submit by default), formaction, name and value only
+    make sense on a <button>.
+    """
+    if not label:
+        raise template.TemplateSyntaxError("Un bouton a toujours un libellé.")
+    if icon_only and not icon:
+        raise template.TemplateSyntaxError("icon_only demande une icône.")
+    unknown = attrs.keys() - set(BUTTON_ONLY_ATTRIBUTES)
+    if unknown:
+        raise template.TemplateSyntaxError(
+            f"button : paramètre inconnu {', '.join(sorted(unknown))}."
+        )
+    if url and attrs:
+        raise template.TemplateSyntaxError(
+            f"button : {', '.join(sorted(attrs))} sans effet sur un lien (url={url!r})."
+        )
     return {
-        **labelled_content(label, icon, icon_only),
+        "label": label,
+        "url": url,
+        "icon": icon,
+        "icon_only": icon_only,
         "classes": f"{BUTTON_BASE} {variant_classes('button', BUTTON_VARIANTS, variant)}",
-        "type": type,
-        "formaction": formaction,
+        "type": attrs.get("type", "submit"),
+        "formaction": attrs.get("formaction", ""),
         "name": attrs.get("name", ""),
         "value": attrs.get("value", ""),
-    }
-
-
-@register.inclusion_tag("components/button_link.html")
-def button_link(label, url, variant="primary", icon=None, icon_only=False):
-    return {
-        **labelled_content(label, icon, icon_only),
-        "classes": f"{BUTTON_BASE} {variant_classes('button_link', BUTTON_VARIANTS, variant)}",
-        "url": url,
     }
 
 

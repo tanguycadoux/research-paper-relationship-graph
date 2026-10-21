@@ -76,17 +76,25 @@ class ButtonTests(SimpleTestCase):
             '{% button "X" variant="rouge" %}',
             '{% button "" %}',
             '{% button "X" icon_only=True %}',
+            '{% button "X" colour="red" %}',
+            '{% button "X" url="/a/" type="button" %}',
+            '{% button "X" url="/a/" formaction="/b/" %}',
         ):
             with self.subTest(source=source), self.assertRaises(TemplateSyntaxError):
                 render(source)
 
-
-class OtherComponentsTests(SimpleTestCase):
-    def test_button_link(self):
-        html = render('{% button_link "Voir la fiche" url="/authors/1/" variant="secondary" %}')
+    def test_with_a_url_the_button_is_a_link(self):
+        html = render('{% button "Voir la fiche" url="/authors/1/" variant="secondary" %}')
         self.assertIn('<a href="/authors/1/"', html)
         self.assertIn(BUTTON_VARIANTS["secondary"], html)
+        self.assertNotIn("<button", html)
 
+    def test_icon_only_link_keeps_an_accessible_label(self):
+        html = render('{% button "Modifier" url="/x/" icon="edit" icon_only=True %}')
+        self.assertIn('aria-label="Modifier"', html)
+
+
+class OtherComponentsTests(SimpleTestCase):
     def test_badge_variants(self):
         for variant, classes in BADGE_VARIANTS.items():
             with self.subTest(variant=variant):
