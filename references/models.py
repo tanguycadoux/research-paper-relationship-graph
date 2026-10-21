@@ -96,6 +96,16 @@ class CitedReference(models.Model):
     doi = models.CharField(max_length=255, blank=True)
     unstructured = models.TextField(blank=True)
     raw = models.JSONField(default=dict, blank=True)
+    # Manual identification: kept when the source publication is imported again.
+    resolved_manually = models.BooleanField(default=False)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["position"]

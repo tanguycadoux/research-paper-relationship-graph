@@ -50,7 +50,7 @@ class CitationGraphTests(TestCase):
         self.assertEqual(nodes["Cité"]["url"], reverse("publication_detail", args=[self.cited.pk]))
 
     def test_corpus_graph_merges_the_corpus_publications(self):
-        user = get_user_model().objects.create_user("alice", password="secret")
+        user = get_user_model().objects.create_user("alice")
         UserPublication.objects.create(user=user, publication=self.source)
         UserPublication.objects.create(user=user, publication=self.other)
         graph = corpus_graph(user)
