@@ -2,6 +2,8 @@ from datetime import date
 
 from references.models import Author, AuthorPublication, Publication, PublicationReference
 
+from .doi import is_valid_doi, normalize_doi
+
 
 def parse_publication(pub, parse_references=True):
     """
@@ -99,8 +101,8 @@ def parse_references_list(pub, message):
         except ValueError:
             ref_key = 0
 
-        normalized_doi = doi.lower().strip()
-        if normalized_doi:
+        normalized_doi = normalize_doi(doi)
+        if is_valid_doi(normalized_doi):
             target_pub, _ = Publication.objects.get_or_create(
                 doi=normalized_doi,
                 defaults={

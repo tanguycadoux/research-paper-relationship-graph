@@ -36,12 +36,15 @@ Exemples :
 
 Un changement incompatible est signalé par `!` après le type (`feat!: …`), avec une ligne `BREAKING CHANGE: …` dans le corps.
 
-## Linter
+## Linter et tests
 
 ```bash
 pip install -r requirements-dev.txt
 ruff check .
 ruff format .
+python manage.py test
 ```
 
-La CI (GitHub Actions) lance `ruff check` et `ruff format --check` sur chaque pull request.
+Les tests ne font aucun appel réseau : les appels à Crossref sont simulés avec `unittest.mock`.
+
+La CI (GitHub Actions) lance `ruff check`, `ruff format --check` et `python manage.py test` sur chaque pull request.

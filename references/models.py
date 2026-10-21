@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
 
+from .services.doi import normalize_doi
+
 
 class Publication(models.Model):
     doi = models.CharField(max_length=100, blank=True)
@@ -24,8 +26,7 @@ class Publication(models.Model):
         return self.title or self.doi or f"PK : {self.pk}"
 
     def save(self, *args, **kwargs):
-        if self.doi:
-            self.doi = self.doi.lower().replace("https://doi.org/", "").strip()
+        self.doi = normalize_doi(self.doi)
         super().save(*args, **kwargs)
 
 
