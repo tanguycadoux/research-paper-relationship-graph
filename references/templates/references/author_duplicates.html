@@ -17,6 +17,11 @@
                 <h2 id="duplicates-{{ forloop.counter }}-title">{{ group.0.last_name }}</h2>
                 <form method="post" action="{% url 'authors_merge_select' %}">
                     {% csrf_token %}
+                    {% if group.shared_organizations %}
+                        <p>
+                            <small>Tutelle commune à plusieurs d'entre eux : {{ group.shared_organizations|join:", " }}</small>
+                        </p>
+                    {% endif %}
                     <fieldset>
                         <legend>{{ group|length }} auteurs</legend>
                         <ul>

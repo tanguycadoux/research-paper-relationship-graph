@@ -3,13 +3,14 @@ Suggestion of probable duplicate authors: same family name, compatible given
 names ('A.' / 'Ada', 'J.-L.' / 'Jean Luc'), never two different ORCIDs.
 """
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from django.db.models import Count
 
-from ..models import Author
+from ..models import Author, AuthorPublication
 from .author_distinctions import distinct_pairs, ordered_pair
 from .names import name_parts, normalized
+from .organizations import top_levels
 
 
 def duplicate_groups():
@@ -17,12 +18,45 @@ def duplicate_groups():
     authors = Author.objects.annotate(publication_count=Count("publications", distinct=True))
     declared_distinct = distinct_pairs()
     groups = [
-        group
+        DuplicateGroup(group)
         for same_family in by_family_name(authors).values()
         for group in compatible_groups(same_family, declared_distinct)
         if len(group) > 1
     ]
+    add_shared_organizations(groups)
     return sorted(groups, key=group_priority)
+
+
+class DuplicateGroup(list):
+    """Probable duplicates, with the top-level organizations shared by several of them."""
+
+    shared_organizations = ()
+
+
+def add_shared_organizations(groups):
+    """
+    A top-level organization (the CEA) declared by at least two authors of a group
+    strengthens the suggestion. It is only an indication: researchers change
+    laboratories, so different organizations never separate two authors.
+    """
+    organizations = top_level_organizations({a.pk for group in groups for a in group})
+    for group in groups:
+        counts = Counter(org for author in group for org in organizations[author.pk])
+        group.shared_organizations = sorted(
+            (org for org, count in counts.items() if count > 1), key=lambda o: o.name
+        )
+
+
+def top_level_organizations(author_pks):
+    """{author pk: set of top-level organizations declared on its publications}."""
+    slots = AuthorPublication.objects.filter(author_id__in=author_pks).prefetch_related(
+        "organizations__ancestors__ancestors"
+    )
+    organizations = defaultdict(set)
+    for slot in slots:
+        for organization in slot.organizations.all():
+            organizations[slot.author_id].update(top_levels(organization))
+    return organizations
 
 
 def by_family_name(authors):
@@ -72,6 +106,10 @@ def compatible_given_names(first, second):
 
 
 def group_priority(group):
-    """Exactly one ORCID first (the most useful merges), then the largest groups."""
+    """
+    Exactly one ORCID first (the most useful merges), then a shared organization,
+    then the largest groups.
+    """
     orcids = {author.orcid for author in group if author.orcid}
-    return (len(orcids) != 1, -len(group), normalized(group[0].last_name))
+    shared = bool(group.shared_organizations)
+    return (len(orcids) != 1, not shared, -len(group), normalized(group[0].last_name))
