@@ -1,51 +1,48 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Gestionnaire de références</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'style.css' %}">
-    {% block head %}{% endblock head %}
-</head>
-
-<body>
-    <nav>
-        {% if user.is_authenticated %}
-            <p>Bonjour {{ user.username }}</p>
-            
-            <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="submit">
-                    Se déconnecter
-                </button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}">Se connecter</a>
-            <a href="{% url 'register' %}">Créer un compte</a>
-        {% endif %}
-
-        <hr>
-
-        {% block nav %}{% endblock nav %}
-    </nav>
-    <div>
-        {% block content %}{% endblock content %}
-    </div>
-    <div class="admin-side-panel">
-        <a href="{% url 'admin:index' %}" target="_blank">Admin</a>
-    </div>
-
-    {% if messages %}
-        <div class="messages">
-            <h2>Messages</h2>
-            <ul>
-                {% for message in messages %}
-                    <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>
-                        {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important: {% endif %}
-                        {{ message }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
-</body>
+<html lang="fr">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Gestionnaire de références</title>
+        <link rel="stylesheet" href="{% static 'style.css' %}">
+        {% block head %}{% endblock head %}
+    </head>
+    <body>
+        <header class="site-header">
+            {% if user.is_authenticated %}
+                <p>Bonjour {{ user.username }}</p>
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Se déconnecter</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Se connecter</a>
+                <a href="{% url 'register' %}">Créer un compte</a>
+            {% endif %}
+            <hr>
+            <nav aria-label="Navigation principale">
+                {% block nav %}{% endblock nav %}
+            </nav>
+        </header>
+        <main>
+            {% if messages %}
+                <section class="messages" aria-labelledby="messages-title">
+                    <h2 id="messages-title">Messages</h2>
+                    <ul>
+                        {% for message in messages %}
+                            <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>
+                                {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}Important :{% endif %}
+                                {{ message }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
+            {% block content %}{% endblock content %}
+        </main>
+        <aside class="admin-side-panel" aria-label="Administration">
+            <a href="{% url 'admin:index' %}" target="_blank">Admin</a>
+        </aside>
+    </body>
 </html>

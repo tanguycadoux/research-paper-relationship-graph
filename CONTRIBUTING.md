@@ -42,9 +42,12 @@ Un changement incompatible est signalé par `!` après le type (`feat!: …`), a
 pip install -r requirements-dev.txt
 ruff check .
 ruff format .
+djlint --lint templates references/templates accounts/templates
 python manage.py test
 ```
 
+Les templates suivent HTML5 : `lang="fr"`, balises sémantiques (`<header>`, `<nav>`, un seul `<main>`, `<aside>`…), pas de style inline. djLint vérifie une partie de ces règles. Après un changement de structure, validez aussi une page rendue avec le [validateur W3C](https://validator.w3.org/nu/).
+
 Les tests ne font aucun appel réseau : les appels à Crossref sont simulés avec `unittest.mock`. Le test runner (`config/test_runner.py`) fait échouer toute tentative de connexion, ce qui révèle un appel oublié.
 
-La CI (GitHub Actions) lance `ruff check`, `ruff format --check` et `python manage.py test` sur chaque pull request.
+La CI (GitHub Actions) lance `ruff check`, `ruff format --check`, `djlint --lint` et `python manage.py test` sur chaque pull request.

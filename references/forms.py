@@ -13,7 +13,10 @@ class PublicationForm(forms.ModelForm):
     class Meta:
         model = Publication
         fields = ["doi", "isbn", "title", "publication_date"]
-        widgets = {"publication_date": forms.DateInput(attrs={"type": "date"})}
+        widgets = {
+            # <input type="date"> needs ISO dates, whatever the locale.
+            "publication_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1,4 +1,4 @@
-{% extends 'references/base.html' %}
+{% extends "references/base.html" %}
 
 {% block content %}
     <h1>{{ publication.title }}</h1>
@@ -9,7 +9,7 @@
     {% if publication.isbn %}
         <p>ISBN : {{ publication.isbn }}</p>
     {% endif %}
-    <p><small>{{ publication.publication_date }}</small></p>
+    {% if publication.publication_date %}<p><small>{{ publication.publication_date }}</small></p>{% endif %}
     <section aria-labelledby="authors-title">
         <h2 id="authors-title">Auteurs</h2>
         <ol>
