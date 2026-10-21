@@ -30,6 +30,33 @@ pip install -r requirements.txt
 
 ## Configuration
 
+La configuration sensible se lit dans des variables d'environnement, jamais dans le code :
+le dépôt est public.
+
+| Variable | Rôle |
+|---|---|
+| `DJANGO_DEBUG` | `1` en développement local. Absente, le mode debug est désactivé. |
+| `DJANGO_SECRET_KEY` | Clé secrète de Django, obligatoire hors mode debug. |
+| `DJANGO_ALLOWED_HOSTS` | Noms de domaine servis, séparés par des virgules (inutile en local). |
+| `CROSSREF_MAILTO` | Adresse de contact pour Crossref et OpenAlex (voir plus bas). |
+
+Sur une machine de développement, il suffit de `DJANGO_DEBUG` :
+
+```powershell
+# Windows (PowerShell), de façon permanente (nouveau terminal nécessaire)
+setx DJANGO_DEBUG 1
+```
+
+```bash
+# Linux / macOS (à ajouter dans ~/.bashrc)
+export DJANGO_DEBUG=1
+```
+
+Pour un déploiement, générez une clé avec
+`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`.
+
+### Adresse de contact Crossref
+
 L'application interroge les API de Crossref, DataCite et OpenAlex. L'adresse ci-dessous sert de contact pour Crossref et OpenAlex. Pour bénéficier du *polite pool*
 (10 requêtes/s au lieu de 5, et un service plus stable), il faut fournir une adresse
 e-mail de contact dans la variable d'environnement `CROSSREF_MAILTO`. Ne la mettez pas
