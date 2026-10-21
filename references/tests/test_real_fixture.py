@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from references.models import CitedReference, Publication
 from references.services.parser import parse_publication
+from references.tests.helpers import with_crossref
 
 FIXTURE = Path(__file__).parent / "fixtures" / "crossref_nature14539.json"
 
@@ -15,7 +16,7 @@ class RealCrossrefResponseTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.pub = Publication.objects.create(doi="10.1038/nature14539")
-        cls.pub.crossref_json = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        with_crossref(cls.pub, json.loads(FIXTURE.read_text(encoding="utf-8")))
         parse_publication(cls.pub)
         cls.pub.refresh_from_db()
 

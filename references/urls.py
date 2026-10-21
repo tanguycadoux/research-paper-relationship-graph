@@ -23,9 +23,9 @@ urlpatterns = [
         name="publication_delete",
     ),
     path(
-        "publications/<int:pk>/crossref/",
-        publications.fetch_crossref,
-        name="publication_crossref",
+        "publications/<int:pk>/metadata/",
+        publications.publication_metadata,
+        name="publication_metadata",
     ),
     path(
         "publications/<int:pk>/import/",

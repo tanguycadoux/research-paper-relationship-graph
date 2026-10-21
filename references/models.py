@@ -10,10 +10,6 @@ class Publication(models.Model):
     isbn = models.CharField("ISBN", max_length=13, blank=True)
     title = models.TextField(blank=True)
     publication_date = models.DateField(null=True, blank=True)
-    crossref_json = models.JSONField(null=True, blank=True)
-    crossref_fetched_at = models.DateTimeField(null=True, blank=True)
-    openlibrary_json = models.JSONField(null=True, blank=True)
-    openlibrary_fetched_at = models.DateTimeField(null=True, blank=True)
     authors = models.ManyToManyField(
         "Author", through="AuthorPublication", related_name="publications", blank=True
     )
@@ -39,6 +35,34 @@ class Publication(models.Model):
         self.doi = normalize_doi(self.doi)
         self.isbn = normalize_isbn(self.isbn)
         super().save(*args, **kwargs)
+
+
+class ExternalRecord(models.Model):
+    """
+    Answer of an external source about a publication, stored as is. data is None
+    when the source answered that it does not know the publication.
+    """
+
+    class Source(models.TextChoices):
+        CROSSREF = "crossref", "Crossref"
+        OPENLIBRARY = "openlibrary", "Open Library"
+
+    publication = models.ForeignKey(
+        Publication, on_delete=models.CASCADE, related_name="external_records"
+    )
+    source = models.CharField(max_length=20, choices=Source.choices)
+    data = models.JSONField(null=True, blank=True)
+    fetched_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["publication", "source"], name="unique_record_per_source"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.publication} – {self.get_source_display()}"
 
 
 class Author(models.Model):

@@ -8,6 +8,7 @@ from references.forms import IdentifyReferenceForm
 from references.models import CitedReference, Publication
 from references.services import identification
 from references.services.parser import parse_publication
+from references.tests.helpers import with_crossref
 
 BOOK = {"key": "ref1", "unstructured": "Goodfellow I. Deep Learning. MIT Press, 2016."}
 NO_KEY = {"unstructured": "Private communication."}
@@ -25,7 +26,7 @@ class IdentificationTestCase(TestCase):
         self.parse([BOOK, NO_KEY, WITH_DOI])
 
     def parse(self, references):
-        self.source.crossref_json = source_json(references)
+        with_crossref(self.source, source_json(references))
         parse_publication(self.source)
 
     def ref(self, position):
@@ -68,7 +69,7 @@ class ManualResolutionSurvivesReimportTests(IdentificationTestCase):
 @patch("references.services.importer.fetch_crossref_json")
 class IdentifyByDoiTests(IdentificationTestCase):
     def test_existing_publication_is_reused_without_calling_crossref(self, fetch):
-        existing = Publication.objects.create(doi="10.1000/book", crossref_json={"message": {}})
+        existing = with_crossref(Publication.objects.create(doi="10.1000/book"), {"message": {}})
         pub, imported = identification.identify_by_doi(self.ref(0), "10.1000/book", self.user)
         self.assertEqual(pub, existing)
         self.assertTrue(imported)

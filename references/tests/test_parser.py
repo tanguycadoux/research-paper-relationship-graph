@@ -6,6 +6,7 @@ from django.test.utils import CaptureQueriesContext
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
 from references.services.parser import parse_publication
+from references.tests.helpers import with_crossref
 
 
 def crossref_message(authors=(), references=()):
@@ -30,7 +31,7 @@ REF_WITHOUT_DOI = {"key": "ref2", "unstructured": "Smith J. Some book. 1999."}
 class ParsePublicationTests(TestCase):
     def make_publication(self, json_data):
         pub = Publication.objects.create(title="")
-        pub.crossref_json = json_data
+        with_crossref(pub, json_data)
         parse_publication(pub)
         return pub
 
@@ -107,7 +108,7 @@ class ParserQueryCountTests(TestCase):
 
     def parse(self, json_data):
         pub = Publication.objects.create(title="")
-        pub.crossref_json = json_data
+        with_crossref(pub, json_data)
         parse_publication(pub)
 
     def count_queries(self, size):

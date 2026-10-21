@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Author, CitedReference, Publication, UserPublication
+from .models import Author, CitedReference, ExternalRecord, Publication, UserPublication
 
 
 @admin.register(Publication)
@@ -46,3 +46,10 @@ class CitedReferenceAdmin(admin.ModelAdmin):
 class UserPublicationAdmin(admin.ModelAdmin):
     list_display = ("pk", "user", "publication", "added_at")
     list_select_related = ("user", "publication")
+
+
+@admin.register(ExternalRecord)
+class ExternalRecordAdmin(admin.ModelAdmin):
+    list_display = ("pk", "publication", "source", "fetched_at")
+    list_filter = ("source",)
+    list_select_related = ("publication",)

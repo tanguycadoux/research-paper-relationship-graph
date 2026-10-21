@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
 from references.services.importer import import_publication
+from references.tests.helpers import crossref_record
 
 SOURCE_DOI = "10.1000/source"
 CITED_DOI = "10.1000/cited"
@@ -49,7 +50,7 @@ class ImportPublicationTests(TestCase):
         self.assertTrue(import_publication(pub))
         fetch.assert_called_once_with(SOURCE_DOI)
         self.assertEqual(pub.title, "Source")
-        self.assertIsNotNone(pub.crossref_fetched_at)
+        self.assertIsNotNone(crossref_record(pub))
 
     def test_force_fetch_refreshes(self, fetch, fetch_works):
         pub = Publication.objects.create(doi=SOURCE_DOI)
@@ -60,7 +61,7 @@ class ImportPublicationTests(TestCase):
     def test_unknown_doi_returns_false(self, fetch, fetch_works):
         pub = Publication.objects.create(doi="10.1000/unknown")
         self.assertFalse(import_publication(pub))
-        self.assertIsNone(pub.crossref_fetched_at)
+        self.assertIsNone(crossref_record(pub))
 
     def test_without_references_cited_publications_are_not_created(self, fetch, fetch_works):
         pub = Publication.objects.create(doi=SOURCE_DOI)
@@ -103,8 +104,8 @@ class ImportPublicationTests(TestCase):
         self.addCleanup(CROSSREF.pop, "10.1000/other")
         import_publication(Publication.objects.create(doi="10.1000/other"), with_references=True)
         ghost = Publication.objects.get(doi="10.1000/ghost")
-        self.assertIsNotNone(ghost.crossref_fetched_at)
-        self.assertIsNone(ghost.crossref_json)
+        self.assertIsNotNone(crossref_record(ghost))
+        self.assertIsNone(crossref_record(ghost).data)
 
         fetch_works.reset_mock()
         import_publication(Publication.objects.get(doi="10.1000/other"), with_references=True)

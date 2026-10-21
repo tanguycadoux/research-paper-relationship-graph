@@ -12,6 +12,7 @@ from references.services.publication_merge import (
     merge_publication,
     merge_summary,
 )
+from references.tests.helpers import with_crossref
 
 BOOK_REF = {"key": "ref1", "unstructured": "Goodfellow et al. Deep Learning. 2016."}
 
@@ -21,7 +22,7 @@ class MergeTestCase(TestCase):
         self.user = get_user_model().objects.create_user("alice")
         self.other_user = get_user_model().objects.create_user("bob")
         self.source = Publication.objects.create(title="Source")
-        self.source.crossref_json = {"message": {"title": ["Source"], "reference": [BOOK_REF]}}
+        with_crossref(self.source, {"message": {"title": ["Source"], "reference": [BOOK_REF]}})
         parse_publication(self.source)
         self.ref = CitedReference.objects.get(source=self.source)
         self.duplicate = identification.identify_without_identifier(
@@ -71,7 +72,7 @@ class MergeServiceTests(MergeTestCase):
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class FindMergeTargetTests(MergeTestCase):
     def test_by_existing_doi_without_calling_crossref(self, fetch):
-        article = Publication.objects.create(doi="10.1000/x", crossref_json={"message": {}})
+        article = with_crossref(Publication.objects.create(doi="10.1000/x"), {"message": {}})
         self.assertEqual(find_merge_target("https://doi.org/10.1000/X"), article)
         fetch.assert_not_called()
 

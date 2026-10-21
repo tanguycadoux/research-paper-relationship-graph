@@ -4,7 +4,7 @@
     <h1>{{ publication.title }}</h1>
 
     {% if publication.doi %}
-        <p>DOI : <a href="{% url 'publication_crossref' publication.pk %}" target="_blank">{{ publication.doi }}</a></p>
+        <p>DOI : <a href="{% url 'publication_metadata' publication.pk %}" target="_blank">{{ publication.doi }}</a></p>
     {% endif %}
     {% if publication.isbn %}
         <p>ISBN : {{ publication.isbn }}</p>
