@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
 from ..models import CitedReference, Publication, UserPublication
+from ..services.external_records import metadata_status, with_metadata_status
 from ..services.identification import with_references_to_identify
 from ..services.importer import import_publication
 from ..services.publication_details import crossref_details
@@ -18,7 +19,9 @@ class PublicationListView(ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
-    queryset = with_references_to_identify(Publication.objects.exclude(title=""))
+    queryset = with_metadata_status(
+        with_references_to_identify(Publication.objects.exclude(title=""))
+    )
     ordering = "-publication_date"
 
     def get_context_data(self, **kwargs):
@@ -52,11 +55,14 @@ class PublicationDetailView(DetailView):
 
         context["cited_references"] = pub.cited_references.select_related("target")
         # Only publications whose bibliography was imported (those of a corpus) can cite it.
-        context["citing_publications"] = with_references_to_identify(
-            Publication.objects.filter(
-                pk__in=CitedReference.objects.filter(target=pub).values("source")
+        context["citing_publications"] = with_metadata_status(
+            with_references_to_identify(
+                Publication.objects.filter(
+                    pk__in=CitedReference.objects.filter(target=pub).values("source")
+                )
             )
         ).order_by("-publication_date", "title")
+        context["metadata_status"] = metadata_status(pub)
         context["references_to_identify"] = sum(
             1 for ref in context["cited_references"] if ref.target_id is None
         )
