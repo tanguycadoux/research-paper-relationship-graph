@@ -9,6 +9,7 @@ Interface components: {% load ui %}, then
     {% alert "Import terminé." variant="success" %}
     {% card title="Informations" %}…{% endcard %}
     {% icon "delete" class="size-5" %}
+    {% external_link "https://doi.org/"|add:pub.doi pub.doi class="break-all" %}
 
 The Tailwind classes of each variant are written in full here, once: Tailwind
 finds them by scanning this file.
@@ -84,6 +85,7 @@ ALERT_ICONS = {
     "warning": "warning",
     "success": "check_circle",
 }
+EXTERNAL_LINK_ICON = "ml-0.5 inline-block size-[0.9em] align-[-0.1em]"
 CARD_CLASSES = "rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
 CARD_FLUSH_CLASSES = "overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"
 CARD_TITLE_CLASSES = "mb-2 text-base font-semibold"
@@ -110,6 +112,22 @@ def icon(name, **attrs):
         view_box,
         attrs.get("class", "inline-block size-[1.25em] shrink-0 align-[-0.25em]"),
         mark_safe(inner),  # read from our own static/icons/ files
+    )
+
+
+@register.simple_tag
+def external_link(url, label, **attrs):
+    """
+    A link to another site: it opens a new tab, which an icon and a text for screen
+    readers announce.
+    """
+    return format_html(
+        '<a href="{}" target="_blank" rel="noopener noreferrer"{}>{}'
+        '<span class="sr-only"> (nouvel onglet)</span>{}</a>',
+        url,
+        format_html(' class="{}"', attrs["class"]) if attrs.get("class") else "",
+        label,
+        icon("open_in_new", **{"class": EXTERNAL_LINK_ICON}),
     )
 
 

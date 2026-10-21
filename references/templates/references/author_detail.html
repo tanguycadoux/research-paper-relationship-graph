@@ -8,7 +8,7 @@
         <p class="text-sm text-gray-500">
             <a href="{% url 'author_list' %}">Auteurs</a>
             {% if author.orcid %}
-                · ORCID <a href="https://orcid.org/{{ author.orcid }}">{{ author.orcid }}</a>
+                · ORCID {% external_link "https://orcid.org/"|add:author.orcid author.orcid %}
             {% endif %}
         </p>
         <h1>{{ author|default:"(sans nom)" }}</h1>
@@ -44,7 +44,7 @@
                                 <tr>
                                     <th scope="row" class="font-normal">
                                         {% if group.organization.ror %}
-                                            <a href="https://ror.org/{{ group.organization.ror }}">{{ group.organization }}</a>
+                                            {% external_link "https://ror.org/"|add:group.organization.ror group.organization %}
                                         {% else %}
                                             {{ group.organization }}
                                         {% endif %}
