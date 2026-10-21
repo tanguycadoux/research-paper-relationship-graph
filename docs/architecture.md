@@ -28,6 +28,8 @@ references/          application principale
     metadata_formats.py  conversion de chaque source vers le format lu par le parser
     crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN)
     datacite_api.py  client DataCite (DOI par DOI ou par lots)
+    openalex_api.py  client OpenAlex (DOI par DOI ou par lots)
+    enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
     openlibrary_api.py  client Open Library (recherche par ISBN)
     doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
@@ -160,6 +162,41 @@ On peut aussi déclarer les auteurs cochés comme **personnes différentes**
 n'est plus jamais proposée, comme deux ORCID différents. Lors d'une fusion, les
 distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
 
+## OpenAlex, source complémentaire
+
+[OpenAlex](https://openalex.org) n'est pas un recours comme DataCite : il est interrogé
+pour **tous** les DOI importés, en plus de Crossref et DataCite, parce qu'il apporte autre
+chose. On y trouve les institutions avec leur identifiant ROR, des ORCID absents de
+Crossref, des identifiants d'auteurs et la date de mise en ligne. Il n'ajoute aucun
+article : seuls ceux déjà importés (corpus et articles cités) sont complétés.
+
+- Un article : une requête unitaire (gratuite). Elle n'est enregistrée que si OpenAlex a
+  répondu, pour pouvoir la retenter en cas de panne.
+- Les articles cités : un lot par 50 DOI (`filter=doi:A|B|…`). Un DOI absent d'une
+  réponse est enregistré comme inconnu.
+- Conditions (vérifiées le 2026-10-21) : API gratuite et sans clé. Une requête unitaire
+  est illimitée. Les requêtes par lots consomment un budget quotidien d'environ 1 000 lots
+  sans clé.
+
+### Informations contradictoires entre sources
+
+Comparaison faite sur 50 articles réels : 7 « années différentes », qui sont en fait la
+date de mise en ligne (OpenAlex) face à la date imprimée (Crossref). Aucun ORCID
+contradictoire, et 151 ORCID ajoutés. Quelques noms canoniques OpenAlex corrigent des
+fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
+
+1. **On n'écrase jamais rien** : chaque source garde sa réponse brute.
+2. **Crossref et DataCite font référence** pour la fiche : titre, date, auteurs tels que
+   publiés, références (données de l'éditeur).
+3. **OpenAlex complète** seulement : institutions, ORCID manquants, date en ligne.
+4. Les auteurs sont rapprochés par leur **position et leur nom publié**
+   (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article.
+5. Un **vrai conflit** (par exemple un ORCID différent de celui déjà connu) : l'existant est
+   gardé et le conflit est signalé sur une page « Conflits » (#91).
+6. Les **corrections manuelles** l'emportent toujours.
+7. Deux valeurs toutes deux justes (dates, nombres de citations) sont affichées avec leur
+   source.
+
 ## Livres et ISBN
 
 Un livre souvent cité sans DOI peut être identifié par son ISBN. On cherche d'abord dans
@@ -200,4 +237,6 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | ISBN : Crossref d'abord, puis Open Library (titre, année, auteurs) | Gratuit, sans clé, un appel par livre. |
 | 2026-10-21 | Réponses des sources dans une table dédiée (`ExternalRecord`) | Une nouvelle source (DataCite, ORCID…) ne demande ni nouveaux champs ni nouvelle logique de cache. |
 | 2026-10-21 | DataCite en second recours pour les DOI, par lots | Les actes JACoW sont chez DataCite ; Crossref d'abord, puisqu'il couvre la majorité des DOI et fournit les bibliographies. |
+| 2026-10-21 | OpenAlex en complément, pour tous les DOI importés | Institutions avec ROR et ORCID manquants ; une requête unitaire et un lot de plus par import. |
+| 2026-10-21 | Politique face aux contradictions : Crossref et DataCite font référence, OpenAlex complète, conflits signalés | Comparaison sur 50 articles réels : les écarts sont surtout des dates de nature différente et des corrections de noms. |
 | 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |

@@ -30,7 +30,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-L'application interroge l'API de Crossref. Pour bénéficier du *polite pool*
+L'application interroge les API de Crossref, DataCite et OpenAlex. L'adresse ci-dessous sert de contact pour Crossref et OpenAlex. Pour bénéficier du *polite pool*
 (10 requêtes/s au lieu de 5, et un service plus stable), il faut fournir une adresse
 e-mail de contact dans la variable d'environnement `CROSSREF_MAILTO`. Ne la mettez pas
 dans le code : le dépôt est public.

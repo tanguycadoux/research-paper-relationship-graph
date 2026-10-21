@@ -12,7 +12,7 @@ from references.services.publication_merge import (
     merge_publication,
     merge_summary,
 )
-from references.tests.helpers import with_crossref, without_datacite
+from references.tests.helpers import with_crossref, without_other_sources
 
 BOOK_REF = {"key": "ref1", "unstructured": "Goodfellow et al. Deep Learning. 2016."}
 
@@ -69,7 +69,7 @@ class MergeServiceTests(MergeTestCase):
             merge_publication(self.duplicate, self.duplicate, self.user)
 
 
-@without_datacite
+@without_other_sources
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class FindMergeTargetTests(MergeTestCase):
     def test_by_existing_doi_without_calling_crossref(self, fetch):
@@ -123,7 +123,7 @@ class MergeViewTests(MergeTestCase):
         self.assertNotContains(self.client.get(book_detail), self.url(self.book))
 
 
-@without_datacite
+@without_other_sources
 @patch("references.services.importer.fetch_crossref_json")
 class FindMergeTargetImportTests(TestCase):
     def test_unknown_doi_is_imported(self, fetch):

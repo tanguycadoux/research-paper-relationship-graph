@@ -8,7 +8,7 @@ from references.forms import IdentifyReferenceForm
 from references.models import CitedReference, Publication, UserPublication
 from references.services import identification
 from references.services.parser import parse_publication
-from references.tests.helpers import with_crossref, without_datacite
+from references.tests.helpers import with_crossref, without_other_sources
 
 BOOK = {"key": "ref1", "unstructured": "Goodfellow I. Deep Learning. MIT Press, 2016."}
 NO_KEY = {"unstructured": "Private communication."}
@@ -66,7 +66,7 @@ class ManualResolutionSurvivesReimportTests(IdentificationTestCase):
         self.assertEqual(self.ref(2).target, other)
 
 
-@without_datacite
+@without_other_sources
 @patch("references.services.importer.fetch_crossref_json")
 class IdentifyByDoiTests(IdentificationTestCase):
     def test_existing_publication_is_reused_without_calling_crossref(self, fetch):
@@ -105,7 +105,7 @@ class IdentifyReferenceFormTests(TestCase):
         self.assertIn("title", form.errors)
 
 
-@without_datacite
+@without_other_sources
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class IdentifyReferenceViewTests(IdentificationTestCase):
     def url(self, position):

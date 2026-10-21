@@ -9,7 +9,7 @@ from references.services.datacite_api import fetch_datacite_json, fetch_datacite
 from references.services.external_records import Source
 from references.services.importer import import_publication
 from references.services.metadata_formats import datacite_message
-from references.tests.helpers import crossref_record
+from references.tests.helpers import crossref_record, without_openalex
 
 FIXTURE = Path(__file__).parent / "fixtures" / "datacite_jacow_ecris2016_tuao05.json"
 JACOW_DOI = "10.18429/jacow-ecris2016-tuao05"
@@ -101,6 +101,7 @@ class DataciteMessageTests(SimpleTestCase):
         self.assertEqual(message["reference"], [{"key": "datacite-0", "DOI": "10.1000/cited"}])
 
 
+@without_openalex
 @patch("references.services.importer.fetch_datacite_json", return_value=JACOW)
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class SingleDoiTests(TestCase):
@@ -123,6 +124,7 @@ def source_with_references(dois):
     return {"message": {"title": ["Source"], "reference": references}}
 
 
+@without_openalex
 class CitedDoisTests(TestCase):
     def import_source(self, crossref_works, datacite_works):
         source = Publication.objects.create(doi="10.1000/source")
@@ -155,7 +157,7 @@ class CitedDoisTests(TestCase):
         jacow = Publication.objects.get(doi=JACOW_DOI)
         self.assertEqual(jacow.title, "First Plasma of the PHOENIX V3 ECR Ion Source")
         ghost = Publication.objects.get(doi="10.1000/ghost")
-        self.assertEqual(ghost.external_records.count(), 2)
+        self.assertEqual(ghost.external_records.exclude(source="openalex").count(), 2)
         self.assertFalse(ghost.external_records.filter(data__isnull=False).exists())
 
     def test_doi_is_not_marked_unknown_when_datacite_fails(self):
