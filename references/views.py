@@ -11,6 +11,7 @@ from plotly.offline import plot
 
 from .forms import AuthorMergeConfirmForm, AuthorMergeSelectForm, PublicationForm
 from .models import Author, Publication, UserPublication
+from .services.doi import is_valid_doi, normalize_doi
 from .services.importer import import_publication
 from .utils import build_pub_graph, build_user_refs_graph, plotly_graph_from_nx
 
@@ -159,13 +160,11 @@ def add_to_user_refs(request, pk):
 @login_required
 @require_POST
 def add_publication_to_user_refs_by_doi(request):
-    raw_doi = request.POST.get("doi", "").strip()
+    normalized_doi = normalize_doi(request.POST.get("doi", ""))
 
-    if not raw_doi:
-        messages.error(request, "Veuillez entrer un DOI.")
+    if not is_valid_doi(normalized_doi):
+        messages.error(request, "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
         return redirect("my_references")
-
-    normalized_doi = raw_doi.lower().replace("https///doi.org/", "").strip()
 
     pub, created = Publication.objects.get_or_create(doi=normalized_doi)
 
