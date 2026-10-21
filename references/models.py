@@ -87,6 +87,31 @@ class Author(models.Model):
             other.delete()
 
 
+class AuthorDistinction(models.Model):
+    """
+    Two authors declared to be different people: never suggested as duplicates.
+    The pair is stored once, the author with the smaller id first.
+    """
+
+    first = models.ForeignKey(Author, on_delete=models.CASCADE, related_name="+")
+    second = models.ForeignKey(Author, on_delete=models.CASCADE, related_name="+")
+    declared_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    declared_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["first", "second"], name="unique_author_distinction"),
+            models.CheckConstraint(
+                condition=models.Q(first__lt=models.F("second")), name="ordered_author_distinction"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.first} ≠ {self.second}"
+
+
 class AuthorPublication(models.Model):
     """
     An author slot of a publication: the name as published by Crossref (never

@@ -50,6 +50,11 @@ urlpatterns = [
     path("authors/merge/", authors.author_merge_select_view, name="authors_merge_select"),
     path("authors/duplicates/", authors.author_duplicates_view, name="author_duplicates"),
     path(
+        "authors/duplicates/dismiss/",
+        authors.author_duplicates_dismiss_view,
+        name="author_duplicates_dismiss",
+    ),
+    path(
         "authors/merge/confirm/<str:ids>/",
         authors.author_merge_confirm_view,
         name="author_merge_confirm",

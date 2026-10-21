@@ -10,6 +10,7 @@ from collections import defaultdict
 from django.db.models import Count
 
 from ..models import Author
+from .author_distinctions import distinct_pairs, ordered_pair
 
 NAME_PARTS = re.compile(r"[^\w]+")
 
@@ -17,10 +18,11 @@ NAME_PARTS = re.compile(r"[^\w]+")
 def duplicate_groups():
     """Groups of at least two probable duplicates, the most likely first."""
     authors = Author.objects.annotate(publication_count=Count("publications", distinct=True))
+    declared_distinct = distinct_pairs()
     groups = [
         group
         for same_family in by_family_name(authors).values()
-        for group in compatible_groups(same_family)
+        for group in compatible_groups(same_family, declared_distinct)
         if len(group) > 1
     ]
     return sorted(groups, key=group_priority)
@@ -34,7 +36,7 @@ def by_family_name(authors):
     return families
 
 
-def compatible_groups(authors):
+def compatible_groups(authors, declared_distinct=frozenset()):
     """
     Put each author in the first group whose members are all compatible with it.
     Authors with an ORCID and complete names come first, so that groups form
@@ -42,7 +44,9 @@ def compatible_groups(authors):
     """
     groups = []
     for author in sorted(authors, key=lambda a: (not a.orcid, -len(a.first_name), a.pk)):
-        group = next((g for g in groups if all(compatible(author, m) for m in g)), None)
+        group = next(
+            (g for g in groups if all(compatible(author, m, declared_distinct) for m in g)), None
+        )
         if group is None:
             groups.append([author])
         else:
@@ -50,7 +54,9 @@ def compatible_groups(authors):
     return groups
 
 
-def compatible(first, second):
+def compatible(first, second, declared_distinct=frozenset()):
+    if ordered_pair(first.pk, second.pk) in declared_distinct:
+        return False
     if first.orcid and second.orcid and first.orcid != second.orcid:
         return False
     return compatible_given_names(first.first_name, second.first_name)
