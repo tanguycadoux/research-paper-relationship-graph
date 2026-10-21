@@ -17,15 +17,11 @@ class PublicationListView(ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
+    queryset = Publication.objects.exclude(title="")
+    ordering = "-publication_date"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        pubs = Publication.objects.exclude(title="")
-        pubs = pubs.order_by("-publication_date")
-
-        context["publications"] = pubs
-
         user = self.request.user
         if user.is_authenticated:
             context["user_pub_ids"] = set(

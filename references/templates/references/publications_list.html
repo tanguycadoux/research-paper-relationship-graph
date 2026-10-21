@@ -3,6 +3,10 @@
 {% block content %}
     <h1>Liste des références</h1>
 
+    {% if user.is_authenticated %}
+        <p><a href="{% url 'publication_add' %}">Ajouter une publication</a></p>
+    {% endif %}
+
     {% if publications %}
         <table>
             <thead>

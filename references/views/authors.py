@@ -17,16 +17,7 @@ class AuthorListView(ListView):
     model = Author
     template_name = "references/authors_list.html"
     context_object_name = "authors"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        authors = Author.objects.all()
-        authors = authors.order_by("last_name")
-
-        context["authors"] = authors
-
-        return context
+    ordering = "last_name"
 
 
 class AuthorDetailView(DetailView):
