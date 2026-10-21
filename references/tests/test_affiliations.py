@@ -5,10 +5,15 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Organization, Publication
-from references.services.affiliations import attach_affiliations, organization_periods
-from references.services.enrichment import complete_cited_with_openalex
+from references.services.affiliations import attach_affiliations
+from references.services.enrichment import (
+    complete_ancestors,
+    complete_cited_with_openalex,
+    complete_with_openalex,
+)
 from references.services.external_records import Source, store_record
 from references.services.names import same_person_name
+from references.services.organizations import organization_groups
 from references.services.parser import parse_publication
 from references.tests.helpers import with_crossref
 
@@ -123,32 +128,134 @@ class AttachAffiliationsTests(TestCase):
         self.assertEqual(self.organizations(cited), [[LPSC["display_name"]]])
 
 
-class OrganizationPeriodsTests(TestCase):
-    def test_period_and_count_from_the_publications(self):
-        first = publication(
-            "A", [THUILLIER], [authorship("Thomas Thuillier", LPSC)], datetime.date(2012, 5, 1)
-        )
-        publication(
-            "B", [THUILLIER], [authorship("Thomas Thuillier", LPSC)], datetime.date(2016, 1, 1)
-        )
-        publication(
-            "C", [THUILLIER], [authorship("Thomas Thuillier", CERN)], datetime.date(2019, 1, 1)
-        )
-        author = first.authorpublication_set.get().author
-        periods = {
-            o.name: (o.first_date.year, o.last_date.year, o.publication_count)
-            for o in organization_periods(author)
-        }
-        self.assertEqual(periods, {LPSC["display_name"]: (2012, 2016, 2), "CERN": (2019, 2019, 1)})
+CEA = {
+    "id": "https://openalex.org/I2738703131",
+    "display_name": "Commissariat à l'Énergie Atomique et aux Énergies Alternatives",
+    "ror": "https://ror.org/00jjx8s55",
+    "lineage": ["https://openalex.org/I2738703131"],
+}
+UPSACLAY = {
+    "id": "https://openalex.org/I277688954",
+    "display_name": "Université Paris-Saclay",
+    "lineage": ["https://openalex.org/I277688954"],
+}
+DRF = {
+    "id": "https://openalex.org/I4210113668",
+    "display_name": "Direction de la Recherche Fondamentale",
+    "lineage": ["https://openalex.org/I2738703131", "https://openalex.org/I4210113668"],
+}
+IRFU = {
+    "id": "https://openalex.org/I4210165232",
+    "display_name": "Institut de Recherche sur les Lois Fondamentales de l'Univers",
+    "lineage": [
+        "https://openalex.org/I2738703131",
+        "https://openalex.org/I4210113668",
+        "https://openalex.org/I4210165232",
+    ],
+}
+CEA_SACLAY = {
+    "id": "https://openalex.org/I4210128565",
+    "display_name": "CEA Paris-Saclay",
+    "lineage": [
+        "https://openalex.org/I2738703131",
+        "https://openalex.org/I277688954",
+        "https://openalex.org/I4210128565",
+    ],
+}
 
-    def test_pages_show_the_organizations(self):
-        pub = publication(
-            "A", [THUILLIER], [authorship("Thomas Thuillier", LPSC)], datetime.date(2016, 1, 1)
+
+def names(organizations):
+    return sorted(str(o) for o in organizations)
+
+
+class OrganizationHierarchyTests(TestCase):
+    def test_unknown_ancestors_are_fetched_in_one_batch_before_parsing(self):
+        pub = Publication.objects.create(doi="10.1000/a", title="A")
+        work = {"authorships": [authorship("Thomas Thuillier", IRFU, CEA_SACLAY)]}
+        with (
+            patch("references.services.enrichment.fetch_openalex_work", return_value=work),
+            patch(
+                "references.services.enrichment.fetch_openalex_institutions",
+                return_value={"I2738703131": CEA, "I4210113668": DRF, "I277688954": UPSACLAY},
+            ) as fetch_institutions,
+        ):
+            complete_with_openalex(pub)
+        fetch_institutions.assert_called_once_with(["I2738703131", "I277688954", "I4210113668"])
+        with_crossref(pub, {"message": {"title": ["A"], "author": [THUILLIER]}})
+        parse_publication(pub)
+        irfu = Organization.objects.get(openalex_id="I4210165232")
+        self.assertEqual(
+            names(irfu.ancestors.all()), [str(CEA["display_name"]), DRF["display_name"]]
         )
-        self.assertContains(
-            self.client.get(reverse("publication_detail", args=[pub.pk])), LPSC["display_name"]
+        self.assertEqual(
+            names(Organization.objects.get(openalex_id="I4210113668").ancestors.all()),
+            [CEA["display_name"]],
+        )
+
+    def test_known_ancestors_are_not_fetched_again(self):
+        publication("A", [THUILLIER], [authorship("Thomas Thuillier", CEA, DRF)])
+        with patch("references.services.enrichment.fetch_openalex_institutions") as fetch:
+            complete_ancestors([{"authorships": [authorship("x", IRFU)]}])
+        fetch.assert_not_called()
+
+
+class OrganizationGroupsTests(TestCase):
+    def setUp(self):
+        publication("Ancestors", [ANGOT], [authorship("Julien Angot", CEA, UPSACLAY, DRF)])
+
+    def author_groups(self, pub):
+        author = pub.authorpublication_set.get().author
+        return {
+            str(g["organization"]): (
+                names(g["details"]),
+                g["publication_count"],
+                g["first_date"].year,
+                g["last_date"].year,
+            )
+            for g in organization_groups(author)
+        }
+
+    def test_grouped_by_top_level_organization(self):
+        first = publication(
+            "A",
+            [THUILLIER],
+            [authorship("Thomas Thuillier", IRFU, CEA_SACLAY)],
+            datetime.date(2012, 1, 1),
+        )
+        publication(
+            "B", [THUILLIER], [authorship("Thomas Thuillier", IRFU)], datetime.date(2018, 1, 1)
+        )
+        self.assertEqual(
+            self.author_groups(first),
+            {
+                CEA["display_name"]: (
+                    [CEA_SACLAY["display_name"], IRFU["display_name"]],
+                    2,
+                    2012,
+                    2018,
+                ),
+                UPSACLAY["display_name"]: ([CEA_SACLAY["display_name"]], 1, 2012, 2012),
+            },
+        )
+
+    def test_author_page_shows_the_groups(self):
+        pub = publication(
+            "A", [THUILLIER], [authorship("Thomas Thuillier", IRFU)], datetime.date(2016, 1, 1)
         )
         author = pub.authorpublication_set.get().author
         response = self.client.get(reverse("author_detail", args=[author.pk]))
-        self.assertContains(response, "https://ror.org/03f0apy98")
+        self.assertContains(response, "https://ror.org/00jjx8s55")
+        self.assertContains(response, IRFU["display_name"].replace("'", "&#x27;"))
         self.assertContains(response, "2016")
+
+
+class OrganizationGroupsWithoutHierarchyTests(TestCase):
+    def test_an_organization_without_ancestors_is_its_own_group(self):
+        pub = publication(
+            "A", [THUILLIER], [authorship("Thomas Thuillier", LPSC)], datetime.date(2016, 1, 1)
+        )
+        author = pub.authorpublication_set.get().author
+        groups = organization_groups(author)
+        self.assertEqual(
+            [(str(g["organization"]), g["details"]) for g in groups], [(LPSC["display_name"], [])]
+        )

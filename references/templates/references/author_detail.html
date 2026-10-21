@@ -12,34 +12,42 @@
             {% endif %}
         </header>
 
-        {% if organizations %}
+        {% if organization_groups %}
             <section aria-labelledby="author-organizations-title">
                 <h2 id="author-organizations-title">Organisations</h2>
-                <p><small>Déclarées sur ses publications (selon OpenAlex) ; les périodes sont celles des publications.</small></p>
+                <p>
+                    <small>
+                        Déclarées sur ses publications (selon OpenAlex), regroupées par organisation
+                        de tutelle. Une unité mixte apparaît sous chacune de ses tutelles. Les
+                        périodes sont celles des publications.
+                    </small>
+                </p>
                 <table>
                     <thead>
                         <tr>
                             <th scope="col">Organisation</th>
+                            <th scope="col">Détail</th>
                             <th scope="col">Période</th>
                             <th scope="col">Publications</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for organization in organizations %}
+                        {% for group in organization_groups %}
                             <tr>
                                 <th scope="row">
-                                    {% if organization.ror %}
-                                        <a href="https://ror.org/{{ organization.ror }}">{{ organization }}</a>
+                                    {% if group.organization.ror %}
+                                        <a href="https://ror.org/{{ group.organization.ror }}">{{ group.organization }}</a>
                                     {% else %}
-                                        {{ organization }}
+                                        {{ group.organization }}
                                     {% endif %}
                                 </th>
+                                <td>{{ group.details|join:", " }}</td>
                                 <td>
-                                    {% if organization.first_date %}
-                                        {{ organization.first_date|date:"Y" }}{% if organization.last_date|date:"Y" != organization.first_date|date:"Y" %} – {{ organization.last_date|date:"Y" }}{% endif %}
+                                    {% if group.first_date %}
+                                        {{ group.first_date|date:"Y" }}{% if group.last_date|date:"Y" != group.first_date|date:"Y" %} – {{ group.last_date|date:"Y" }}{% endif %}
                                     {% endif %}
                                 </td>
-                                <td>{{ organization.publication_count }}</td>
+                                <td>{{ group.publication_count }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

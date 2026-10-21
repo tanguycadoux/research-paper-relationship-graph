@@ -9,7 +9,8 @@ from django.db import transaction
 from ..models import Publication
 from .affiliations import attach_affiliations
 from .external_records import Source, has_record, store_record
-from .openalex_api import fetch_openalex_work, fetch_openalex_works
+from .openalex_api import fetch_openalex_institutions, fetch_openalex_work, fetch_openalex_works
+from .organizations import missing_ancestor_ids, organizations_for
 
 
 def complete_with_openalex(pub, force_fetch=False):
@@ -22,6 +23,7 @@ def complete_with_openalex(pub, force_fetch=False):
     work = fetch_openalex_work(pub.doi)
     if work:
         store_record(pub, Source.OPENALEX, work)
+        complete_ancestors([work])
 
 
 def complete_cited_with_openalex(pub):
@@ -30,6 +32,7 @@ def complete_cited_with_openalex(pub):
     if not targets:
         return
     works = fetch_openalex_works(list(targets))
+    complete_ancestors([work for work in works.values() if work])
     with transaction.atomic():
         for doi, work in works.items():
             store_record(targets[doi], Source.OPENALEX, work)
@@ -44,3 +47,20 @@ def cited_without_openalex(pub):
         .exclude(external_records__source=Source.OPENALEX)
         .distinct()
     )
+
+
+def complete_ancestors(works):
+    """
+    Create the ancestor organizations named in the lineages of the institutions
+    but unknown yet (one request per batch), so that the parser can link them
+    without any network access.
+    """
+    institutions = [
+        institution
+        for work in works
+        for authorship in work.get("authorships", [])
+        for institution in authorship.get("institutions", [])
+    ]
+    missing = missing_ancestor_ids(institutions)
+    if missing:
+        organizations_for(list(fetch_openalex_institutions(missing).values()))

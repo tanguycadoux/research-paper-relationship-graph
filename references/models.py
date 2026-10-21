@@ -95,6 +95,12 @@ class Organization(models.Model):
     ror = models.CharField("ROR", max_length=20, blank=True)
     openalex_id = models.CharField(max_length=20, blank=True)
     country_code = models.CharField(max_length=2, blank=True)
+    # All the organizations it belongs to, at every level (OpenAlex lineage): IRFU
+    # belongs to the Direction de la Recherche Fondamentale and to the CEA. A joint
+    # unit can have several top-level ancestors.
+    ancestors = models.ManyToManyField(
+        "self", symmetrical=False, related_name="descendants", blank=True
+    )
 
     class Meta:
         ordering = ["name"]

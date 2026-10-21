@@ -7,11 +7,11 @@ and published name, and nothing is attached when they disagree.
 import logging
 
 from django.db import transaction
-from django.db.models import Count, Max, Min, Q
 
-from ..models import AuthorPublication, Organization
+from ..models import AuthorPublication
 from .external_records import Source
 from .names import same_person_name
+from .organizations import openalex_id, organizations_for
 
 logger = logging.getLogger(__name__)
 
@@ -56,60 +56,4 @@ def link_slots(slots, authorships):
         for slot, group in zip(slots, institutions, strict=True)
         for institution in {openalex_id(i): i for i in group}.values()
         if openalex_id(institution) in organizations
-    )
-
-
-def organizations_for(institutions):
-    """
-    {OpenAlex id: Organization} for the institutions, creating the missing ones.
-    An organization is recognized by its OpenAlex id or by its ROR (OpenAlex
-    sometimes merges institutions under a new id).
-    """
-    by_id = {openalex_id(i): i for i in institutions if openalex_id(i)}
-    rors = {ror_id(i) for i in by_id.values() if ror_id(i)}
-    existing = Organization.objects.filter(Q(openalex_id__in=by_id) | Q(ror__in=rors))
-    by_oid = {org.openalex_id: org for org in existing}
-    by_ror = {org.ror: org for org in existing if org.ror}
-    found = {
-        oid: by_oid.get(oid) or by_ror.get(ror_id(i))
-        for oid, i in by_id.items()
-        if oid in by_oid or ror_id(i) in by_ror
-    }
-    missing = [new_organization(i) for oid, i in by_id.items() if oid not in found]
-    Organization.objects.bulk_create(missing)
-    return found | {org.openalex_id: org for org in missing}
-
-
-def new_organization(institution):
-    return Organization(
-        name=institution.get("display_name") or "",
-        ror=ror_id(institution),
-        openalex_id=openalex_id(institution),
-        country_code=institution.get("country_code") or "",
-    )
-
-
-def ror_id(institution):
-    """'https://ror.org/03f0apy98' -> '03f0apy98'."""
-    return (institution.get("ror") or "").rsplit("/", 1)[-1]
-
-
-def openalex_id(institution):
-    """'https://openalex.org/I4210141222' -> 'I4210141222'."""
-    return (institution.get("id") or "").rsplit("/", 1)[-1]
-
-
-def organization_periods(author):
-    """
-    Organizations of an author with their period, computed from the publications:
-    first and last publication date, and number of publications.
-    """
-    return (
-        Organization.objects.filter(author_slots__author=author)
-        .annotate(
-            first_date=Min("author_slots__publication__publication_date"),
-            last_date=Max("author_slots__publication__publication_date"),
-            publication_count=Count("author_slots__publication", distinct=True),
-        )
-        .order_by("-last_date")
     )
