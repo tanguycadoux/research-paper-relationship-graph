@@ -45,3 +45,11 @@ class ListViewsTests(TestCase):
         Author.objects.create(first_name="Ada", last_name="Lovelace")
         response = self.client.get(reverse("authors_list"))
         self.assertEqual([a.last_name for a in response.context["authors"]], ["Lovelace", "Turing"])
+
+
+class PublicationDateInputTests(TestCase):
+    def test_date_is_rendered_in_iso_format_whatever_the_locale(self):
+        form = PublicationForm(
+            instance=Publication(title="Un article", publication_date=date(2026, 8, 1))
+        )
+        self.assertIn('value="2026-08-01"', str(form["publication_date"]))
