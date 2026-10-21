@@ -96,7 +96,7 @@ def trigger_import_publication(request, pk):
     """
     pub = get_object_or_404(Publication, pk=pk)
     if import_publication(pub, with_references=pub.parse_references, force_fetch=True):
-        messages.success(request, f"Données Crossref rafraîchies pour « {pub} ».")
+        messages.success(request, f"Métadonnées rafraîchies pour « {pub} ».")
     else:
-        messages.error(request, f"Impossible de récupérer les données Crossref de « {pub} ».")
+        messages.error(request, f"Impossible de récupérer les métadonnées de « {pub} ».")
     return redirect("publication_detail", pk=pub.pk)

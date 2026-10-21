@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
 from references.services.importer import import_publication
-from references.tests.helpers import crossref_record
+from references.tests.helpers import crossref_record, without_datacite
 
 SOURCE_DOI = "10.1000/source"
 CITED_DOI = "10.1000/cited"
@@ -38,6 +38,7 @@ def with_mocked_crossref(cls):
     )
 
 
+@without_datacite
 @with_mocked_crossref
 class ImportPublicationTests(TestCase):
     def test_creating_a_publication_does_not_call_crossref(self, fetch, fetch_works):
@@ -112,6 +113,7 @@ class ImportPublicationTests(TestCase):
         fetch_works.assert_not_called()
 
 
+@without_datacite
 @with_mocked_crossref
 class AddToCorpusViewTests(TestCase):
     def setUp(self):

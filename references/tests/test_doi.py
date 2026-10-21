@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from references.models import Publication, UserPublication
 from references.services.doi import is_valid_doi, normalize_doi
+from references.tests.helpers import without_datacite
 
 
 class NormalizeDoiTests(SimpleTestCase):
@@ -39,6 +40,7 @@ class IsValidDoiTests(SimpleTestCase):
                 self.assertFalse(is_valid_doi(doi))
 
 
+@without_datacite
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class DoiPersistenceTests(TestCase):
     def setUp(self):
