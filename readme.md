@@ -63,3 +63,15 @@ L'application est alors accessible sur http://127.0.0.1:8000/.
 
 La base `db.sqlite3` est locale et n'est pas versionnée.
 Pour récupérer ses données sur une autre machine, il faut la copier à la main.
+
+## Commandes utiles
+
+```bash
+# Rattacher les affiliations des publications déjà en base, à partir des données OpenAlex
+# stockées (les organisations parentes manquantes sont demandées en une requête groupée)
+python manage.py complete_affiliations
+
+# Idem, en demandant d'abord à OpenAlex les publications qui n'ont pas encore de réponse
+# (une requête par lot de 50 publications)
+python manage.py complete_affiliations --fetch-missing
+```

@@ -206,6 +206,10 @@ auteur, les organisations sont **regroupées par tutelle** (organisation sans an
 avec le détail des entités déclarées. Une unité mixte (CEA Paris-Saclay : CEA et
 Université Paris-Saclay) apparaît sous chacune de ses tutelles.
 
+La commande `complete_affiliations` complète les publications déjà en base à partir des
+données OpenAlex stockées, sans les redemander. L'option `--fetch-missing` interroge
+d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse.
+
 ### Informations contradictoires entre sources
 
 Comparaison faite sur 50 articles réels : 7 « années différentes », qui sont en fait la
