@@ -6,4 +6,5 @@ class ReferencesConfig(AppConfig):
     name = "references"
 
     def ready(self):
-        pass
+        # Imported for its side effect: connects the post_save receivers.
+        from . import signals  # noqa: F401
