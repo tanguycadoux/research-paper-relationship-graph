@@ -27,6 +27,7 @@ references/          application principale
     external_records.py  stockage des réponses des sources (ExternalRecord)
     metadata_formats.py  conversion de chaque source vers le format lu par le parser
     crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN)
+    datacite_api.py  client DataCite (DOI par DOI ou par lots)
     openlibrary_api.py  client Open Library (recherche par ISBN)
     doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
@@ -87,7 +88,7 @@ Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
    de signal.
 2. Les métadonnées d'un article ne sont récupérées que si aucune source ne l'a encore décrit.
    Le seul moyen de rappeler Crossref pour un article déjà récupéré est le bouton
-   « Rafraîchir depuis Crossref » (`force_fetch`).
+   « Rafraîchir les métadonnées » (`force_fetch`).
 3. Pour un article du corpus, les références sont analysées, puis les articles cités
    jamais récupérés sont importés, sans leurs propres références : on ne descend que d'un
    niveau.
@@ -122,6 +123,20 @@ erreurs réseau, et ne retente jamais une 404 ni une 403.
   de sa page. Ses citations sont reportées et marquées comme corrections manuelles, ses
   entrées de corpus sont reportées sans doublon, puis elle est supprimée. Une publication
   identifiée ne peut pas être fusionnée de cette façon.
+
+## DOI enregistrés chez DataCite
+
+Un DOI est attribué par une seule agence. **Crossref** couvre la plupart des articles,
+**DataCite** les actes de conférence (JACoW, très cités en physique des accélérateurs),
+les dépôts Zenodo et les jeux de données. Crossref répond « inconnu » pour un DOI DataCite.
+
+- Un DOI isolé : Crossref, puis DataCite (`/dois/<doi>`).
+- Les articles cités : un lot Crossref, puis **un lot DataCite** (`/dois?ids=A,B,…`) pour
+  les seuls DOI que Crossref ne connaît pas. Un DOI inconnu des deux n'est enregistré
+  comme tel que si DataCite a répondu : en cas de panne, il est retenté au prochain import.
+- Une fiche DataCite (titres, créateurs avec ORCID, date) est convertie au format lu par le
+  parser. Elle ne contient en général pas de bibliographie : seuls les liens déclarés
+  `References` ou `Cites` vers des DOI deviennent des références.
 
 ## Livres et ISBN
 
@@ -162,4 +177,5 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Pas de rapprochement automatique des références au texte identique | Sans DOI ni ISBN, rien ne prouve qu'il s'agit du même ouvrage : on identifie à la main, ou on fusionne des publications (#67). |
 | 2026-10-21 | ISBN : Crossref d'abord, puis Open Library (titre, année, auteurs) | Gratuit, sans clé, un appel par livre. |
 | 2026-10-21 | Réponses des sources dans une table dédiée (`ExternalRecord`) | Une nouvelle source (DataCite, ORCID…) ne demande ni nouveaux champs ni nouvelle logique de cache. |
+| 2026-10-21 | DataCite en second recours pour les DOI, par lots | Les actes JACoW sont chez DataCite ; Crossref d'abord, puisqu'il couvre la majorité des DOI et fournit les bibliographies. |
 | 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |

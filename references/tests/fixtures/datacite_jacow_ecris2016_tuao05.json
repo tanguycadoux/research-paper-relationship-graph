@@ -1,0 +1,323 @@
+{
+ "data": {
+  "id": "10.18429/jacow-ecris2016-tuao05",
+  "type": "dois",
+  "attributes": {
+   "doi": "10.18429/jacow-ecris2016-tuao05",
+   "prefix": "10.18429",
+   "suffix": "jacow-ecris2016-tuao05",
+   "identifiers": [],
+   "alternateIdentifiers": [],
+   "creators": [
+    {
+     "name": "Thuillier, Thomas",
+     "nameType": "Personal",
+     "givenName": "Thomas",
+     "familyName": "Thuillier",
+     "affiliation": [
+      "LPSC, Grenoble Cedex, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00000258",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Angot, Julien",
+     "nameType": "Personal",
+     "givenName": "Julien",
+     "familyName": "Angot",
+     "affiliation": [
+      "LPSC, Grenoble Cedex, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00037943",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Bonny, Laurent",
+     "nameType": "Personal",
+     "givenName": "Laurent",
+     "familyName": "Bonny",
+     "affiliation": [
+      "LPSC, Grenoble Cedex, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00089840",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Flambard, Jean Luc",
+     "nameType": "Personal",
+     "givenName": "Jean Luc",
+     "familyName": "Flambard",
+     "affiliation": [
+      "GANIL, Caen, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00037663",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Jacob, Josua",
+     "nameType": "Personal",
+     "givenName": "Josua",
+     "familyName": "Jacob",
+     "affiliation": [
+      "LPSC, Grenoble Cedex, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00048984",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Kalvas, Taneli",
+     "nameType": "Personal",
+     "givenName": "Taneli",
+     "familyName": "Kalvas",
+     "affiliation": [
+      "JYFL, Jyvaskyla, Finland"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00037444",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Lamy, Thierry",
+     "nameType": "Personal",
+     "givenName": "Thierry",
+     "familyName": "Lamy",
+     "affiliation": [
+      "LPSC, Grenoble Cedex, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00000257",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Maunoury, Laurent",
+     "nameType": "Personal",
+     "givenName": "Laurent",
+     "familyName": "Maunoury",
+     "affiliation": [
+      "GANIL, Caen, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00037861",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Peaucelle, Christophe",
+     "nameType": "Personal",
+     "givenName": "Christophe",
+     "familyName": "Peaucelle",
+     "affiliation": [
+      "IN2P3 IPNL, Villeurbanne, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00040346",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    },
+    {
+     "name": "Sole, Patrick",
+     "nameType": "Personal",
+     "givenName": "Patrick",
+     "familyName": "Sole",
+     "affiliation": [
+      "LPSC, Grenoble Cedex, France"
+     ],
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "http://jacow.org/JACoW-00005212",
+       "nameIdentifierScheme": "JACoW-ID"
+      }
+     ]
+    }
+   ],
+   "titles": [
+    {
+     "lang": "en-us",
+     "title": "First Plasma of the PHOENIX V3 ECR Ion Source"
+    }
+   ],
+   "publisher": "JACoW, Geneva, Switzerland",
+   "container": {
+    "type": "Series",
+    "identifier": "978-3-95450-186-1",
+    "identifierType": "ISBN",
+    "title": "Proceedings of the 22nd Int. Workshop on ECR Ion Sources",
+    "volume": "ECRIS2016",
+    "firstPage": "Korea"
+   },
+   "publicationYear": 2016,
+   "subjects": [
+    {
+     "lang": "en-us",
+     "subject": "Accelerator Physics"
+    },
+    {
+     "lang": "en-us",
+     "subject": "Status reports and new development"
+    }
+   ],
+   "contributors": [
+    {
+     "name": "Schaa, Volker RW (Ed.)",
+     "nameType": "Personal",
+     "affiliation": [
+      "GSI, Darmstadt, Germany"
+     ],
+     "contributorType": "Editor",
+     "nameIdentifiers": [
+      {
+       "nameIdentifier": "https://orcid.org/0000-0003-1866-8570",
+       "nameIdentifierScheme": "ORCID"
+      }
+     ]
+    }
+   ],
+   "dates": [
+    {
+     "date": "2017-09-26",
+     "dateType": "Created"
+    },
+    {
+     "date": "2016",
+     "dateType": "Issued"
+    }
+   ],
+   "language": "en",
+   "types": {
+    "ris": "RPRT",
+    "bibtex": "article",
+    "citeproc": "article-journal",
+    "schemaOrg": "ScholarlyArticle",
+    "resourceType": "ConferencePaper",
+    "resourceTypeGeneral": "Text"
+   },
+   "relatedIdentifiers": [
+    {
+     "relationType": "IsPartOf",
+     "relatedIdentifier": "978-3-95450-186-1",
+     "relatedIdentifierType": "ISBN"
+    }
+   ],
+   "relatedItems": [],
+   "sizes": [
+    "2 pages",
+    "0.771 MB"
+   ],
+   "formats": [
+    "PDF"
+   ],
+   "version": null,
+   "rightsList": [
+    {
+     "rights": "CC 3.0",
+     "rightsUri": "https://creativecommons.org/licenses/by/3.0"
+    }
+   ],
+   "descriptions": [
+    {
+     "lang": "en-us",
+     "description": "PHOENIX V3 is an upgrade of the PHOENIX V2 ECR ion source granted by the European CRISP project. This new ECRIS features a larger plasma chamber and a re-duced vacuum pressure under operation. The V3 source will replace the V2 one on the SPIRAL2 accelerator in 2018. The first plasma of PHOENIX V3 was achieved on May 9th 2016. The early commissioning of the V3 source at low 18 GHz power demonstrates as expected an en-hancement of the high charge state production and Ar¹⁴⁺ intensity already exceeds the V2 one. Further enhance-ments are expected the outgassing will be achieved and the full RF power will be injected in the source.",
+     "descriptionType": "Abstract"
+    },
+    {
+     "description": "Proceedings of the 22nd Int. Workshop on ECR Ion Sources, ECRIS2016, Busan, Korea",
+     "descriptionType": "SeriesInformation"
+    }
+   ],
+   "geoLocations": [],
+   "fundingReferences": [],
+   "xml": "PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxyZXNvdXJjZSB4bWxucz0iaHR0cDovL2RhdGFjaXRlLm9yZy9zY2hlbWEva2VybmVsLTMiIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhzaTpzY2hlbWFMb2NhdGlvbj0iaHR0cDovL2RhdGFjaXRlLm9yZy9zY2hlbWEva2VybmVsLTMgaHR0cDovL3NjaGVtYS5kYXRhY2l0ZS5vcmcvbWV0YS9rZXJuZWwtMy9tZXRhZGF0YS54c2QiPgogIDxpZGVudGlmaWVyIGlkZW50aWZpZXJUeXBlPSJET0kiPjEwLjE4NDI5L0pBQ29XLUVDUklTMjAxNi1UVUFPMDU8L2lkZW50aWZpZXI+CiAgPGNyZWF0b3JzPgogICAgPGNyZWF0b3I+CiAgICAgIDxjcmVhdG9yTmFtZT5UaHVpbGxpZXIsIFRob21hczwvY3JlYXRvck5hbWU+CiAgICAgIDxuYW1lSWRlbnRpZmllciBzY2hlbWVVUkk9Imh0dHA6Ly9qYWNvdy5vcmcvIiBuYW1lSWRlbnRpZmllclNjaGVtZT0iSkFDb1ctSUQiPkpBQ29XLTAwMDAwMjU4PC9uYW1lSWRlbnRpZmllcj4KICAgICAgPGFmZmlsaWF0aW9uPkxQU0MsIEdyZW5vYmxlIENlZGV4LCBGcmFuY2U8L2FmZmlsaWF0aW9uPgogICAgPC9jcmVhdG9yPgogICAgPGNyZWF0b3I+CiAgICAgIDxjcmVhdG9yTmFtZT5BbmdvdCwgSnVsaWVuPC9jcmVhdG9yTmFtZT4KICAgICAgPG5hbWVJZGVudGlmaWVyIHNjaGVtZVVSST0iaHR0cDovL2phY293Lm9yZy8iIG5hbWVJZGVudGlmaWVyU2NoZW1lPSJKQUNvVy1JRCI+SkFDb1ctMDAwMzc5NDM8L25hbWVJZGVudGlmaWVyPgogICAgICA8YWZmaWxpYXRpb24+TFBTQywgR3Jlbm9ibGUgQ2VkZXgsIEZyYW5jZTwvYWZmaWxpYXRpb24+CiAgICA8L2NyZWF0b3I+CiAgICA8Y3JlYXRvcj4KICAgICAgPGNyZWF0b3JOYW1lPkJvbm55LCBMYXVyZW50PC9jcmVhdG9yTmFtZT4KICAgICAgPG5hbWVJZGVudGlmaWVyIHNjaGVtZVVSST0iaHR0cDovL2phY293Lm9yZy8iIG5hbWVJZGVudGlmaWVyU2NoZW1lPSJKQUNvVy1JRCI+SkFDb1ctMDAwODk4NDA8L25hbWVJZGVudGlmaWVyPgogICAgICA8YWZmaWxpYXRpb24+TFBTQywgR3Jlbm9ibGUgQ2VkZXgsIEZyYW5jZTwvYWZmaWxpYXRpb24+CiAgICA8L2NyZWF0b3I+CiAgICA8Y3JlYXRvcj4KICAgICAgPGNyZWF0b3JOYW1lPkZsYW1iYXJkLCBKZWFuIEx1YzwvY3JlYXRvck5hbWU+CiAgICAgIDxuYW1lSWRlbnRpZmllciBzY2hlbWVVUkk9Imh0dHA6Ly9qYWNvdy5vcmcvIiBuYW1lSWRlbnRpZmllclNjaGVtZT0iSkFDb1ctSUQiPkpBQ29XLTAwMDM3NjYzPC9uYW1lSWRlbnRpZmllcj4KICAgICAgPGFmZmlsaWF0aW9uPkdBTklMLCBDYWVuLCBGcmFuY2U8L2FmZmlsaWF0aW9uPgogICAgPC9jcmVhdG9yPgogICAgPGNyZWF0b3I+CiAgICAgIDxjcmVhdG9yTmFtZT5KYWNvYiwgSm9zdWE8L2NyZWF0b3JOYW1lPgogICAgICA8bmFtZUlkZW50aWZpZXIgc2NoZW1lVVJJPSJodHRwOi8vamFjb3cub3JnLyIgbmFtZUlkZW50aWZpZXJTY2hlbWU9IkpBQ29XLUlEIj5KQUNvVy0wMDA0ODk4NDwvbmFtZUlkZW50aWZpZXI+CiAgICAgIDxhZmZpbGlhdGlvbj5MUFNDLCBHcmVub2JsZSBDZWRleCwgRnJhbmNlPC9hZmZpbGlhdGlvbj4KICAgIDwvY3JlYXRvcj4KICAgIDxjcmVhdG9yPgogICAgICA8Y3JlYXRvck5hbWU+S2FsdmFzLCBUYW5lbGk8L2NyZWF0b3JOYW1lPgogICAgICA8bmFtZUlkZW50aWZpZXIgc2NoZW1lVVJJPSJodHRwOi8vamFjb3cub3JnLyIgbmFtZUlkZW50aWZpZXJTY2hlbWU9IkpBQ29XLUlEIj5KQUNvVy0wMDAzNzQ0NDwvbmFtZUlkZW50aWZpZXI+CiAgICAgIDxhZmZpbGlhdGlvbj5KWUZMLCBKeXZhc2t5bGEsIEZpbmxhbmQ8L2FmZmlsaWF0aW9uPgogICAgPC9jcmVhdG9yPgogICAgPGNyZWF0b3I+CiAgICAgIDxjcmVhdG9yTmFtZT5MYW15LCBUaGllcnJ5PC9jcmVhdG9yTmFtZT4KICAgICAgPG5hbWVJZGVudGlmaWVyIHNjaGVtZVVSST0iaHR0cDovL2phY293Lm9yZy8iIG5hbWVJZGVudGlmaWVyU2NoZW1lPSJKQUNvVy1JRCI+SkFDb1ctMDAwMDAyNTc8L25hbWVJZGVudGlmaWVyPgogICAgICA8YWZmaWxpYXRpb24+TFBTQywgR3Jlbm9ibGUgQ2VkZXgsIEZyYW5jZTwvYWZmaWxpYXRpb24+CiAgICA8L2NyZWF0b3I+CiAgICA8Y3JlYXRvcj4KICAgICAgPGNyZWF0b3JOYW1lPk1hdW5vdXJ5LCBMYXVyZW50PC9jcmVhdG9yTmFtZT4KICAgICAgPG5hbWVJZGVudGlmaWVyIHNjaGVtZVVSST0iaHR0cDovL2phY293Lm9yZy8iIG5hbWVJZGVudGlmaWVyU2NoZW1lPSJKQUNvVy1JRCI+SkFDb1ctMDAwMzc4NjE8L25hbWVJZGVudGlmaWVyPgogICAgICA8YWZmaWxpYXRpb24+R0FOSUwsIENhZW4sIEZyYW5jZTwvYWZmaWxpYXRpb24+CiAgICA8L2NyZWF0b3I+CiAgICA8Y3JlYXRvcj4KICAgICAgPGNyZWF0b3JOYW1lPlBlYXVjZWxsZSwgQ2hyaXN0b3BoZTwvY3JlYXRvck5hbWU+CiAgICAgIDxuYW1lSWRlbnRpZmllciBzY2hlbWVVUkk9Imh0dHA6Ly9qYWNvdy5vcmcvIiBuYW1lSWRlbnRpZmllclNjaGVtZT0iSkFDb1ctSUQiPkpBQ29XLTAwMDQwMzQ2PC9uYW1lSWRlbnRpZmllcj4KICAgICAgPGFmZmlsaWF0aW9uPklOMlAzIElQTkwsIFZpbGxldXJiYW5uZSwgRnJhbmNlPC9hZmZpbGlhdGlvbj4KICAgIDwvY3JlYXRvcj4KICAgIDxjcmVhdG9yPgogICAgICA8Y3JlYXRvck5hbWU+U29sZSwgUGF0cmljazwvY3JlYXRvck5hbWU+CiAgICAgIDxuYW1lSWRlbnRpZmllciBzY2hlbWVVUkk9Imh0dHA6Ly9qYWNvdy5vcmcvIiBuYW1lSWRlbnRpZmllclNjaGVtZT0iSkFDb1ctSUQiPkpBQ29XLTAwMDA1MjEyPC9uYW1lSWRlbnRpZmllcj4KICAgICAgPGFmZmlsaWF0aW9uPkxQU0MsIEdyZW5vYmxlIENlZGV4LCBGcmFuY2U8L2FmZmlsaWF0aW9uPgogICAgPC9jcmVhdG9yPgogIDwvY3JlYXRvcnM+CiAgPHRpdGxlcz4KICAgIDx0aXRsZSB4bWw6bGFuZz0iZW4tdXMiPkZpcnN0IFBsYXNtYSBvZiB0aGUgUEhPRU5JWCBWMyBFQ1IgSW9uIFNvdXJjZTwvdGl0bGU+CiAgPC90aXRsZXM+CiAgPHB1Ymxpc2hlcj5KQUNvVywgR2VuZXZhLCBTd2l0emVybGFuZCA8L3B1Ymxpc2hlcj4KICA8cHVibGljYXRpb25ZZWFyPjIwMTY8L3B1YmxpY2F0aW9uWWVhcj4KICA8c3ViamVjdHM+CiAgICA8c3ViamVjdCB4bWw6bGFuZz0iZW4tdXMiPkFjY2VsZXJhdG9yIFBoeXNpY3M8L3N1YmplY3Q+CiAgICA8c3ViamVjdCB4bWw6bGFuZz0iZW4tdXMiPlN0YXR1cyByZXBvcnRzIGFuZCBuZXcgZGV2ZWxvcG1lbnQ8L3N1YmplY3Q+CiAgPC9zdWJqZWN0cz4KICA8Y29udHJpYnV0b3JzPgogICAgPGNvbnRyaWJ1dG9yIGNvbnRyaWJ1dG9yVHlwZT0iRWRpdG9yIj4KICAgICAgPGNvbnRyaWJ1dG9yTmFtZT5TY2hhYSwgVm9sa2VyIFJXIChFZC4pPC9jb250cmlidXRvck5hbWU+CiAgICAgIDxuYW1lSWRlbnRpZmllciBzY2hlbWVVUkk9Imh0dHA6Ly9vcmNpZC5vcmcvIiBuYW1lSWRlbnRpZmllclNjaGVtZT0iT1JDSUQiPjAwMDAtMDAwMy0xODY2LTg1NzA8L25hbWVJZGVudGlmaWVyPgogICAgICA8YWZmaWxpYXRpb24+R1NJLCBEYXJtc3RhZHQsIEdlcm1hbnk8L2FmZmlsaWF0aW9uPgogICAgPC9jb250cmlidXRvcj4KICA8L2NvbnRyaWJ1dG9ycz4KICA8ZGF0ZXM+CiAgICA8ZGF0ZSBkYXRlVHlwZT0iQ3JlYXRlZCI+MjAxNy0wOS0yNjwvZGF0ZT4KICA8L2RhdGVzPgogIDxsYW5ndWFnZT5lbi11czwvbGFuZ3VhZ2U+CiAgPHJlc291cmNlVHlwZSByZXNvdXJjZVR5cGVHZW5lcmFsPSJUZXh0Ij5Db25mZXJlbmNlUGFwZXI8L3Jlc291cmNlVHlwZT4KICA8cmVsYXRlZElkZW50aWZpZXJzPgogICAgPHJlbGF0ZWRJZGVudGlmaWVyIHJlbGF0ZWRJZGVudGlmaWVyVHlwZT0iSVNCTiIgcmVsYXRpb25UeXBlPSJJc1BhcnRPZiI+OTc4LTMtOTU0NTAtMTg2LTE8L3JlbGF0ZWRJZGVudGlmaWVyPgogIDwvcmVsYXRlZElkZW50aWZpZXJzPgogIDxzaXplcz4KICAgIDxzaXplPjIgcGFnZXM8L3NpemU+CiAgICA8c2l6ZT4wLjc3MSBNQjwvc2l6ZT4KICA8L3NpemVzPgogIDxmb3JtYXRzPgogICAgPGZvcm1hdD5QREY8L2Zvcm1hdD4KICA8L2Zvcm1hdHM+CiAgPHJpZ2h0c0xpc3Q+CiAgICA8cmlnaHRzIHJpZ2h0c1VSST0iaHR0cHM6Ly9jcmVhdGl2ZWNvbW1vbnMub3JnL2xpY2Vuc2VzL2J5LzMuMC8iPkNDIDMuMDwvcmlnaHRzPgogIDwvcmlnaHRzTGlzdD4KICA8ZGVzY3JpcHRpb25zPgogICAgPGRlc2NyaXB0aW9uIHhtbDpsYW5nPSJlbi11cyIgZGVzY3JpcHRpb25UeXBlPSJBYnN0cmFjdCI+CiAgICBQSE9FTklYIFYzIGlzIGFuIHVwZ3JhZGUgb2YgdGhlIFBIT0VOSVggVjIgRUNSIGlvbiBzb3VyY2UgZ3JhbnRlZCBieSB0aGUgRXVyb3BlYW4gQ1JJU1AgcHJvamVjdC4gVGhpcyBuZXcgRUNSSVMgZmVhdHVyZXMgYSBsYXJnZXIgcGxhc21hIGNoYW1iZXIgYW5kIGEgcmUtZHVjZWQgdmFjdXVtIHByZXNzdXJlIHVuZGVyIG9wZXJhdGlvbi4gVGhlIFYzIHNvdXJjZSB3aWxsIHJlcGxhY2UgdGhlIFYyIG9uZSBvbiB0aGUgU1BJUkFMMiBhY2NlbGVyYXRvciBpbiAyMDE4LiBUaGUgZmlyc3QgcGxhc21hIG9mIFBIT0VOSVggVjMgd2FzIGFjaGlldmVkIG9uIE1heSA5dGggMjAxNi4gVGhlIGVhcmx5IGNvbW1pc3Npb25pbmcgb2YgdGhlIFYzIHNvdXJjZSBhdCBsb3cgMTggR0h6IHBvd2VyIGRlbW9uc3RyYXRlcyBhcyBleHBlY3RlZCBhbiBlbi1oYW5jZW1lbnQgb2YgdGhlIGhpZ2ggY2hhcmdlIHN0YXRlIHByb2R1Y3Rpb24gYW5kIEFyJiN4Qjk7JiN4MjA3NDsmI3gyMDdBOyBpbnRlbnNpdHkgYWxyZWFkeSBleGNlZWRzIHRoZSBWMiBvbmUuIEZ1cnRoZXIgZW5oYW5jZS1tZW50cyBhcmUgZXhwZWN0ZWQgdGhlIG91dGdhc3Npbmcgd2lsbCBiZSBhY2hpZXZlZCBhbmQgdGhlIGZ1bGwgUkYgcG93ZXIgd2lsbCBiZSBpbmplY3RlZCBpbiB0aGUgc291cmNlLgogIDwvZGVzY3JpcHRpb24+CiAgICA8ZGVzY3JpcHRpb24gZGVzY3JpcHRpb25UeXBlPSJTZXJpZXNJbmZvcm1hdGlvbiI+CiAgICBQcm9jZWVkaW5ncyBvZiB0aGUgMjJuZCBJbnQuIFdvcmtzaG9wIG9uIEVDUiBJb24gU291cmNlcywgRUNSSVMyMDE2LCBCdXNhbiwgS29yZWEKICA8L2Rlc2NyaXB0aW9uPgogIDwvZGVzY3JpcHRpb25zPgo8L3Jlc291cmNlPg==",
+   "url": "http://jacow.org/ecris2016/doi/JACoW-ECRIS2016-TUAO05.html",
+   "contentUrl": null,
+   "metadataVersion": 3,
+   "schemaVersion": "http://datacite.org/schema/kernel-3",
+   "source": null,
+   "isActive": true,
+   "state": "findable",
+   "reason": null,
+   "viewCount": 0,
+   "viewsOverTime": [],
+   "downloadCount": 0,
+   "downloadsOverTime": [],
+   "referenceCount": 0,
+   "citationCount": 0,
+   "citationsOverTime": [],
+   "partCount": 0,
+   "partOfCount": 0,
+   "versionCount": 0,
+   "versionOfCount": 0,
+   "created": "2017-09-27T00:51:29.000Z",
+   "registered": "2017-09-27T00:51:30.000Z",
+   "published": "2016",
+   "updated": "2020-08-03T09:45:11.000Z"
+  },
+  "relationships": {
+   "client": {
+    "data": {
+     "id": "cern.jacow",
+     "type": "clients"
+    }
+   },
+   "provider": {
+    "data": {
+     "id": "cern",
+     "type": "providers"
+    }
+   },
+   "media": {
+    "data": {
+     "id": "10.18429/jacow-ecris2016-tuao05",
+     "type": "media"
+    }
+   },
+   "references": {
+    "data": []
+   },
+   "citations": {
+    "data": []
+   },
+   "parts": {
+    "data": []
+   },
+   "partOf": {
+    "data": []
+   },
+   "versions": {
+    "data": []
+   },
+   "versionOf": {
+    "data": []
+   }
+  }
+ }
+}

@@ -6,7 +6,7 @@ Crossref, which the parser reads.
 from .external_records import Source, records_by_source
 
 # When several sources know a publication, the first one is used.
-PRIORITY = [Source.CROSSREF, Source.OPENLIBRARY]
+PRIORITY = [Source.CROSSREF, Source.DATACITE, Source.OPENLIBRARY]
 
 
 def metadata_message(pub):
@@ -20,6 +20,51 @@ def metadata_message(pub):
 
 def crossref_message(data):
     return data.get("message", {})
+
+
+def datacite_message(data):
+    """Express a DataCite record like a Crossref message."""
+    attributes = data.get("data", {}).get("attributes", {})
+    titles = [t["title"] for t in attributes.get("titles", []) if t.get("title")]
+    return {
+        "title": titles[:1],
+        "issued": {"date-parts": [datacite_date_parts(attributes)]},
+        "author": [datacite_author(creator) for creator in attributes.get("creators", [])],
+        "reference": datacite_references(attributes),
+    }
+
+
+def datacite_date_parts(attributes):
+    """Full issue date when DataCite gives one, otherwise the publication year."""
+    for date in attributes.get("dates", []):
+        parts = str(date.get("date", "")).split("-")
+        if date.get("dateType") == "Issued" and all(p.isdigit() for p in parts):
+            return [int(p) for p in parts[:3]]
+    year = str(attributes.get("publicationYear", ""))
+    return [int(year)] if year.isdigit() else []
+
+
+def datacite_author(creator):
+    orcids = [
+        identifier.get("nameIdentifier", "")
+        for identifier in creator.get("nameIdentifiers", [])
+        if identifier.get("nameIdentifierScheme") == "ORCID"
+    ]
+    family = creator.get("familyName") or creator.get("name", "")
+    author = {"given": creator.get("givenName", ""), "family": family}
+    if orcids:
+        author["ORCID"] = orcids[0]
+    return author
+
+
+def datacite_references(attributes):
+    """DOIs that the record declares as references (relationType References or Cites)."""
+    return [
+        {"key": f"datacite-{index}", "DOI": related["relatedIdentifier"]}
+        for index, related in enumerate(attributes.get("relatedIdentifiers", []))
+        if related.get("relationType") in ("References", "Cites")
+        and related.get("relatedIdentifierType") == "DOI"
+    ]
 
 
 def openlibrary_message(doc):
@@ -41,5 +86,6 @@ def split_full_name(name):
 
 CONVERTERS = {
     Source.CROSSREF: crossref_message,
+    Source.DATACITE: datacite_message,
     Source.OPENLIBRARY: openlibrary_message,
 }

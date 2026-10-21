@@ -6,7 +6,7 @@ from django.test.utils import CaptureQueriesContext
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
 from references.services.parser import parse_publication
-from references.tests.helpers import with_crossref
+from references.tests.helpers import with_crossref, without_datacite
 
 
 def crossref_message(authors=(), references=()):
@@ -27,6 +27,7 @@ REF_WITH_DOI = {"key": "ref1", "DOI": "10.1000/ABC", "article-title": "Cited art
 REF_WITHOUT_DOI = {"key": "ref2", "unstructured": "Smith J. Some book. 1999."}
 
 
+@without_datacite
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class ParsePublicationTests(TestCase):
     def make_publication(self, json_data):

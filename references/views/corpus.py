@@ -15,7 +15,7 @@ def report_addition(request, pub, imported):
         messages.warning(
             request,
             f"« {pub} » a été ajouté à votre corpus, mais ses données n'ont pas pu être "
-            "récupérées sur Crossref (DOI inconnu ou service injoignable).",
+            "récupérées (DOI inconnu de Crossref et de DataCite, ou service injoignable).",
         )
 
 
