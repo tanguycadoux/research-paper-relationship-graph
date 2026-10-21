@@ -2,6 +2,7 @@ from datetime import date
 
 from references.models import AuthorPublication, CitedReference, Publication
 
+from .affiliations import attach_affiliations
 from .author_resolution import resolve_authors
 from .doi import is_valid_doi, normalize_doi
 from .metadata_formats import metadata_message
@@ -24,6 +25,8 @@ def parse_publication(pub, parse_references=True):
         parse_references_list(pub, message)
 
     pub.save()
+    # Author slots are recreated above: their affiliations are attached again.
+    attach_affiliations(pub)
 
 
 def parse_title(pub, message):

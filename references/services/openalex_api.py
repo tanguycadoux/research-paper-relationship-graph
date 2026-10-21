@@ -13,6 +13,7 @@ from . import http
 from .doi import normalize_doi
 
 OPENALEX_WORKS_URL = "https://api.openalex.org/works"
+OPENALEX_INSTITUTIONS_URL = "https://api.openalex.org/institutions"
 BATCH_SIZE = 50
 
 
@@ -59,3 +60,24 @@ def _fetch_batch(dois):
 def contact_params():
     mailto = settings.CROSSREF_MAILTO
     return {"mailto": mailto} if mailto else {}
+
+
+def fetch_openalex_institutions(ids):
+    """
+    Return {OpenAlex id: institution} for institution ids ('I2738703131'), one
+    request per batch of BATCH_SIZE. Used for the ancestors of an institution.
+    """
+    institutions = {}
+    for start in range(0, len(ids), BATCH_SIZE):
+        batch = ids[start : start + BATCH_SIZE]
+        data = http.get_json(
+            OPENALEX_INSTITUTIONS_URL,
+            params={"filter": "openalex:" + "|".join(batch), "per-page": len(batch)}
+            | contact_params(),
+            service="OpenAlex",
+            subject=f"batch of {len(batch)} institutions",
+            contact=settings.CROSSREF_MAILTO,
+        )
+        for institution in (data or {}).get("results", []):
+            institutions[institution["id"].rsplit("/", 1)[-1]] = institution
+    return institutions

@@ -10,6 +10,7 @@ from django.views.generic import DetailView, ListView, UpdateView
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author
 from ..services import author_distinctions, author_duplicates, author_merge
+from ..services.organizations import organization_groups
 
 
 class AuthorListView(ListView):
@@ -35,6 +36,7 @@ class AuthorDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         # distinct: after a merge, one author can hold several slots of a publication.
         context["publications"] = self.object.publications.distinct().order_by("-publication_date")
+        context["organization_groups"] = organization_groups(self.object)
         return context
 
 

@@ -6,9 +6,11 @@ record. Their answers are stored; they never overwrite anything.
 
 from django.db import transaction
 
-from ..models import Publication
+from ..models import ExternalRecord, Publication
+from .affiliations import attach_affiliations
 from .external_records import Source, has_record, store_record
-from .openalex_api import fetch_openalex_work, fetch_openalex_works
+from .openalex_api import fetch_openalex_institutions, fetch_openalex_work, fetch_openalex_works
+from .organizations import missing_ancestor_ids, organizations_for
 
 
 def complete_with_openalex(pub, force_fetch=False):
@@ -21,6 +23,7 @@ def complete_with_openalex(pub, force_fetch=False):
     work = fetch_openalex_work(pub.doi)
     if work:
         store_record(pub, Source.OPENALEX, work)
+        complete_ancestors([work])
 
 
 def complete_cited_with_openalex(pub):
@@ -29,9 +32,12 @@ def complete_cited_with_openalex(pub):
     if not targets:
         return
     works = fetch_openalex_works(list(targets))
+    complete_ancestors([work for work in works.values() if work])
     with transaction.atomic():
         for doi, work in works.items():
             store_record(targets[doi], Source.OPENALEX, work)
+            if work:
+                attach_affiliations(targets[doi])
 
 
 def cited_without_openalex(pub):
@@ -41,3 +47,49 @@ def cited_without_openalex(pub):
         .exclude(external_records__source=Source.OPENALEX)
         .distinct()
     )
+
+
+def complete_ancestors(works):
+    """
+    Create the ancestor organizations named in the lineages of the institutions
+    but unknown yet (one request per batch), so that the parser can link them
+    without any network access.
+    """
+    institutions = [
+        institution
+        for work in works
+        for authorship in work.get("authorships", [])
+        for institution in authorship.get("institutions", [])
+    ]
+    missing = missing_ancestor_ids(institutions)
+    if missing:
+        organizations_for(list(fetch_openalex_institutions(missing).values()))
+
+
+def complete_existing_publications(fetch_missing=False):
+    """
+    Complete the publications already in the database: attach their affiliations
+    (with the hierarchy of their organizations) from the stored OpenAlex works.
+    With fetch_missing, the publications with a DOI but no OpenAlex answer yet are
+    first requested, one request per batch. Return a summary of what was done.
+    """
+    fetched = fetch_missing_openalex() if fetch_missing else 0
+    records = ExternalRecord.objects.filter(source=Source.OPENALEX, data__isnull=False)
+    records = list(records.select_related("publication"))
+    complete_ancestors([record.data for record in records])
+    attached = sum(attach_affiliations(record.publication) for record in records)
+    return {"fetched": fetched, "with_openalex": len(records), "attached": attached}
+
+
+def fetch_missing_openalex():
+    targets = {
+        pub.doi: pub
+        for pub in Publication.objects.exclude(doi="").exclude(
+            external_records__source=Source.OPENALEX
+        )
+    }
+    works = fetch_openalex_works(list(targets)) if targets else {}
+    with transaction.atomic():
+        for doi, work in works.items():
+            store_record(targets[doi], Source.OPENALEX, work)
+    return len(works)

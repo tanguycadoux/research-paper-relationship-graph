@@ -51,6 +51,11 @@ class PublicationDetailView(DetailView):
 
         context["cited_references"] = pub.cited_references.select_related("target")
         context["details"] = crossref_details(pub)
+        context["author_slots"] = (
+            pub.authorpublication_set.select_related("author")
+            .prefetch_related("organizations")
+            .order_by("order")
+        )
         return context
 
 

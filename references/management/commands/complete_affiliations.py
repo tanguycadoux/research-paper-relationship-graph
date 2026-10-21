@@ -1,0 +1,29 @@
+from django.core.management.base import BaseCommand
+
+from references.services.enrichment import complete_existing_publications
+
+
+class Command(BaseCommand):
+    help = (
+        "Rattache les affiliations (et la hiérarchie des organisations) des publications "
+        "déjà en base, à partir des données OpenAlex stockées."
+    )
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--fetch-missing",
+            action="store_true",
+            help="Interroger d'abord OpenAlex (par lots de 50) pour les publications avec DOI "
+            "qui n'ont pas encore de réponse OpenAlex.",
+        )
+
+    def handle(self, *args, **options):
+        summary = complete_existing_publications(fetch_missing=options["fetch_missing"])
+        if options["fetch_missing"]:
+            self.stdout.write(f"Publications demandées à OpenAlex : {summary['fetched']}")
+        self.stdout.write(f"Publications avec une réponse OpenAlex : {summary['with_openalex']}")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Publications dont les affiliations sont rattachées : {summary['attached']}"
+            )
+        )
