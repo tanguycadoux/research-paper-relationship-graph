@@ -13,8 +13,6 @@ class Publication(models.Model):
     authors = models.ManyToManyField(
         "Author", through="AuthorPublication", related_name="publications", blank=True
     )
-    # True once the publication is in a corpus: its cited references are imported.
-    parse_references = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
@@ -35,6 +33,14 @@ class Publication(models.Model):
         self.doi = normalize_doi(self.doi)
         self.isbn = normalize_isbn(self.isbn)
         super().save(*args, **kwargs)
+
+    @property
+    def parse_references(self):
+        """
+        Whether the cited references are imported: as long as the publication is in
+        the corpus of at least one user. Those already imported stay when it leaves.
+        """
+        return self.userpublication_set.exists()
 
 
 class ExternalRecord(models.Model):
