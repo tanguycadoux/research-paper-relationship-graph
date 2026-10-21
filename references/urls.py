@@ -5,6 +5,7 @@ from .views import (
     cited_references,
     conflicts,
     corpus,
+    corpus_transfer,
     graphs,
     home,
     publication_merge,
@@ -69,6 +70,11 @@ urlpatterns = [
     # Corpus of the current user
     path("my-references/", corpus.my_references, name="my_references"),
     path("my-references/graph/", graphs.my_refs_graph, name="my_refs_graph"),
+    path("my-references/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
+    path(
+        "my-references/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"
+    ),
+    path("my-references/import/", corpus_transfer.import_json, name="corpus_import"),
     path(
         "my-references/add-by-doi/",
         corpus.add_publication_to_user_refs_by_doi,
