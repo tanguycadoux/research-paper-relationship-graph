@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ..models import Publication
+from .books import find_or_import_book
 from .importer import import_publication
 
 
@@ -18,6 +19,16 @@ def identify_by_doi(ref, doi, user):
     """
     pub, _ = Publication.objects.get_or_create(doi=doi)
     imported = import_publication(pub)
+    resolve(ref, pub, user)
+    return pub, imported
+
+
+def identify_by_isbn(ref, isbn, user):
+    """
+    Link the reference to the book of an ISBN (Crossref, then Open Library).
+    Return (publication, metadata_available).
+    """
+    pub, imported = find_or_import_book(isbn)
     resolve(ref, pub, user)
     return pub, imported
 

@@ -118,6 +118,6 @@ class ParserQueryCountTests(TestCase):
         return len(context)
 
     def test_query_count_does_not_grow_per_row(self):
-        # bulk_create splits large inserts to respect SQLite's parameter limit: a few
-        # extra queries for 40 times more rows, instead of several per row.
-        self.assertLessEqual(self.count_queries(200) - self.count_queries(5), 5)
+        # 200 authors and 200 references: per-row queries would mean more than 600.
+        # bulk_create only splits large inserts to respect SQLite's parameter limit.
+        self.assertLess(self.count_queries(200), 25)

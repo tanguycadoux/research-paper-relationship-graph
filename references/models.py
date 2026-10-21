@@ -2,14 +2,18 @@ from django.conf import settings
 from django.db import models
 
 from .services.doi import normalize_doi
+from .services.isbn import normalize_isbn
 
 
 class Publication(models.Model):
     doi = models.CharField(max_length=255, blank=True)
+    isbn = models.CharField("ISBN", max_length=13, blank=True)
     title = models.TextField(blank=True)
     publication_date = models.DateField(null=True, blank=True)
     crossref_json = models.JSONField(null=True, blank=True)
     crossref_fetched_at = models.DateTimeField(null=True, blank=True)
+    openlibrary_json = models.JSONField(null=True, blank=True)
+    openlibrary_fetched_at = models.DateTimeField(null=True, blank=True)
     authors = models.ManyToManyField(
         "Author", through="AuthorPublication", related_name="publications", blank=True
     )
@@ -22,14 +26,18 @@ class Publication(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["doi"], condition=~models.Q(doi=""), name="unique_non_empty_doi"
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["isbn"], condition=~models.Q(isbn=""), name="unique_non_empty_isbn"
+            ),
         ]
 
     def __str__(self):
-        return self.title or self.doi or f"PK : {self.pk}"
+        return self.title or self.doi or self.isbn or f"PK : {self.pk}"
 
     def save(self, *args, **kwargs):
         self.doi = normalize_doi(self.doi)
+        self.isbn = normalize_isbn(self.isbn)
         super().save(*args, **kwargs)
 
 

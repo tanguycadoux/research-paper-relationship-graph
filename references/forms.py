@@ -2,12 +2,16 @@ from django import forms
 
 from .models import Author, Publication
 from .services.doi import is_valid_doi, normalize_doi
+from .services.isbn import is_valid_isbn, normalize_isbn
 
 
 class PublicationForm(forms.ModelForm):
+    # Longer than the stored ISBN-13: hyphens and ISBN-10 are accepted, then normalized.
+    isbn = forms.CharField(label="ISBN", max_length=20, required=False)
+
     class Meta:
         model = Publication
-        fields = ["doi", "title", "publication_date"]
+        fields = ["doi", "isbn", "title", "publication_date"]
         widgets = {"publication_date": forms.DateInput(attrs={"type": "date"})}
 
     def __init__(self, *args, **kwargs):
@@ -15,6 +19,12 @@ class PublicationForm(forms.ModelForm):
         # Every field is optional: a publication may be created from partial data.
         for field in self.fields.values():
             field.required = False
+
+    def clean_isbn(self):
+        isbn = normalize_isbn(self.cleaned_data["isbn"])
+        if isbn and not is_valid_isbn(isbn):
+            raise forms.ValidationError("Veuillez entrer un ISBN-10 ou ISBN-13 valide.")
+        return isbn
 
 
 class AuthorChoiceField(forms.ModelMultipleChoiceField):
@@ -40,22 +50,27 @@ class AuthorMergeConfirmForm(forms.Form):
 
 class IdentifyReferenceForm(forms.Form):
     METHOD_DOI = "doi"
+    METHOD_ISBN = "isbn"
     METHOD_NONE = "none"
 
     method = forms.ChoiceField(
         label="Identifier par",
-        choices=[(METHOD_DOI, "DOI"), (METHOD_NONE, "Sans identifiant")],
+        choices=[(METHOD_DOI, "DOI"), (METHOD_ISBN, "ISBN"), (METHOD_NONE, "Sans identifiant")],
         widget=forms.RadioSelect,
         initial=METHOD_DOI,
     )
     doi = forms.CharField(label="DOI", required=False)
+    isbn = forms.CharField(label="ISBN", required=False)
     title = forms.CharField(label="Titre", required=False)
     year = forms.IntegerField(label="Année", required=False, min_value=1000, max_value=2100)
 
     def clean(self):
         cleaned = super().clean()
-        if cleaned.get("method") == self.METHOD_DOI:
+        method = cleaned.get("method")
+        if method == self.METHOD_DOI:
             self.clean_identifier_doi(cleaned)
+        elif method == self.METHOD_ISBN:
+            self.clean_identifier_isbn(cleaned)
         elif not cleaned.get("title"):
             self.add_error("title", "Le titre est obligatoire sans identifiant.")
         return cleaned
@@ -65,3 +80,9 @@ class IdentifyReferenceForm(forms.Form):
         if not is_valid_doi(doi):
             self.add_error("doi", "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
         cleaned["doi"] = doi
+
+    def clean_identifier_isbn(self, cleaned):
+        isbn = normalize_isbn(cleaned.get("isbn", ""))
+        if not is_valid_isbn(isbn):
+            self.add_error("isbn", "Veuillez entrer un ISBN-10 ou ISBN-13 valide.")
+        cleaned["isbn"] = isbn
