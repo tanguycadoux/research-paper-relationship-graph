@@ -86,3 +86,10 @@ class IdentifyReferenceForm(forms.Form):
         if not is_valid_isbn(isbn):
             self.add_error("isbn", "Veuillez entrer un ISBN-10 ou ISBN-13 valide.")
         cleaned["isbn"] = isbn
+
+
+class MergePublicationForm(forms.Form):
+    target = forms.CharField(
+        label="DOI, ISBN ou lien d'une publication de l'application", max_length=500
+    )
+    confirm = forms.BooleanField(required=False, widget=forms.HiddenInput)

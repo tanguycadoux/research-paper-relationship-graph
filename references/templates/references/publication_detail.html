@@ -32,6 +32,9 @@
     <a href="{% url 'publication_trigger_import' publication.pk %}">Rafraîchir depuis Crossref</a>
     <a href="{% url 'publication_edit' publication.pk %}">Editer</a>
     <a href="{% url 'publication_delete' publication.pk %}">Supprimer</a>
+    {% if user.is_authenticated and not publication.doi and not publication.isbn %}
+        <a href="{% url 'publication_merge' publication.pk %}">Cette publication est en fait…</a>
+    {% endif %}
 
     <h2>Références</h2>
 
