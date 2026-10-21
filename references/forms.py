@@ -54,12 +54,48 @@ class AuthorForm(forms.ModelForm):
 
 
 class AuthorMergeConfirmForm(forms.Form):
-    first_name = forms.CharField(label="Prénom", required=False)
-    last_name = forms.CharField(label="Nom", required=False)
-    orcid = forms.CharField(label="ORCID", required=False)
+    """
+    For each field, a choice among the values of the merged authors, or another
+    value typed by the user. Two different ORCIDs require an explicit confirmation.
+    """
 
-    def clean_orcid(self):
-        return normalize_orcid(self.cleaned_data["orcid"])
+    OTHER = "__other__"
+    LABELS = {"first_name": "Prénom", "last_name": "Nom", "orcid": "ORCID"}
+
+    def __init__(self, *args, candidates, orcid_conflict=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field, label in self.LABELS.items():
+            self.fields[field] = forms.ChoiceField(
+                label=label,
+                choices=self.choices(field, candidates[field]),
+                widget=forms.RadioSelect,
+                required=field != "orcid",  # "Aucun" (no ORCID) is a valid choice
+            )
+            self.fields[f"{field}_other"] = forms.CharField(label="Autre valeur", required=False)
+        if orcid_conflict:
+            self.fields["confirm_orcid_conflict"] = forms.BooleanField(
+                label="Je confirme : ces ORCID différents désignent bien la même personne.",
+                required=True,
+            )
+
+    def choices(self, field, values):
+        choices = [(value, value) for value in values]
+        if field == "orcid":
+            choices.append(("", "Aucun"))
+        return [*choices, (self.OTHER, "Autre valeur :")]
+
+    def field_groups(self):
+        """(choice, other value) bound fields of each merged field, for the template."""
+        return [(self[field], self[f"{field}_other"]) for field in self.LABELS]
+
+    def clean(self):
+        cleaned = super().clean()
+        for field in self.LABELS:
+            if cleaned.get(field) == self.OTHER:
+                cleaned[field] = cleaned.get(f"{field}_other", "").strip()
+        if "orcid" in cleaned:
+            cleaned["orcid"] = normalize_orcid(cleaned["orcid"])
+        return cleaned
 
 
 class IdentifyReferenceForm(forms.Form):

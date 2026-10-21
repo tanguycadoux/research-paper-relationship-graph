@@ -138,6 +138,16 @@ les dépôts Zenodo et les jeux de données. Crossref répond « inconnu » pour
   parser. Elle ne contient en général pas de bibliographie : seuls les liens déclarés
   `References` ou `Cites` vers des DOI deviennent des références.
 
+## Fusion d'auteurs
+
+`services/author_merge.py` : pour chaque champ (prénom, nom, ORCID), on propose les valeurs
+des auteurs fusionnés, ou une autre valeur saisie. Par défaut, on prend la forme la plus
+complète : sans initiale, pas tout en capitales, puis la plus longue. Pour l'ORCID, on
+prend le premier existant. Deux ORCID différents désignent en général deux personnes :
+la fusion demande alors une confirmation explicite. Les noms publiés restent sur chaque
+publication (`AuthorPublication`), si bien qu'aucune variante n'est perdue et que la
+fusion résiste aux ré-imports.
+
 ## Livres et ISBN
 
 Un livre souvent cité sans DOI peut être identifié par son ISBN. On cherche d'abord dans

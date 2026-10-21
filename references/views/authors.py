@@ -1,7 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -9,6 +8,7 @@ from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author
+from ..services import author_merge
 
 
 class AuthorListView(ListView):
@@ -77,28 +77,19 @@ def author_merge_confirm_view(request, ids):
         messages.error(request, "Il faut au moins deux auteurs.")
         return redirect("authors_merge_select")
 
-    pivot = authors[0]
-    form = AuthorMergeConfirmForm(request.POST or None, initial=editable_fields(pivot))
+    kept = authors[0]
+    candidates = author_merge.candidate_values(authors)
+    form = AuthorMergeConfirmForm(
+        request.POST or None,
+        initial=author_merge.default_values(candidates),
+        candidates=candidates,
+        orcid_conflict=author_merge.has_orcid_conflict(candidates),
+    )
     if request.method == "POST" and form.is_valid():
-        merge_authors(pivot, authors[1:], form.cleaned_data)
-        messages.success(request, f"{len(authors)} auteurs fusionnés en « {pivot} ».")
-        return redirect("author_detail", pk=pivot.pk)
+        author_merge.merge_authors(kept, authors[1:], form.cleaned_data)
+        messages.success(request, f"{len(authors)} auteurs fusionnés en « {kept} ».")
+        return redirect("author_detail", pk=kept.pk)
 
-    context = {"form": form, "authors": authors, "pivot": pivot}
-    return render(request, "references/authors_merge_confirm.html", context)
-
-
-MERGE_FIELDS = ("first_name", "last_name", "orcid")
-
-
-def editable_fields(author):
-    return {field: getattr(author, field) for field in MERGE_FIELDS}
-
-
-@transaction.atomic
-def merge_authors(pivot, others, data):
-    """Keep pivot with the chosen values and move the publications of the others to it."""
-    for field in MERGE_FIELDS:
-        setattr(pivot, field, data[field])
-    pivot.save()
-    pivot.merge_with(others)
+    return render(
+        request, "references/authors_merge_confirm.html", {"form": form, "authors": authors}
+    )

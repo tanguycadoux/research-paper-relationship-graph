@@ -36,19 +36,36 @@
         </section>
 
         <section aria-labelledby="merged-identity-title">
-            <h2 id="merged-identity-title">Auteur conservé</h2>
+            <h2 id="merged-identity-title">Identité après fusion</h2>
+            <p>Pour chaque champ, choisissez la valeur à conserver. La plus complète est proposée par défaut.</p>
             <form method="post">
                 {% csrf_token %}
-                <fieldset>
-                    <legend>Identité après fusion</legend>
-                    {% for field in form %}
+                {{ form.non_field_errors }}
+                {% for choice, other in form.field_groups %}
+                    <fieldset>
+                        <legend>{{ choice.label }}</legend>
+                        {{ choice }}
                         <p>
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
+                            <label for="{{ other.id_for_label }}">{{ other.label }}</label>
+                            {{ other }}
                         </p>
-                        {{ field.errors }}
-                    {% endfor %}
-                </fieldset>
+                        {{ choice.errors }}
+                    </fieldset>
+                {% endfor %}
+                {% if form.confirm_orcid_conflict %}
+                    <fieldset>
+                        <legend>ORCID différents</legend>
+                        <p>
+                            Ces auteurs ont des ORCID différents : ce sont en général deux personnes
+                            distinctes.
+                        </p>
+                        <p>
+                            {{ form.confirm_orcid_conflict }}
+                            <label for="{{ form.confirm_orcid_conflict.id_for_label }}">{{ form.confirm_orcid_conflict.label }}</label>
+                        </p>
+                        {{ form.confirm_orcid_conflict.errors }}
+                    </fieldset>
+                {% endif %}
                 <button type="submit">Fusionner</button>
                 <a href="{% url 'authors_merge_select' %}">Annuler</a>
             </form>
