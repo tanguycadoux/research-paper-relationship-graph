@@ -77,8 +77,7 @@
                     <div>
                         <dt class="text-gray-500">DOI</dt>
                         <dd>
-                            <a href="https://doi.org/{{ publication.doi }}"
-                               class="break-all">{{ publication.doi }}</a>
+                            {% external_link "https://doi.org/"|add:publication.doi publication.doi class="break-all" %}
                         </dd>
                     </div>
                 {% endif %}
@@ -117,7 +116,7 @@
                         <dt class="text-gray-500">Licences</dt>
                         {% for license in details.licenses %}
                             <dd>
-                                <a href="{{ license }}" class="break-all">{{ license }}</a>
+                                {% external_link license license class="break-all" %}
                             </dd>
                         {% endfor %}
                     </div>
