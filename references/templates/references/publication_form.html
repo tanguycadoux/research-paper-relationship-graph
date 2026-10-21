@@ -1,13 +1,31 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}{{ view.object.pk|yesno:"Modifier,Ajouter" }} une publication · {% endblock title %}
 
 {% block content %}
-    <h1>{{ view.object.pk|yesno:"Modifier,Ajouter" }} une publication</h1>
+    <header class="mb-6">
+        <h1>{{ view.object.pk|yesno:"Modifier,Ajouter" }} une publication</h1>
+        {% if view.object.pk %}
+            <p class="mt-1 text-gray-600">
+                <a href="{% url 'publication_detail' view.object.pk %}">{{ view.object }}</a>
+            </p>
+        {% endif %}
+    </header>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">{{ view.object.pk|yesno:"Modifier,Ajouter" }}</button>
-    </form>
-
-    <a href="{% url 'publications_list' %}">Retour à la liste</a>
-{% endblock %}
+    {% card %}
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {{ form.as_div }}
+            <div class="flex gap-2">
+                {% button view.object.pk|yesno:"Enregistrer,Ajouter" %}
+                {% if view.object.pk %}
+                    {% url 'publication_detail' view.object.pk as cancel_url %}
+                {% else %}
+                    {% url 'publication_list' as cancel_url %}
+                {% endif %}
+                {% button "Annuler" url=cancel_url variant="secondary" %}
+            </div>
+        </form>
+    {% endcard %}
+{% endblock content %}

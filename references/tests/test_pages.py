@@ -38,10 +38,10 @@ class PageSmokeTests(TestCase):
         self.assert_pages_render(
             [
                 ("index", []),
-                ("publications_list", []),
+                ("publication_list", []),
                 ("publication_detail", [self.pub.pk]),
                 ("publication_graph", [self.pub.pk]),
-                ("authors_list", []),
+                ("author_list", []),
                 ("author_detail", [self.author.pk]),
                 ("login", []),
                 ("register", []),
@@ -52,16 +52,16 @@ class PageSmokeTests(TestCase):
         self.client.force_login(self.user)
         self.assert_pages_render(
             [
-                ("publication_add", []),
+                ("publication_create", []),
                 ("publication_edit", [self.pub.pk]),
-                ("my_references", []),
-                ("my_refs_graph", []),
+                ("corpus", []),
+                ("corpus_graph", []),
             ]
         )
 
     def test_private_pages_redirect_anonymous_users_to_login(self):
-        response = self.client.get(reverse("my_references"))
-        self.assertRedirects(response, f"{reverse('login')}?next={reverse('my_references')}")
+        response = self.client.get(reverse("corpus"))
+        self.assertRedirects(response, f"{reverse('login')}?next={reverse('corpus')}")
 
     def test_detail_lists_resolved_and_unresolved_references(self):
         response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))

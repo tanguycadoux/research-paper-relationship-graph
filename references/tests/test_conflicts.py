@@ -95,29 +95,29 @@ class ConflictsPageTests(TestCase):
         self.conflict = MetadataConflict.objects.get()
 
     def test_page_lists_open_conflicts_with_the_seen_button(self):
-        response = self.client.get(reverse("conflicts"))
+        response = self.client.get(reverse("conflict_list"))
         self.assertContains(response, "Auteurs différents selon les sources")
         self.assertContains(response, 'value="seen"')
         self.assertNotContains(response, 'value="accepted"')
 
     def test_decision_is_traced(self):
-        url = reverse("resolve_conflict", args=[self.conflict.pk])
-        self.assertRedirects(self.client.post(url, {"decision": "seen"}), reverse("conflicts"))
+        url = reverse("conflict_resolve", args=[self.conflict.pk])
+        self.assertRedirects(self.client.post(url, {"decision": "seen"}), reverse("conflict_list"))
         self.conflict.refresh_from_db()
         self.assertEqual((self.conflict.status, self.conflict.resolved_by), ("seen", self.user))
-        response = self.client.get(reverse("conflicts"))
+        response = self.client.get(reverse("conflict_list"))
         self.assertContains(response, "Aucun conflit à trancher")
         self.assertContains(response, "Décisions récentes")
 
     def test_impossible_decision_is_refused(self):
-        url = reverse("resolve_conflict", args=[self.conflict.pk])
+        url = reverse("conflict_resolve", args=[self.conflict.pk])
         response = self.client.post(url, {"decision": "accepted"}, follow=True)
         self.assertContains(response, "pas possible")
         self.conflict.refresh_from_db()
         self.assertEqual(self.conflict.status, "open")
 
     def test_post_only_and_login_required(self):
-        url = reverse("resolve_conflict", args=[self.conflict.pk])
+        url = reverse("conflict_resolve", args=[self.conflict.pk])
         self.assertEqual(self.client.get(url).status_code, 405)
         self.client.logout()
-        self.assertEqual(self.client.get(reverse("conflicts")).status_code, 302)
+        self.assertEqual(self.client.get(reverse("conflict_list")).status_code, 302)

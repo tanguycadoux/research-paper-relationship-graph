@@ -1,16 +1,22 @@
 {% extends "base.html" %}
+{% load ui %}
+
+{% block title %}Créer un compte · {% endblock title %}
 
 {% block content %}
-
-    <h1>Créer un compte</h1>
-
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_div }}
-
-        <button type="submit">S'inscrire</button>
-    </form>
-
-    <p>Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a></p>
-
-{% endblock %}
+    <div class="mx-auto max-w-md">
+        <header class="mb-6">
+            <h1>Créer un compte</h1>
+        </header>
+        {% card %}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                {{ form.as_div }}
+                {% button "S'inscrire" icon="person_add" %}
+            </form>
+        {% endcard %}
+        <p class="mt-4 text-sm text-gray-600">
+            Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
+        </p>
+    </div>
+{% endblock content %}

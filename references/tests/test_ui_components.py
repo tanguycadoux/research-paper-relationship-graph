@@ -6,6 +6,7 @@ from django.test import SimpleTestCase
 
 from references.services import icons
 from references.templatetags.ui import (
+    ALERT_VARIANTS,
     BADGE_VARIANTS,
     BUTTON_VARIANTS,
 )
@@ -119,6 +120,26 @@ class OtherComponentsTests(SimpleTestCase):
     def test_card_heading_level_stays_below_the_page_title(self):
         with self.assertRaises(TemplateSyntaxError):
             render('{% card title="X" level=1 %}{% endcard %}')
+
+    def test_card_without_title_is_not_a_section(self):
+        html = render("{% card %}<p>x</p>{% endcard %}")
+        self.assertTrue(html.startswith('<div class="'))
+        self.assertNotIn("<section", html)
+
+    def test_flush_card_frames_a_table(self):
+        html = render("{% card flush=True %}<table></table>{% endcard %}")
+        self.assertIn("overflow-x-auto", html)
+        self.assertNotIn("p-4", html)
+
+    def test_message_alert_follows_the_message_level(self):
+        for tag, role, variant in (("error", "alert", "danger"), ("success", "status", "success")):
+            with self.subTest(tag=tag):
+                html = render(
+                    "{% message_alert m %}", m=Mock(level_tag=tag, __str__=lambda s: "Fait")
+                )
+                self.assertIn(f'role="{role}"', html)
+                self.assertIn(ALERT_VARIANTS[variant], html)
+                self.assertIn("Fait", html)
 
 
 class AddIconCommandTests(SimpleTestCase):

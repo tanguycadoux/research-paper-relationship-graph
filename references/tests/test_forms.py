@@ -19,5 +19,5 @@ class AuthorMergeSelectFormTests(TestCase):
     def test_merge_select_page_renders_labels(self):
         Author.objects.create(first_name="Ada", last_name="Lovelace", orcid="0000-0001")
         self.client.force_login(get_user_model().objects.create_user("alice"))
-        response = self.client.get(reverse("authors_merge_select"))
+        response = self.client.get(reverse("author_merge_select"))
         self.assertContains(response, "Ada Lovelace (ORCID : 0000-0001)")

@@ -60,7 +60,7 @@ class ExportTests(TestCase):
 
     def test_page_reports_the_publications_left_out(self):
         self.client.force_login(self.alice)
-        response = self.client.get(reverse("my_references"))
+        response = self.client.get(reverse("corpus"))
         self.assertContains(response, "1 publication sans DOI ni ISBN")
 
 

@@ -1,5 +1,19 @@
 {% extends "references/base.html" %}
+{% load ui %}
 
 {% block content %}
-    <h1>Gestionnaire de références</h1>
+    <header class="mb-6">
+        <h1>Gestionnaire de références</h1>
+        <p class="mt-2 text-gray-600">
+            Constituez votre corpus d'articles et explorez les relations de citation entre eux.
+        </p>
+    </header>
+    <div class="flex flex-wrap gap-2">
+        {% url 'publication_list' as publications_url %}
+        {% button "Parcourir les publications" url=publications_url icon="article" %}
+        {% if user.is_authenticated %}
+            {% url 'corpus' as corpus_url %}
+            {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
+        {% endif %}
+    </div>
 {% endblock content %}

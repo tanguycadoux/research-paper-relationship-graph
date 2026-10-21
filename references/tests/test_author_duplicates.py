@@ -92,7 +92,7 @@ class DuplicatesPageTests(TestCase):
 
     def test_group_form_leads_to_the_merge_confirmation(self):
         response = self.client.post(
-            reverse("authors_merge_select"), {"authors": [self.ada.pk, self.initial.pk]}
+            reverse("author_merge_select"), {"authors": [self.ada.pk, self.initial.pk]}
         )
         ids = response.url.rstrip("/").rsplit("/", 1)[-1]
         self.assertEqual(sorted(ids.split(",")), sorted([str(self.ada.pk), str(self.initial.pk)]))

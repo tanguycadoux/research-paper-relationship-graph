@@ -1,84 +1,99 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}{{ author|default:"(sans nom)" }} · {% endblock title %}
 
 {% block content %}
-    <article>
-        <header>
-            <h1>{{ author|default:"(sans nom)" }}</h1>
+    <header class="mb-8 space-y-3">
+        <p class="text-sm text-gray-500">
+            <a href="{% url 'author_list' %}">Auteurs</a>
             {% if author.orcid %}
-                <p>ORCID : <a href="https://orcid.org/{{ author.orcid }}">{{ author.orcid }}</a></p>
+                · ORCID <a href="https://orcid.org/{{ author.orcid }}">{{ author.orcid }}</a>
             {% endif %}
-            {% if user.is_authenticated %}
-                <p><a href="{% url 'author_edit' author.pk %}">Modifier</a></p>
-            {% endif %}
-        </header>
+        </p>
+        <h1>{{ author|default:"(sans nom)" }}</h1>
+        {% if user.is_authenticated %}
+            <div class="flex flex-wrap gap-2">
+                {% url 'author_edit' author.pk as edit_url %}
+                {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}
+            </div>
+        {% endif %}
+    </header>
 
+    <div class="space-y-8">
         {% if organization_groups %}
             <section aria-labelledby="author-organizations-title">
                 <h2 id="author-organizations-title">Organisations</h2>
-                <p>
-                    <small>
-                        Déclarées sur ses publications (selon OpenAlex), regroupées par organisation
-                        de tutelle. Une unité mixte apparaît sous chacune de ses tutelles. Les
-                        périodes sont celles des publications.
-                    </small>
+                <p class="mt-1 mb-3 text-sm text-gray-500">
+                    Déclarées sur ses publications (selon OpenAlex), regroupées par organisation
+                    de tutelle. Une unité mixte apparaît sous chacune de ses tutelles. Les
+                    périodes sont celles des publications.
                 </p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">Organisation</th>
-                            <th scope="col">Détail</th>
-                            <th scope="col">Période</th>
-                            <th scope="col">Publications</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for group in organization_groups %}
+                {% card flush=True %}
+                    <table>
+                        <thead>
                             <tr>
-                                <th scope="row">
-                                    {% if group.organization.ror %}
-                                        <a href="https://ror.org/{{ group.organization.ror }}">{{ group.organization }}</a>
-                                    {% else %}
-                                        {{ group.organization }}
-                                    {% endif %}
-                                </th>
-                                <td>{{ group.details|join:", " }}</td>
-                                <td>
-                                    {% if group.first_date %}
-                                        {{ group.first_date|date:"Y" }}{% if group.last_date|date:"Y" != group.first_date|date:"Y" %} – {{ group.last_date|date:"Y" }}{% endif %}
-                                    {% endif %}
-                                </td>
-                                <td>{{ group.publication_count }}</td>
+                                <th scope="col">Organisation</th>
+                                <th scope="col">Détail</th>
+                                <th scope="col">Période</th>
+                                <th scope="col">Publications</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for group in organization_groups %}
+                                <tr>
+                                    <th scope="row" class="font-normal">
+                                        {% if group.organization.ror %}
+                                            <a href="https://ror.org/{{ group.organization.ror }}">{{ group.organization }}</a>
+                                        {% else %}
+                                            {{ group.organization }}
+                                        {% endif %}
+                                    </th>
+                                    <td class="text-gray-600">{{ group.details|join:", " }}</td>
+                                    <td class="whitespace-nowrap">
+                                        {% if group.first_date %}
+                                            {{ group.first_date|date:"Y" }}{% if group.last_date|date:"Y" != group.first_date|date:"Y" %} – {{ group.last_date|date:"Y" }}{% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ group.publication_count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endcard %}
             </section>
         {% endif %}
 
         <section aria-labelledby="author-publications-title">
-            <h2 id="author-publications-title">Publications</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th scope="col">Titre</th>
-                        <th scope="col">Date de publication</th>
-                        <th scope="col">DOI</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pub in publications %}
+            <h2 id="author-publications-title" class="mb-3">
+                Publications <span class="font-normal text-gray-500">({{ publications|length }})</span>
+            </h2>
+            {% card flush=True %}
+                <table>
+                    <thead>
                         <tr>
-                            <th scope="row"><a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a></th>
-                            <td>{{ pub.publication_date|default:"" }}</td>
-                            <td>{{ pub.doi }}</td>
+                            <th scope="col">Titre</th>
+                            <th scope="col">Année</th>
+                            <th scope="col">DOI</th>
                         </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="3">Aucune publication.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for pub in publications %}
+                            <tr>
+                                <th scope="row" class="font-normal">
+                                    <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                                </th>
+                                <td class="text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
+                                <td class="text-gray-600">{{ pub.doi }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-gray-500">Aucune publication.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endcard %}
         </section>
-    </article>
+    </div>
 {% endblock content %}

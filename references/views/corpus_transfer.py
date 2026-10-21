@@ -40,10 +40,10 @@ def import_json(request):
     upload = request.FILES.get("file")
     if upload is None:
         messages.error(request, "Choisissez un fichier d'export (.json).")
-        return redirect("my_references")
+        return redirect("corpus")
     if upload.size > MAX_IMPORT_SIZE:
         messages.error(request, "Le fichier dépasse 1 Mo : ce n'est pas un export de corpus.")
-        return redirect("my_references")
+        return redirect("corpus")
     try:
         report = import_corpus(request.user, json.loads(upload.read().decode("utf-8")))
     except (UnicodeDecodeError, json.JSONDecodeError):
@@ -52,7 +52,7 @@ def import_json(request):
         messages.error(request, str(error))
     else:
         report_import(request, report)
-    return redirect("my_references")
+    return redirect("corpus")
 
 
 def report_import(request, report):

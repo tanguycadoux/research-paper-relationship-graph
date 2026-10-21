@@ -23,8 +23,8 @@ from references.services.icons import UnknownIcon, icon_parts
 register = template.Library()
 
 BUTTON_BASE = (
-    "inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm "
-    "font-medium no-underline cursor-pointer focus-visible:outline-2 "
+    "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 "
+    "text-sm font-medium no-underline cursor-pointer focus-visible:outline-2 "
     "focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 )
 BUTTON_VARIANTS = {
@@ -61,6 +61,7 @@ ALERT_ICONS = {
     "success": "check_circle",
 }
 CARD_CLASSES = "rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+CARD_FLUSH_CLASSES = "overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"
 CARD_TITLE_CLASSES = "mb-2 text-base font-semibold"
 
 
@@ -144,14 +145,36 @@ def alert(message, variant="primary"):
     }
 
 
+# Levels of django.contrib.messages, as alert variants.
+MESSAGE_VARIANTS = {
+    "debug": "secondary",
+    "info": "primary",
+    "success": "success",
+    "warning": "warning",
+    "error": "danger",
+}
+
+
+@register.inclusion_tag("components/alert.html")
+def message_alert(message):
+    """A message of django.contrib.messages, shown as an alert of its level."""
+    return alert(message, MESSAGE_VARIANTS.get(message.level_tag, "primary"))
+
+
 @register.simple_block_tag
-def card(content, title="", level=2):
-    """A card: {% card title="…" level=3 %}content{% endcard %}."""
+def card(content, title="", level=2, flush=False):
+    """
+    A card: {% card title="…" level=3 %}content{% endcard %}, a <section> under its
+    heading (a <div> without title). With flush=True, no inner padding and a
+    horizontal scroll: the frame of a table.
+    """
     if level not in range(2, 7):
         raise template.TemplateSyntaxError(
             "card : level va de 2 à 6 (le h1 est le titre de la page)."
         )
-    heading = format_html('<h{} class="{}">{}</h{}>', level, CARD_TITLE_CLASSES, title, level)
-    return format_html(
-        '<section class="{}">{}{}</section>', CARD_CLASSES, heading if title else "", content
-    )
+    classes = CARD_FLUSH_CLASSES if flush else CARD_CLASSES
+    title_classes = f"{CARD_TITLE_CLASSES} px-4 pt-3" if flush else CARD_TITLE_CLASSES
+    heading = format_html('<h{} class="{}">{}</h{}>', level, title_classes, title, level)
+    if not title:
+        return format_html('<div class="{}">{}</div>', classes, content)
+    return format_html('<section class="{}">{}{}</section>', classes, heading, content)

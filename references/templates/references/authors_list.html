@@ -1,28 +1,38 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Auteurs · {% endblock title %}
 
 {% block content %}
-    <h1>Liste des auteurs</h1>
+    <header class="mb-6">
+        <h1>Auteurs</h1>
+    </header>
 
     {% if authors %}
-        <table>
-            <thead>
-                <tr>
-                    <th scope="col">Prénom</th>
-                    <th scope="col">Nom</th>
-                    <th scope="col">ORCID</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for author in authors %}
+        {% card flush=True %}
+            <table>
+                <caption class="sr-only">Auteurs de la base commune, par nom</caption>
+                <thead>
                     <tr>
-                        <th scope="row"><a href="{% url 'author_detail' author.pk %}">{{ author.first_name }}</a></th>
-                        <td>{{ author.last_name }}</td>
-                        <td>{{ author.orcid }}</td>
+                        <th scope="col">Nom</th>
+                        <th scope="col">Prénom</th>
+                        <th scope="col">ORCID</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for author in authors %}
+                        <tr>
+                            <th scope="row" class="font-normal">
+                                <a href="{% url 'author_detail' author.pk %}">{{ author.last_name|default:"(sans nom)" }}</a>
+                            </th>
+                            <td>{{ author.first_name }}</td>
+                            <td class="text-gray-600">{{ author.orcid }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endcard %}
     {% else %}
-        <p>Base de données vide.</p>
+        <p class="text-gray-600">Aucun auteur dans la base.</p>
     {% endif %}
 {% endblock content %}

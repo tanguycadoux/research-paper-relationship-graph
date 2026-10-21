@@ -43,11 +43,11 @@ def add_publication_to_user_refs_by_doi(request):
 
     if not is_valid_doi(normalized_doi):
         messages.error(request, "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
-        return redirect("my_references")
+        return redirect("corpus")
 
     pub, _ = Publication.objects.get_or_create(doi=normalized_doi)
     report_addition(request, pub, add_to_corpus(request.user, pub))
-    return redirect("my_references")
+    return redirect("corpus")
 
 
 @login_required

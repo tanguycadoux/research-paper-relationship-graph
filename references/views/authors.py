@@ -69,7 +69,7 @@ def author_merge_confirm_view(request, ids):
 
     if len(authors) < 2:
         messages.error(request, "Il faut au moins deux auteurs.")
-        return redirect("authors_merge_select")
+        return redirect("author_merge_select")
 
     kept = authors[0]
     candidates = author_merge.candidate_values(authors)

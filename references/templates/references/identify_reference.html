@@ -1,72 +1,68 @@
 {% extends "references/base.html" %}
-
+{% load ui %}
+{% block title %}Identifier une référence · {% endblock title %}
 {% block content %}
-    <article>
-        <header>
-            <h1>Identifier une référence</h1>
-            <p>
-                Référence n° {{ ref.position|add:1 }} de
-                <a href="{% url 'publication_detail' ref.source.pk %}">{{ ref.source }}</a>
-            </p>
-        </header>
-
-        <section aria-labelledby="crossref-data-title">
-            <h2 id="crossref-data-title">Telle que donnée par Crossref</h2>
-            <blockquote>{{ ref.label|default:"(aucun texte)" }}</blockquote>
+    <header class="mb-6">
+        <p class="text-sm text-gray-500">
+            Référence n° {{ ref.position|add:1 }} de
+            <a href="{% url 'publication_detail' ref.source.pk %}">{{ ref.source }}</a>
+        </p>
+        <h1 class="mt-1">Identifier une référence</h1>
+    </header>
+    <div class="space-y-6">
+        {% card title="Telle que donnée par Crossref" %}
+            <blockquote class="border-l-4 border-gray-200 pl-3 text-sm text-gray-700">
+                {{ ref.label|default:"(aucun texte)" }}
+            </blockquote>
             {% if ref.target %}
-                <p>
+                <p class="mt-3 text-sm">
                     Actuellement reliée à
                     <a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
                     {% if ref.resolved_manually %}
-                        (identifiée à la main{% if ref.resolved_by %} par {{ ref.resolved_by }}{% endif %},
-                        le <time datetime="{{ ref.resolved_at|date:'c' }}">{{ ref.resolved_at|date:"j F Y" }}</time>)
+                        <span class="text-gray-500">
+                            (identifiée à la main{% if ref.resolved_by %} par {{ ref.resolved_by }}{% endif %},
+                            le <time datetime="{{ ref.resolved_at|date:'c' }}">{{ ref.resolved_at|date:"j F Y" }}</time>)
+                        </span>
                     {% endif %}
                 </p>
             {% endif %}
-        </section>
-
-        <form method="post">
-            {% csrf_token %}
-            <fieldset>
-                <legend>{{ form.method.label }}</legend>
-                {{ form.method }}
-                {{ form.method.errors }}
-            </fieldset>
-
-            <fieldset>
-                <legend>Par DOI</legend>
-                <p>
-                    <label for="{{ form.doi.id_for_label }}">{{ form.doi.label }}</label>
+        {% endcard %}
+        {% card %}
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <fieldset class="space-y-1">
+                    <legend>{{ form.method.label }}</legend>
+                    <div class="text-sm">{{ form.method }}</div>
+                    {{ form.method.errors }}
+                </fieldset>
+                <fieldset class="space-y-1">
+                    <legend>Par DOI</legend>
+                    <label for="{{ form.doi.id_for_label }}"
+                           class="font-normal text-gray-600">{{ form.doi.label }}</label>
                     {{ form.doi }}
-                </p>
-                {{ form.doi.errors }}
-            </fieldset>
-
-            <fieldset>
-                <legend>Par ISBN</legend>
-                <p>
-                    <label for="{{ form.isbn.id_for_label }}">{{ form.isbn.label }}</label>
+                    {{ form.doi.errors }}
+                </fieldset>
+                <fieldset class="space-y-1">
+                    <legend>Par ISBN</legend>
+                    <label for="{{ form.isbn.id_for_label }}"
+                           class="font-normal text-gray-600">{{ form.isbn.label }}</label>
                     {{ form.isbn }}
-                </p>
-                {{ form.isbn.errors }}
-                <p><small>Recherché dans Crossref, puis dans Open Library.</small></p>
-            </fieldset>
-
-            <fieldset>
-                <legend>Sans identifiant</legend>
-                <p>
-                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.isbn.errors }}
+                    <p class="text-xs text-gray-500">Recherché dans Crossref, puis dans Open Library.</p>
+                </fieldset>
+                <fieldset class="space-y-1">
+                    <legend>Sans identifiant</legend>
+                    <label for="{{ form.title.id_for_label }}"
+                           class="font-normal text-gray-600">{{ form.title.label }}</label>
                     {{ form.title }}
-                </p>
-                {{ form.title.errors }}
-                <p>
-                    <label for="{{ form.year.id_for_label }}">{{ form.year.label }}</label>
+                    {{ form.title.errors }}
+                    <label for="{{ form.year.id_for_label }}"
+                           class="mt-2 font-normal text-gray-600">{{ form.year.label }}</label>
                     {{ form.year }}
-                </p>
-                {{ form.year.errors }}
-            </fieldset>
-
-            <button type="submit">Identifier</button>
-        </form>
-    </article>
+                    {{ form.year.errors }}
+                </fieldset>
+                {% button "Identifier" %}
+            </form>
+        {% endcard %}
+    </div>
 {% endblock content %}

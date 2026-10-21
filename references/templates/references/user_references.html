@@ -1,43 +1,77 @@
 {% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Mes références · {% endblock title %}
 
 {% block content %}
-    <h1>Mes références</h1>
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1>Mes références</h1>
+        {% url 'corpus_graph' as graph_url %}
+        {% button "Mon graphe" url=graph_url variant="secondary" icon="hub" %}
+    </header>
 
-    <form method="post" action="{% url 'add_publication_to_user_refs_by_doi' %}">
-        {% csrf_token %}
-        <input type="text" name="doi" placeholder="Entrez un DOI…" required>
-        <button type="submit">Ajouter</button>
-    </form>
+    <div class="grid gap-6 lg:grid-cols-3">
+        <section aria-labelledby="corpus-title" class="lg:col-span-2">
+            <h2 id="corpus-title" class="mb-3">
+                Publications <span class="font-normal text-gray-500">({{ publications|length }})</span>
+            </h2>
+            {% if publications %}
+                {% card flush=True %}
+                    <ul class="divide-y divide-gray-100 text-sm">
+                        {% for pub in publications %}
+                            <li class="px-4 py-2">
+                                <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                                {% if pub.publication_date %}
+                                    <span class="text-gray-500">· {{ pub.publication_date|date:"Y" }}</span>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endcard %}
+            {% else %}
+                <p class="text-gray-600">Aucune publication dans votre corpus.</p>
+            {% endif %}
+        </section>
 
-    <section aria-labelledby="transfer-title">
-        <h2 id="transfer-title">Exporter et importer</h2>
-        <p>
-            Exporter mon corpus :
-            <a href="{% url 'corpus_export_json' %}" download>JSON (réimportable)</a>,
-            <a href="{% url 'corpus_export_bibtex' %}" download>BibTeX</a>
-        </p>
-        {% if not_exportable %}
-            <p>
-                {{ not_exportable }} publication{{ not_exportable|pluralize }} sans DOI ni ISBN
-                ne figure{{ not_exportable|pluralize:"nt" }} pas dans les exports.
-            </p>
-        {% endif %}
-        <form method="post" action="{% url 'corpus_import' %}" enctype="multipart/form-data">
-            {% csrf_token %}
-            <label for="corpus-file">Importer un export JSON</label>
-            <input type="file" id="corpus-file" name="file" accept=".json,application/json" required>
-            <button type="submit">Importer</button>
-        </form>
-    </section>
+        <div class="space-y-6">
+            {% card title="Ajouter par DOI" %}
+                <form method="post" action="{% url 'corpus_add_by_doi' %}" class="space-y-3">
+                    {% csrf_token %}
+                    <label for="doi" class="sr-only">DOI</label>
+                    <input type="text" id="doi" name="doi" placeholder="10.xxxx/…" required>
+                    {% button "Ajouter" icon="add" %}
+                </form>
+            {% endcard %}
 
-    <h2>Publications</h2>
-    {% if publications %}
-        <ul>
-            {% for pub in publications %}
-                <li><a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a></li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Aucune publication enregistrée.</p>
-    {% endif %}
+            {% card title="Exporter et importer" %}
+                <div class="space-y-4 text-sm">
+                    <div class="flex flex-wrap gap-2">
+                        {% url 'corpus_export_json' as json_url %}
+                        {% url 'corpus_export_bibtex' as bibtex_url %}
+                        {% button "JSON (réimportable)" url=json_url variant="secondary" icon="download" %}
+                        {% button "BibTeX" url=bibtex_url variant="secondary" icon="download" %}
+                    </div>
+                    {% if not_exportable %}
+                        <p class="text-gray-600">
+                            {{ not_exportable }} publication{{ not_exportable|pluralize }} sans DOI ni ISBN
+                            ne figure{{ not_exportable|pluralize:"nt" }} pas dans les exports.
+                        </p>
+                    {% endif %}
+                    <form method="post"
+                          action="{% url 'corpus_import' %}"
+                          enctype="multipart/form-data"
+                          class="space-y-3">
+                        {% csrf_token %}
+                        <label for="corpus-file">Importer un export JSON</label>
+                        <input type="file"
+                               id="corpus-file"
+                               name="file"
+                               accept=".json,application/json"
+                               required>
+                        {% button "Importer" variant="secondary" icon="upload" %}
+                    </form>
+                </div>
+            {% endcard %}
+        </div>
+    </div>
 {% endblock content %}

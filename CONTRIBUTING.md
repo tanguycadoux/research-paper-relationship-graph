@@ -48,6 +48,14 @@ python manage.py test
 
 Les templates suivent HTML5 : `lang="fr"`, balises sémantiques (`<header>`, `<nav>`, un seul `<main>`, `<aside>`…), pas de style inline. djLint vérifie une partie de ces règles. Après un changement de structure, validez aussi une page rendue avec le [validateur W3C](https://validator.w3.org/nu/).
 
+### Interface
+
+- Structure de page : `templates/base.html` (en-tête, navigation, `<main>`). Chaque page commence par un `<header>` qui porte son unique `<h1>`, et ses titres se suivent sans saut de niveau.
+- Styles : classes Tailwind dans les templates. Les styles par défaut des éléments (titres, liens, tableaux, champs de formulaire) sont définis une seule fois, dans la couche `base` de `assets/css/source.css` : un template n'ajoute que ce qui diffère. Pas de nouvelle classe CSS propre au projet.
+- Composants (`{% load ui %}`) : `button` (un lien quand il reçoit une `url`), `badge`, `alert`, `card`, `icon`. Les variantes sont définies dans `references/templatetags/ui.py`.
+- Navigation : elle est décrite dans `references/templatetags/navigation.py`. Une nouvelle page s'y ajoute si elle doit apparaître dans le menu.
+- Icônes : `python manage.py add_icon <nom>` (noms de https://fonts.google.com/icons).
+
 Les tests ne font aucun appel réseau : les appels à Crossref sont simulés avec `unittest.mock`. Le test runner (`config/test_runner.py`) fait échouer toute tentative de connexion, ce qui révèle un appel oublié.
 
 La CI (GitHub Actions) lance `ruff check`, `ruff format --check`, `djlint --lint` et `python manage.py test` sur chaque pull request.
