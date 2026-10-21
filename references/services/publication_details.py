@@ -1,7 +1,7 @@
 """
 Information already present in the stored Crossref answer of a publication,
-displayed without any new request: venue, citation count, funders, licenses,
-subjects and abstract.
+displayed without any new request: venue, citation count, funders (named after
+OpenAlex when it knows them), licenses, subjects and abstract.
 """
 
 import html
@@ -18,22 +18,76 @@ SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([.,;:!?)])")
 
 def crossref_details(pub):
     """Displayable details of the Crossref answer, or None if Crossref does not know pub."""
-    message = (records_by_source(pub).get(Source.CROSSREF) or {}).get("message")
+    records = records_by_source(pub)
+    message = (records.get(Source.CROSSREF) or {}).get("message")
     if not message:
         return None
+    openalex_funders = (records.get(Source.OPENALEX) or {}).get("funders") or []
     return {
         "venue": clean_text(next(iter(message.get("container-title", [])), "")),
         "citation_count": message.get("is-referenced-by-count"),
         "subjects": [clean_text(subject) for subject in message.get("subject", [])],
-        "funders": [funder_label(funder) for funder in message.get("funder", [])],
+        "funders": funder_labels(message.get("funder", []), openalex_funders),
         "licenses": list(dict.fromkeys(lic["URL"] for lic in message.get("license", []))),
         "abstract": abstract_paragraphs(message.get("abstract", "")),
     }
 
 
-def funder_label(funder):
-    awards = ", ".join(funder.get("award", []))
-    name = clean_text(funder.get("name", ""))
+def funder_labels(funders, openalex_funders=()):
+    """
+    One label per funder. Publishers sometimes deposit a funder in damaged forms
+    (« french “Agence… », « Agence … de 308 la Recherche »). Identified funders are
+    the reference: Crossref entries with a DOI (Open Funder Registry), then those of
+    OpenAlex. They take in the other Crossref entries that share one of their award
+    numbers or contain their name; the remaining entries are merged by name.
+    """
+    identified = {}  # comparable name: (name, awards)
+    for funder in funders:
+        if funder.get("DOI"):
+            name = clean_text(funder.get("name", ""))
+            identified.setdefault(comparable_name(name), (name, []))[1].extend(
+                funder.get("award", [])
+            )
+    for funder in openalex_funders:
+        name = clean_text(funder.get("display_name") or "")
+        identified.setdefault(comparable_name(name), (name, []))
+    others = {}  # comparable name: (name, awards)
+    for funder in funders:
+        if funder.get("DOI"):
+            continue
+        awards = funder.get("award", [])
+        reference = matching_identified(identified.values(), funder.get("name", ""), awards)
+        if reference is None:
+            name = clean_text(funder.get("name", ""))
+            reference = others.setdefault(comparable_name(name), (name, []))
+        reference[1].extend(awards)
+    return [
+        funder_label(name, awards)
+        for name, awards in [*identified.values(), *others.values()]
+        if name
+    ]
+
+
+def matching_identified(identified, name, awards):
+    """The identified funder sharing an award number, or whose name is in name (whole words)."""
+    words = f" {comparable_name(clean_text(name))} "
+    for reference in identified:
+        reference_name, reference_awards = reference
+        reference_words = comparable_name(reference_name)
+        if set(awards) & set(reference_awards) or (
+            reference_words and f" {reference_words} " in words
+        ):
+            return reference
+    return None
+
+
+def comparable_name(name):
+    """Lowercase words of letters only: « Agence de 308 la » gives « agence de la »."""
+    return " ".join("".join(c if c.isalpha() else " " for c in name.casefold()).split())
+
+
+def funder_label(name, awards):
+    awards = ", ".join(dict.fromkeys(awards))
     return f"{name} ({awards})" if awards else name
 
 
