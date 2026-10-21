@@ -43,16 +43,17 @@
             {% main_navigation %}
             <main id="contenu" class="flex min-w-0 flex-1 flex-col p-4 md:p-8">
                 <div class="mx-auto flex w-full max-w-5xl flex-1 flex-col">
-                    {% if messages %}
-                        <div class="mb-6 space-y-2">
-                            {% for message in messages %}
-                                {% message_alert message %}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
                     {% block content %}{% endblock content %}
                 </div>
             </main>
         </div>
+        {% if messages %}
+            <div class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
+                {% for message in messages %}
+                    {% message_toast message %}
+                {% endfor %}
+            </div>
+            <script src="{% static 'js/toasts.js' %}" defer></script>
+        {% endif %}
     </body>
 </html>

@@ -144,15 +144,22 @@ class OtherComponentsTests(SimpleTestCase):
         self.assertIn("overflow-x-auto", html)
         self.assertNotIn("p-4", html)
 
-    def test_message_alert_follows_the_message_level(self):
-        for tag, role, variant in (("error", "alert", "danger"), ("success", "status", "success")):
+    def test_message_toast_follows_the_message_level(self):
+        cases = (("error", "alert", "danger", False), ("success", "status", "success", True))
+        for tag, role, variant, autohide in cases:
             with self.subTest(tag=tag):
                 html = render(
-                    "{% message_alert m %}", m=Mock(level_tag=tag, __str__=lambda s: "Fait")
+                    "{% message_toast m %}", m=Mock(level_tag=tag, __str__=lambda s: "Fait")
                 )
                 self.assertIn(f'role="{role}"', html)
                 self.assertIn(ALERT_VARIANTS[variant], html)
+                self.assertEqual("data-toast-autohide" in html, autohide)
                 self.assertIn("Fait", html)
+
+    def test_toast_close_button_waits_for_the_script(self):
+        html = render("{% message_toast m %}", m=Mock(level_tag="info", __str__=lambda s: "x"))
+        self.assertIn('aria-label="Fermer la notification"', html)
+        self.assertRegex(html, r"data-toast-close\s+hidden")
 
 
 class AddIconCommandTests(SimpleTestCase):
