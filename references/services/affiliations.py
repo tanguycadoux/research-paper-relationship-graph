@@ -12,6 +12,7 @@ from ..models import AuthorPublication
 from .conflicts import Kind, close_obsolete, names_summary, report_conflict
 from .external_records import Source
 from .names import same_person_name
+from .orcid_completion import complete_orcids
 from .organizations import openalex_id, organizations_for
 
 logger = logging.getLogger(__name__)
@@ -19,8 +20,9 @@ logger = logging.getLogger(__name__)
 
 def attach_affiliations(pub):
     """
-    Link the author slots of pub to their OpenAlex institutions. Return False when
-    the OpenAlex authors do not match the published ones (nothing is attached).
+    Link the author slots of pub to their OpenAlex institutions, and complete the
+    missing ORCIDs of their authors. Return False when the OpenAlex authors do not
+    match the published ones (nothing is attached).
     """
     record = pub.external_records.filter(source=Source.OPENALEX, data__isnull=False).first()
     if record is None:
@@ -33,6 +35,7 @@ def attach_affiliations(pub):
         return False
     close_obsolete(Kind.AUTHORS_MISMATCH, publication=pub)
     link_slots(slots, authorships)
+    complete_orcids(slots, authorships)
     return True
 
 

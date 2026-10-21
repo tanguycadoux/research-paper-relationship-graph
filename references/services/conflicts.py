@@ -44,6 +44,15 @@ def resolve(conflict, status, user):
     conflict.resolved_by = user
     conflict.resolved_at = timezone.now()
     conflict.save(update_fields=["status", "resolved_by", "resolved_at"])
+    if status == Status.ACCEPTED:
+        apply_proposed_value(conflict)
+
+
+def apply_proposed_value(conflict):
+    """The proposed value replaces the known one."""
+    if conflict.kind == Kind.ORCID:
+        conflict.author.orcid = conflict.proposed_value
+        conflict.author.save(update_fields=["orcid"])
 
 
 def names_summary(names):
