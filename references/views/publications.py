@@ -76,12 +76,16 @@ class PublicationDeleteView(LoginRequiredMixin, DeleteView):
 
 
 @login_required
-def fetch_crossref(request, pk):
+def publication_metadata(request, pk):
+    """Raw answers of the external sources about a publication, as JSON."""
     pub = get_object_or_404(Publication, pk=pk)
-
-    if not pub.crossref_json:
-        raise Http404(f"404 : JSON CrossRef non récupéré pour la publication id={pk}")
-    return JsonResponse(pub.crossref_json)
+    records = {
+        record.source: {"fetched_at": record.fetched_at.isoformat(), "data": record.data}
+        for record in pub.external_records.all()
+    }
+    if not records:
+        raise Http404(f"Aucune métadonnée récupérée pour la publication id={pk}")
+    return JsonResponse(records)
 
 
 @login_required

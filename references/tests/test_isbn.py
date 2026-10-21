@@ -9,8 +9,9 @@ from references.forms import IdentifyReferenceForm, PublicationForm
 from references.models import CitedReference, Publication
 from references.services.books import find_or_import_book
 from references.services.isbn import is_valid_isbn, normalize_isbn
+from references.services.metadata_formats import openlibrary_message
 from references.services.openlibrary_api import fetch_openlibrary_book
-from references.services.parser import openlibrary_message
+from references.tests.helpers import with_openlibrary
 
 DEEP_LEARNING = "9780262035613"
 OPENLIBRARY_DOC = {
@@ -91,7 +92,7 @@ class FindOrImportBookTests(TestCase):
         self.assertEqual(pub.isbn, DEEP_LEARNING)
 
     def test_stored_metadata_is_not_fetched_again(self, crossref, openlibrary):
-        Publication.objects.create(isbn=DEEP_LEARNING, openlibrary_json=OPENLIBRARY_DOC)
+        with_openlibrary(Publication.objects.create(isbn=DEEP_LEARNING), OPENLIBRARY_DOC)
         find_or_import_book(DEEP_LEARNING)
         crossref.assert_not_called()
         openlibrary.assert_not_called()

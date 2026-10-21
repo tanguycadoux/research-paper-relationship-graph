@@ -9,6 +9,7 @@ from references.models import (
     Publication,
     UserPublication,
 )
+from references.tests.helpers import with_crossref
 
 
 class PageSmokeTests(TestCase):
@@ -67,3 +68,9 @@ class PageSmokeTests(TestCase):
         response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
         self.assertContains(response, "Article cité")
         self.assertContains(response, "Smith J. Some book. 1999.")
+
+    def test_metadata_page_lists_the_records_of_each_source(self):
+        with_crossref(self.pub, {"message": {"title": ["Un article"]}})
+        self.client.force_login(self.user)
+        data = self.client.get(reverse("publication_metadata", args=[self.pub.pk])).json()
+        self.assertEqual(data["crossref"]["data"], {"message": {"title": ["Un article"]}})

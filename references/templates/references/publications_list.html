@@ -28,7 +28,7 @@
                             </td>
                         {% endif %}
                         <td><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></td>
-                        <td><a href="{% url 'publication_crossref' pub.pk %}" target="_blank">{{ pub.doi }}</a></td>
+                        <td><a href="{% url 'publication_metadata' pub.pk %}" target="_blank">{{ pub.doi }}</a></td>
                         <td>{{ pub.publication_date }}</td>
                     </tr>
                 {% endfor %}

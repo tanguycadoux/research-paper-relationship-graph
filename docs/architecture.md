@@ -24,6 +24,8 @@ references/          application principale
   views/             une vue par domaine : home, publications, authors, corpus, graphs
   services/          logique métier, sans dépendance aux vues
     http.py          requêtes JSON communes (session, nouvelles tentatives, journalisation)
+    external_records.py  stockage des réponses des sources (ExternalRecord)
+    metadata_formats.py  conversion de chaque source vers le format lu par le parser
     crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN)
     openlibrary_api.py  client Open Library (recherche par ISBN)
     doi.py, isbn.py  normalisation et validation des identifiants
@@ -65,7 +67,8 @@ erDiagram
 
 | Modèle | Rôle |
 |---|---|
-| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. La réponse d'Open Library est stockée de la même façon (`openlibrary_json`, `openlibrary_fetched_at`). Le JSON Crossref est stocké tel quel, avec sa date de récupération `crossref_fetched_at`. |
+| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. |
+| `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Elle est conservée au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
 | `Author` | Une personne (entité résolue). |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
@@ -82,7 +85,7 @@ Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
    pour un ajout au corpus, quel que soit le chemin, et `services/importer.import_publication`
    dans les autres cas. Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
    de signal.
-2. Les métadonnées d'un article ne sont récupérées que si `crossref_fetched_at` est vide.
+2. Les métadonnées d'un article ne sont récupérées que si aucune source ne l'a encore décrit.
    Le seul moyen de rappeler Crossref pour un article déjà récupéré est le bouton
    « Rafraîchir depuis Crossref » (`force_fetch`).
 3. Pour un article du corpus, les références sont analysées, puis les articles cités
@@ -158,4 +161,5 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Adresse Crossref dans une variable d'environnement | Le dépôt est public. |
 | 2026-10-21 | Pas de rapprochement automatique des références au texte identique | Sans DOI ni ISBN, rien ne prouve qu'il s'agit du même ouvrage : on identifie à la main, ou on fusionne des publications (#67). |
 | 2026-10-21 | ISBN : Crossref d'abord, puis Open Library (titre, année, auteurs) | Gratuit, sans clé, un appel par livre. |
+| 2026-10-21 | Réponses des sources dans une table dédiée (`ExternalRecord`) | Une nouvelle source (DataCite, ORCID…) ne demande ni nouveaux champs ni nouvelle logique de cache. |
 | 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |

@@ -4,13 +4,13 @@ books with a DOI), otherwise from Open Library.
 """
 
 from django.db import transaction
-from django.utils import timezone
 
 from ..models import Publication
 from .crossref_api import fetch_crossref_by_isbn
 from .doi import normalize_doi
+from .external_records import Source, has_metadata, store_record
 from .openlibrary_api import fetch_openlibrary_book
-from .parser import parse_openlibrary, parse_publication
+from .parser import parse_publication
 
 
 def find_or_import_book(isbn):
@@ -28,10 +28,6 @@ def find_or_import_book(isbn):
     return pub, import_from_openlibrary(pub)
 
 
-def has_metadata(pub):
-    return pub.crossref_json is not None or pub.openlibrary_json is not None
-
-
 @transaction.atomic
 def store_crossref_book(isbn, work):
     """Store a book found in Crossref, on the publication of its DOI if it exists."""
@@ -43,9 +39,8 @@ def store_crossref_book(isbn, work):
     )
     pub.doi = pub.doi or doi
     pub.isbn = pub.isbn or isbn
-    pub.crossref_json = work
-    pub.crossref_fetched_at = timezone.now()
     pub.save()
+    store_record(pub, Source.CROSSREF, work)
     parse_publication(pub, parse_references=False)
     return pub
 
@@ -55,8 +50,6 @@ def import_from_openlibrary(pub):
     if doc is None:
         return False
     with transaction.atomic():
-        pub.openlibrary_json = doc
-        pub.openlibrary_fetched_at = timezone.now()
-        pub.save(update_fields=["openlibrary_json", "openlibrary_fetched_at"])
-        parse_openlibrary(pub)
+        store_record(pub, Source.OPENLIBRARY, doc)
+        parse_publication(pub, parse_references=False)
     return True
