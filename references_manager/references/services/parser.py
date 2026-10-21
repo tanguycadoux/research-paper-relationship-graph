@@ -1,6 +1,6 @@
-from references.models import Author, AuthorPublication, Publication, PublicationReference
-
 from datetime import date
+
+from references.models import Author, AuthorPublication, Publication, PublicationReference
 
 
 def parse_publication(pub, parse_references=True):
@@ -22,6 +22,7 @@ def parse_publication(pub, parse_references=True):
 
     pub.save()
 
+
 def parse_title(pub, message):
     """
     Extrait le titre dans CrossRef.
@@ -29,6 +30,7 @@ def parse_title(pub, message):
     titles = message.get("title", [])
     if titles and isinstance(titles, list):
         pub.title = titles[0].strip()
+
 
 def parse_publication_date(pub, message):
     """
@@ -52,6 +54,7 @@ def parse_publication_date(pub, message):
         except ValueError:
             pass
 
+
 def parse_authors(pub, message):
     """
     Extrait les auteurs depuis le message CrossRef et les lie à la publication.
@@ -59,7 +62,7 @@ def parse_authors(pub, message):
     authors_data = message.get("author", [])
     if not authors_data:
         return
-    
+
     AuthorPublication.objects.filter(publication=pub).delete()
 
     for index, author_json in enumerate(authors_data):
@@ -72,12 +75,9 @@ def parse_authors(pub, message):
             first_name=first_name,
             last_name=last_name,
         )
-        
-        AuthorPublication.objects.create(
-            publication=pub,
-            author=author,
-            order=index
-        )
+
+        AuthorPublication.objects.create(publication=pub, author=author, order=index)
+
 
 def parse_references_list(pub, message):
     """
@@ -101,12 +101,12 @@ def parse_references_list(pub, message):
 
         normalized_doi = doi.lower().strip()
         if normalized_doi:
-            target_pub, created_pub = Publication.objects.get_or_create(
+            target_pub, _ = Publication.objects.get_or_create(
                 doi=normalized_doi,
                 defaults={
                     "title": title,
                     "parse_references": False,
-                }
+                },
             )
         else:
             target_pub = Publication.objects.create(
@@ -114,10 +114,7 @@ def parse_references_list(pub, message):
                 title=title,
                 parse_references=False,
             )
-            created_pub = True
 
         PublicationReference.objects.update_or_create(
-            source=pub,
-            target=target_pub,
-            defaults={"ref_key": ref_key}
+            source=pub, target=target_pub, defaults={"ref_key": ref_key}
         )

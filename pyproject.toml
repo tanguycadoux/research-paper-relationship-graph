@@ -1,0 +1,31 @@
+[project]
+name = "references-manager"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations"]
+
+[tool.ruff.lint]
+select = [
+    "E",       # pycodestyle errors
+    "W",       # pycodestyle warnings
+    "F",       # pyflakes
+    "I",       # isort
+    "B",       # flake8-bugbear
+    "UP",      # pyupgrade
+    "DJ",      # flake8-django
+    "C90",     # mccabe complexity
+    "PLR0915", # too many statements
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-statements = 30
+
+[tool.ruff.lint.isort]
+known-first-party = ["references", "references_manager"]
