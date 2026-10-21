@@ -1,6 +1,15 @@
 from django.urls import path
 
-from .views import authors, cited_references, corpus, graphs, home, publication_merge, publications
+from .views import (
+    authors,
+    cited_references,
+    conflicts,
+    corpus,
+    graphs,
+    home,
+    publication_merge,
+    publications,
+)
 
 urlpatterns = [
     path("", home.index, name="index"),
@@ -59,6 +68,9 @@ urlpatterns = [
         authors.author_merge_confirm_view,
         name="author_merge_confirm",
     ),
+    # Contradictions between sources
+    path("conflicts/", conflicts.conflicts_view, name="conflicts"),
+    path("conflicts/<int:pk>/resolve/", conflicts.resolve_conflict_view, name="resolve_conflict"),
     # Corpus of the current user
     path("my-references/", corpus.my_references, name="my_references"),
     path("my-references/graph/", graphs.my_refs_graph, name="my_refs_graph"),

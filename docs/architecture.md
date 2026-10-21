@@ -33,6 +33,7 @@ references/          application principale
     affiliations.py  rattachement des organisations aux signatures
     organizations.py organisations OpenAlex, hiérarchie et regroupement par tutelle
     names.py         normalisation des noms de personnes
+    conflicts.py     signalement et décision des conflits entre sources
     openlibrary_api.py  client Open Library (recherche par ISBN)
     doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
@@ -224,7 +225,12 @@ fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
 4. Les auteurs sont rapprochés par leur **position et leur nom publié**
    (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article.
 5. Un **vrai conflit** (par exemple un ORCID différent de celui déjà connu) : l'existant est
-   gardé et le conflit est signalé sur une page « Conflits » (#91).
+   gardé et le conflit est signalé sur la page « Conflits » (`MetadataConflict`,
+   `services/conflicts.py`). Un conflit n'est signalé qu'une fois (objet, champ, valeur
+   proposée) : une décision n'est jamais rouverte par un ré-import. Un conflit devenu
+   obsolète (les sources concordent de nouveau) disparaît. Un conflit **informatif**,
+   comme des auteurs différents selon les sources où rien n'est à « prendre », se marque
+   seulement « Vu ».
 6. Les **corrections manuelles** l'emportent toujours.
 7. Deux valeurs toutes deux justes (dates, nombres de citations) sont affichées avec leur
    source.

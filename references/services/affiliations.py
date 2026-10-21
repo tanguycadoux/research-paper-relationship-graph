@@ -9,6 +9,7 @@ import logging
 from django.db import transaction
 
 from ..models import AuthorPublication
+from .conflicts import Kind, close_obsolete, names_summary, report_conflict
 from .external_records import Source
 from .names import same_person_name
 from .organizations import openalex_id, organizations_for
@@ -28,9 +29,23 @@ def attach_affiliations(pub):
     authorships = record.data.get("authorships", [])
     if not authorships_match(slots, authorships):
         logger.warning("OpenAlex authors do not match the published ones for %s", pub)
+        report_authors_mismatch(pub, slots, authorships)
         return False
+    close_obsolete(Kind.AUTHORS_MISMATCH, publication=pub)
     link_slots(slots, authorships)
     return True
+
+
+def report_authors_mismatch(pub, slots, authorships):
+    """Informative conflict: affiliations are not attached for this publication."""
+    report_conflict(
+        Kind.AUTHORS_MISMATCH,
+        publication=pub,
+        field="authors",
+        current=names_summary([published_name(slot).strip() for slot in slots]),
+        proposed=names_summary([a.get("raw_author_name") or "?" for a in authorships]),
+        source=Source.OPENALEX,
+    )
 
 
 def authorships_match(slots, authorships):

@@ -5,6 +5,7 @@ from .models import (
     AuthorDistinction,
     CitedReference,
     ExternalRecord,
+    MetadataConflict,
     Organization,
     Publication,
     UserPublication,
@@ -73,3 +74,10 @@ class AuthorDistinctionAdmin(admin.ModelAdmin):
 class OrganizationAdmin(admin.ModelAdmin):
     list_display = ("pk", "name", "ror", "country_code")
     search_fields = ("name", "ror")
+
+
+@admin.register(MetadataConflict)
+class MetadataConflictAdmin(admin.ModelAdmin):
+    list_display = ("pk", "kind", "publication", "author", "status", "detected_at")
+    list_filter = ("kind", "status")
+    list_select_related = ("publication", "author")
