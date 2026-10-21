@@ -66,11 +66,28 @@ class AuthorMergeTests(AuthorViewsTestCase):
         )
         self.assertRedirects(response, self.confirm_url, fetch_redirect_response=False)
 
-    def test_confirmation_page_lists_the_authors_and_the_form(self):
+    def test_confirmation_page_offers_the_values_of_each_author(self):
         response = self.client.get(self.confirm_url)
         self.assertContains(response, "A. Lovelace")
-        self.assertContains(response, 'name="orcid"')
-        self.assertContains(response, 'value="Ada"')  # values of the first created author
+        self.assertContains(response, 'name="first_name" value="Ada"')
+        self.assertContains(response, 'name="first_name" value="A."')
+        self.assertContains(response, 'name="first_name_other"')
+
+    def test_most_complete_values_are_proposed_by_default(self):
+        initial = self.client.get(self.confirm_url).context["form"].initial
+        self.assertEqual(
+            initial, {"first_name": "Ada", "last_name": "Lovelace", "orcid": "0000-0001"}
+        )
+
+    def test_different_orcids_require_a_confirmation(self):
+        self.ada_initial.orcid = "0000-0002"
+        self.ada_initial.save()
+        response = self.merge()
+        self.assertContains(response, "ORCID différents")
+        self.assertEqual(Author.objects.count(), 2)
+
+        self.merge(confirm_orcid_conflict="on")
+        self.assertEqual(Author.objects.count(), 1)
 
     def test_merge_of_coauthors_of_the_same_publication(self):
         response = self.merge()
@@ -85,8 +102,8 @@ class AuthorMergeTests(AuthorViewsTestCase):
         response = self.client.get(reverse("author_detail", args=[self.ada.pk]))
         self.assertEqual(response.context["publications"].count(), 2)
 
-    def test_values_chosen_in_the_form_are_kept(self):
-        self.merge(first_name="Augusta Ada")
+    def test_another_value_can_be_typed(self):
+        self.merge(first_name="__other__", first_name_other="Augusta Ada")
         self.ada.refresh_from_db()
         self.assertEqual(self.ada.first_name, "Augusta Ada")
 
