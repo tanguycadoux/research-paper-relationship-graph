@@ -1,6 +1,4 @@
 Django==5.2.8
 networkx==3.6
-numpy==2.3.5
 plotly==6.5.0
-python-dateutil==2.9.0.post0
 requests==2.32.5
