@@ -4,11 +4,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author
-from ..services import author_duplicates, author_merge
+from ..services import author_distinctions, author_duplicates, author_merge
 
 
 class AuthorListView(ListView):
@@ -99,3 +100,18 @@ def author_merge_confirm_view(request, ids):
 def author_duplicates_view(request):
     groups = author_duplicates.duplicate_groups()
     return render(request, "references/author_duplicates.html", {"groups": groups})
+
+
+@login_required
+@require_POST
+def author_duplicates_dismiss_view(request):
+    """Declare the checked authors of a suggestion as different people."""
+    pks = [pk for pk in request.POST.getlist("authors") if pk.isdigit()]
+    authors = list(Author.objects.filter(pk__in=pks))
+    if len(authors) < 2:
+        messages.error(request, "Cochez au moins deux auteurs.")
+    else:
+        author_distinctions.declare_distinct(authors, request.user)
+        names = ", ".join(str(author) for author in authors)
+        messages.success(request, f"Ne seront plus proposés ensemble : {names}.")
+    return redirect("author_duplicates")

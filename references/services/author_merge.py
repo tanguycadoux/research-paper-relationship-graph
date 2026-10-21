@@ -7,6 +7,8 @@ import re
 
 from django.db import transaction
 
+from .author_distinctions import transfer_distinctions
+
 MERGE_FIELDS = ("first_name", "last_name", "orcid")
 NAME_SEPARATORS = re.compile(r"[\s\-]+")
 INITIAL = re.compile(r"^\w\.?$")
@@ -51,4 +53,5 @@ def merge_authors(kept, others, values):
     for field in MERGE_FIELDS:
         setattr(kept, field, values[field])
     kept.save()
+    transfer_distinctions(kept, others)
     kept.merge_with(others)
