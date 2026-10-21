@@ -13,7 +13,8 @@ class Publication(models.Model):
     authors = models.ManyToManyField(
         "Author", through="AuthorPublication", related_name="publications", blank=True
     )
-    parse_references = models.BooleanField(default=True)
+    # True once the publication is in a corpus: its cited references are imported.
+    parse_references = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 

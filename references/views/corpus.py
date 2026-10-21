@@ -4,23 +4,25 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from ..models import Publication, UserPublication
+from ..services.corpus import add_to_corpus
 from ..services.doi import is_valid_doi, normalize_doi
-from ..services.importer import import_publication
+
+
+def report_addition(request, pub, imported):
+    if imported:
+        messages.success(request, f"« {pub} » a été ajouté à votre corpus.")
+    else:
+        messages.warning(
+            request,
+            f"« {pub} » a été ajouté à votre corpus, mais ses données n'ont pas pu être "
+            "récupérées sur Crossref (DOI inconnu ou service injoignable).",
+        )
 
 
 @login_required
 def add_to_user_refs(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
-
-    if not pub.parse_references:
-        import_publication(pub, parse_references=True)
-        pub.parse_references = True
-        pub.save(update_fields=["parse_references"])
-
-    UserPublication.objects.get_or_create(
-        user=request.user,
-        publication=pub,
-    )
+    report_addition(request, pub, add_to_corpus(request.user, pub))
     return redirect("publication_detail", pk=pk)
 
 
@@ -33,16 +35,8 @@ def add_publication_to_user_refs_by_doi(request):
         messages.error(request, "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
         return redirect("my_references")
 
-    pub, created = Publication.objects.get_or_create(doi=normalized_doi)
-
-    if created:
-        messages.success(request, f"Publication créée et importée : {pub}")
-    else:
-        messages.success(request, f"Publication importée : {pub}")
-
-    UserPublication.objects.get_or_create(user=request.user, publication=pub)
-    messages.success(request, "Publication ajoutée à vos références.")
-
+    pub, _ = Publication.objects.get_or_create(doi=normalized_doi)
+    report_addition(request, pub, add_to_corpus(request.user, pub))
     return redirect("my_references")
 
 

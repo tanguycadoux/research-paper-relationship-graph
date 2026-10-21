@@ -57,6 +57,12 @@ class PublicationCreateView(LoginRequiredMixin, CreateView):
     form_class = PublicationForm
     success_url = reverse_lazy("publications_list")
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.object.doi:
+            import_publication(self.object)
+        return response
+
 
 class PublicationUpdateView(LoginRequiredMixin, UpdateView):
     model = Publication
@@ -81,14 +87,12 @@ def fetch_crossref(request, pk):
 @login_required
 def trigger_import_publication(request, pk):
     """
-    Manually trigger the Crossref import of a publication (debug helper).
+    Fetch the Crossref data of a publication again: the only way to call
+    Crossref for a publication whose data was already fetched.
     """
     pub = get_object_or_404(Publication, pk=pk)
-
-    try:
-        import_publication(pub, parse_references=True, force_fetch=False)
-        messages.success(request, f"Import CrossRef terminé pour {pub}")
-    except Exception as e:
-        messages.error(request, f"Erreur lors de l'import : {e}")
-
+    if import_publication(pub, with_references=pub.parse_references, force_fetch=True):
+        messages.success(request, f"Données Crossref rafraîchies pour « {pub} ».")
+    else:
+        messages.error(request, f"Impossible de récupérer les données Crossref de « {pub} ».")
     return redirect("publication_detail", pk=pub.pk)

@@ -143,6 +143,6 @@ def resolve_cited_publication(doi, ref):
         return None
     target, _ = Publication.objects.get_or_create(
         doi=doi,
-        defaults={"title": ref.get("article-title", ""), "parse_references": False},
+        defaults={"title": ref.get("article-title", "")},
     )
     return target
