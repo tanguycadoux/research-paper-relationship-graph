@@ -33,19 +33,29 @@
     <table>
         <thead>
             <tr>
-                <th scope="col">Ordre</th>
-                <th scope="col">Titre</th>
+                <th scope="col">N°</th>
+                <th scope="col">Référence</th>
                 <th scope="col">Date de publication</th>
                 <th scope="col">DOI</th>
             </tr>
         </thead>
         <tbody>
-            {% for ref in publication.outgoing_references.all %}
+            {% for ref in cited_references %}
                 <tr>
-                    <th scope="row">{{ ref.ref_key }}</th>
-                    <td><a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target.title }}</a></td>
-                    <td>{{ ref.target.publication_date }}</td>
-                    <td>{{ ref.target.doi }}</td>
+                    <th scope="row">{{ ref.position|add:1 }}</th>
+                    <td>
+                        {% if ref.target %}
+                            <a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
+                        {% else %}
+                            {{ ref.label }}
+                        {% endif %}
+                    </td>
+                    <td>{{ ref.target.publication_date|default:"" }}</td>
+                    <td>{{ ref.doi }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4">Aucune référence connue.</td>
                 </tr>
             {% endfor %}
         </tbody>

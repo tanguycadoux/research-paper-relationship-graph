@@ -1,6 +1,6 @@
 from datetime import date
 
-from references.models import Author, AuthorPublication, Publication, PublicationReference
+from references.models import Author, AuthorPublication, CitedReference, Publication
 
 from .doi import is_valid_doi, normalize_doi
 
@@ -60,63 +60,89 @@ def parse_publication_date(pub, message):
 def parse_authors(pub, message):
     """
     Extract the authors and link them to the publication, in order.
+    The published names are kept; the canonical author is resolved from them.
     """
     authors_data = message.get("author", [])
     if not authors_data:
         return
 
+    # Resolve before deleting the current slots: they record previous resolutions.
+    names = [published_name(author_json) for author_json in authors_data]
+    authors = [resolve_author(*name) for name in names]
+
     AuthorPublication.objects.filter(publication=pub).delete()
-
-    for index, author_json in enumerate(authors_data):
-        first_name = author_json.get("given", "")
-        last_name = author_json.get("family", "")
-        orcid = author_json.get("ORCID", "").replace("https://orcid.org/", "").strip()
-
-        author, _ = Author.objects.get_or_create(
-            orcid=orcid,
-            first_name=first_name,
-            last_name=last_name,
+    for index, ((given, family, orcid), author) in enumerate(zip(names, authors, strict=True)):
+        AuthorPublication.objects.create(
+            publication=pub,
+            author=author,
+            order=index,
+            published_given_name=given,
+            published_family_name=family,
+            published_orcid=orcid,
         )
 
-        AuthorPublication.objects.create(publication=pub, author=author, order=index)
+
+def published_name(author_json):
+    """
+    Return (given name, family name, ORCID) of a Crossref author entry.
+    Organizations only have a "name", used as family name.
+    """
+    given = author_json.get("given", "").strip()
+    family = (author_json.get("family") or author_json.get("name", "")).strip()
+    orcid = author_json.get("ORCID", "").strip().rsplit("/", 1)[-1]
+    return given, family, orcid
+
+
+def resolve_author(given, family, orcid):
+    """
+    Find the canonical author of a published name, or create it. A name already
+    resolved once (possibly by a manual merge) is resolved the same way again.
+    """
+    if orcid:
+        author = Author.objects.filter(orcid=orcid).first()
+        if author:
+            return author
+    previous = (
+        AuthorPublication.objects.filter(
+            published_given_name=given, published_family_name=family, published_orcid=orcid
+        )
+        .select_related("author")
+        .first()
+    )
+    if previous:
+        return previous.author
+    author = Author.objects.filter(first_name=given, last_name=family, orcid=orcid).first()
+    return author or Author.objects.create(first_name=given, last_name=family, orcid=orcid)
 
 
 def parse_references_list(pub, message):
     """
-    Extract the cited references and create the PublicationReference links.
+    Store the bibliography of the publication as CitedReference entries, resolved
+    to a Publication when the cited DOI is known.
     """
-    refs_data = message.get("reference", [])
-    if not refs_data:
-        return
-
-    PublicationReference.objects.filter(source=pub).delete()
-
-    for ref in refs_data:
-        doi = ref.get("DOI", "")
-        title = ref.get("article-title", "")
-        ref_key_str = ref.get("key", "")
-
-        try:
-            ref_key = int(ref_key_str.lstrip("ref"))
-        except ValueError:
-            ref_key = 0
-
-        normalized_doi = normalize_doi(doi)
-        if is_valid_doi(normalized_doi):
-            target_pub, _ = Publication.objects.get_or_create(
-                doi=normalized_doi,
-                defaults={
-                    "title": title,
-                    "parse_references": False,
-                },
-            )
-        else:
-            target_pub = Publication.objects.create(
-                doi="",
-                title=title,
-                parse_references=False,
-            )
-
-        PublicationReference.objects.update_or_create(
-            source=pub, target=target_pub, defaults={"ref_key": ref_key}
+    CitedReference.objects.filter(source=pub).delete()
+    for position, ref in enumerate(message.get("reference", [])):
+        doi = normalize_doi(ref.get("DOI", ""))
+        CitedReference.objects.create(
+            source=pub,
+            target=resolve_cited_publication(doi, ref),
+            position=position,
+            key=ref.get("key", ""),
+            doi=doi,
+            unstructured=ref.get("unstructured", ""),
+            raw=ref,
         )
+
+
+def resolve_cited_publication(doi, ref):
+    """
+    Return the Publication of a cited DOI, creating it if needed.
+    Without a valid DOI, the reference stays unresolved (no empty Publication).
+    """
+    if not is_valid_doi(doi):
+        return None
+    target, _ = Publication.objects.get_or_create(
+        doi=doi,
+        defaults={"title": ref.get("article-title", ""), "parse_references": False},
+    )
+    return target

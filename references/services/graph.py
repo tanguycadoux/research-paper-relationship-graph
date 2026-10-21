@@ -5,6 +5,9 @@ import plotly.graph_objects as go
 
 
 def map_value(value, from_min, from_max, to_min, to_max):
+    """Linearly map value from [from_min, from_max] to [to_min, to_max]."""
+    if from_max == from_min:
+        return (to_min + to_max) / 2
     return (value - from_min) * (to_max - to_min) / (from_max - from_min) + to_min
 
 
@@ -17,10 +20,10 @@ def build_user_refs_graph(user):
         pub = upub.publication
         G.add_node(pub.pk, publication=pub)
 
-        refs = pub.outgoing_references.all()
+        refs = pub.cited_references.exclude(target=None).select_related("target")
         for ref in refs:
             target = ref.target
-            incoming_refs = len(target.incoming_references.all())
+            incoming_refs = target.citations.count()
             G.add_node(target.pk, publication=target, cited_by_nb=incoming_refs)
             G.add_edge(pub.pk, target.pk)
     return G
@@ -31,10 +34,10 @@ def build_pub_graph(pub):
 
     G.add_node(pub.pk, publication=pub)
 
-    refs = pub.outgoing_references.all()
+    refs = pub.cited_references.exclude(target=None).select_related("target")
     for ref in refs:
         target = ref.target
-        incoming_refs = len(target.incoming_references.all())
+        incoming_refs = target.citations.count()
         G.add_node(target.pk, publication=target, cited_by_nb=incoming_refs)
         G.add_edge(pub.pk, target.pk)
     return G

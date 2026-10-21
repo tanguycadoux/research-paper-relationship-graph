@@ -18,7 +18,7 @@ d'auteurs.
 
 ```
 config/              configuration Django (settings, urls, wsgi, asgi)
-accounts/            inscription, templates registration/
+accounts/            modèle utilisateur (accounts.User), inscription, templates registration/
 references/          application principale
   models.py          modèle de données
   views/             une vue par domaine : home, publications, authors, corpus, graphs
@@ -59,11 +59,12 @@ erDiagram
 
 | Modèle | Rôle |
 |---|---|
-| `Publication` | Un article. DOI unique quand il est renseigné **(cible, #49)**. Le JSON Crossref est stocké tel quel, avec sa date de récupération `crossref_fetched_at` **(cible, #49)**. |
-| `CitedReference` **(cible, #49)** | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel. Son lien vers la `Publication` citée est **facultatif**. Saisir un DOI à la main revient à remplir ce lien (M4). Remplace `PublicationReference`. |
+| `Publication` | Un article. DOI unique quand il est renseigné. Le JSON Crossref est stocké tel quel, avec sa date de récupération `crossref_fetched_at`. |
+| `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Saisir un DOI à la main revient à remplir ce lien (M4). |
 | `Author` | Une personne (entité résolue). |
-| `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID) **(cible, #49)**, ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
+| `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
 | `UserPublication` | Le corpus d'un utilisateur. |
+| `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
 
 **Décision : les corrections sont communes à tous les utilisateurs.** Les publications,
 les auteurs, les DOI saisis et les fusions forment une base de connaissances partagée.
@@ -107,3 +108,4 @@ erreurs réseau, et ne retente jamais une 404 ni une 403.
 | 2026-10-21 | Import synchrone, références récupérées par lots | Divise les appels Crossref par environ 30, sans worker à exploiter. |
 | 2026-10-21 | Graphes en JSON avec Cytoscape.js | Pages légères, interactivité côté client, cohérent avec la refonte Tailwind (M8). |
 | 2026-10-21 | Adresse Crossref dans une variable d'environnement | Le dépôt est public. |
+| 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |
