@@ -3,6 +3,7 @@ from django import forms
 from .models import Author, Publication
 from .services.doi import is_valid_doi, normalize_doi
 from .services.isbn import is_valid_isbn, normalize_isbn
+from .services.orcid import normalize_orcid
 
 
 class PublicationForm(forms.ModelForm):
@@ -42,10 +43,23 @@ class AuthorMergeSelectForm(forms.Form):
     )
 
 
+class AuthorForm(forms.ModelForm):
+    class Meta:
+        model = Author
+        fields = ["first_name", "last_name", "orcid"]
+        labels = {"first_name": "Prénom", "last_name": "Nom", "orcid": "ORCID"}
+
+    def clean_orcid(self):
+        return normalize_orcid(self.cleaned_data["orcid"])
+
+
 class AuthorMergeConfirmForm(forms.Form):
-    first_name = forms.CharField(required=False)
-    last_name = forms.CharField(required=False)
-    orcid = forms.CharField(required=False)
+    first_name = forms.CharField(label="Prénom", required=False)
+    last_name = forms.CharField(label="Nom", required=False)
+    orcid = forms.CharField(label="ORCID", required=False)
+
+    def clean_orcid(self):
+        return normalize_orcid(self.cleaned_data["orcid"])
 
 
 class IdentifyReferenceForm(forms.Form):

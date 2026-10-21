@@ -1,0 +1,26 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <article>
+        <header>
+            <h1>Modifier l'auteur</h1>
+            <p><a href="{% url 'author_detail' author.pk %}">{{ author }}</a></p>
+        </header>
+
+        <form method="post">
+            {% csrf_token %}
+            <fieldset>
+                <legend>Identité</legend>
+                {% for field in form %}
+                    <p>
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                    </p>
+                    {{ field.errors }}
+                {% endfor %}
+            </fieldset>
+            <button type="submit">Enregistrer</button>
+            <a href="{% url 'author_detail' author.pk %}">Annuler</a>
+        </form>
+    </article>
+{% endblock content %}

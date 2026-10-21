@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 
 from .services.doi import normalize_doi
 from .services.isbn import normalize_isbn
@@ -76,9 +76,11 @@ class Author(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip()
 
+    @transaction.atomic
     def merge_with(self, others: list["Author"]):
         """
         Move the publications of the other authors to this one, then delete them.
+        The published names stay on each publication, so the merge survives re-imports.
         """
         for other in others:
             AuthorPublication.objects.filter(author=other).update(author=self)

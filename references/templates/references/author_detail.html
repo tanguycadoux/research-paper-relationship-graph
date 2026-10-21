@@ -1,30 +1,41 @@
 {% extends 'references/base.html' %}
 
 {% block content %}
-    <h1>{{ author }}</h1>
+    <article>
+        <header>
+            <h1>{{ author|default:"(sans nom)" }}</h1>
+            {% if author.orcid %}
+                <p>ORCID : <a href="https://orcid.org/{{ author.orcid }}">{{ author.orcid }}</a></p>
+            {% endif %}
+            {% if user.is_authenticated %}
+                <p><a href="{% url 'author_edit' author.pk %}">Modifier</a></p>
+            {% endif %}
+        </header>
 
-    <p>ORCID : {{ author.orcid }}</p>
-
-    <a href="{% url 'author_edit' author.pk %}">Editer</a>
-
-    <h2>Publications</h2>
-    
-    <table>
-        <thead>
-            <tr>
-                <th scope="col">Titre</th>
-                <th scope="col">Date de publication</th>
-                <th scope="col">DOI</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for pub in author.publications.all %}
-                <tr>
-                    <td scope="row"><a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a></td>
-                    <td>{{ pub.publication_date }}</td>
-                    <td>{{ pub.doi }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% endblock %}
+        <section aria-labelledby="author-publications-title">
+            <h2 id="author-publications-title">Publications</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Titre</th>
+                        <th scope="col">Date de publication</th>
+                        <th scope="col">DOI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pub in publications %}
+                        <tr>
+                            <th scope="row"><a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a></th>
+                            <td>{{ pub.publication_date|default:"" }}</td>
+                            <td>{{ pub.doi }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3">Aucune publication.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </article>
+{% endblock content %}

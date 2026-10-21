@@ -1,5 +1,57 @@
 {% extends 'references/base.html' %}
 
 {% block content %}
-    <h1>Confirmation des auteurs à combiner</h1>
+    <article>
+        <header>
+            <h1>Fusionner {{ authors|length }} auteurs</h1>
+            <p>
+                Toutes leurs publications seront rattachées à un seul auteur. Les noms tels
+                que publiés restent conservés sur chaque publication, si bien que la fusion
+                résiste aux ré-imports.
+            </p>
+        </header>
+
+        <section aria-labelledby="merged-authors-title">
+            <h2 id="merged-authors-title">Auteurs fusionnés</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col">Auteur</th>
+                        <th scope="col">ORCID</th>
+                        <th scope="col">Publications</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for author in authors %}
+                        <tr>
+                            <th scope="row">
+                                <a href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
+                            </th>
+                            <td>{{ author.orcid }}</td>
+                            <td>{{ author.publication_count }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+
+        <section aria-labelledby="merged-identity-title">
+            <h2 id="merged-identity-title">Auteur conservé</h2>
+            <form method="post">
+                {% csrf_token %}
+                <fieldset>
+                    <legend>Identité après fusion</legend>
+                    {% for field in form %}
+                        <p>
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                        </p>
+                        {{ field.errors }}
+                    {% endfor %}
+                </fieldset>
+                <button type="submit">Fusionner</button>
+                <a href="{% url 'authors_merge_select' %}">Annuler</a>
+            </form>
+        </section>
+    </article>
 {% endblock content %}
