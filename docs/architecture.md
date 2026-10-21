@@ -148,6 +148,14 @@ la fusion demande alors une confirmation explicite. Les noms publiés restent su
 publication (`AuthorPublication`), si bien qu'aucune variante n'est perdue et que la
 fusion résiste aux ré-imports.
 
+**Doublons probables** (`services/author_duplicates.py`). Les auteurs sont regroupés par
+nom de famille normalisé, sans accents ni casse. Deux prénoms sont compatibles mot à mot :
+identiques, ou une initiale qui correspond à la première lettre de l'autre (« J.-L. » et
+« Jean Luc »). Un auteur n'entre dans un groupe que s'il est compatible avec **tous** ses
+membres : sinon, « J. » relierait « John » et « James ». Deux ORCID différents ne sont
+jamais regroupés. Les groupes qui comptent exactement un ORCID viennent en premier. La
+page renvoie vers la fusion habituelle, après qu'on a éventuellement décoché des auteurs.
+
 ## Livres et ISBN
 
 Un livre souvent cité sans DOI peut être identifié par son ISBN. On cherche d'abord dans

@@ -8,7 +8,7 @@ from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author
-from ..services import author_merge
+from ..services import author_duplicates, author_merge
 
 
 class AuthorListView(ListView):
@@ -93,3 +93,9 @@ def author_merge_confirm_view(request, ids):
     return render(
         request, "references/authors_merge_confirm.html", {"form": form, "authors": authors}
     )
+
+
+@login_required
+def author_duplicates_view(request):
+    groups = author_duplicates.duplicate_groups()
+    return render(request, "references/author_duplicates.html", {"groups": groups})

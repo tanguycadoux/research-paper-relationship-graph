@@ -48,5 +48,10 @@
             Combiner des auteurs
         </a></li>
 
+        {% url 'author_duplicates' as this_url %}
+        <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+            Doublons probables
+        </a></li>
+
     </ul>
 {% endblock nav %}
