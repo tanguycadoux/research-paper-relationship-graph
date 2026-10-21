@@ -83,10 +83,16 @@ Une fois le venv activé, depuis la racine du dépôt :
 
 ```bash
 python manage.py migrate
-python manage.py runserver
+python manage.py tailwind runserver
 ```
 
 L'application est alors accessible sur http://127.0.0.1:8000/.
+
+`tailwind runserver` lance le serveur et reconstruit la feuille de style Tailwind à chaque
+modification d'un template. Au premier lancement, il télécharge le CLI de Tailwind
+(environ 110 Mo, sans Node) dans `.django_tailwind_cli/`. La feuille compilée
+(`static/css/tailwind.css`) n'est pas versionnée ; pour la construire une seule fois, sans
+serveur : `python manage.py tailwind build`. Ses sources sont dans `assets/css/source.css`.
 
 La base `db.sqlite3` est locale et n'est pas versionnée.
 Pour récupérer ses données sur une autre machine, il faut la copier à la main.

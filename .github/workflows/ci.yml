@@ -29,3 +29,20 @@ jobs:
       - run: python manage.py test
         env:
           DJANGO_SECRET_KEY: ci-only-not-secret
+
+  tailwind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      # The standalone CLI (about 110 MB) is downloaded once per Tailwind version.
+      - uses: actions/cache@v4
+        with:
+          path: .django_tailwind_cli
+          key: tailwind-cli-${{ hashFiles('config/settings.py') }}
+      - run: python manage.py tailwind build
+        env:
+          DJANGO_SECRET_KEY: ci-only-not-secret
