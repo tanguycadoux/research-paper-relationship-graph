@@ -1,0 +1,15 @@
+{% load ui %}
+<div role="{{ role }}"
+     class="{{ classes }}"
+     data-toast
+     {% if autohide %}data-toast-autohide{% endif %}>
+    {% if icon %}{% icon icon %}{% endif %}
+    <p class="flex-1">{{ message }}</p>
+    <button type="button"
+            class="-m-1 shrink-0 cursor-pointer rounded p-1 hover:bg-black/5"
+            aria-label="Fermer la notification"
+            data-toast-close
+            hidden>
+        {% icon "close" %}
+    </button>
+</div>

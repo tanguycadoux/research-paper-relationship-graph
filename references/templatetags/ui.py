@@ -192,12 +192,6 @@ MESSAGE_VARIANTS = {
 }
 
 
-@register.inclusion_tag("components/alert.html")
-def message_alert(message):
-    """A message of django.contrib.messages, shown as an alert of its level."""
-    return alert(message, MESSAGE_VARIANTS.get(message.level_tag, "primary"))
-
-
 @register.simple_block_tag
 def card(content, title="", level=2, flush=False):
     """
@@ -215,3 +209,20 @@ def card(content, title="", level=2, flush=False):
     if not title:
         return format_html('<div class="{}">{}</div>', classes, content)
     return format_html('<section class="{}">{}{}</section>', classes, heading, content)
+
+
+TOAST_CLASSES = "pointer-events-auto shadow-lg"
+# Successes and information fade out (static/js/toasts.js); warnings and errors stay.
+AUTOHIDE_VARIANTS = {"primary", "secondary", "success"}
+
+
+@register.inclusion_tag("components/toast.html")
+def message_toast(message):
+    """A message of django.contrib.messages, shown as a notification (toast)."""
+    variant = MESSAGE_VARIANTS.get(message.level_tag, "primary")
+    context = alert(message, variant)
+    return {
+        **context,
+        "classes": f"{context['classes']} {TOAST_CLASSES}",
+        "autohide": variant in AUTOHIDE_VARIANTS,
+    }

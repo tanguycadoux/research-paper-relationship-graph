@@ -112,6 +112,23 @@ class CorpusIsolationTests(TestCase):
         self.assertEqual(self.theirs.userpublication_set.get().user.username, "bob")
 
 
+class ToastTests(TestCase):
+    def test_messages_are_shown_as_toasts_with_their_script(self):
+        user = get_user_model().objects.create_user("alice")
+        pub = Publication.objects.create(title="Un article")
+        UserPublication.objects.create(user=user, publication=pub)
+        self.client.force_login(user)
+        response = self.client.post(
+            reverse("corpus_remove", args=[pub.pk]), {"next": reverse("corpus")}, follow=True
+        )
+        self.assertContains(response, "data-toast-autohide")
+        self.assertContains(response, "« Un article » a été retiré de votre corpus.")
+        self.assertContains(response, "js/toasts.js")
+
+    def test_no_toast_container_without_messages(self):
+        self.assertNotContains(self.client.get(reverse("index")), "js/toasts.js")
+
+
 class EditionTests(TestCase):
     def setUp(self):
         self.client.force_login(get_user_model().objects.create_user("alice"))
