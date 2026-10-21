@@ -4,7 +4,7 @@ from .parser import parse_publication
 
 def import_publication(pub, parse_references=True, force_fetch=False):
     """
-    Pipeline d'import de métadonnées.
+    Fetch the Crossref JSON if needed (or if forced), then parse it into the publication.
     """
     if force_fetch or not pub.crossref_json:
         json_data = fetch_crossref_json(pub.doi)

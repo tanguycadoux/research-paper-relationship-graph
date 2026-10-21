@@ -11,27 +11,24 @@ class PublicationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Autoriser tous les champs à être vides
+        # Every field is optional: a publication may be created from partial data.
         for field in self.fields.values():
             field.required = False
 
 
+class AuthorChoiceField(forms.ModelMultipleChoiceField):
+    def label_from_instance(self, author):
+        if author.orcid:
+            return f"{author} (ORCID : {author.orcid})"
+        return str(author)
+
+
 class AuthorMergeSelectForm(forms.Form):
-    authors = forms.ModelMultipleChoiceField(
+    authors = AuthorChoiceField(
         queryset=Author.objects.order_by("last_name", "first_name"),
         widget=forms.CheckboxSelectMultiple,
         required=True,
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for i, sub in enumerate(
-            self.fields["authors"].widget.subwidgets(name="authors", value=self["authors"].value())
-        ):
-            author = self.fields["authors"].queryset[i]
-            print(author)
-            sub.author_obj = author
 
 
 class AuthorMergeConfirmForm(forms.Form):
