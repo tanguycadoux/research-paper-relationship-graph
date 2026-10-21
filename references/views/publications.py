@@ -38,15 +38,24 @@ class PublicationDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pub = self.get_object()
+        pub = self.object
         user = self.request.user
 
         if user.is_authenticated:
-            context["belongs_to_user"] = pub.userpublication_set.filter(user=user).exists()
+            context["user_pub_ids"] = set(
+                UserPublication.objects.filter(user=user).values_list("publication_id", flat=True)
+            )
         else:
-            context["belongs_to_user"] = False
+            context["user_pub_ids"] = set()
+        context["belongs_to_user"] = pub.pk in context["user_pub_ids"]
 
         context["cited_references"] = pub.cited_references.select_related("target")
+        # Only publications whose bibliography was imported (those of a corpus) can cite it.
+        context["citing_publications"] = (
+            Publication.objects.filter(cited_references__target=pub)
+            .distinct()
+            .order_by("-publication_date", "title")
+        )
         context["details"] = crossref_details(pub)
         context["author_slots"] = (
             pub.authorpublication_set.select_related("author")

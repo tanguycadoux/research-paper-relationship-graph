@@ -45,6 +45,7 @@
     </header>
 
     <div class="grid gap-6 lg:grid-cols-3">
+        {# Left column (two thirds), then right column #}
         <div class="space-y-6 lg:col-span-2">
             {% card title="Auteurs" %}
                 <ol class="space-y-1 text-sm">
@@ -71,67 +72,69 @@
             {% endif %}
         </div>
 
-        {% card title="Informations" %}
-            <dl class="space-y-3 text-sm">
-                {% if publication.doi %}
-                    <div>
-                        <dt class="text-gray-500">DOI</dt>
-                        <dd>
-                            {% external_link "https://doi.org/"|add:publication.doi publication.doi class="break-all" %}
-                        </dd>
-                    </div>
-                {% endif %}
-                {% if publication.isbn %}
-                    <div>
-                        <dt class="text-gray-500">ISBN</dt>
-                        <dd>{{ publication.isbn }}</dd>
-                    </div>
-                {% endif %}
-                {% if publication.publication_date %}
-                    <div>
-                        <dt class="text-gray-500">Date de publication</dt>
-                        <dd>{{ publication.publication_date }}</dd>
-                    </div>
-                {% endif %}
-                {% if details.citation_count is not None %}
-                    <div>
-                        <dt class="text-gray-500">Citations</dt>
-                        <dd>{{ details.citation_count }} (selon Crossref)</dd>
-                    </div>
-                {% endif %}
-                {% if details.subjects %}
-                    <div>
-                        <dt class="text-gray-500">Disciplines</dt>
-                        <dd>{{ details.subjects|join:", " }}</dd>
-                    </div>
-                {% endif %}
-                {% if details.funders %}
-                    <div>
-                        <dt class="text-gray-500">Financement</dt>
-                        {% for funder in details.funders %}<dd>{{ funder }}</dd>{% endfor %}
-                    </div>
-                {% endif %}
-                {% if details.licenses %}
-                    <div>
-                        <dt class="text-gray-500">Licences</dt>
-                        {% for license in details.licenses %}
+        <div class="space-y-6">
+            {% card title="Informations" %}
+                <dl class="space-y-3 text-sm">
+                    {% if publication.doi %}
+                        <div>
+                            <dt class="text-gray-500">DOI</dt>
                             <dd>
-                                {% external_link license license class="break-all" %}
+                                {% external_link "https://doi.org/"|add:publication.doi publication.doi class="break-all" %}
                             </dd>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                {% if user.is_authenticated and publication.doi %}
-                    <div>
-                        <dt class="text-gray-500">Données brutes</dt>
-                        <dd>
-                            <a href="{% url 'publication_metadata' publication.pk %}"
-                              >Réponses des sources (JSON)</a>
-                        </dd>
-                    </div>
-                {% endif %}
-            </dl>
-        {% endcard %}
+                        </div>
+                    {% endif %}
+                    {% if publication.isbn %}
+                        <div>
+                            <dt class="text-gray-500">ISBN</dt>
+                            <dd>{{ publication.isbn }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if publication.publication_date %}
+                        <div>
+                            <dt class="text-gray-500">Date de publication</dt>
+                            <dd>{{ publication.publication_date }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if details.citation_count is not None %}
+                        <div>
+                            <dt class="text-gray-500">Citations dans toute la littérature</dt>
+                            <dd>{{ details.citation_count }} (selon Crossref)</dd>
+                        </div>
+                    {% endif %}
+                    {% if details.subjects %}
+                        <div>
+                            <dt class="text-gray-500">Disciplines</dt>
+                            <dd>{{ details.subjects|join:", " }}</dd>
+                        </div>
+                    {% endif %}
+                    {% if details.funders %}
+                        <div>
+                            <dt class="text-gray-500">Financement</dt>
+                            {% for funder in details.funders %}<dd>{{ funder }}</dd>{% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if details.licenses %}
+                        <div>
+                            <dt class="text-gray-500">Licences</dt>
+                            {% for license in details.licenses %}
+                                <dd>
+                                    {% external_link license license class="break-all" %}
+                                </dd>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {% if user.is_authenticated and publication.doi %}
+                        <div>
+                            <dt class="text-gray-500">Données brutes</dt>
+                            <dd>
+                                <a href="{% url 'publication_metadata' publication.pk %}"
+                                  >Réponses des sources (JSON)</a>
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            {% endcard %}
+        </div>
     </div>
 
     <section aria-labelledby="references-title" class="mt-8">
@@ -189,5 +192,24 @@
                 </tbody>
             </table>
         </div>
+    </section>
+
+    <section aria-labelledby="cited-by-title" class="mt-8">
+        <h2 id="cited-by-title">
+            Cité par <span class="font-normal text-gray-500">({{ citing_publications|length }})</span>
+        </h2>
+        <p class="mt-1 mb-3 text-sm text-gray-500">
+            Publications de cette base qui le citent. Seules celles dont la bibliographie a été
+            importée, c'est-à-dire celles d'un corpus, peuvent apparaître ici : la liste n'est pas
+            exhaustive.
+            {% if details.citation_count is not None %}
+                Crossref recense {{ details.citation_count }} citation{{ details.citation_count|pluralize }} dans toute la littérature.
+            {% endif %}
+        </p>
+        {% if citing_publications %}
+            {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" corpus_actions=user.is_authenticated %}
+        {% else %}
+            <p class="text-sm text-gray-600">Aucune publication de la base ne la cite.</p>
+        {% endif %}
     </section>
 {% endblock content %}
