@@ -97,3 +97,16 @@ class DuplicatesPageTests(TestCase):
         ids = response.url.rstrip("/").rsplit("/", 1)[-1]
         self.assertEqual(sorted(ids.split(",")), sorted([str(self.ada.pk), str(self.initial.pk)]))
         self.assertEqual(self.client.get(response.url).status_code, 200)
+
+
+class SameOrcidTests(TestCase):
+    def test_same_orcid_is_grouped_whatever_the_given_names(self):
+        Author.objects.create(first_name="Helene", last_name="Felice", orcid="0000-0002")
+        Author.objects.create(first_name="Hélène M.", last_name="Felice", orcid="0000-0002")
+        Author.objects.create(first_name="Harry", last_name="Felice", orcid="0000-0002")
+        self.assertEqual(len(duplicate_groups()[0]), 3)
+
+    def test_hyphens_in_family_names_are_ignored(self):
+        Author.objects.create(first_name="R.", last_name="Correia-Machado", orcid="0000-0001")
+        Author.objects.create(first_name="R.", last_name="Correia Machado")
+        self.assertEqual(len(duplicate_groups()), 1)

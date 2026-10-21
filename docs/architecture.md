@@ -34,6 +34,7 @@ references/          application principale
     organizations.py organisations OpenAlex, hiérarchie et regroupement par tutelle
     names.py         normalisation des noms de personnes
     conflicts.py     signalement et décision des conflits entre sources
+    orcid_completion.py  ORCID manquants complétés depuis OpenAlex
     openlibrary_api.py  client Open Library (recherche par ISBN)
     doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
@@ -160,7 +161,9 @@ nom de famille normalisé, sans accents ni casse. Deux prénoms sont compatibles
 identiques, ou une initiale qui correspond à la première lettre de l'autre (« J.-L. » et
 « Jean Luc »). Un auteur n'entre dans un groupe que s'il est compatible avec **tous** ses
 membres : sinon, « J. » relierait « John » et « James ». Deux ORCID différents ne sont
-jamais regroupés. Les groupes qui comptent exactement un ORCID viennent en premier. La
+jamais regroupés, et deux auteurs qui ont le **même** ORCID le sont toujours, quelle que
+soit l'écriture de leurs noms. Les noms de famille sont comparés sans tenir compte des
+tirets ni de la ponctuation (« Correia-Machado » = « Correia Machado »). Les groupes qui comptent exactement un ORCID viennent en premier. La
 page renvoie vers la fusion habituelle, après qu'on a éventuellement décoché des auteurs.
 On peut aussi déclarer les auteurs cochés comme **personnes différentes**
 (`AuthorDistinction`, paire stockée une fois, avec qui l'a déclarée et quand) : la paire
@@ -210,6 +213,16 @@ Université Paris-Saclay) apparaît sous chacune de ses tutelles.
 La commande `complete_affiliations` complète les publications déjà en base à partir des
 données OpenAlex stockées, sans les redemander. L'option `--fetch-missing` interroge
 d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse.
+
+### ORCID complétés depuis OpenAlex
+
+Pour les auteurs rapprochés (même position, même nom publié), l'ORCID donné par OpenAlex
+est attribué à l'**auteur** s'il n'en a pas. S'il en a un autre, rien ne change et un
+conflit est signalé : « Prendre la valeur proposée » remplace alors l'ORCID. L'ORCID
+publié de la signature (`published_orcid`, donnée Crossref) n'est jamais modifié : il fait
+partie de la clé qui retrouve un auteur au ré-import. Mesuré sur la base réelle : les
+auteurs avec ORCID passent de 35 à 74 sur 135, sans conflit. 11 ORCID se retrouvent
+alors chacun sur plusieurs auteurs : ce sont des doublons certains.
 
 ### Informations contradictoires entre sources
 

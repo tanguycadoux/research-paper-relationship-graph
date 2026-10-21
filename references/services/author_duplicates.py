@@ -29,8 +29,13 @@ def by_family_name(authors):
     families = defaultdict(list)
     for author in authors:
         if author.last_name and author.first_name:
-            families[normalized(author.last_name)].append(author)
+            families[family_key(author.last_name)].append(author)
     return families
+
+
+def family_key(last_name):
+    """'Correia-Machado' and 'Correia Machado' share the same key."""
+    return " ".join(name_parts(last_name))
 
 
 def compatible_groups(authors, declared_distinct=frozenset()):
@@ -54,8 +59,9 @@ def compatible_groups(authors, declared_distinct=frozenset()):
 def compatible(first, second, declared_distinct=frozenset()):
     if ordered_pair(first.pk, second.pk) in declared_distinct:
         return False
-    if first.orcid and second.orcid and first.orcid != second.orcid:
-        return False
+    if first.orcid and second.orcid:
+        # The same ORCID is the same person, whatever the spelling of the names.
+        return first.orcid == second.orcid
     return compatible_given_names(first.first_name, second.first_name)
 
 
