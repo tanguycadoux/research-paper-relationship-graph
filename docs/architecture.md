@@ -92,13 +92,17 @@ erreurs réseau, et ne retente jamais une 404 ni une 403.
 
 ## Graphes
 
-**Décision : le serveur fournit les données, le navigateur dessine** **(cible, #50)**.
+**Décision : le serveur fournit les données, le navigateur dessine.**
 
-- `services/graph.py` produit les nœuds (titre, date, nombre de citations) et les arêtes.
-- Une vue JSON expose ces données, et les templates les affichent avec Cytoscape.js,
-  chargé depuis un CDN en version épinglée.
-- On abandonne Plotly rendu côté serveur, qui embarquait 4,8 Mo de JavaScript par page,
-  ainsi que `networkx`.
+- `services/graph.py` produit les éléments Cytoscape : les nœuds (titre, date, nombre de
+  citations, lien) et les arêtes. Il fait deux requêtes, quelle que soit la taille du graphe.
+- La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
+  `references/static/references/citation_graph.js` les affiche sur une frise
+  chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
+- **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
+  intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
+  service tiers.
+- Plotly rendu côté serveur (4,8 Mo de JavaScript par page) et `networkx` sont abandonnés.
 
 ## Journal des décisions
 
@@ -107,5 +111,6 @@ erreurs réseau, et ne retente jamais une 404 ni une 403.
 | 2026-10-21 | Corrections communes à tous les utilisateurs | Base de connaissances partagée, plus simple. Le corpus reste individuel. |
 | 2026-10-21 | Import synchrone, références récupérées par lots | Divise les appels Crossref par environ 30, sans worker à exploiter. |
 | 2026-10-21 | Graphes en JSON avec Cytoscape.js | Pages légères, interactivité côté client, cohérent avec la refonte Tailwind (M8). |
+| 2026-10-21 | Cytoscape.js embarqué plutôt que chargé depuis un CDN | Fonctionne hors ligne, sans dépendance externe à l'exécution. Fichier léger (435 Ko). |
 | 2026-10-21 | Adresse Crossref dans une variable d'environnement | Le dépôt est public. |
 | 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |
