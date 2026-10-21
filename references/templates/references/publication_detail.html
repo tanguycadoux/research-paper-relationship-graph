@@ -16,12 +16,12 @@
                 {% if belongs_to_user %}
                     <form method="post" action="{% url 'corpus_remove' publication.pk %}">
                         {% csrf_token %}
-                        {% button "Retirer de mes références" variant="secondary" icon="close" %}
+                        {% button "Retirer de mes références" variant="danger-light" icon="remove" %}
                     </form>
                 {% else %}
                     <form method="post" action="{% url 'corpus_add' publication.pk %}">
                         {% csrf_token %}
-                        {% button "Ajouter à mes références" icon="add" %}
+                        {% button "Ajouter à mes références" variant="success-light" icon="add" %}
                     </form>
                 {% endif %}
             {% endif %}

@@ -64,6 +64,15 @@ class ButtonTests(SimpleTestCase):
         self.assertIn('aria-label="Fermer"', html)
         self.assertNotIn(">\n    Fermer", html)
 
+    def test_icon_only_button_is_a_square_of_the_buttons_height(self):
+        square = render('{% button "Fermer" icon="close" icon_only=True %}')
+        labelled = render('{% button "Fermer" icon="close" %}')
+        for html in (square, labelled):
+            self.assertIn(" h-8 ", html)
+        self.assertIn(" w-8 ", square)
+        self.assertNotIn("px-3", square)
+        self.assertIn(" px-3 ", labelled)
+
     def test_formaction_name_and_value(self):
         html = render('{% button "Garder" formaction="/x/" name="choice" value="keep" %}')
         self.assertIn('formaction="/x/"', html)

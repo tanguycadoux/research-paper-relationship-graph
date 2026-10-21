@@ -13,51 +13,7 @@
     </header>
 
     {% if publications %}
-        {% card flush=True %}
-            <table>
-                <caption class="sr-only">Publications de la base commune, des plus récentes aux plus anciennes</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Titre</th>
-                        <th scope="col">DOI</th>
-                        <th scope="col">Année</th>
-                        {% if user.is_authenticated %}
-                            <th scope="col">
-                                <span class="sr-only">Mon corpus</span>
-                            </th>
-                        {% endif %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for pub in publications %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a>
-                            </td>
-                            <td class="text-gray-600">{{ pub.doi }}</td>
-                            <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
-                            {% if user.is_authenticated %}
-                                <td class="text-right">
-                                    {% if pub.id in user_pub_ids %}
-                                        <form method="post" action="{% url 'corpus_remove' pub.pk %}">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                            {% button "Retirer de mes références" variant="secondary" icon="close" icon_only=True %}
-                                        </form>
-                                    {% else %}
-                                        <form method="post" action="{% url 'corpus_add' pub.pk %}">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                            {% button "Ajouter à mes références" variant="secondary" icon="add" icon_only=True %}
-                                        </form>
-                                    {% endif %}
-                                </td>
-                            {% endif %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endcard %}
+        {% include "references/_publication_table.html" with caption="Publications de la base commune, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated %}
     {% else %}
         <p class="text-gray-600">Aucune publication dans la base.</p>
     {% endif %}

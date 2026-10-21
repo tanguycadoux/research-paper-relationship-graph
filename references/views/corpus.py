@@ -61,7 +61,9 @@ def remove_from_user_refs(request, pk):
 
 @login_required
 def my_references(request):
-    pubs = Publication.objects.filter(userpublication__user=request.user)
+    pubs = Publication.objects.filter(userpublication__user=request.user).order_by(
+        "-publication_date", "title"
+    )
     context = {
         "publications": pubs,
         "not_exportable": pubs.filter(doi="", isbn="").count(),

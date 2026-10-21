@@ -1,0 +1,50 @@
+{% comment %}
+Table of publications. Context: publications, caption; with corpus_actions, a last
+column to add each publication to the user's corpus or take it away (user_pub_ids).
+{% endcomment %}
+{% load ui %}
+{% card flush=True %}
+    <table>
+        <caption class="sr-only">{{ caption }}</caption>
+        <thead>
+            <tr>
+                <th scope="col">Titre</th>
+                <th scope="col">DOI</th>
+                <th scope="col">Année</th>
+                {% if corpus_actions %}
+                    <th scope="col">
+                        <span class="sr-only">Mon corpus</span>
+                    </th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for pub in publications %}
+                <tr>
+                    <td>
+                        <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                    </td>
+                    <td class="text-gray-600">{{ pub.doi }}</td>
+                    <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
+                    {% if corpus_actions %}
+                        <td class="text-right">
+                            {% if pub.id in user_pub_ids %}
+                                <form method="post" action="{% url 'corpus_remove' pub.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    {% button "Retirer de mes références" variant="danger-light" icon="remove" icon_only=True %}
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'corpus_add' pub.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
+                                </form>
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endcard %}

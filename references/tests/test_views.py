@@ -84,6 +84,23 @@ class CorpusIsolationTests(TestCase):
         response = self.client.get(reverse("corpus"))
         self.assertEqual(list(response.context["publications"]), [self.mine])
 
+    def test_my_references_are_sorted_by_year_newest_first(self):
+        UserPublication.objects.create(
+            user=self.alice,
+            publication=Publication.objects.create(
+                title="Récent", publication_date=date(2024, 1, 1)
+            ),
+        )
+        UserPublication.objects.create(
+            user=self.alice,
+            publication=Publication.objects.create(
+                title="Ancien", publication_date=date(1999, 1, 1)
+            ),
+        )
+        response = self.client.get(reverse("corpus"))
+        titles = [pub.title for pub in response.context["publications"]]
+        self.assertEqual(titles, ["Récent", "Ancien", "Article d'Alice"])
+
     def test_my_graph_holds_only_my_corpus(self):
         response = self.client.get(reverse("corpus_graph"))
         node_ids = [node["data"]["id"] for node in response.context["graph"]["nodes"]]

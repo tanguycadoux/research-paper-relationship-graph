@@ -22,20 +22,40 @@ from references.services.icons import UnknownIcon, icon_parts
 
 register = template.Library()
 
+# Every button is 2rem high, border included; an icon-only button is a 2rem square.
 BUTTON_BASE = (
-    "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 "
+    "inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border "
     "text-sm font-medium no-underline cursor-pointer focus-visible:outline-2 "
     "focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 )
+BUTTON_WITH_LABEL = "px-3"
+BUTTON_ICON_ONLY = "w-8"
 BUTTON_VARIANTS = {
-    "primary": "bg-blue-700 text-white hover:bg-blue-800 focus-visible:outline-blue-700",
-    "secondary": (
-        "border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 "
-        "focus-visible:outline-gray-500"
+    "primary": (
+        "border-transparent bg-blue-700 text-white hover:bg-blue-800 focus-visible:outline-blue-700"
     ),
-    "danger": "bg-red-700 text-white hover:bg-red-800 focus-visible:outline-red-700",
-    "warning": "bg-amber-400 text-gray-900 hover:bg-amber-500 focus-visible:outline-amber-500",
-    "success": "bg-green-700 text-white hover:bg-green-800 focus-visible:outline-green-700",
+    "secondary": (
+        "border-gray-300 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-500"
+    ),
+    "danger": (
+        "border-transparent bg-red-700 text-white hover:bg-red-800 focus-visible:outline-red-700"
+    ),
+    "warning": (
+        "border-transparent bg-amber-400 text-gray-900 hover:bg-amber-500 "
+        "focus-visible:outline-amber-500"
+    ),
+    "success": (
+        "border-transparent bg-green-700 text-white hover:bg-green-800 "
+        "focus-visible:outline-green-700"
+    ),
+    # Discreet pair for actions that add or take away (a corpus entry, for instance)
+    "success-light": (
+        "border-green-300 bg-green-50 text-green-800 hover:bg-green-100 "
+        "focus-visible:outline-green-600"
+    ),
+    "danger-light": (
+        "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:outline-red-600"
+    ),
 }
 BADGE_BASE = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
 BADGE_VARIANTS = {
@@ -117,7 +137,13 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, **attrs
         "url": url,
         "icon": icon,
         "icon_only": icon_only,
-        "classes": f"{BUTTON_BASE} {variant_classes('button', BUTTON_VARIANTS, variant)}",
+        "classes": " ".join(
+            [
+                BUTTON_BASE,
+                BUTTON_ICON_ONLY if icon_only else BUTTON_WITH_LABEL,
+                variant_classes("button", BUTTON_VARIANTS, variant),
+            ]
+        ),
         "type": attrs.get("type", "submit"),
         "formaction": attrs.get("formaction", ""),
         "name": attrs.get("name", ""),
