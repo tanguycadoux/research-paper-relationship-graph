@@ -22,14 +22,18 @@ from references.services.icons import UnknownIcon, icon_parts
 
 register = template.Library()
 
-# Every button is 2rem high, border included; an icon-only button is a 2rem square.
+# Every button is 2rem high, border included, with a 1.25rem icon: the space around
+# the icon, (2rem - 2px - 1.25rem) / 2, is the same on its left as above and below.
+# An icon-only button is a 2rem square.
 BUTTON_BASE = (
     "inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border "
     "text-sm font-medium no-underline cursor-pointer focus-visible:outline-2 "
     "focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 )
 BUTTON_WITH_LABEL = "px-3"
+BUTTON_WITH_ICON_AND_LABEL = "pl-[calc(0.375rem-1px)] pr-3"
 BUTTON_ICON_ONLY = "w-8"
+BUTTON_ICON = "size-5 shrink-0"
 BUTTON_VARIANTS = {
     "primary": (
         "border-transparent bg-blue-700 text-white hover:bg-blue-800 focus-visible:outline-blue-700"
@@ -112,6 +116,12 @@ def icon(name, **attrs):
 BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value")
 
 
+def button_shape(icon, icon_only):
+    if icon_only:
+        return BUTTON_ICON_ONLY
+    return BUTTON_WITH_ICON_AND_LABEL if icon else BUTTON_WITH_LABEL
+
+
 @register.inclusion_tag("components/button.html")
 def button(label, url="", variant="primary", icon=None, icon_only=False, **attrs):
     """
@@ -140,10 +150,11 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, **attrs
         "classes": " ".join(
             [
                 BUTTON_BASE,
-                BUTTON_ICON_ONLY if icon_only else BUTTON_WITH_LABEL,
+                button_shape(icon, icon_only),
                 variant_classes("button", BUTTON_VARIANTS, variant),
             ]
         ),
+        "icon_classes": BUTTON_ICON,
         "type": attrs.get("type", "submit"),
         "formaction": attrs.get("formaction", ""),
         "name": attrs.get("name", ""),
