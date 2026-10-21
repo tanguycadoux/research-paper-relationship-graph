@@ -4,7 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
+from django.views.decorators.http import require_POST
+from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
 from ..models import Publication, UserPublication
@@ -77,11 +78,6 @@ class PublicationUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy("publications_list")
 
 
-class PublicationDeleteView(LoginRequiredMixin, DeleteView):
-    model = Publication
-    success_url = reverse_lazy("publications_list")
-
-
 @login_required
 def publication_metadata(request, pk):
     """Raw answers of the external sources about a publication, as JSON."""
@@ -96,6 +92,7 @@ def publication_metadata(request, pk):
 
 
 @login_required
+@require_POST
 def trigger_import_publication(request, pk):
     """
     Fetch the Crossref data of a publication again: the only way to call
