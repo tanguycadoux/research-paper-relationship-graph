@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from ..models import Publication
 from .books import find_or_import_book
+from .external_records import has_metadata
 from .importer import import_publication
 
 
@@ -42,11 +43,24 @@ def identify_without_identifier(ref, title, year, user):
 
 
 def resolve(ref, pub, user):
+    previous = ref.target
     ref.target = pub
     ref.resolved_manually = True
     ref.resolved_by = user
     ref.resolved_at = timezone.now()
     ref.save(update_fields=["target", "resolved_manually", "resolved_by", "resolved_at"])
+    if previous is not None and previous != pub:
+        delete_if_orphan(previous)
+
+
+def delete_if_orphan(pub):
+    """
+    Delete a publication left behind by a new identification, when nobody uses it:
+    cited by no reference, in no corpus, and without any metadata.
+    """
+    used = pub.citations.exists() or pub.userpublication_set.exists() or has_metadata(pub)
+    if not used:
+        pub.delete()
 
 
 def year_to_date(year):
