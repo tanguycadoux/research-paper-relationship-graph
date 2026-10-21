@@ -37,6 +37,9 @@
                 <th scope="col">Référence</th>
                 <th scope="col">Date de publication</th>
                 <th scope="col">DOI</th>
+                {% if user.is_authenticated %}
+                    <th scope="col">Action</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -52,10 +55,18 @@
                     </td>
                     <td>{{ ref.target.publication_date|default:"" }}</td>
                     <td>{{ ref.doi }}</td>
+                    {% if user.is_authenticated %}
+                        <td>
+                            <a href="{% url 'reference_identify' publication.pk ref.position %}">
+                                {% if ref.target %}Corriger{% else %}Identifier{% endif %}
+                            </a>
+                            {% if ref.resolved_manually %}<small>(identifiée à la main)</small>{% endif %}
+                        </td>
+                    {% endif %}
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4">Aucune référence connue.</td>
+                    <td colspan="5">Aucune référence connue.</td>
                 </tr>
             {% endfor %}
         </tbody>

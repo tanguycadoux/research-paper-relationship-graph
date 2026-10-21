@@ -1,0 +1,62 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <article>
+        <header>
+            <h1>Identifier une référence</h1>
+            <p>
+                Référence n° {{ ref.position|add:1 }} de
+                <a href="{% url 'publication_detail' ref.source.pk %}">{{ ref.source }}</a>
+            </p>
+        </header>
+
+        <section aria-labelledby="crossref-data-title">
+            <h2 id="crossref-data-title">Telle que donnée par Crossref</h2>
+            <blockquote>{{ ref.label|default:"(aucun texte)" }}</blockquote>
+            {% if ref.target %}
+                <p>
+                    Actuellement reliée à
+                    <a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
+                    {% if ref.resolved_manually %}
+                        (identifiée à la main{% if ref.resolved_by %} par {{ ref.resolved_by }}{% endif %},
+                        le <time datetime="{{ ref.resolved_at|date:'c' }}">{{ ref.resolved_at|date:"j F Y" }}</time>)
+                    {% endif %}
+                </p>
+            {% endif %}
+        </section>
+
+        <form method="post">
+            {% csrf_token %}
+            <fieldset>
+                <legend>{{ form.method.label }}</legend>
+                {{ form.method }}
+                {{ form.method.errors }}
+            </fieldset>
+
+            <fieldset>
+                <legend>Par DOI</legend>
+                <p>
+                    <label for="{{ form.doi.id_for_label }}">{{ form.doi.label }}</label>
+                    {{ form.doi }}
+                </p>
+                {{ form.doi.errors }}
+            </fieldset>
+
+            <fieldset>
+                <legend>Sans identifiant</legend>
+                <p>
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                </p>
+                {{ form.title.errors }}
+                <p>
+                    <label for="{{ form.year.id_for_label }}">{{ form.year.label }}</label>
+                    {{ form.year }}
+                </p>
+                {{ form.year.errors }}
+            </fieldset>
+
+            <button type="submit">Identifier</button>
+        </form>
+    </article>
+{% endblock content %}

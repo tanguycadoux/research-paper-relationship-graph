@@ -16,7 +16,7 @@ class PageSmokeTests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.user = get_user_model().objects.create_user("alice", password="secret")
+        cls.user = get_user_model().objects.create_user("alice")
         cls.pub = Publication.objects.create(title="Un article")
         cls.author = Author.objects.create(first_name="Ada", last_name="Lovelace")
         AuthorPublication.objects.create(publication=cls.pub, author=cls.author, order=0)

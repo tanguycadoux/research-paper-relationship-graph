@@ -42,7 +42,7 @@ class IsValidDoiTests(SimpleTestCase):
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class DoiPersistenceTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user("alice", password="secret")
+        self.user = get_user_model().objects.create_user("alice")
         self.client.force_login(self.user)
 
     def test_model_saves_normalized_doi(self, _fetch):

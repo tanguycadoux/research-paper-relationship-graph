@@ -99,25 +99,50 @@ def published_name(author_json):
 def parse_references_list(pub, message):
     """
     Store the bibliography of the publication as CitedReference entries, resolved
-    to a Publication when the cited DOI is known.
+    to a Publication when the cited DOI is known. Manual identifications made on a
+    previous import are kept, and take precedence over Crossref.
     """
     refs = message.get("reference", [])
     dois = [normalize_doi(ref.get("DOI", "")) for ref in refs]
     targets = cited_publications(dois, refs)
+    manual = manual_resolutions(pub)
 
     CitedReference.objects.filter(source=pub).delete()
     CitedReference.objects.bulk_create(
-        CitedReference(
-            source=pub,
-            target=targets.get(doi),
-            position=position,
-            key=ref.get("key", ""),
-            doi=doi,
-            unstructured=ref.get("unstructured", ""),
-            raw=ref,
+        with_manual_resolution(
+            CitedReference(
+                source=pub,
+                target=targets.get(doi),
+                position=position,
+                key=ref.get("key", ""),
+                doi=doi,
+                unstructured=ref.get("unstructured", ""),
+                raw=ref,
+            ),
+            manual,
         )
         for position, (ref, doi) in enumerate(zip(refs, dois, strict=True))
     )
+
+
+def reference_identity(ref):
+    """Crossref key of a reference, or its position when it has no key."""
+    return ("key", ref.key) if ref.key else ("position", ref.position)
+
+
+def manual_resolutions(pub):
+    references = CitedReference.objects.filter(source=pub, resolved_manually=True)
+    return {reference_identity(ref): ref for ref in references}
+
+
+def with_manual_resolution(ref, manual):
+    previous = manual.get(reference_identity(ref))
+    if previous:
+        ref.target_id = previous.target_id
+        ref.resolved_manually = True
+        ref.resolved_by_id = previous.resolved_by_id
+        ref.resolved_at = previous.resolved_at
+    return ref
 
 
 def cited_publications(dois, refs):

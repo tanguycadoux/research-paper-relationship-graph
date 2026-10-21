@@ -114,7 +114,7 @@ class ImportPublicationTests(TestCase):
 @with_mocked_crossref
 class AddToCorpusViewTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user("alice", password="secret")
+        self.user = get_user_model().objects.create_user("alice")
         self.client.force_login(self.user)
 
     def test_add_by_doi_imports_publication_and_references(self, fetch, fetch_works):
