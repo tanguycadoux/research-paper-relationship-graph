@@ -7,6 +7,7 @@ record. Their answers are stored; they never overwrite anything.
 from django.db import transaction
 
 from ..models import Publication
+from .affiliations import attach_affiliations
 from .external_records import Source, has_record, store_record
 from .openalex_api import fetch_openalex_work, fetch_openalex_works
 
@@ -32,6 +33,8 @@ def complete_cited_with_openalex(pub):
     with transaction.atomic():
         for doi, work in works.items():
             store_record(targets[doi], Source.OPENALEX, work)
+            if work:
+                attach_affiliations(targets[doi])
 
 
 def cited_without_openalex(pub):

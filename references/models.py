@@ -88,6 +88,29 @@ class Author(models.Model):
             other.delete()
 
 
+class Organization(models.Model):
+    """A research organization (laboratory, university, company), from OpenAlex."""
+
+    name = models.CharField(max_length=500)
+    ror = models.CharField("ROR", max_length=20, blank=True)
+    openalex_id = models.CharField(max_length=20, blank=True)
+    country_code = models.CharField(max_length=2, blank=True)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["ror"], condition=~models.Q(ror=""), name="unique_ror"),
+            models.UniqueConstraint(
+                fields=["openalex_id"],
+                condition=~models.Q(openalex_id=""),
+                name="unique_openalex_organization",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
 class AuthorDistinction(models.Model):
     """
     Two authors declared to be different people: never suggested as duplicates.
@@ -125,6 +148,9 @@ class AuthorPublication(models.Model):
     published_given_name = models.CharField(max_length=255, blank=True)
     published_family_name = models.CharField(max_length=255, blank=True)
     published_orcid = models.CharField(max_length=50, blank=True)
+    # Affiliations declared on this publication: a property of the signature, not
+    # of the person, since researchers change laboratories.
+    organizations = models.ManyToManyField(Organization, related_name="author_slots", blank=True)
 
     class Meta:
         ordering = ["order"]

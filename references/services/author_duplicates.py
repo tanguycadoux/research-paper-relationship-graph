@@ -3,16 +3,13 @@ Suggestion of probable duplicate authors: same family name, compatible given
 names ('A.' / 'Ada', 'J.-L.' / 'Jean Luc'), never two different ORCIDs.
 """
 
-import re
-import unicodedata
 from collections import defaultdict
 
 from django.db.models import Count
 
 from ..models import Author
 from .author_distinctions import distinct_pairs, ordered_pair
-
-NAME_PARTS = re.compile(r"[^\w]+")
+from .names import name_parts, normalized
 
 
 def duplicate_groups():
@@ -66,16 +63,6 @@ def compatible_given_names(first, second):
     """Word by word: equal, or an initial matching the first letter of the other."""
     pairs = zip(name_parts(first), name_parts(second), strict=False)
     return all(a == b or (min(len(a), len(b)) == 1 and a[0] == b[0]) for a, b in pairs)
-
-
-def name_parts(name):
-    return [part for part in NAME_PARTS.split(normalized(name)) if part]
-
-
-def normalized(text):
-    """Lower case, without accents."""
-    decomposed = unicodedata.normalize("NFKD", text.casefold())
-    return "".join(c for c in decomposed if not unicodedata.combining(c))
 
 
 def group_priority(group):

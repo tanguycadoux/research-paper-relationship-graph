@@ -12,6 +12,41 @@
             {% endif %}
         </header>
 
+        {% if organizations %}
+            <section aria-labelledby="author-organizations-title">
+                <h2 id="author-organizations-title">Organisations</h2>
+                <p><small>Déclarées sur ses publications (selon OpenAlex) ; les périodes sont celles des publications.</small></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Organisation</th>
+                            <th scope="col">Période</th>
+                            <th scope="col">Publications</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for organization in organizations %}
+                            <tr>
+                                <th scope="row">
+                                    {% if organization.ror %}
+                                        <a href="https://ror.org/{{ organization.ror }}">{{ organization }}</a>
+                                    {% else %}
+                                        {{ organization }}
+                                    {% endif %}
+                                </th>
+                                <td>
+                                    {% if organization.first_date %}
+                                        {{ organization.first_date|date:"Y" }}{% if organization.last_date|date:"Y" != organization.first_date|date:"Y" %} – {{ organization.last_date|date:"Y" }}{% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ organization.publication_count }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+        {% endif %}
+
         <section aria-labelledby="author-publications-title">
             <h2 id="author-publications-title">Publications</h2>
             <table>

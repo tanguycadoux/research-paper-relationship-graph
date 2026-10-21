@@ -10,11 +10,19 @@
         <p>ISBN : {{ publication.isbn }}</p>
     {% endif %}
     <p><small>{{ publication.publication_date }}</small></p>
-    <p>
-        {% for ap in publication.authorpublication_set.all %}
-            {{ ap.author }}{% if not forloop.last %}, {% endif %}
-        {% endfor %}
-    </p>
+    <section aria-labelledby="authors-title">
+        <h2 id="authors-title">Auteurs</h2>
+        <ol>
+            {% for slot in author_slots %}
+                <li>
+                    <a href="{% url 'author_detail' slot.author.pk %}">{{ slot.author }}</a>
+                    {% if slot.organizations.all %}
+                        <small>({{ slot.organizations.all|join:", " }})</small>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </section>
 
     {% if user.is_authenticated %}
         {% if belongs_to_user %}

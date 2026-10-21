@@ -5,6 +5,7 @@ from .models import (
     AuthorDistinction,
     CitedReference,
     ExternalRecord,
+    Organization,
     Publication,
     UserPublication,
 )
@@ -66,3 +67,9 @@ class ExternalRecordAdmin(admin.ModelAdmin):
 class AuthorDistinctionAdmin(admin.ModelAdmin):
     list_display = ("pk", "first", "second", "declared_by", "declared_at")
     list_select_related = ("first", "second", "declared_by")
+
+
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    list_display = ("pk", "name", "ror", "country_code")
+    search_fields = ("name", "ror")

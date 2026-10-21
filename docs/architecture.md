@@ -30,6 +30,8 @@ references/          application principale
     datacite_api.py  client DataCite (DOI par DOI ou par lots)
     openalex_api.py  client OpenAlex (DOI par DOI ou par lots)
     enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
+    affiliations.py  organisations des signatures (institutions OpenAlex)
+    names.py         normalisation des noms de personnes
     openlibrary_api.py  client Open Library (recherche par ISBN)
     doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
@@ -75,6 +77,7 @@ erDiagram
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Elle est conservée au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
 | `Author` | Une personne (entité résolue). |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
+| `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex. |
 | `UserPublication` | Le corpus d'un utilisateur. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
 
@@ -177,6 +180,20 @@ article : seuls ceux déjà importés (corpus et articles cités) sont complét�
 - Conditions (vérifiées le 2026-10-21) : API gratuite et sans clé. Une requête unitaire
   est illimitée. Les requêtes par lots consomment un budget quotidien d'environ 1 000 lots
   sans clé.
+
+### Affiliations
+
+Une affiliation est une propriété de la **signature** (`AuthorPublication.organizations`),
+pas de la personne : « sur cet article, X a déclaré le laboratoire Y ». Les périodes d'un
+auteur dans une organisation (première et dernière publication) **se calculent** et ne
+sont pas stockées : un changement de laboratoire apparaît naturellement.
+
+Les institutions viennent d'OpenAlex. Elles sont rattachées aux signatures par **position
+et nom publié** : les mots du nom sont comparés quel que soit leur ordre, si bien que
+« Thuillier, Thomas » (DataCite) correspond à « Thomas Thuillier ». Si le nombre d'auteurs
+ou un nom diffère, rien n'est rattaché pour l'article. Une organisation est reconnue par
+son identifiant OpenAlex ou par son ROR. Les liens sont recréés à chaque analyse, puisque
+les signatures le sont aussi.
 
 ### Informations contradictoires entre sources
 
