@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.forms import IdentifyReferenceForm
-from references.models import CitedReference, Publication
+from references.models import CitedReference, Publication, UserPublication
 from references.services import identification
 from references.services.parser import parse_publication
 from references.tests.helpers import with_crossref, without_datacite
@@ -132,3 +132,27 @@ class IdentifyReferenceViewTests(IdentificationTestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("publication_detail", args=[self.source.pk]))
         self.assertContains(response, self.url(0))
+
+
+class OrphanTargetTests(IdentificationTestCase):
+    def reidentify(self, first_target):
+        identification.resolve(self.ref(0), first_target, self.user)
+        identification.resolve(self.ref(0), Publication.objects.create(title="La bonne"), self.user)
+        return Publication.objects.filter(pk=first_target.pk).exists()
+
+    def test_empty_unused_previous_target_is_deleted(self):
+        self.assertFalse(self.reidentify(Publication.objects.create(isbn="9783954501861")))
+
+    def test_previous_target_with_metadata_is_kept(self):
+        kept = with_crossref(Publication.objects.create(doi="10.1000/kept"), {"message": {}})
+        self.assertTrue(self.reidentify(kept))
+
+    def test_previous_target_still_cited_is_kept(self):
+        cited = Publication.objects.create(title="Citée ailleurs")
+        CitedReference.objects.create(source=self.source, target=cited, position=99)
+        self.assertTrue(self.reidentify(cited))
+
+    def test_previous_target_in_a_corpus_is_kept(self):
+        in_corpus = Publication.objects.create(title="Dans un corpus")
+        UserPublication.objects.create(user=self.user, publication=in_corpus)
+        self.assertTrue(self.reidentify(in_corpus))
