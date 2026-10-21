@@ -45,6 +45,6 @@ ruff format .
 python manage.py test
 ```
 
-Les tests ne font aucun appel réseau : les appels à Crossref sont simulés avec `unittest.mock`.
+Les tests ne font aucun appel réseau : les appels à Crossref sont simulés avec `unittest.mock`. Le test runner (`config/test_runner.py`) fait échouer toute tentative de connexion, ce qui révèle un appel oublié.
 
 La CI (GitHub Actions) lance `ruff check`, `ruff format --check` et `python manage.py test` sur chaque pull request.

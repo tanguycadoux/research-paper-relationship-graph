@@ -139,6 +139,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CROSSREF_MAILTO = os.environ.get("CROSSREF_MAILTO", "")
 
 
+# Tests
+
+TEST_RUNNER = "config.test_runner.NoNetworkTestRunner"
+
+
 # Logging
 
 LOGGING = {

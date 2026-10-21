@@ -39,7 +39,8 @@ Règles :
 - Les **vues** restent fines : elles valident l'entrée, appellent un service et rendent
   la réponse.
 - Les **services** portent la logique et se testent sans HTTP.
-- Les tests ne font **aucun appel réseau** : Crossref est simulé.
+- Les tests ne font **aucun appel réseau** : Crossref est simulé, et le test runner
+  (`config/test_runner.py`) fait échouer toute connexion réseau.
 
 ## Modèle de données
 
@@ -82,9 +83,19 @@ Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
 3. Pour un article du corpus, les références sont analysées, puis les articles cités
    jamais récupérés sont importés, sans leurs propres références : on ne descend que d'un
    niveau.
-4. **(cible, #51)** Ces articles cités sont récupérés **par lots de 50** en une requête
-   (`/works?filter=doi:A,doi:B,…`). Un article à 100 références coûtera ainsi environ
-   3 requêtes au lieu de 101.
+4. Ces articles cités sont récupérés **par lots de 50** en une requête
+   (`/works?filter=doi:A,doi:B,…`). Un DOI absent de la réponse est marqué comme
+   récupéré, sans données, pour ne pas être redemandé par les imports suivants. Une
+   action explicite (ajout au corpus, rafraîchissement) peut le redemander.
+   Les fiches de ces requêtes de liste contiennent les mêmes auteurs et références qu'une
+   requête unitaire. Il leur manque seulement des champs secondaires (`original-title`,
+   `short-title`, `subject`, `subtitle`).
+
+Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
+Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une
+transaction, sans les appels réseau. Les auteurs et les publications citées sont
+résolus par requêtes groupées, et les créations passent par `bulk_create` : le nombre de
+requêtes SQL ne croît pas avec le nombre d'auteurs ou de références.
 
 **Décision : l'import est synchrone.** Grâce aux lots, il ne prend que quelques secondes
 et ne demande aucune infrastructure supplémentaire. Le service est isolé des vues, si

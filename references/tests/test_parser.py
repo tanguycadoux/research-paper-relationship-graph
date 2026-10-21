@@ -1,7 +1,8 @@
 from unittest.mock import patch
 
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
 from references.services.parser import parse_publication
@@ -99,3 +100,24 @@ class PublicationConstraintTests(TestCase):
         AuthorPublication.objects.create(publication=pub, author=author, order=0)
         AuthorPublication.objects.create(publication=pub, author=author, order=1)
         self.assertEqual(pub.authorpublication_set.count(), 2)
+
+
+class ParserQueryCountTests(TestCase):
+    """The number of queries must not grow with the number of authors or references."""
+
+    def parse(self, json_data):
+        pub = Publication.objects.create(title="")
+        pub.crossref_json = json_data
+        parse_publication(pub)
+
+    def count_queries(self, size):
+        authors = [{"given": f"G{i}", "family": f"F{i}", "ORCID": f"0000-{i}"} for i in range(size)]
+        refs = [{"key": f"r{i}", "DOI": f"10.1000/q{size}-{i}"} for i in range(size)]
+        with CaptureQueriesContext(connection) as context:
+            self.parse(crossref_message(authors=authors, references=refs))
+        return len(context)
+
+    def test_query_count_does_not_grow_per_row(self):
+        # bulk_create splits large inserts to respect SQLite's parameter limit: a few
+        # extra queries for 40 times more rows, instead of several per row.
+        self.assertLessEqual(self.count_queries(200) - self.count_queries(5), 5)

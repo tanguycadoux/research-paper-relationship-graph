@@ -1,7 +1,8 @@
 from datetime import date
 
-from references.models import Author, AuthorPublication, CitedReference, Publication
+from references.models import AuthorPublication, CitedReference, Publication
 
+from .author_resolution import resolve_authors
 from .doi import is_valid_doi, normalize_doi
 
 
@@ -68,11 +69,11 @@ def parse_authors(pub, message):
 
     # Resolve before deleting the current slots: they record previous resolutions.
     names = [published_name(author_json) for author_json in authors_data]
-    authors = [resolve_author(*name) for name in names]
+    authors = resolve_authors(names)
 
     AuthorPublication.objects.filter(publication=pub).delete()
-    for index, ((given, family, orcid), author) in enumerate(zip(names, authors, strict=True)):
-        AuthorPublication.objects.create(
+    AuthorPublication.objects.bulk_create(
+        AuthorPublication(
             publication=pub,
             author=author,
             order=index,
@@ -80,6 +81,8 @@ def parse_authors(pub, message):
             published_family_name=family,
             published_orcid=orcid,
         )
+        for index, ((given, family, orcid), author) in enumerate(zip(names, authors, strict=True))
+    )
 
 
 def published_name(author_json):
@@ -93,56 +96,38 @@ def published_name(author_json):
     return given, family, orcid
 
 
-def resolve_author(given, family, orcid):
-    """
-    Find the canonical author of a published name, or create it. A name already
-    resolved once (possibly by a manual merge) is resolved the same way again.
-    """
-    if orcid:
-        author = Author.objects.filter(orcid=orcid).first()
-        if author:
-            return author
-    previous = (
-        AuthorPublication.objects.filter(
-            published_given_name=given, published_family_name=family, published_orcid=orcid
-        )
-        .select_related("author")
-        .first()
-    )
-    if previous:
-        return previous.author
-    author = Author.objects.filter(first_name=given, last_name=family, orcid=orcid).first()
-    return author or Author.objects.create(first_name=given, last_name=family, orcid=orcid)
-
-
 def parse_references_list(pub, message):
     """
     Store the bibliography of the publication as CitedReference entries, resolved
     to a Publication when the cited DOI is known.
     """
+    refs = message.get("reference", [])
+    dois = [normalize_doi(ref.get("DOI", "")) for ref in refs]
+    targets = cited_publications(dois, refs)
+
     CitedReference.objects.filter(source=pub).delete()
-    for position, ref in enumerate(message.get("reference", [])):
-        doi = normalize_doi(ref.get("DOI", ""))
-        CitedReference.objects.create(
+    CitedReference.objects.bulk_create(
+        CitedReference(
             source=pub,
-            target=resolve_cited_publication(doi, ref),
+            target=targets.get(doi),
             position=position,
             key=ref.get("key", ""),
             doi=doi,
             unstructured=ref.get("unstructured", ""),
             raw=ref,
         )
-
-
-def resolve_cited_publication(doi, ref):
-    """
-    Return the Publication of a cited DOI, creating it if needed.
-    Without a valid DOI, the reference stays unresolved (no empty Publication).
-    """
-    if not is_valid_doi(doi):
-        return None
-    target, _ = Publication.objects.get_or_create(
-        doi=doi,
-        defaults={"title": ref.get("article-title", "")},
+        for position, (ref, doi) in enumerate(zip(refs, dois, strict=True))
     )
-    return target
+
+
+def cited_publications(dois, refs):
+    """
+    Return {doi: Publication} for the valid cited DOIs, creating the missing ones.
+    Without a valid DOI, a reference stays unresolved (no empty Publication).
+    """
+    titles = {doi: ref.get("article-title", "") for doi, ref in zip(dois, refs, strict=True)}
+    valid = {doi for doi in dois if is_valid_doi(doi)}
+    existing = {pub.doi: pub for pub in Publication.objects.filter(doi__in=valid)}
+    missing = [Publication(doi=doi, title=titles[doi]) for doi in valid - existing.keys()]
+    Publication.objects.bulk_create(missing)
+    return existing | {pub.doi: pub for pub in missing}
