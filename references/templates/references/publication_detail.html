@@ -26,9 +26,15 @@
 
     {% if user.is_authenticated %}
         {% if belongs_to_user %}
-            <a href="{% url 'remove_publication_from_my_refs' publication.pk %}">Retirer de mes références</a>
+            <form method="post" action="{% url 'remove_publication_from_my_refs' publication.pk %}">
+                {% csrf_token %}
+                <button type="submit">Retirer de mes références</button>
+            </form>
         {% else %}
-            <a href="{% url 'add_publication_to_my_refs' publication.pk %}">Ajouter à mes références</a>
+            <form method="post" action="{% url 'add_publication_to_my_refs' publication.pk %}">
+                {% csrf_token %}
+                <button type="submit">Ajouter à mes références</button>
+            </form>
         {% endif %}
     {% else %}
         <p>Connectez-vous pour enregistrer cette publication</p>
@@ -72,11 +78,15 @@
     <hr>
 
     <a href="{% url 'publication_graph' publication.pk %}">Graphe</a>
-    <a href="{% url 'publication_trigger_import' publication.pk %}">Rafraîchir les métadonnées</a>
     <a href="{% url 'publication_edit' publication.pk %}">Editer</a>
-    <a href="{% url 'publication_delete' publication.pk %}">Supprimer</a>
     {% if user.is_authenticated and not publication.doi and not publication.isbn %}
         <a href="{% url 'publication_merge' publication.pk %}">Cette publication est en fait…</a>
+    {% endif %}
+    {% if user.is_authenticated %}
+        <form method="post" action="{% url 'publication_trigger_import' publication.pk %}">
+            {% csrf_token %}
+            <button type="submit">Rafraîchir les métadonnées</button>
+        </form>
     {% endif %}
 
     <h2>Références</h2>

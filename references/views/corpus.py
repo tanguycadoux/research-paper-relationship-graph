@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from ..models import Publication, UserPublication
@@ -19,11 +20,20 @@ def report_addition(request, pub, imported):
         )
 
 
+def redirect_back(request, pk):
+    """Go back to the page holding the button (the `next` field), or to the publication."""
+    next_url = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
+    return redirect("publication_detail", pk=pk)
+
+
 @login_required
+@require_POST
 def add_to_user_refs(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
     report_addition(request, pub, add_to_corpus(request.user, pub))
-    return redirect("publication_detail", pk=pk)
+    return redirect_back(request, pk)
 
 
 @login_required
@@ -41,10 +51,12 @@ def add_publication_to_user_refs_by_doi(request):
 
 
 @login_required
+@require_POST
 def remove_from_user_refs(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
     UserPublication.objects.filter(user=request.user, publication=pub).delete()
-    return redirect("publication_detail", pk=pk)
+    messages.success(request, f"« {pub} » a été retiré de votre corpus.")
+    return redirect_back(request, pk)
 
 
 @login_required

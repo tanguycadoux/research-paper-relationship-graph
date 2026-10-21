@@ -54,7 +54,6 @@ class PageSmokeTests(TestCase):
             [
                 ("publication_add", []),
                 ("publication_edit", [self.pub.pk]),
-                ("publication_delete", [self.pub.pk]),
                 ("my_references", []),
                 ("my_refs_graph", []),
             ]

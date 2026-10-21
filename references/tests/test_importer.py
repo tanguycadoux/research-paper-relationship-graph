@@ -144,7 +144,7 @@ class AddToCorpusViewTests(TestCase):
 
     def test_both_ways_of_adding_share_the_same_logic(self, fetch, fetch_works):
         pub = Publication.objects.create(doi=SOURCE_DOI)
-        self.client.get(reverse("add_publication_to_my_refs", args=[pub.pk]))
+        self.client.post(reverse("add_publication_to_my_refs", args=[pub.pk]))
         pub.refresh_from_db()
         self.assertTrue(pub.parse_references)
         self.assertEqual(CitedReference.objects.filter(source=pub).count(), 2)
