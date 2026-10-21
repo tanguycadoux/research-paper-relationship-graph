@@ -1,9 +1,7 @@
 {% extends 'references/base.html' %}
 
 {% block content %}
-    <h1>Mon graph</h1>
+    <h1>Mon graphe</h1>
 
-    <div>
-        {{ plot_div|safe }}
-    </div>
+    {% include 'references/_citation_graph.html' %}
 {% endblock content %}
