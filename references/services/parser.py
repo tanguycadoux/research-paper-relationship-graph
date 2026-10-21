@@ -5,6 +5,7 @@ from references.models import AuthorPublication, CitedReference, Publication
 from .author_resolution import resolve_authors
 from .doi import is_valid_doi, normalize_doi
 from .metadata_formats import metadata_message
+from .orcid import normalize_orcid
 
 
 def parse_publication(pub, parse_references=True):
@@ -91,7 +92,7 @@ def published_name(author_json):
     """
     given = author_json.get("given", "").strip()
     family = (author_json.get("family") or author_json.get("name", "")).strip()
-    orcid = author_json.get("ORCID", "").strip().rsplit("/", 1)[-1]
+    orcid = normalize_orcid(author_json.get("ORCID", ""))
     return given, family, orcid
 
 
