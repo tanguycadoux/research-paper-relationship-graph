@@ -1,0 +1,7 @@
+/* Source of the Tailwind stylesheet, compiled into static/css/tailwind.css (not versioned). */
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+/* Preflight (tailwindcss/preflight.css, layer base) comes with the template migration (#34):
+   until then, the current pages keep the browser defaults they are styled on. */
+@import "tailwindcss/utilities.css" layer(utilities);

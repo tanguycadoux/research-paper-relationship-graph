@@ -299,3 +299,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Références importées dès qu'une publication est dans au moins un corpus, conservées quand elle en sort | Elles font partie de la base commune et la réajouter ne coûte aucun appel (#23). |
 | 2026-10-21 | Export du corpus en JSON (identifiants, réimportable) et en BibTeX (export seul) | Le corpus d'un utilisateur se résume à ses DOI et ISBN ; les corrections appartiennent à la base commune. BibTeX pour Zotero et LaTeX, sans parseur à maintenir (#29). |
 | 2026-10-21 | LaTeX des titres conservé tel quel ; entités HTML et balisage JATS retirés | Aucune perte, utile à l'export BibTeX ; le rendu à l'écran relève de M9 (#107). |
+| 2026-10-21 | Tailwind via django-tailwind-cli, CSS compilé non versionné | CLI standalone en version fixée, sans Node, mêmes commandes sous Windows et Linux ; diffs propres (#32). |
+| 2026-10-21 | Composants d'interface en template tags Django | Aucune dépendance, API `{% button %}` / `{% card %}…{% endcard %}` ; django-cotton écarté (dépendance, outillage) (#96). |
+| 2026-10-21 | Icônes Material Symbols en SVG inline (`{% icon %}`, commande `add_icon`) | Fonctionne hors ligne, pas de nom affiché pendant le chargement d'une police, stylable avec Tailwind (#33). |
+| 2026-10-21 | URL au pluriel pour toutes les collections (`publications/`, `publications/42/`) | Un seul préfixe par ressource, convention de l'admin Django et des API REST (#110). |
