@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from ..models import Publication, UserPublication
 from ..services.corpus import add_to_corpus
 from ..services.doi import is_valid_doi, normalize_doi
+from ..services.identification import with_references_to_identify
 
 
 def report_addition(request, pub, imported):
@@ -61,9 +62,9 @@ def remove_from_user_refs(request, pk):
 
 @login_required
 def my_references(request):
-    pubs = Publication.objects.filter(userpublication__user=request.user).order_by(
-        "-publication_date", "title"
-    )
+    pubs = with_references_to_identify(
+        Publication.objects.filter(userpublication__user=request.user)
+    ).order_by("-publication_date", "title")
     context = {
         "publications": pubs,
         "not_exportable": pubs.filter(doi="", isbn="").count(),

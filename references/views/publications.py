@@ -8,7 +8,8 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
-from ..models import Publication, UserPublication
+from ..models import CitedReference, Publication, UserPublication
+from ..services.identification import with_references_to_identify
 from ..services.importer import import_publication
 from ..services.publication_details import crossref_details
 
@@ -17,7 +18,7 @@ class PublicationListView(ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
-    queryset = Publication.objects.exclude(title="")
+    queryset = with_references_to_identify(Publication.objects.exclude(title=""))
     ordering = "-publication_date"
 
     def get_context_data(self, **kwargs):
@@ -38,15 +39,27 @@ class PublicationDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pub = self.get_object()
+        pub = self.object
         user = self.request.user
 
         if user.is_authenticated:
-            context["belongs_to_user"] = pub.userpublication_set.filter(user=user).exists()
+            context["user_pub_ids"] = set(
+                UserPublication.objects.filter(user=user).values_list("publication_id", flat=True)
+            )
         else:
-            context["belongs_to_user"] = False
+            context["user_pub_ids"] = set()
+        context["belongs_to_user"] = pub.pk in context["user_pub_ids"]
 
         context["cited_references"] = pub.cited_references.select_related("target")
+        # Only publications whose bibliography was imported (those of a corpus) can cite it.
+        context["citing_publications"] = with_references_to_identify(
+            Publication.objects.filter(
+                pk__in=CitedReference.objects.filter(target=pub).values("source")
+            )
+        ).order_by("-publication_date", "title")
+        context["references_to_identify"] = sum(
+            1 for ref in context["cited_references"] if ref.target_id is None
+        )
         context["details"] = crossref_details(pub)
         context["author_slots"] = (
             pub.authorpublication_set.select_related("author")
