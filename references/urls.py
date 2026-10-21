@@ -1,65 +1,64 @@
 from django.urls import path
 
-from .views import (
-    AuthorDetailView,
-    AuthorListView,
-    AuthorUpdateView,
-    PublicationCreateView,
-    PublicationDeleteView,
-    PublicationDetailView,
-    PublicationListView,
-    PublicationUpdateView,
-    RegisterView,
-    add_publication_to_user_refs_by_doi,
-    add_to_user_refs,
-    author_merge_confirm_view,
-    author_merge_select_view,
-    fetch_crossref,
-    index,
-    my_references,
-    my_refs_graph,
-    pub_graph,
-    remove_from_user_refs,
-    trigger_import_publication,
-)
+from .views import authors, corpus, graphs, home, publications
 
 urlpatterns = [
-    path("", index, name="index"),
-    path("publications/", PublicationListView.as_view(), name="publications_list"),
-    path("publication/<int:pk>/", PublicationDetailView.as_view(), name="publication_detail"),
-    path("publication/add/", PublicationCreateView.as_view(), name="publication_add"),
-    path("publication/<int:pk>/edit/", PublicationUpdateView.as_view(), name="publication_edit"),
+    path("", home.index, name="index"),
+    # Publications
+    path("publications/", publications.PublicationListView.as_view(), name="publications_list"),
+    path("publications/add/", publications.PublicationCreateView.as_view(), name="publication_add"),
     path(
-        "publication/<int:pk>/delete/", PublicationDeleteView.as_view(), name="publication_delete"
+        "publications/<int:pk>/",
+        publications.PublicationDetailView.as_view(),
+        name="publication_detail",
     ),
-    path("publication/<int:pk>/crossref/", fetch_crossref, name="publication_crossref"),
     path(
-        "publication/<int:pk>/trigger_import/",
-        trigger_import_publication,
+        "publications/<int:pk>/edit/",
+        publications.PublicationUpdateView.as_view(),
+        name="publication_edit",
+    ),
+    path(
+        "publications/<int:pk>/delete/",
+        publications.PublicationDeleteView.as_view(),
+        name="publication_delete",
+    ),
+    path(
+        "publications/<int:pk>/crossref/",
+        publications.fetch_crossref,
+        name="publication_crossref",
+    ),
+    path(
+        "publications/<int:pk>/import/",
+        publications.trigger_import_publication,
         name="publication_trigger_import",
     ),
-    path("publication/<int:pk>/graph/", pub_graph, name="publication_graph"),
-    path("authors/", AuthorListView.as_view(), name="authors_list"),
-    path("author/<int:pk>/", AuthorDetailView.as_view(), name="author_detail"),
-    path("author/<int:pk>/edit/", AuthorUpdateView.as_view(), name="author_edit"),
-    path("authors/merge/", author_merge_select_view, name="authors_merge_select"),
+    path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
+    # Authors
+    path("authors/", authors.AuthorListView.as_view(), name="authors_list"),
+    path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
+    path("authors/<int:pk>/edit/", authors.AuthorUpdateView.as_view(), name="author_edit"),
+    path("authors/merge/", authors.author_merge_select_view, name="authors_merge_select"),
     path(
-        "authors/merge/confirm/<str:ids>/", author_merge_confirm_view, name="author_merge_confirm"
+        "authors/merge/confirm/<str:ids>/",
+        authors.author_merge_confirm_view,
+        name="author_merge_confirm",
     ),
+    # Corpus of the current user
+    path("my-references/", corpus.my_references, name="my_references"),
+    path("my-references/graph/", graphs.my_refs_graph, name="my_refs_graph"),
     path(
-        "publication/<int:pk>/add_to_my_refs/", add_to_user_refs, name="add_publication_to_my_refs"
-    ),
-    path(
-        "publication/<int:pk>/remove_from_my_refs/",
-        remove_from_user_refs,
-        name="remove_publication_from_my_refs",
-    ),
-    path(
-        "publication/add_to_my_refs_by_doi/",
-        add_publication_to_user_refs_by_doi,
+        "my-references/add-by-doi/",
+        corpus.add_publication_to_user_refs_by_doi,
         name="add_publication_to_user_refs_by_doi",
     ),
-    path("my_references/", my_references, name="my_references"),
-    path("my_references_graph/", my_refs_graph, name="my_refs_graph"),
-    path("accounts/register/", RegisterView.as_view(), name="register"),
+    path(
+        "my-references/<int:pk>/add/",
+        corpus.add_to_user_refs,
+        name="add_publication_to_my_refs",
+    ),
+    path(
+        "my-references/<int:pk>/remove/",
+        corpus.remove_from_user_refs,
+        name="remove_publication_from_my_refs",
+    ),
 ]
