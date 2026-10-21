@@ -13,20 +13,28 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
+# Secrets and deployment settings come from the environment: the repository is public.
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-u5065!jf^0$=i6zh1js9m*_^00ltfwiw4iy6ujqb0jug2p9p56"
+DEBUG = os.environ.get("DJANGO_DEBUG", "") == "1"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            "Set DJANGO_SECRET_KEY, or DJANGO_DEBUG=1 for local development (see the README)."
+        )
+    # Development only: fixed so that sessions survive the autoreloader's restarts.
+    SECRET_KEY = "django-insecure-development-only"
 
-ALLOWED_HOSTS = []
+# Comma-separated, e.g. "example.org,www.example.org". Empty is fine with DEBUG (localhost).
+ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host]
 
 
 # Application definition
@@ -110,9 +118,9 @@ LOGOUT_REDIRECT_URL = "/"
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fr-fr"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Europe/Paris"
 
 USE_I18N = True
 
