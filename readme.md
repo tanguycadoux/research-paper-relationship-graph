@@ -28,6 +28,28 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Configuration
+
+L'application interroge l'API de Crossref. Pour bénéficier du *polite pool*
+(10 requêtes/s au lieu de 5, et un service plus stable), il faut fournir une adresse
+e-mail de contact dans la variable d'environnement `CROSSREF_MAILTO`. Ne la mettez pas
+dans le code : le dépôt est public.
+
+```powershell
+# Windows (PowerShell), pour la session en cours
+$env:CROSSREF_MAILTO = "vous@example.org"
+# ou de façon permanente (nouveau terminal nécessaire)
+setx CROSSREF_MAILTO "vous@example.org"
+```
+
+```bash
+# Linux / macOS (à ajouter dans ~/.bashrc pour la rendre permanente)
+export CROSSREF_MAILTO="vous@example.org"
+```
+
+Sans cette variable, l'application fonctionne dans le *public pool* et affiche un
+avertissement au premier appel.
+
 ## Lancement du serveur
 
 Une fois le venv activé, depuis la racine du dépôt :
