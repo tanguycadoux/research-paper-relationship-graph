@@ -1,6 +1,6 @@
 {% comment %}
 Table of publications. Context: publications (annotated by
-with_references_to_identify for the « N à identifier » badges), caption; with corpus_actions, a last
+with_references_to_identify and with_metadata_status for the badges), caption; with corpus_actions, a last
 column to add each publication to the user's corpus or take it away (user_pub_ids).
 {% endcomment %}
 {% load ui %}
@@ -24,6 +24,11 @@ column to add each publication to the user's corpus or take it away (user_pub_id
                 <tr>
                     <td>
                         <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                        {% if pub.metadata_status == "missing" %}
+                            {% badge "métadonnées à récupérer" icon="refresh" %}
+                        {% elif pub.metadata_status == "unknown" %}
+                            {% badge "inconnue des sources" variant="danger" %}
+                        {% endif %}
                         {% if pub.to_identify %}
                             {% badge pub.to_identify|stringformat:"d"|add:" à identifier" variant="warning" %}
                         {% endif %}

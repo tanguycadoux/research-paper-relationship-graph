@@ -30,10 +30,13 @@
             {% if user.is_authenticated %}
                 {% url 'publication_edit' publication.pk as edit_url %}
                 {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}
-                <form method="post" action="{% url 'publication_refresh' publication.pk %}">
-                    {% csrf_token %}
-                    {% button "Rafraîchir les métadonnées" variant="secondary" icon="refresh" %}
-                </form>
+                {% if publication.doi %}
+                    {# The refresh asks the DOI sources only #}
+                    <form method="post" action="{% url 'publication_refresh' publication.pk %}">
+                        {% csrf_token %}
+                        {% button "Rafraîchir les métadonnées" variant="secondary" icon="refresh" %}
+                    </form>
+                {% endif %}
                 {% if not publication.doi and not publication.isbn %}
                     {% url 'publication_merge' publication.pk as merge_url %}
                     {% button "Cette publication est en fait…" url=merge_url variant="secondary" icon="merge" %}
@@ -42,6 +45,15 @@
                 <p class="text-sm text-gray-600">Connectez-vous pour enregistrer cette publication.</p>
             {% endif %}
         </div>
+        {% if metadata_status == "missing" %}
+            {% if user.is_authenticated and publication.doi %}
+                {% alert "Les métadonnées de cette publication n'ont pas encore été récupérées : « Rafraîchir les métadonnées » interroge les sources." variant="warning" %}
+            {% else %}
+                {% alert "Les métadonnées de cette publication n'ont pas encore été récupérées." variant="warning" %}
+            {% endif %}
+        {% elif metadata_status == "unknown" %}
+            {% alert "Aucune des sources interrogées (Crossref, DataCite, Open Library…) ne connaît cette publication." %}
+        {% endif %}
     </header>
 
     <div class="grid gap-6 lg:grid-cols-3">
