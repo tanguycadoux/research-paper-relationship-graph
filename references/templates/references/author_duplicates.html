@@ -1,0 +1,42 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <article>
+        <header>
+            <h1>Doublons probables</h1>
+            <p>
+                Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
+                Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
+                auteurs à écarter, puis passez à la fusion.
+            </p>
+        </header>
+
+        {% for group in groups %}
+            <section aria-labelledby="duplicates-{{ forloop.counter }}-title">
+                <h2 id="duplicates-{{ forloop.counter }}-title">{{ group.0.last_name }}</h2>
+                <form method="post" action="{% url 'authors_merge_select' %}">
+                    {% csrf_token %}
+                    <fieldset>
+                        <legend>{{ group|length }} auteurs</legend>
+                        <ul>
+                            {% for author in group %}
+                                <li>
+                                    <input type="checkbox" name="authors" value="{{ author.pk }}"
+                                           id="duplicate-{{ author.pk }}" checked>
+                                    <label for="duplicate-{{ author.pk }}">{{ author }}</label>
+                                    {% if author.orcid %}<small>(ORCID {{ author.orcid }})</small>{% endif %}
+                                    <small>
+                                        — <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize }}</a>
+                                    </small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </fieldset>
+                    <button type="submit">Fusionner…</button>
+                </form>
+            </section>
+        {% empty %}
+            <p>Aucun doublon probable.</p>
+        {% endfor %}
+    </article>
+{% endblock content %}

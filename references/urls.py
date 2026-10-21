@@ -48,6 +48,7 @@ urlpatterns = [
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
     path("authors/<int:pk>/edit/", authors.AuthorUpdateView.as_view(), name="author_edit"),
     path("authors/merge/", authors.author_merge_select_view, name="authors_merge_select"),
+    path("authors/duplicates/", authors.author_duplicates_view, name="author_duplicates"),
     path(
         "authors/merge/confirm/<str:ids>/",
         authors.author_merge_confirm_view,
