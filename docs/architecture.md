@@ -303,3 +303,4 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Composants d'interface en template tags Django | Aucune dépendance, API `{% button %}` / `{% card %}…{% endcard %}` ; django-cotton écarté (dépendance, outillage) (#96). |
 | 2026-10-21 | Icônes Material Symbols en SVG inline (`{% icon %}`, commande `add_icon`) | Fonctionne hors ligne, pas de nom affiché pendant le chargement d'une police, stylable avec Tailwind (#33). |
 | 2026-10-21 | URL au pluriel pour toutes les collections (`publications/`, `publications/42/`) | Un seul préfixe par ressource, convention de l'admin Django et des API REST (#110). |
+| 2026-10-21 | Import à la demande des références d'une publication hors corpus | Sa bibliographie est déjà dans la réponse Crossref stockée ; l'importer ne coûte que des lots pour les publications citées, et enrichit la base commune sans toucher aux corpus (#126). |

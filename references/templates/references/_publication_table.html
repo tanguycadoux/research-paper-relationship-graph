@@ -1,6 +1,6 @@
 {% comment %}
 Table of publications. Context: publications (annotated by
-with_references_to_identify and with_metadata_status for the badges), caption; with corpus_actions, a last
+for_publication_table, for the badges), caption; with corpus_actions, a last
 column to add each publication to the user's corpus or take it away (user_pub_ids).
 {% endcomment %}
 {% load ui %}
@@ -28,6 +28,13 @@ column to add each publication to the user's corpus or take it away (user_pub_id
                             {% badge "métadonnées à récupérer" icon="refresh" %}
                         {% elif pub.metadata_status == "unknown" %}
                             {% badge "inconnue des sources" variant="danger" %}
+                        {% endif %}
+                        {% if pub.references_available and not pub.references_imported %}
+                            {% if pub.references_available == 1 %}
+                                {% badge "1 référence non importée" icon="download" %}
+                            {% else %}
+                                {% badge pub.references_available|stringformat:"d"|add:" références non importées" icon="download" %}
+                            {% endif %}
                         {% endif %}
                         {% if pub.to_identify %}
                             {% badge pub.to_identify|stringformat:"d"|add:" à identifier" variant="warning" %}
