@@ -26,6 +26,41 @@
         <p>Connectez-vous pour enregistrer cette publication</p>
     {% endif %}
 
+    {% if details %}
+        <section aria-labelledby="details-title">
+            <h2 id="details-title">Informations</h2>
+            <dl>
+                {% if details.venue %}
+                    <dt>Revue ou conférence</dt>
+                    <dd>{{ details.venue }}</dd>
+                {% endif %}
+                {% if details.citation_count is not None %}
+                    <dt>Citations</dt>
+                    <dd>{{ details.citation_count }} (selon Crossref)</dd>
+                {% endif %}
+                {% if details.subjects %}
+                    <dt>Disciplines</dt>
+                    <dd>{{ details.subjects|join:", " }}</dd>
+                {% endif %}
+                {% if details.funders %}
+                    <dt>Financement</dt>
+                    {% for funder in details.funders %}<dd>{{ funder }}</dd>{% endfor %}
+                {% endif %}
+                {% if details.licenses %}
+                    <dt>Licences</dt>
+                    {% for license in details.licenses %}<dd><a href="{{ license }}">{{ license }}</a></dd>{% endfor %}
+                {% endif %}
+            </dl>
+        </section>
+
+        {% if details.abstract %}
+            <section aria-labelledby="abstract-title">
+                <h2 id="abstract-title">Résumé</h2>
+                {% for paragraph in details.abstract %}<p>{{ paragraph }}</p>{% endfor %}
+            </section>
+        {% endif %}
+    {% endif %}
+
     <hr>
 
     <a href="{% url 'publication_graph' publication.pk %}">Graphe</a>
