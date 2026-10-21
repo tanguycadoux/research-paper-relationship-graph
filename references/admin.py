@@ -18,10 +18,9 @@ class PublicationAdmin(admin.ModelAdmin):
     list_filter = ("publication_date",)
     ordering = ("title",)
 
+    @admin.display(description="Authors")
     def display_authors(self, obj):
         return ", ".join(str(a) for a in obj.authors.all())
-
-    display_authors.short_description = "Authors"
 
 
 @admin.register(Author)
@@ -30,8 +29,7 @@ class AuthorAdmin(admin.ModelAdmin):
     search_fields = ("first_name", "last_name", "orcid")
     ordering = ("last_name",)
 
+    @admin.display(description="Publications")
     def display_publications(self, obj):
         pubs = obj.publications.all().order_by("authorpublication__order")
         return ", ".join(str(p) for p in pubs)
-
-    display_publications.short_description = "Publications"
