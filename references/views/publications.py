@@ -48,6 +48,7 @@ class PublicationDetailView(DetailView):
         else:
             context["belongs_to_user"] = False
 
+        context["cited_references"] = pub.cited_references.select_related("target")
         return context
 
 

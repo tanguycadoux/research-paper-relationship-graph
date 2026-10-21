@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
@@ -42,7 +42,7 @@ class IsValidDoiTests(SimpleTestCase):
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class DoiPersistenceTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user("alice", password="secret")
+        self.user = get_user_model().objects.create_user("alice", password="secret")
         self.client.force_login(self.user)
 
     def test_model_saves_normalized_doi(self, _fetch):

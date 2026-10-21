@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
@@ -18,6 +18,6 @@ class AuthorMergeSelectFormTests(TestCase):
 
     def test_merge_select_page_renders_labels(self):
         Author.objects.create(first_name="Ada", last_name="Lovelace", orcid="0000-0001")
-        self.client.force_login(User.objects.create_user("alice", password="secret"))
+        self.client.force_login(get_user_model().objects.create_user("alice", password="secret"))
         response = self.client.get(reverse("authors_merge_select"))
         self.assertContains(response, "Ada Lovelace (ORCID : 0000-0001)")

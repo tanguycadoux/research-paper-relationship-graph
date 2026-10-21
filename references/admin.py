@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Author, Publication
+from .models import Author, CitedReference, Publication, UserPublication
 
 
 @admin.register(Publication)
@@ -33,3 +33,16 @@ class AuthorAdmin(admin.ModelAdmin):
     def display_publications(self, obj):
         pubs = obj.publications.all().order_by("authorpublication__order")
         return ", ".join(str(p) for p in pubs)
+
+
+@admin.register(CitedReference)
+class CitedReferenceAdmin(admin.ModelAdmin):
+    list_display = ("pk", "source", "position", "doi", "target")
+    list_select_related = ("source", "target")
+    search_fields = ("doi", "unstructured", "source__title")
+
+
+@admin.register(UserPublication)
+class UserPublicationAdmin(admin.ModelAdmin):
+    list_display = ("pk", "user", "publication", "added_at")
+    list_select_related = ("user", "publication")
