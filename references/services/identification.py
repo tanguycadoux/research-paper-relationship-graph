@@ -5,12 +5,23 @@ Manual identification of a cited reference: the user tells which publication it 
 import datetime
 
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from ..models import Publication
 from .books import find_or_import_book
 from .external_records import has_metadata
 from .importer import import_publication
+
+
+def with_references_to_identify(publications):
+    """
+    Annotate publications with to_identify, their number of cited references linked
+    to no publication: one query for the whole list.
+    """
+    return publications.annotate(
+        to_identify=Count("cited_references", filter=Q(cited_references__target__isnull=True))
+    )
 
 
 def identify_by_doi(ref, doi, user):

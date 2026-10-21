@@ -138,31 +138,43 @@
     </div>
 
     <section aria-labelledby="references-title" class="mt-8">
-        <h2 id="references-title" class="mb-3 text-lg font-semibold">
+        <h2 id="references-title">
             Références <span class="font-normal text-gray-500">({{ cited_references|length }})</span>
         </h2>
-        <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
-            <table class="w-full text-left text-sm">
-                <thead class="border-b border-gray-200 bg-gray-50 text-gray-600">
+        <p class="mt-1 mb-3 text-sm text-gray-500">
+            {% if references_to_identify %}
+                {{ references_to_identify }} référence{{ references_to_identify|pluralize }} sur {{ cited_references|length }}
+                {% if references_to_identify == 1 %}
+                    n'est reliée
+                {% else %}
+                    ne sont reliées
+                {% endif %}
+                à aucune publication : à identifier.
+            {% elif cited_references %}
+                Toutes les références sont reliées à une publication.
+            {% endif %}
+        </p>
+        {% card flush=True %}
+            <table>
+                <thead>
                     <tr>
-                        <th scope="col" class="px-3 py-2 font-medium">N°</th>
-                        <th scope="col" class="px-3 py-2 font-medium">Référence</th>
-                        <th scope="col" class="px-3 py-2 font-medium">Année</th>
+                        <th scope="col">N°</th>
+                        <th scope="col">Référence</th>
+                        <th scope="col">Année</th>
                         {% if user.is_authenticated %}
-                            <th scope="col" class="px-3 py-2 font-medium">
+                            <th scope="col">
                                 <span class="sr-only">Action</span>
                             </th>
                         {% endif %}
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody>
                     {% for ref in cited_references %}
-                        <tr>
-                            <th scope="row" class="px-3 py-2 align-top font-normal text-gray-500">{{ ref.position|add:1 }}</th>
-                            <td class="px-3 py-2">
+                        <tr {% if not ref.target %}class="bg-amber-50"{% endif %}>
+                            <th scope="row" class="font-normal text-gray-500">{{ ref.position|add:1 }}</th>
+                            <td>
                                 {% if ref.target %}
-                                    <a href="{% url 'publication_detail' ref.target.pk %}"
-                                      >{{ ref.target }}</a>
+                                    <a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
                                 {% else %}
                                     <span class="text-gray-700">{{ ref.label }}</span>
                                 {% endif %}
@@ -172,26 +184,26 @@
                                     {% badge "à identifier" variant="warning" %}
                                 {% endif %}
                             </td>
-                            <td class="px-3 py-2 align-top text-gray-500">{{ ref.target.publication_date|date:"Y" }}</td>
+                            <td class="text-gray-500">{{ ref.target.publication_date|date:"Y" }}</td>
                             {% if user.is_authenticated %}
-                                <td class="px-3 py-2 text-right align-top">
+                                <td class="text-right">
                                     {% url 'reference_identify' publication.pk ref.position as identify_url %}
                                     {% if ref.target %}
                                         {% button "Corriger" url=identify_url variant="secondary" icon="edit" icon_only=True %}
                                     {% else %}
-                                        {% button "Identifier" url=identify_url variant="secondary" %}
+                                        {% button "Identifier" url=identify_url variant="warning" %}
                                     {% endif %}
                                 </td>
                             {% endif %}
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4" class="px-3 py-4 text-gray-500">Aucune référence connue.</td>
+                            <td colspan="4" class="text-gray-500">Aucune référence connue.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
+        {% endcard %}
     </section>
 
     <section aria-labelledby="cited-by-title" class="mt-8">
@@ -203,7 +215,7 @@
             importée, c'est-à-dire celles d'un corpus, peuvent apparaître ici : la liste n'est pas
             exhaustive.
             {% if details.citation_count is not None %}
-                Crossref recense {{ details.citation_count }} citation{{ details.citation_count|pluralize }} dans toute la littérature.
+                Crossref recense {{ details.citation_count }} citation{% if details.citation_count > 1 %}s{% endif %} dans toute la littérature.
             {% endif %}
         </p>
         {% if citing_publications %}

@@ -1,5 +1,6 @@
 {% comment %}
-Table of publications. Context: publications, caption; with corpus_actions, a last
+Table of publications. Context: publications (annotated by
+with_references_to_identify for the « N à identifier » badges), caption; with corpus_actions, a last
 column to add each publication to the user's corpus or take it away (user_pub_ids).
 {% endcomment %}
 {% load ui %}
@@ -23,6 +24,9 @@ column to add each publication to the user's corpus or take it away (user_pub_id
                 <tr>
                     <td>
                         <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                        {% if pub.to_identify %}
+                            {% badge pub.to_identify|stringformat:"d"|add:" à identifier" variant="warning" %}
+                        {% endif %}
                     </td>
                     <td class="text-gray-600">{{ pub.doi }}</td>
                     <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
