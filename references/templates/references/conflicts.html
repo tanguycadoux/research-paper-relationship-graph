@@ -1,0 +1,66 @@
+{% extends 'references/base.html' %}
+
+{% block content %}
+    <article>
+        <header>
+            <h1>Conflits</h1>
+            <p>
+                Valeurs d'une source qui contredisent une valeur déjà connue. La valeur connue
+                est conservée tant que personne n'a tranché ; les décisions valent pour tous.
+            </p>
+        </header>
+
+        <section aria-labelledby="open-conflicts-title">
+            <h2 id="open-conflicts-title">À trancher ({{ open_conflicts|length }})</h2>
+            {% for conflict in open_conflicts %}
+                <article aria-labelledby="conflict-{{ conflict.pk }}-title">
+                    <h3 id="conflict-{{ conflict.pk }}-title">
+                        {{ conflict.get_kind_display }} :
+                        {% if conflict.publication %}
+                            <a href="{% url 'publication_detail' conflict.publication.pk %}">{{ conflict.publication }}</a>
+                        {% else %}
+                            <a href="{% url 'author_detail' conflict.author.pk %}">{{ conflict.author }}</a>
+                        {% endif %}
+                    </h3>
+                    <dl>
+                        <dt>Valeur retenue</dt>
+                        <dd>{{ conflict.current_value|default:"(vide)" }}</dd>
+                        <dt>Proposée par {{ conflict.get_source_display }}</dt>
+                        <dd>{{ conflict.proposed_value|default:"(vide)" }}</dd>
+                        <dt>Détecté le</dt>
+                        <dd><time datetime="{{ conflict.detected_at|date:'c' }}">{{ conflict.detected_at|date:"j F Y" }}</time></dd>
+                    </dl>
+                    {% if conflict.is_informative %}
+                        <p><small>Les affiliations de cette publication ne sont pas rattachées tant que les listes d'auteurs diffèrent.</small></p>
+                    {% endif %}
+                    <form method="post" action="{% url 'resolve_conflict' conflict.pk %}">
+                        {% csrf_token %}
+                        {% if conflict.is_informative %}
+                            <button type="submit" name="decision" value="seen">Vu</button>
+                        {% else %}
+                            <button type="submit" name="decision" value="kept">Garder l'existant</button>
+                            <button type="submit" name="decision" value="accepted">Prendre la valeur proposée</button>
+                        {% endif %}
+                    </form>
+                </article>
+            {% empty %}
+                <p>Aucun conflit à trancher.</p>
+            {% endfor %}
+        </section>
+
+        {% if recent_decisions %}
+            <section aria-labelledby="recent-decisions-title">
+                <h2 id="recent-decisions-title">Décisions récentes</h2>
+                <ul>
+                    {% for conflict in recent_decisions %}
+                        <li>
+                            {{ conflict.get_kind_display }} — {{ conflict.publication|default:conflict.author }} :
+                            {{ conflict.get_status_display|lower }}{% if conflict.resolved_by %}, par {{ conflict.resolved_by }}{% endif %},
+                            le <time datetime="{{ conflict.resolved_at|date:'c' }}">{{ conflict.resolved_at|date:"j F Y" }}</time>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+    </article>
+{% endblock content %}

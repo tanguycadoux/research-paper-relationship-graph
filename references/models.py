@@ -244,3 +244,49 @@ class UserPublication(models.Model):
 
     def __str__(self):
         return f"{self.user} – {self.publication}"
+
+
+class MetadataConflict(models.Model):
+    """
+    A value from a source that contradicts a known value. The known value is kept
+    until someone decides; decisions are shared by all users.
+    """
+
+    class Kind(models.TextChoices):
+        AUTHORS_MISMATCH = "authors_mismatch", "Auteurs différents selon les sources"
+        ORCID = "orcid", "ORCID différent"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Ouvert"
+        KEPT = "kept", "Valeur existante conservée"
+        ACCEPTED = "accepted", "Valeur proposée retenue"
+        SEEN = "seen", "Vu"
+
+    kind = models.CharField(max_length=30, choices=Kind.choices)
+    publication = models.ForeignKey(
+        Publication, on_delete=models.CASCADE, null=True, blank=True, related_name="conflicts"
+    )
+    author = models.ForeignKey(
+        Author, on_delete=models.CASCADE, null=True, blank=True, related_name="conflicts"
+    )
+    field = models.CharField(max_length=50)
+    current_value = models.TextField(blank=True)
+    proposed_value = models.TextField(blank=True)
+    source = models.CharField(max_length=20, choices=ExternalRecord.Source.choices)
+    detected_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-detected_at"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} – {self.publication or self.author}"
+
+    @property
+    def is_informative(self):
+        """Nothing to accept: the conflict can only be acknowledged."""
+        return self.kind == self.Kind.AUTHORS_MISMATCH

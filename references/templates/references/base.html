@@ -53,5 +53,10 @@
             Doublons probables
         </a></li>
 
+        {% url 'conflicts' as this_url %}
+        <li><a class="nav-link {% if request.path == this_url %}nav-link--active{% endif %}" href="{{ this_url }}">
+            Conflits
+        </a></li>
+
     </ul>
 {% endblock nav %}
