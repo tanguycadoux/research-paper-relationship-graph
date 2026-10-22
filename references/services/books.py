@@ -45,6 +45,26 @@ def store_crossref_book(isbn, work):
     return pub
 
 
+def import_book_metadata(pub):
+    """
+    Fetch the metadata of an existing publication from its ISBN: Crossref first, then
+    Open Library. Return False if neither knows it.
+    """
+    work = fetch_crossref_by_isbn(pub.isbn)
+    if work is None:
+        return import_from_openlibrary(pub)
+    doi = normalize_doi(work["message"].get("DOI", ""))
+    with transaction.atomic():
+        # The DOI is taken only if no other publication holds it (else: a duplicate,
+        # to merge by hand).
+        if doi and not pub.doi and not Publication.objects.filter(doi=doi).exists():
+            pub.doi = doi
+            pub.save()
+        store_record(pub, Source.CROSSREF, work)
+        parse_publication(pub, parse_references=False)
+    return True
+
+
 def import_from_openlibrary(pub):
     doc = fetch_openlibrary_book(pub.isbn)
     if doc is None:

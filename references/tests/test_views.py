@@ -139,7 +139,7 @@ class EditionTests(TestCase):
             reverse("publication_edit", args=[pub.pk]),
             {"title": "Titre corrigé", "publication_date": "2026-08-01"},
         )
-        self.assertRedirects(response, reverse("publication_list"))
+        self.assertRedirects(response, reverse("publication_detail", args=[pub.pk]))
         pub.refresh_from_db()
         self.assertEqual((pub.title, pub.publication_date), ("Titre corrigé", date(2026, 8, 1)))
 

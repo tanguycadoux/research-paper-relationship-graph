@@ -10,6 +10,9 @@ class Publication(models.Model):
     isbn = models.CharField("ISBN", max_length=13, blank=True)
     title = models.TextField(blank=True)
     publication_date = models.DateField(null=True, blank=True)
+    # Corrected by hand (« Modifier »): the sources no longer overwrite them (#146).
+    title_edited = models.BooleanField(default=False)
+    date_edited = models.BooleanField(default=False)
     authors = models.ManyToManyField(
         "Author", through="AuthorPublication", related_name="publications", blank=True
     )

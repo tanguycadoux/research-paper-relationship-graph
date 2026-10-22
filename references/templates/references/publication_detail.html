@@ -11,6 +11,13 @@
             {% if details.venue %}· {{ details.venue }}{% endif %}
         </p>
         <h1 class="text-2xl leading-tight font-semibold text-balance">{{ publication }}</h1>
+        {% if publication.title_edited or publication.date_edited %}
+            <p class="text-sm text-gray-600">
+                {% icon "edit" %} Corrigé à la main :
+                {% if publication.title_edited %}titre{% endif %}{% if publication.title_edited and publication.date_edited %}, {% endif %}{% if publication.date_edited %}date{% endif %}.
+                Les sources ne les réécrivent plus.
+            </p>
+        {% endif %}
         <div class="flex flex-wrap items-center gap-2">
             {% if user.is_authenticated %}
                 {% if belongs_to_user %}
@@ -35,6 +42,13 @@
                     <form method="post" action="{% url 'publication_refresh' publication.pk %}">
                         {% csrf_token %}
                         {% button "Rafraîchir les métadonnées" variant="secondary" icon="refresh" %}
+                    </form>
+                {% endif %}
+                {% if publication.title_edited or publication.date_edited %}
+                    <form method="post"
+                          action="{% url 'publication_restore_sources' publication.pk %}">
+                        {% csrf_token %}
+                        {% button "Revenir aux valeurs des sources" variant="secondary" icon="undo" %}
                     </form>
                 {% endif %}
                 {% if not publication.doi and not publication.isbn %}
