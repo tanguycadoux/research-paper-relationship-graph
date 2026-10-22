@@ -319,6 +319,9 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 
 **Décision : le serveur fournit les données, le navigateur dessine.**
 
+- Deux graphes : celui d'une **publication** montre ses références identifiées et les
+  publications de la base qui la citent (#186) ; celui du **corpus** montre les
+  publications du corpus et ce qu'elles citent.
 - `services/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre, la date,
   le DOI, l'ISBN, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la

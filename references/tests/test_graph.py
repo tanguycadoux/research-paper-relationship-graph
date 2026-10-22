@@ -98,6 +98,27 @@ class CitationGraphTests(TestCase):
         # The information card of a selected publication, filled by the script (#61).
         self.assertContains(response, 'id="citation-graph-card"')
 
-    def test_graph_page_without_citations(self):
+    def test_publication_graph_contains_the_citing_publications(self):
+        graph = publication_graph(self.cited)
+        nodes = self.nodes_by_label(graph)
+        self.assertEqual(set(nodes), {"Cité", "Source", "Autre source"})
+        self.assertTrue(nodes["Cité"]["isSource"])
+        self.assertFalse(nodes["Source"]["isSource"])
+        self.assertEqual(
+            {(e["data"]["source"], e["data"]["target"]) for e in graph["edges"]},
+            {(str(self.source.pk), str(self.cited.pk)), (str(self.other.pk), str(self.cited.pk))},
+        )
+
+    def test_corpus_graph_does_not_add_the_citing_publications(self):
+        user = get_user_model().objects.create_user("bob")
+        UserPublication.objects.create(user=user, publication=self.cited)
+        self.assertEqual(corpus_graph(user)["edges"], [])
+
+    def test_graph_page_of_a_cited_publication_is_not_empty(self):
         response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))
-        self.assertContains(response, "Aucune référence identifiée")
+        self.assertContains(response, 'id="citation-graph-data"')
+
+    def test_graph_page_without_citations(self):
+        alone = Publication.objects.create(title="Seule")
+        response = self.client.get(reverse("publication_graph", args=[alone.pk]))
+        self.assertContains(response, "Aucune citation identifiée")
