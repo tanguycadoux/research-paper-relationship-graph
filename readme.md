@@ -138,3 +138,10 @@ djlint --lint templates references/templates accounts/templates
 
 Les tests ne font aucun appel réseau. Le détail des règles est dans
 [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Licence
+
+Le code est distribué sous licence [MIT](LICENSE). Les bibliothèques et ressources
+embarquées gardent leur propre licence : Cytoscape.js (MIT,
+`static/vendor/cytoscape/LICENSE`) et les icônes Material Symbols (Apache 2.0,
+`static/icons/LICENSE`).
