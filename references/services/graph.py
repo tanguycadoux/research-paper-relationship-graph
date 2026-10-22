@@ -3,9 +3,6 @@ from django.urls import reverse
 
 from ..models import AuthorPublication, CitedReference, Publication
 
-# Authors named on the information card of a node; the others count as « et al. ».
-CARD_AUTHORS = 3
-
 
 def publication_graph(pub):
     """Graph of a publication and the publications it cites."""
@@ -55,7 +52,8 @@ def node_data(pub, is_source):
             "date": pub.publication_date.isoformat() if pub.publication_date else None,
             "doi": pub.doi,
             "isbn": pub.isbn,
-            "authors": authors[:CARD_AUTHORS],
+            # « First author et al. » on the information card.
+            "firstAuthor": authors[0] if authors else "",
             "authorCount": len(authors),
             "citedBy": pub.cited_by,
             "isSource": is_source,

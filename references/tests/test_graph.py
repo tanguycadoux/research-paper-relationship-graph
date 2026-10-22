@@ -72,12 +72,10 @@ class CitationGraphTests(TestCase):
         nodes = self.nodes_by_label(publication_graph(self.source))
         self.assertEqual(nodes["Source"]["doi"], "10.1000/source")
         self.assertEqual(nodes["Source"]["isbn"], "")
-        # Each person once (merged slots), the first three named.
-        self.assertEqual(
-            nodes["Source"]["authors"], ["Ada Lovelace", "Alan Turing", "Grace Hopper"]
-        )
+        # « Ada Lovelace et al. »: each person counted once (merged slots).
+        self.assertEqual(nodes["Source"]["firstAuthor"], "Ada Lovelace")
         self.assertEqual(nodes["Source"]["authorCount"], 4)
-        self.assertEqual(nodes["Cité"]["authors"], [])
+        self.assertEqual(nodes["Cité"]["firstAuthor"], "")
 
     def test_corpus_graph_merges_the_corpus_publications(self):
         user = get_user_model().objects.create_user("alice")

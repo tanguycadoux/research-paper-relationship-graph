@@ -150,8 +150,8 @@
             card.querySelector(`[data-card-row="${name}"]`).hidden = !visible;
         };
         field("title").textContent = data.label;
-        const etAl = data.authorCount > data.authors.length ? " et al." : "";
-        field("authors").textContent = data.authors.join(", ") + etAl;
+        const etAl = data.authorCount > 1 ? " et al." : "";
+        field("authors").textContent = data.firstAuthor + etAl;
         showRow("authors", data.authorCount > 0);
         field("year").textContent = data.date ? data.date.slice(0, 4) : "";
         showRow("year", Boolean(data.date));
