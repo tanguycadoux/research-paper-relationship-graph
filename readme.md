@@ -24,7 +24,7 @@ Documentation :
 
 ## Installation
 
-Il faut Python 3.12 ou plus récent. Le dossier `.venv` n'est pas versionné : chaque
+Il faut Python 3.14 (la version utilisée en développement et en CI). Le dossier `.venv` n'est pas versionné : chaque
 machine crée le sien.
 
 ### Windows (PowerShell)
