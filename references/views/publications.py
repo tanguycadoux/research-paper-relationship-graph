@@ -9,19 +9,17 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
 from ..models import CitedReference, Publication, UserPublication
-from ..services.external_records import metadata_status, with_metadata_status
-from ..services.identification import with_references_to_identify
+from ..services.external_records import metadata_status
 from ..services.importer import import_publication
 from ..services.publication_details import crossref_details
+from ..services.publication_table import for_publication_table, references_available
 
 
 class PublicationListView(ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
-    queryset = with_metadata_status(
-        with_references_to_identify(Publication.objects.exclude(title=""))
-    )
+    queryset = for_publication_table(Publication.objects.exclude(title=""))
     ordering = "-publication_date"
 
     def get_context_data(self, **kwargs):
@@ -55,14 +53,13 @@ class PublicationDetailView(DetailView):
 
         context["cited_references"] = pub.cited_references.select_related("target")
         # Only publications whose bibliography was imported (those of a corpus) can cite it.
-        context["citing_publications"] = with_metadata_status(
-            with_references_to_identify(
-                Publication.objects.filter(
-                    pk__in=CitedReference.objects.filter(target=pub).values("source")
-                )
+        context["citing_publications"] = for_publication_table(
+            Publication.objects.filter(
+                pk__in=CitedReference.objects.filter(target=pub).values("source")
             )
         ).order_by("-publication_date", "title")
         context["metadata_status"] = metadata_status(pub)
+        context["references_available"] = references_available(pub)
         context["references_to_identify"] = sum(
             1 for ref in context["cited_references"] if ref.target_id is None
         )
@@ -116,6 +113,22 @@ def trigger_import_publication(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
     if import_publication(pub, with_references=pub.parse_references, force_fetch=True):
         messages.success(request, f"Métadonnées rafraîchies pour « {pub} ».")
+    else:
+        messages.error(request, f"Impossible de récupérer les métadonnées de « {pub} ».")
+    return redirect("publication_detail", pk=pub.pk)
+
+
+@login_required
+@require_POST
+def import_publication_references(request, pk):
+    """
+    Import the bibliography of a publication outside any corpus, without adding it
+    to the user's corpus: its references join the shared base (#23).
+    """
+    pub = get_object_or_404(Publication, pk=pk)
+    if import_publication(pub, with_references=True):
+        count = pub.cited_references.count()
+        messages.success(request, f"{count} référence(s) importée(s) pour « {pub} ».")
     else:
         messages.error(request, f"Impossible de récupérer les métadonnées de « {pub} ».")
     return redirect("publication_detail", pk=pub.pk)

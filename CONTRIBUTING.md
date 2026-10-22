@@ -14,6 +14,7 @@
 - On ne pousse jamais directement sur `main`. Chaque issue est traitée dans une branche (`fix/…`, `feat/…`, `chore/…`), puis fusionnée par une pull request qui la référence (`Closes #n`).
 - Des branches peuvent avancer en parallèle si elles ne touchent pas les mêmes fichiers, pour éviter les conflits de merge.
 - `main` est protégée : pas de push direct, la CI doit passer, et une branche doit être à jour avec `main` avant le merge (bouton « Update branch »).
+- Après la fusion d'une pull request, sa branche est supprimée sur GitHub (automatique) et en local : `git switch main`, `git pull`, `git fetch --prune`, puis `git branch -d <branche>`.
 
 ## Messages de commit
 

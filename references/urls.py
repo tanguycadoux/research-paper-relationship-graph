@@ -41,6 +41,11 @@ urlpatterns = [
     ),
     path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
     path(
+        "publications/<int:pk>/references/import/",
+        publications.import_publication_references,
+        name="publication_import_references",
+    ),
+    path(
         "publications/<int:pk>/merge/",
         publication_merge.merge_publication,
         name="publication_merge",

@@ -164,8 +164,20 @@
                 à aucune publication : à identifier.
             {% elif cited_references %}
                 Toutes les références sont reliées à une publication.
+            {% elif references_available %}
+                Les sources listent {{ references_available }} référence{% if references_available > 1 %}s{% endif %}
+                pour cette publication. Elles ne sont importées automatiquement que pour les
+                publications d'un corpus.
             {% endif %}
         </p>
+        {% if not cited_references and references_available and user.is_authenticated %}
+            <form method="post"
+                  action="{% url 'publication_import_references' publication.pk %}"
+                  class="mb-3">
+                {% csrf_token %}
+                {% button "Importer ses références" icon="download" %}
+            </form>
+        {% endif %}
         {% card flush=True %}
             <table>
                 <thead>
