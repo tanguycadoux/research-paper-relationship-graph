@@ -51,6 +51,11 @@ urlpatterns = [
         name="publication_merge",
     ),
     path(
+        "publications/<int:pk>/restore-sources/",
+        publications.restore_publication_sources,
+        name="publication_restore_sources",
+    ),
+    path(
         "publications/<int:pk>/references/<int:position>/identify/",
         cited_references.identify_reference,
         name="reference_identify",

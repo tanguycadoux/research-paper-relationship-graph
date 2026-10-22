@@ -32,8 +32,10 @@ def parse_publication(pub, parse_references=True):
 
 def parse_title(pub, message):
     """
-    Extract the title.
+    Extract the title, unless it was corrected by hand.
     """
+    if pub.title_edited:
+        return
     titles = message.get("title", [])
     if titles and isinstance(titles, list):
         pub.title = clean_title(titles[0])
@@ -41,8 +43,11 @@ def parse_title(pub, message):
 
 def parse_publication_date(pub, message):
     """
-    Extract the publication date (missing month or day default to 1).
+    Extract the publication date (missing month or day default to 1), unless it was
+    corrected by hand.
     """
+    if pub.date_edited:
+        return
     issued = message.get("issued", {})
     date_parts = issued.get("date-parts", [])
 

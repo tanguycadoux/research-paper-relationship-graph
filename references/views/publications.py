@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
@@ -13,6 +13,12 @@ from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
 from ..services.importer import import_publication
 from ..services.publication_details import crossref_details
+from ..services.publication_edits import (
+    identifier_changed,
+    record_manual_edits,
+    refetch_after_identifier_change,
+    restore_source_values,
+)
 from ..services.publication_table import (
     corpus_ids,
     for_publication_table,
@@ -82,7 +88,40 @@ class PublicationCreateView(LoginRequiredMixin, CreateView):
 class PublicationUpdateView(LoginRequiredMixin, UpdateView):
     model = Publication
     form_class = PublicationForm
-    success_url = reverse_lazy("publication_list")
+
+    def form_valid(self, form):
+        record_manual_edits(form.instance, form.changed_data)
+        response = super().form_valid(form)
+        if identifier_changed(form.changed_data):
+            report_refetch(self.request, self.object, refetch_after_identifier_change(self.object))
+        else:
+            messages.success(self.request, f"« {self.object} » a été modifiée.")
+        return response
+
+    def get_success_url(self):
+        return reverse("publication_detail", args=[self.object.pk])
+
+
+def report_refetch(request, pub, imported):
+    pub.refresh_from_db()
+    if imported:
+        messages.success(request, f"Identifiant modifié : données de « {pub} » récupérées.")
+    else:
+        messages.warning(
+            request,
+            f"Identifiant modifié, mais les données de « {pub} » n'ont pas pu être récupérées "
+            "(identifiant inconnu des sources, ou service injoignable).",
+        )
+
+
+@login_required
+@require_POST
+def restore_publication_sources(request, pk):
+    """Forget the manual corrections of the title and date: the sources decide again."""
+    pub = get_object_or_404(Publication, pk=pk)
+    restore_source_values(pub)
+    messages.success(request, f"Titre et date repris des sources pour « {pub} ».")
+    return redirect("publication_detail", pk=pk)
 
 
 @login_required

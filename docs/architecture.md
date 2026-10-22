@@ -56,6 +56,7 @@ references/          application principale
     Corrections
     identification.py  identification manuelle des références, « non identifiable »
     publication_merge.py  fusion d'une publication sans identifiant dans une autre
+    publication_edits.py  corrections de « Modifier » : titre et date protégés, nouvel identifiant
     author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
     author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
     author_distinctions.py  auteurs déclarés différents
@@ -112,7 +113,7 @@ erDiagram
 
 | Modèle | Rôle |
 |---|---|
-| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. |
+| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. |
 | `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
 | `Author` | Une personne (entité résolue). |
@@ -170,6 +171,12 @@ tentatives, et jusqu'à 60 s d'attente si la source le demande.
 - **Identifier une référence** (`identification.py`) : par DOI, par ISBN, ou en créant une
   publication sans identifiant, ou la déclarer non identifiable. La correction est tracée et
   survit aux ré-imports.
+- **Modifier une publication** (`publication_edits.py`, #146) : un titre ou une date
+  corrigés sont marqués et ne sont plus réécrits par les analyses suivantes ; la fiche le
+  signale, et « Revenir aux valeurs des sources » relit la réponse stockée, sans requête.
+  Un champ vidé redevient celui de la source. Un **nouveau DOI ou ISBN** désigne une autre
+  œuvre : les réponses des sources, les signatures et la bibliographie de l'ancien sont
+  supprimées (avec les auteurs restés sans publication), puis le nouveau est importé.
 - **« Cette publication est en fait… »** (`publication_merge.py`) : une publication sans
   DOI ni ISBN peut être fusionnée dans une autre, désignée par un DOI, un ISBN ou le lien
   de sa page. Ses citations sont reportées et marquées comme corrections manuelles, ses
@@ -385,3 +392,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-22 | Une seule mise en page fluide, pas de version mobile distincte | Le site sert surtout sur grand écran ; les petits écrans doivent fonctionner sans seconde mise en page à maintenir (#150). |
 | 2026-10-23 | Attente des sources limitée pendant le chargement d'une page, longue pour les commandes | Une page ne doit pas rester bloquée une minute ou plus ; une commande n'a personne qui attend (#172). |
 | 2026-10-23 | Python 3.14 seulement (développement, CI, `requires-python`) | Une seule version à suivre, celle du développement ; la matrice 3.12/3.14 de #170 n'apportait rien sans autre machine ni déploiement. À revoir si un serveur impose une autre version (#169). |
+| 2026-10-23 | Titre et date corrigés à la main marqués par deux booléens, jamais réécrits par les sources | Seuls ces champs viennent des sources ; des booléens suffisent et se lisent dans l'admin. Un conflit aurait été trop lourd pour une correction volontaire (#146). |
