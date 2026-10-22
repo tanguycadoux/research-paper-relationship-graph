@@ -4,6 +4,11 @@ Application Django pour analyser les relations entre articles scientifiques.
 Quand on ajoute un article à son corpus, ses métadonnées et celles des articles
 qu'il cite sont récupérées depuis [Crossref](https://www.crossref.org/).
 
+Documentation :
+- [Architecture](docs/architecture.md) : organisation du code, modèle de données, sources
+  interrogées et journal des décisions ;
+- [Contribuer](CONTRIBUTING.md) : règles du projet, branches, messages de commit, tests.
+
 ## Installation
 
 Il faut Python 3.12 ou plus récent. Le dossier `.venv` n'est pas versionné : chaque
