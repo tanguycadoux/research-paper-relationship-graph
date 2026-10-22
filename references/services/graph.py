@@ -1,12 +1,15 @@
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.urls import reverse
 
 from ..models import AuthorPublication, CitedReference, Publication
 
 
 def publication_graph(pub):
-    """Graph of a publication and the publications it cites."""
-    return citation_graph([pub.pk])
+    """
+    Graph of a publication, the publications it cites and those of the base that
+    cite it (#186): a publication without identified references is not empty.
+    """
+    return citation_graph([pub.pk], with_citing=True)
 
 
 def corpus_graph(user):
@@ -15,17 +18,21 @@ def corpus_graph(user):
     return citation_graph(source_ids)
 
 
-def citation_graph(source_ids):
+def citation_graph(source_ids, with_citing=False):
     """
     Return the graph as Cytoscape.js elements: one node per publication, one edge
-    per resolved citation from a source publication.
+    per resolved citation from a source publication, and with_citing, one per
+    citation of a source publication by another one.
     """
+    links = Q(source_id__in=source_ids)
+    if with_citing:
+        links |= Q(target_id__in=source_ids)
     edges = list(
-        CitedReference.objects.filter(source_id__in=source_ids, target__isnull=False)
+        CitedReference.objects.filter(links, target__isnull=False)
         .values_list("source_id", "target_id")
         .distinct()
     )
-    node_ids = set(source_ids) | {target_id for _, target_id in edges}
+    node_ids = set(source_ids) | {pk for edge in edges for pk in edge}
     publications = (
         Publication.objects.filter(pk__in=node_ids)
         .annotate(cited_by=Count("citations"))
