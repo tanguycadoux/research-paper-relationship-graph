@@ -1,8 +1,21 @@
 # Gestionnaire de références
 
 Application Django pour analyser les relations entre articles scientifiques.
-Quand on ajoute un article à son corpus, ses métadonnées et celles des articles
-qu'il cite sont récupérées depuis [Crossref](https://www.crossref.org/).
+Quand on ajoute un article à son corpus, ses métadonnées et celles des articles qu'il
+cite sont récupérées depuis [Crossref](https://www.crossref.org/), ou
+[DataCite](https://datacite.org/) pour les DOI qu'il ne connaît pas (actes de conférence,
+Zenodo), puis complétées par [OpenAlex](https://openalex.org/) (institutions, ORCID). Les
+livres sont identifiés par leur ISBN, avec [Open Library](https://openlibrary.org/) en
+recours.
+
+Fonctionnalités :
+- un **corpus** personnel, exportable en JSON (réimportable) et en BibTeX ;
+- une **base commune** de publications et d'auteurs, corrigée par tous : identification
+  des références citées, fusion d'auteurs et de publications, doublons probables, conflits
+  entre sources ;
+- un **graphe des citations** sur une frise chronologique, pour son corpus ou pour une
+  publication ;
+- les **affiliations** des auteurs, regroupées par organisation de tutelle.
 
 Documentation :
 - [Architecture](docs/architecture.md) : organisation du code, modèle de données, sources
@@ -113,3 +126,15 @@ python manage.py complete_affiliations
 # (une requête par lot de 50 publications)
 python manage.py complete_affiliations --fetch-missing
 ```
+
+## Tests et vérifications
+
+```bash
+pip install -r requirements-dev.txt
+python manage.py test
+ruff check . && ruff format --check .
+djlint --lint templates references/templates accounts/templates
+```
+
+Les tests ne font aucun appel réseau. Le détail des règles est dans
+[CONTRIBUTING.md](CONTRIBUTING.md).
