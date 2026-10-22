@@ -11,8 +11,12 @@
             {% if details.venue %}· {{ details.venue }}{% endif %}
         </p>
         <h1 class="text-2xl leading-tight font-semibold text-balance">{{ publication }}</h1>
-        {% if publication.title_edited %}
-            <p>{% badge "titre corrigé à la main" icon="edit" %}</p>
+        {% if publication.title_edited or publication.date_edited %}
+            <p class="text-sm text-gray-600">
+                {% icon "edit" %} Corrigé à la main :
+                {% if publication.title_edited %}titre{% endif %}{% if publication.title_edited and publication.date_edited %}, {% endif %}{% if publication.date_edited %}date{% endif %}.
+                Les sources ne les réécrivent plus.
+            </p>
         {% endif %}
         <div class="flex flex-wrap items-center gap-2">
             {% if user.is_authenticated %}

@@ -56,6 +56,10 @@ class KeptCorrectionsTests(ManualEditsTestCase):
     def test_corrected_date_survives_a_new_parse(self):
         self.edit(publication_date="2019-06-15")
         self.assertEqual((self.pub.title_edited, self.pub.date_edited), (False, True))
+        detail = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
+        # Under the title, with the other corrections, and beside the date itself.
+        self.assertContains(detail, "date.")
+        self.assertContains(detail, "corrigée à la main")
         parse_publication(self.pub)
         self.assertEqual(self.pub.publication_date, date(2019, 6, 15))
 
@@ -69,7 +73,8 @@ class KeptCorrectionsTests(ManualEditsTestCase):
     def test_detail_page_shows_the_correction_and_restores_the_sources(self):
         self.edit(title="Titre corrigé")
         detail = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
-        self.assertContains(detail, "titre corrigé à la main")
+        self.assertContains(detail, "Corrigé à la main :")
+        self.assertContains(detail, "titre.")
         self.assertContains(detail, "Revenir aux valeurs des sources")
 
         url = reverse("publication_restore_sources", args=[self.pub.pk])
