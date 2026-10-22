@@ -81,6 +81,11 @@ class UnidentifiableViewTests(IdentificationTestCase):
 
         identify_page = self.client.get(reverse("reference_identify", args=[self.source.pk, 1]))
         self.assertContains(identify_page, "Annuler « non identifiable »")
+        # A valid HTML date: no microseconds (#143).
+        self.assertRegex(
+            identify_page.content.decode(),
+            r'datetime="\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[+-]\d{4}"',
+        )
         self.client.post(self.url(1))
         self.assertFalse(self.ref(1).unidentifiable)
 
