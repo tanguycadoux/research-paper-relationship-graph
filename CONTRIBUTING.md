@@ -45,6 +45,7 @@ ruff check .
 ruff format .
 djlint --lint templates references/templates accounts/templates
 python manage.py test
+coverage run manage.py test && coverage report   # couverture, lignes non couvertes
 ```
 
 Les templates suivent HTML5 : `lang="fr"`, balises sémantiques (`<header>`, `<nav>`, un seul `<main>`, `<aside>`…), pas de style inline. djLint vérifie une partie de ces règles. Après un changement de structure, validez aussi une page rendue avec le [validateur W3C](https://validator.w3.org/nu/).
