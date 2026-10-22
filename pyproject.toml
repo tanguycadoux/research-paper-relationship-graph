@@ -34,3 +34,12 @@ known-first-party = ["accounts", "config", "references"]
 profile = "django"
 # Block tags of references/templatetags/ui.py, indented like the built-in ones.
 custom_blocks = "card"
+
+[tool.coverage.run]
+source = ["accounts", "config", "references"]
+omit = ["*/migrations/*", "*/tests/*", "config/asgi.py", "config/wsgi.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+sort = "Cover"
