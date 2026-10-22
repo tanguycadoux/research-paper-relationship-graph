@@ -3,10 +3,10 @@
     "use strict";
 
     const MARGIN = 40;
-    const MAX_TICKS = 12;
-    // Minimum distance, in pixels, between the "Non daté" label and a year label.
-    const UNDATED_LABEL_GAP = 48;
-    const TICK_STEPS = [1, 2, 5, 10, 20, 25, 50, 100];
+    // Minimum distance, in pixels, between two labels of the year axis: the step
+    // depends on the zoom, not on the visible span, so labels never pile up.
+    const MIN_LABEL_SPACING = 60;
+    const TICK_STEPS = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000];
     const UNDATED_OFFSET_RATIO = 0.05;
 
     function fractionalYear(isoDate) {
@@ -70,8 +70,11 @@
         }));
     }
 
-    function tickStep(span) {
-        return TICK_STEPS.find((step) => span / step <= MAX_TICKS) || TICK_STEPS.at(-1);
+    function tickStep(pixelsPerYear) {
+        return (
+            TICK_STEPS.find((step) => step * pixelsPerYear >= MIN_LABEL_SPACING) ||
+            TICK_STEPS.at(-1)
+        );
     }
 
     // The year axis is an HTML strip above the canvas: it stays in view, and its ticks
@@ -90,12 +93,12 @@
         // Ticks only over the dated publications, in the visible part of the graph.
         const first = Math.max(scale.year(extent.x1), Math.floor(years.min));
         const last = Math.min(scale.year(extent.x2), Math.ceil(years.max));
-        const step = tickStep(last - first);
+        const step = tickStep(renderedX(1) - renderedX(0));
         const undatedX = renderedX(scale.undatedYear);
         const labels = [axisLabel("Non daté", undatedX)];
         for (let year = Math.ceil(first / step) * step; year <= last; year += step) {
             const x = renderedX(year);
-            if (Math.abs(x - undatedX) >= UNDATED_LABEL_GAP) {
+            if (Math.abs(x - undatedX) >= MIN_LABEL_SPACING) {
                 labels.push(axisLabel(year, x));
             }
         }
