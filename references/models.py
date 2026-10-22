@@ -84,7 +84,7 @@ class Author(models.Model):
         return f"{self.first_name} {self.last_name}".strip()
 
     @transaction.atomic
-    def merge_with(self, others: list["Author"]):
+    def merge_with(self, others: list[Author]):
         """
         Move the publications of the other authors to this one, then delete them.
         The published names stay on each publication, so the merge survives re-imports.

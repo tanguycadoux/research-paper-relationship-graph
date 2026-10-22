@@ -46,7 +46,7 @@ def import_json(request):
         return redirect("corpus")
     try:
         report = import_corpus(request.user, json.loads(upload.read().decode("utf-8")))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except UnicodeDecodeError, json.JSONDecodeError:
         messages.error(request, "Le fichier n'est pas un JSON valide.")
     except InvalidExport as error:
         messages.error(request, str(error))
