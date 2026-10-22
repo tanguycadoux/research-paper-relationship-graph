@@ -132,14 +132,80 @@
             selector: "edge",
             style: { width: 1.5, "line-color": "black", "curve-style": "straight" },
         },
+        // Selection (#61): the publication, its references and the publications citing it.
+        { selector: ".faded", style: { opacity: 0.15 } },
+        { selector: "node.selected", style: { "border-width": 4 } },
+        { selector: "edge.reference", style: { width: 3, "line-color": "#1d4ed8", "z-index": 5 } },
+        { selector: "edge.citing", style: { width: 3, "line-color": "#b45309", "z-index": 5 } },
     ];
 
-    function bindInteractions(cy) {
+    // French plural: 0 and 1 take the singular.
+    function publications(count) {
+        return `${count} publication${count > 1 ? "s" : ""}`;
+    }
+
+    function fillCard(card, data, referenceCount, citingCount) {
+        const field = (name) => card.querySelector(`[data-card="${name}"]`);
+        const showRow = (name, visible) => {
+            card.querySelector(`[data-card-row="${name}"]`).hidden = !visible;
+        };
+        field("title").textContent = data.label;
+        const etAl = data.authorCount > data.authors.length ? " et al." : "";
+        field("authors").textContent = data.authors.join(", ") + etAl;
+        showRow("authors", data.authorCount > 0);
+        field("year").textContent = data.date ? data.date.slice(0, 4) : "";
+        showRow("year", Boolean(data.date));
+        const doiLink = field("doi").querySelector("a");
+        doiLink.href = `https://doi.org/${data.doi}`;
+        doiLink.firstChild.nodeValue = data.doi;
+        showRow("doi", Boolean(data.doi));
+        field("isbn").textContent = data.isbn;
+        showRow("isbn", Boolean(data.isbn));
+        field("references").textContent = `cite ${publications(referenceCount)}`;
+        field("citing").textContent = `citée par ${publications(citingCount)}`;
+        field("cited-by").textContent = `citée par ${publications(data.citedBy)}`;
+        card.querySelector("[data-card-link] a").href = data.url;
+        card.hidden = false;
+    }
+
+    function clearSelection(cy, card) {
+        cy.elements().removeClass("faded selected reference citing");
+        card.hidden = true;
+    }
+
+    // An edge goes from the citing publication to the cited one.
+    function selectNode(cy, node, card) {
+        clearSelection(cy, card);
+        const references = node.outgoers("edge");
+        const citing = node.incomers("edge");
+        const kept = node.union(references).union(references.targets());
+        cy.elements().not(kept.union(citing).union(citing.sources())).addClass("faded");
+        node.addClass("selected");
+        references.addClass("reference");
+        citing.addClass("citing");
+        fillCard(card, node.data(), references.length, citing.length);
+    }
+
+    function bindInteractions(cy, card) {
         cy.on("mouseover", "node[url]", (event) => event.target.addClass("hovered"));
         cy.on("mouseout", "node[url]", (event) => event.target.removeClass("hovered"));
-        cy.on("tap", "node[url]", (event) => {
+        cy.on("tap", "node[url]", (event) => selectNode(cy, event.target, card));
+        cy.on("tap", (event) => {
+            if (event.target === cy) {
+                clearSelection(cy, card);
+            }
+        });
+        cy.on("dbltap", "node[url]", (event) => {
             window.location.href = event.target.data("url");
         });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                clearSelection(cy, card);
+            }
+        });
+        card.querySelector("[data-card-close] button").addEventListener("click", () =>
+            clearSelection(cy, card),
+        );
     }
 
     function render() {
@@ -154,8 +220,9 @@
             // Axes are already scaled to the container: fitting only corrects small offsets.
             layout: { name: "preset", fit: true, padding: MARGIN / 2 },
             autoungrabify: true,
+            autounselectify: true,
         });
-        bindInteractions(cy);
+        bindInteractions(cy, document.getElementById("citation-graph-card"));
         const axis = document.getElementById("citation-graph-axis");
         const drawAxis = () => drawYearAxis(axis, cy, years, scale);
         cy.on("viewport", drawAxis);
