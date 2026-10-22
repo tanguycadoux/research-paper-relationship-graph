@@ -6,7 +6,7 @@
              aria-hidden="true"></div>
         <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des citations"></div>
         {% comment %}
-            Filled by citation_graph.js with the selected publication (#61). Bottom left: the
+            Filled by graph/selection.js with the selected publication (#61). Bottom left: the
             nodes run from top left (oldest) to bottom right (newest), that corner stays empty.
             Never taller than the frame below the axis (3.25rem: axis and margins): it scrolls.
         {% endcomment %}
@@ -62,7 +62,7 @@
     </p>
     {{ graph|json_script:"citation-graph-data" }}
     <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
-    <script src="{% static 'references/citation_graph.js' %}"></script>
+    <script type="module" src="{% static 'references/graph/main.js' %}"></script>
 {% else %}
     <p class="text-gray-600">Aucune citation identifiée : rien à afficher.</p>
 {% endif %}

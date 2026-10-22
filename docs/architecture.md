@@ -73,7 +73,7 @@ references/          application principale
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/citation_graph.js  dessin et interactions du graphe
+  static/references/graph/  graphe, en modules ES (main, scale, layout, axis, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/
@@ -328,7 +328,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
   citations, auteurs par `Prefetch`).
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
-  `references/static/references/citation_graph.js` les affiche sur une frise
+  Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
@@ -338,6 +338,11 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   carte d'informations HTML (`#citation-graph-card`), en bas à gauche du cadre, où la
   disposition chronologique laisse de la place. Un double-clic ouvre la fiche ; Échap ou
   un clic dans le vide désélectionne.
+- **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
+  chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
+  `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
+  et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
+  JavaScript pour l'instant : vérification dans Chrome headless.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
   intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
   service tiers.
@@ -396,3 +401,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Attente des sources limitée pendant le chargement d'une page, longue pour les commandes | Une page ne doit pas rester bloquée une minute ou plus ; une commande n'a personne qui attend (#172). |
 | 2026-10-23 | Python 3.14 seulement (développement, CI, `requires-python`) | Une seule version à suivre, celle du développement ; la matrice 3.12/3.14 de #170 n'apportait rien sans autre machine ni déploiement. À revoir si un serveur impose une autre version (#169). |
 | 2026-10-23 | Titre et date corrigés à la main marqués par deux booléens, jamais réécrits par les sources | Seuls ces champs viennent des sources ; des booléens suffisent et se lisent dans l'admin. Un conflit aurait été trop lourd pour une correction volontaire (#146). |
+| 2026-10-23 | Script du graphe en modules ES natifs, sans Node | Le code va presque doubler avec M11 ; les modules du navigateur suffisent, sans outil de construction ni dépendance (#174). |

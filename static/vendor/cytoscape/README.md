@@ -1,6 +1,6 @@
 # Cytoscape.js 3.34.3
 
-Bibliothèque embarquée pour afficher les graphes (`references/citation_graph.js`).
+Bibliothèque embarquée pour afficher les graphes (`references/static/references/graph/`).
 
 - Source : archive npm officielle `https://registry.npmjs.org/cytoscape/-/cytoscape-3.34.3.tgz`,
   intégrité sha512 vérifiée contre le registre npm.
