@@ -159,6 +159,12 @@ Le client (`crossref_api.py`) s'identifie avec `CROSSREF_MAILTO` pour accéder a
 *polite pool*. Il respecte `Retry-After` sur les erreurs 429, retente les 5xx et les
 erreurs réseau, et ne retente jamais une 404 ni une 403.
 
+**Attente limitée dans une page** (`services/http.py`, #172). L'import est synchrone :
+pendant qu'une page charge, une source en panne n'est retentée qu'une fois, et l'on
+abandonne si elle demande d'attendre plus de 5 s (l'utilisateur pourra réessayer). Les
+commandes (`complete_affiliations`) s'exécutent dans `patient_requests()` : trois
+tentatives, et jusqu'à 60 s d'attente si la source le demande.
+
 ## Corrections manuelles
 
 - **Identifier une référence** (`identification.py`) : par DOI, par ISBN, ou en créant une
@@ -377,3 +383,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-22 | Référence citée déclarable « non identifiable » | Rapports internes et présentations ne correspondent à aucune publication importable ; la déclaration est tracée et survit au ré-import comme une identification (#129). |
 | 2026-10-22 | Axe des années en HTML hors du canevas | Toujours visible, graduations recalculées selon le zoom (#62). |
 | 2026-10-22 | Une seule mise en page fluide, pas de version mobile distincte | Le site sert surtout sur grand écran ; les petits écrans doivent fonctionner sans seconde mise en page à maintenir (#150). |
+| 2026-10-23 | Attente des sources limitée pendant le chargement d'une page, longue pour les commandes | Une page ne doit pas rester bloquée une minute ou plus ; une commande n'a personne qui attend (#172). |
