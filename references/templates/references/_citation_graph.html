@@ -1,9 +1,11 @@
 {% load static %}
 {% if graph.edges %}
-    <div id="citation-graph"
-         class="min-h-96 flex-1 rounded-lg border border-gray-200 bg-white shadow-sm"
-         role="img"
-         aria-label="Graphe des citations"></div>
+    <div class="flex min-h-96 flex-1 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+        <div id="citation-graph-axis"
+             class="relative h-7 shrink-0 overflow-hidden border-b border-gray-100 text-xs text-gray-500"
+             aria-hidden="true"></div>
+        <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des citations"></div>
+    </div>
     <p class="mt-2 text-sm text-gray-500">
         Axe horizontal : date de publication. En vert : articles sources ; en bleu : articles cités
         (plus clair = plus cité). Survolez un article pour voir son titre, cliquez pour l'ouvrir.

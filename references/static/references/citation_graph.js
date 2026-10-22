@@ -3,8 +3,9 @@
     "use strict";
 
     const MARGIN = 40;
-    const TICK_ROW_OFFSET = 30;
     const MAX_TICKS = 12;
+    // Minimum distance, in pixels, between the "Non daté" label and a year label.
+    const UNDATED_LABEL_GAP = 48;
     const TICK_STEPS = [1, 2, 5, 10, 20, 25, 50, 100];
     const UNDATED_OFFSET_RATIO = 0.05;
 
@@ -49,11 +50,13 @@
         const span = Math.max(years.max - years.min, 1);
         const undatedYear = years.min - Math.max(span * UNDATED_OFFSET_RATIO, 1);
         const width = container.clientWidth - 2 * MARGIN;
-        const height = container.clientHeight - 2 * MARGIN - TICK_ROW_OFFSET;
+        const height = container.clientHeight - 2 * MARGIN;
+        const yearSpan = years.max - undatedYear;
         return {
             undatedYear,
-            x: (year) => MARGIN + ((year - undatedYear) / (years.max - undatedYear)) * width,
-            y: (row) => MARGIN + TICK_ROW_OFFSET + (row / Math.max(rowCount - 1, 1)) * height,
+            x: (year) => MARGIN + ((year - undatedYear) / yearSpan) * width,
+            year: (x) => undatedYear + ((x - MARGIN) / width) * yearSpan,
+            y: (row) => MARGIN + (row / Math.max(rowCount - 1, 1)) * height,
         };
     }
 
@@ -71,23 +74,32 @@
         return TICK_STEPS.find((step) => span / step <= MAX_TICKS) || TICK_STEPS.at(-1);
     }
 
-    function tickNode(label, year, scale) {
-        return {
-            data: { id: `tick-${label}`, label: String(label) },
-            position: { x: scale.x(year), y: MARGIN },
-            classes: "tick",
-            selectable: false,
-            grabbable: false,
-        };
+    // The year axis is an HTML strip above the canvas: it stays in view, and its ticks
+    // follow the horizontal zoom and pan of the graph (#62).
+    function axisLabel(text, x) {
+        const label = document.createElement("span");
+        label.className = "absolute top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap";
+        label.style.left = `${x}px`;
+        label.textContent = String(text);
+        return label;
     }
 
-    function yearTicks(years, scale) {
-        const step = tickStep(years.max - years.min);
-        const ticks = [tickNode("Non daté", scale.undatedYear, scale)];
-        for (let year = Math.ceil(years.min / step) * step; year <= years.max; year += step) {
-            ticks.push(tickNode(year, year, scale));
+    function drawYearAxis(axis, cy, years, scale) {
+        const renderedX = (year) => scale.x(year) * cy.zoom() + cy.pan().x;
+        const extent = cy.extent();
+        // Ticks only over the dated publications, in the visible part of the graph.
+        const first = Math.max(scale.year(extent.x1), Math.floor(years.min));
+        const last = Math.min(scale.year(extent.x2), Math.ceil(years.max));
+        const step = tickStep(last - first);
+        const undatedX = renderedX(scale.undatedYear);
+        const labels = [axisLabel("Non daté", undatedX)];
+        for (let year = Math.ceil(first / step) * step; year <= last; year += step) {
+            const x = renderedX(year);
+            if (Math.abs(x - undatedX) >= UNDATED_LABEL_GAP) {
+                labels.push(axisLabel(year, x));
+            }
         }
-        return ticks;
+        axis.replaceChildren(...labels);
     }
 
     const STYLE = [
@@ -114,16 +126,6 @@
             },
         },
         {
-            selector: "node.tick",
-            style: {
-                label: "data(label)",
-                "background-opacity": 0,
-                "border-width": 0,
-                color: "dimgray",
-                events: "no",
-            },
-        },
-        {
             selector: "edge",
             style: { width: 1.5, "line-color": "black", "curve-style": "straight" },
         },
@@ -144,13 +146,17 @@
         const scale = makeScale(years, graph.nodes.length, container);
         const cy = cytoscape({
             container,
-            elements: [...yearTicks(years, scale), ...placeNodes(graph.nodes, scale), ...graph.edges],
+            elements: [...placeNodes(graph.nodes, scale), ...graph.edges],
             style: STYLE,
             // Axes are already scaled to the container: fitting only corrects small offsets.
             layout: { name: "preset", fit: true, padding: MARGIN / 2 },
             autoungrabify: true,
         });
         bindInteractions(cy);
+        const axis = document.getElementById("citation-graph-axis");
+        const drawAxis = () => drawYearAxis(axis, cy, years, scale);
+        cy.on("viewport", drawAxis);
+        drawAxis();
         keepFitted(cy, container);
     }
 

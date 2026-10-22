@@ -65,6 +65,8 @@ class CitationGraphTests(TestCase):
         response = self.client.get(reverse("publication_graph", args=[self.source.pk]))
         self.assertContains(response, 'id="citation-graph-data"')
         self.assertContains(response, "vendor/cytoscape/cytoscape.min.js")
+        # The year axis is drawn outside the canvas, to stay in view (#62).
+        self.assertContains(response, 'id="citation-graph-axis"')
 
     def test_graph_page_without_citations(self):
         response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))
