@@ -5,21 +5,24 @@
 //   2. Positions: a small vertical simulation from that order.
 
 import { fractionalYear } from "./scale.js";
-import { citedByRange, nodeColor } from "./style.js";
+import { nodeSizes } from "./style.js";
 
 // Passes of the barycentre method; the order is stable well before.
 const ORDER_PASSES = 20;
 const ITERATIONS = 300;
 // Pull between two publications that cite each other (share of their gap per step).
 const SPRING = 0.02;
-// Two publications closer than CLOSE_X in x must be CLOSE_GAP apart in y (pixels), so
-// that they do not overlap.
+// Starting rows are ROW_SPACING apart (pixels), whatever the size of the frame, so that
+// the layout does not depend on the window: only the final stretch does.
+const ROW_SPACING = 36;
+// Two publications closer than CLOSE_X in x keep NODE_SPACING between their edges in y,
+// so that they do not overlap (their sizes follow their citations).
 const CLOSE_X = 40;
-const CLOSE_GAP = 32;
-// A publication keeps EDGE_GAP away from the edges it is not part of, so that no edge
-// runs hidden behind a node. The distance is measured across the edge: a steep edge
-// needs a larger vertical gap, up to MAX_EDGE_GAP.
-const EDGE_GAP = 16;
+const NODE_SPACING = 12;
+// A publication keeps EDGE_SPACING between its edge and the edges it is not part of, so
+// that no edge runs hidden behind a node. The distance is measured across the edge: a
+// steep edge needs a larger vertical gap, up to MAX_EDGE_GAP.
+const EDGE_SPACING = 6;
 const MAX_EDGE_GAP = 64;
 
 function linkPairs(nodes, edges) {
@@ -89,11 +92,12 @@ function pullLinked(ys, links) {
     }
 }
 
-function clearEdges(xs, ys, crossed) {
+function clearEdges(xs, ys, crossed, sizes) {
     for (const [node, a, b, t] of crossed) {
         const edgeY = ys[a] + t * (ys[b] - ys[a]);
         const slope = (ys[b] - ys[a]) / (xs[b] - xs[a]);
-        const needed = Math.min(EDGE_GAP * Math.hypot(1, slope), MAX_EDGE_GAP);
+        const clearance = sizes[node] / 2 + EDGE_SPACING;
+        const needed = Math.min(clearance * Math.hypot(1, slope), MAX_EDGE_GAP);
         const gap = ys[node] - edgeY;
         if (Math.abs(gap) < needed) {
             ys[node] = edgeY + (gap !== 0 ? Math.sign(gap) : 1) * needed;
@@ -101,10 +105,10 @@ function clearEdges(xs, ys, crossed) {
     }
 }
 
-function separateClose(ys, close, startYs) {
+function separateClose(ys, close, startYs, sizes) {
     for (const [a, b] of close) {
         const gap = ys[b] - ys[a];
-        const missing = CLOSE_GAP - Math.abs(gap);
+        const missing = (sizes[a] + sizes[b]) / 2 + NODE_SPACING - Math.abs(gap);
         if (missing > 0) {
             // Ties are broken by the starting order, so the result is reproducible.
             const direction = gap !== 0 ? Math.sign(gap) : Math.sign(startYs[b] - startYs[a]) || 1;
@@ -118,14 +122,14 @@ function separateClose(ys, close, startYs) {
 // pass over it; publications close in date push each other apart, last, so that nodes
 // never overlap. The result is stretched to the available height, never squeezed: a
 // taller graph is shown whole by zooming out.
-export function verticalPositions(xs, startYs, links, top, bottom) {
+export function verticalPositions(xs, startYs, sizes, links, top, bottom) {
     const ys = [...startYs];
     const close = closePairs(xs);
     const crossed = crossedEdges(xs, links);
     for (let step = 0; step < ITERATIONS; step++) {
         pullLinked(ys, links);
-        clearEdges(xs, ys, crossed);
-        separateClose(ys, close, startYs);
+        clearEdges(xs, ys, crossed, sizes);
+        separateClose(ys, close, startYs, sizes);
     }
     const min = Math.min(...ys);
     const span = Math.max(...ys) - min;
@@ -141,16 +145,17 @@ export function placeNodes(nodes, edges, scale) {
     const links = linkPairs(byDate, edges);
     const rows = barycentreOrder(byDate.length, links);
     const xs = byDate.map((n) => scale.x(yearOf(n)));
+    const sizes = nodeSizes(byDate);
     const ys = verticalPositions(
         xs,
-        rows.map((row) => scale.y(row)),
+        rows.map((row) => row * ROW_SPACING),
+        sizes,
         links,
         scale.y(0),
         scale.y(byDate.length - 1),
     );
-    const citedRange = citedByRange(nodes);
     return byDate.map((n, i) => ({
-        data: { ...n.data, color: nodeColor(n.data, citedRange) },
+        data: { ...n.data, size: sizes[i] },
         position: { x: xs[i], y: ys[i] },
     }));
 }

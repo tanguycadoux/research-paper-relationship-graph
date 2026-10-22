@@ -33,6 +33,8 @@ def citation_graph(source_ids, with_citing=False):
         .distinct()
     )
     node_ids = set(source_ids) | {pk for edge in edges for pk in edge}
+    # Publications that cite a source without being one (#139: their own colour).
+    citing_ids = {source for source, target in edges if target in source_ids} - set(source_ids)
     publications = (
         Publication.objects.filter(pk__in=node_ids)
         .annotate(cited_by=Count("citations"))
@@ -44,12 +46,19 @@ def citation_graph(source_ids, with_citing=False):
         )
     )
     return {
-        "nodes": [node_data(pub, pub.pk in source_ids) for pub in publications],
+        "nodes": [node_data(pub, role(pub.pk, source_ids, citing_ids)) for pub in publications],
         "edges": [edge_data(source_id, target_id) for source_id, target_id in edges],
     }
 
 
-def node_data(pub, is_source):
+def role(pk, source_ids, citing_ids):
+    """source: the publication or the corpus; citing: cites a source; cited: cited only."""
+    if pk in source_ids:
+        return "source"
+    return "citing" if pk in citing_ids else "cited"
+
+
+def node_data(pub, role):
     # Each person once, even with several slots after a merge.
     authors = list(dict.fromkeys(str(slot.author) for slot in pub.authorpublication_set.all()))
     return {
@@ -63,7 +72,7 @@ def node_data(pub, is_source):
             "firstAuthor": authors[0] if authors else "",
             "authorCount": len(authors),
             "citedBy": pub.cited_by,
-            "isSource": is_source,
+            "role": role,
             "url": reverse("publication_detail", args=[pub.pk]),
         }
     }

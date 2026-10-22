@@ -40,10 +40,8 @@
                 <div>
                     <dt class="text-gray-500">Dans ce graphe</dt>
                     <dd>
-                        <span data-card="references"></span>
-                        <span class="text-blue-700">(liens bleus)</span>,
-                        <span data-card="citing"></span>
-                        <span class="text-amber-700">(liens orange)</span>
+                        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-reference" aria-hidden="true"></span><span data-card="references"></span>,
+                        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing" aria-hidden="true"></span><span data-card="citing"></span>
                     </dd>
                 </div>
                 <div>
@@ -54,11 +52,41 @@
             <p class="mt-4" data-card-link>{% button "Voir la fiche" url="#" variant="secondary" %}</p>
         </section>
     </div>
-    <p class="mt-2 text-sm text-gray-500">
-        Axe horizontal : date de publication. En vert : articles sources ; en bleu : articles cités
-        (plus clair = plus cité). Survolez un article pour voir son titre. Cliquez dessus pour
-        afficher ses références, les articles qui le citent et ses informations ; double-cliquez
-        pour ouvrir sa fiche. Échap ou un clic dans le vide le désélectionne.
+    {# Same colours as graph/style.js: the --color-graph-* theme variables (#139). #}
+    <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-700"
+        aria-label="Légende du graphe">
+        <li>
+            <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
+                  aria-hidden="true"></span>
+            {% if graph_kind == "corpus" %}
+                Publication de mon corpus
+            {% else %}
+                Cette publication
+            {% endif %}
+        </li>
+        {% if graph_kind != "corpus" %}
+            <li>
+                <span class="mr-1 inline-block size-3 rounded-full bg-graph-citing align-middle"
+                      aria-hidden="true"></span>
+                Publication qui la cite
+            </li>
+        {% endif %}
+        <li>
+            <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+                  aria-hidden="true"></span>
+            Publication citée
+        </li>
+        <li>Taille : nombre de citations dans la base</li>
+        <li>
+            Après un clic :
+            <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-reference" aria-hidden="true"></span>ses références,
+            <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing" aria-hidden="true"></span>ses citants
+        </li>
+    </ul>
+    <p class="mt-1 text-sm text-gray-500">
+        Axe horizontal : date de publication. Survolez un article pour voir son titre ; cliquez
+        pour le sélectionner, double-cliquez pour ouvrir sa fiche. Échap ou un clic dans le vide
+        désélectionne.
     </p>
     {{ graph|json_script:"citation-graph-data" }}
     <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
