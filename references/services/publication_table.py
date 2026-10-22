@@ -7,7 +7,7 @@ from django.db.models import Count, IntegerField, OuterRef, Subquery
 from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Cast, Coalesce
 
-from ..models import ExternalRecord
+from ..models import ExternalRecord, UserPublication
 from .external_records import Source, with_metadata_status
 from .identification import with_references_to_identify
 from .metadata_formats import metadata_message
@@ -17,6 +17,13 @@ def for_publication_table(publications):
     return with_references_available(
         with_metadata_status(with_references_to_identify(publications))
     )
+
+
+def corpus_ids(user):
+    """Ids of the publications of the user's corpus, for the add/remove buttons."""
+    if not user.is_authenticated:
+        return set()
+    return set(UserPublication.objects.filter(user=user).values_list("publication_id", flat=True))
 
 
 def with_references_available(publications):

@@ -10,7 +10,7 @@ column to add each publication to the user's corpus or take it away (user_pub_id
         <thead>
             <tr>
                 <th scope="col">Titre</th>
-                <th scope="col">DOI</th>
+                <th scope="col">Identifiant</th>
                 <th scope="col">Année</th>
                 {% if corpus_actions %}
                     <th scope="col">
@@ -40,7 +40,13 @@ column to add each publication to the user's corpus or take it away (user_pub_id
                             {% badge pub.to_identify|stringformat:"d"|add:" à identifier" variant="warning" %}
                         {% endif %}
                     </td>
-                    <td class="text-gray-600">{{ pub.doi }}</td>
+                    <td class="text-gray-600">
+                        {% if pub.doi %}
+                            {{ pub.doi }}
+                        {% elif pub.isbn %}
+                            ISBN {{ pub.isbn }}
+                        {% endif %}
+                    </td>
                     <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
                     {% if corpus_actions %}
                         <td class="text-right">

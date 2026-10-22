@@ -27,12 +27,15 @@ class PublicationFormTests(TestCase):
 
 
 class ListViewsTests(TestCase):
-    def test_publications_are_listed_newest_first_without_untitled_ones(self):
+    def test_publications_are_listed_newest_first_undated_last(self):
         Publication.objects.create(title="Ancien", publication_date=date(2000, 1, 1))
         Publication.objects.create(title="Récent", publication_date=date(2020, 1, 1))
         Publication.objects.create(doi="10.1000/untitled")
         response = self.client.get(reverse("publication_list"))
-        self.assertEqual([str(p) for p in response.context["publications"]], ["Récent", "Ancien"])
+        self.assertEqual(
+            [str(p) for p in response.context["publications"]],
+            ["Récent", "Ancien", "10.1000/untitled"],
+        )
 
     def test_creation_page_is_linked_for_logged_in_users(self):
         url = reverse("publication_create")
