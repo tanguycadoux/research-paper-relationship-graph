@@ -69,7 +69,7 @@
                 Publications <span class="font-normal text-gray-500">({{ publications|length }})</span>
             </h2>
             {% if publications %}
-                {% include "references/_publication_table.html" with caption="Publications de cet auteur, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated %}
+                {% include "references/_publication_table.html" with caption="Publications de cet auteur, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated hide_authors=True %}
             {% else %}
                 <p class="text-gray-600">Aucune publication.</p>
             {% endif %}
