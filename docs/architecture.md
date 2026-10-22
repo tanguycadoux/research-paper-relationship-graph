@@ -1,8 +1,9 @@
 # Architecture
 
-Ce document décrit l'organisation du projet et les décisions de conception. Les
-éléments marqués **(cible)** ne sont pas encore en place : l'issue indiquée les
-introduit.
+Ce document décrit l'organisation du projet et les décisions de conception. Il est mis
+à jour dans la même pull request que tout changement d'architecture. Les règles de
+contribution (branches, commits, tests, conventions d'interface) sont dans
+[CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Principe
 
@@ -17,36 +18,72 @@ d'auteurs.
 ## Organisation du code
 
 ```
-config/              configuration Django (settings, urls, wsgi, asgi)
+config/              configuration Django (settings, urls, wsgi, asgi), test runner sans réseau
 accounts/            modèle utilisateur (accounts.User), inscription, templates registration/
 references/          application principale
   models.py          modèle de données
-  views/             une vue par domaine : home, publications, authors, corpus, graphs
+  admin.py           administration Django (seul endroit où l'on supprime une publication)
+  forms.py           formulaires (publication, auteur, fusions, identification)
+  urls.py            routes, au pluriel pour les collections (publications/, authors/…)
+  views/             vues fines, une par domaine
+    home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
+    cited_references.py (identification d'une référence),
+    publication_merge.py (« Cette publication est en fait… »),
+    corpus_transfer.py (export et import du corpus)
   services/          logique métier, sans dépendance aux vues
+    Sources externes
     http.py          requêtes JSON communes (session, nouvelles tentatives, journalisation)
-    external_records.py  stockage des réponses des sources (ExternalRecord)
-    metadata_formats.py  conversion de chaque source vers le format lu par le parser
     crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN)
     datacite_api.py  client DataCite (DOI par DOI ou par lots)
-    openalex_api.py  client OpenAlex (DOI par DOI ou par lots)
+    openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions)
+    openlibrary_api.py  client Open Library (recherche par ISBN)
+    external_records.py  stockage des réponses des sources (ExternalRecord), statut des métadonnées
+    metadata_formats.py  conversion de chaque source vers le format lu par le parser
+    Import et analyse
+    importer.py      orchestration : récupération puis analyse
+    corpus.py        ajout au corpus (import avec les références)
+    parser.py        réponse de la source vers les modèles
+    titles.py        nettoyage des titres (entités HTML, balisage JATS)
+    author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
     enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
     affiliations.py  rattachement des organisations aux signatures
     organizations.py organisations OpenAlex, hiérarchie et regroupement par tutelle
-    names.py         normalisation des noms de personnes
-    conflicts.py     signalement et décision des conflits entre sources
     orcid_completion.py  ORCID manquants complétés depuis OpenAlex
-    openlibrary_api.py  client Open Library (recherche par ISBN)
-    doi.py, isbn.py  normalisation et validation des identifiants
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
-    identification.py  identification manuelle des références
+    Identifiants et noms
+    doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
+    names.py         normalisation des noms de personnes
+    Corrections
+    identification.py  identification manuelle des références, « non identifiable »
     publication_merge.py  fusion d'une publication sans identifiant dans une autre
-    importer.py      orchestration : récupération puis analyse
-    parser.py        JSON Crossref vers modèles
+    author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
+    author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
+    author_distinctions.py  auteurs déclarés différents
+    conflicts.py     signalement et décision des conflits entre sources
+    Affichage et échanges
+    publication_table.py  annotations du tableau commun (premier auteur, badges)
+    publication_details.py  informations de la fiche (revue, financeurs, licences, citations)
     graph.py         construction des données des graphes
-  templates/references/
+    corpus_transfer.py  export JSON et BibTeX du corpus, import JSON
+    icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
+  templatetags/
+    ui.py            composants d'interface : button, badge, alert, card, icon, external_link
+    navigation.py    navigation principale (groupes, lien courant)
+  management/commands/
+    complete_affiliations.py  affiliations des publications déjà en base
+    add_icon.py      ajout d'une icône Material Symbols dans static/icons/
+  static/references/citation_graph.js  dessin et interactions du graphe
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
+  templates/components/  gabarits des composants de ui.py
   tests/
-templates/base.html  gabarit commun
-static/              CSS commun
+templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
+assets/css/source.css  source Tailwind (styles de base des éléments)
+static/
+  css/tailwind.css   feuille compilée, non versionnée
+  icons/             icônes SVG
+  js/toasts.js       notifications
+  vendor/cytoscape/  Cytoscape.js embarqué
+docs/                cette documentation
 ```
 
 Règles :
@@ -269,15 +306,46 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 
 **Décision : le serveur fournit les données, le navigateur dessine.**
 
-- `services/graph.py` produit les éléments Cytoscape : les nœuds (titre, date, nombre de
-  citations, lien) et les arêtes. Il fait deux requêtes, quelle que soit la taille du graphe.
+- `services/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre, la date,
+  le DOI, l'ISBN, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
+  base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
+  publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
+  citations, auteurs par `Prefetch`).
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   `references/static/references/citation_graph.js` les affiche sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
+- **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
+  redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
+  la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
+- **Sélection** (#61) : un clic sur un article met en évidence ses références (liens
+  bleus) et les articles qui le citent (liens orange), estompe le reste et remplit une
+  carte d'informations HTML (`#citation-graph-card`), en bas à gauche du cadre, où la
+  disposition chronologique laisse de la place. Un double-clic ouvre la fiche ; Échap ou
+  un clic dans le vide désélectionne.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
   intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
   service tiers.
 - Plotly rendu côté serveur (4,8 Mo de JavaScript par page) et `networkx` sont abandonnés.
+
+## Interface
+
+Les conventions détaillées (couche `base` de Tailwind, composants, liens externes, icônes)
+sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
+
+- **Tailwind**, compilé par django-tailwind-cli depuis `assets/css/source.css`, sans Node.
+  Les styles par défaut des éléments sont définis une fois dans la couche `base`.
+- **Composants** en template tags (`references/templatetags/ui.py`) : `button`, `badge`,
+  `alert`, `card`, `icon`, `external_link`. **Navigation** décrite dans
+  `templatetags/navigation.py`. **Notifications** : les messages Django s'affichent en
+  toasts (`static/js/toasts.js`).
+- **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
+  des publications, « Mes références », « Cité par » et la page d'un auteur.
+  `services/publication_table.for_publication_table` calcule dans la même requête ce
+  qu'il affiche à côté du titre : le premier auteur (« et al. » s'il y en a d'autres,
+  sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
+  manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
+  que les jointures ne multiplient pas les décomptes.
+- HTML5 sémantique, validé au W3C en fin de jalon.
 
 ## Journal des décisions
 
@@ -285,7 +353,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 |---|---|---|
 | 2026-10-21 | Corrections communes à tous les utilisateurs | Base de connaissances partagée, plus simple. Le corpus reste individuel. |
 | 2026-10-21 | Import synchrone, références récupérées par lots | Divise les appels Crossref par environ 30, sans worker à exploiter. |
-| 2026-10-21 | Graphes en JSON avec Cytoscape.js | Pages légères, interactivité côté client, cohérent avec la refonte Tailwind (M8). |
+| 2026-10-21 | Graphes en JSON avec Cytoscape.js | Pages légères, interactivité côté client, cohérent avec la refonte Tailwind (M9). |
 | 2026-10-21 | Cytoscape.js embarqué plutôt que chargé depuis un CDN | Fonctionne hors ligne, sans dépendance externe à l'exécution. Fichier léger (435 Ko). |
 | 2026-10-21 | Adresse Crossref dans une variable d'environnement | Le dépôt est public. |
 | 2026-10-21 | Pas de rapprochement automatique des références au texte identique | Sans DOI ni ISBN, rien ne prouve qu'il s'agit du même ouvrage : on identifie à la main, ou on fusionne des publications (#67). |
@@ -305,3 +373,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Icônes Material Symbols en SVG inline (`{% icon %}`, commande `add_icon`) | Fonctionne hors ligne, pas de nom affiché pendant le chargement d'une police, stylable avec Tailwind (#33). |
 | 2026-10-21 | URL au pluriel pour toutes les collections (`publications/`, `publications/42/`) | Un seul préfixe par ressource, convention de l'admin Django et des API REST (#110). |
 | 2026-10-21 | Import à la demande des références d'une publication hors corpus | Sa bibliographie est déjà dans la réponse Crossref stockée ; l'importer ne coûte que des lots pour les publications citées, et enrichit la base commune sans toucher aux corpus (#126). |
+| 2026-10-22 | Un seul tableau de publications, premier auteur « et al. », identifiant préfixé (DOI ou ISBN) | Mêmes informations et mêmes actions partout ; annotations en sous-requêtes pour des décomptes justes (#128). |
+| 2026-10-22 | Référence citée déclarable « non identifiable » | Rapports internes et présentations ne correspondent à aucune publication importable ; la déclaration est tracée et survit au ré-import comme une identification (#129). |
+| 2026-10-22 | Axe des années en HTML hors du canevas | Toujours visible, graduations recalculées selon le zoom (#62). |
+| 2026-10-22 | Une seule mise en page fluide, pas de version mobile distincte | Le site sert surtout sur grand écran ; les petits écrans doivent fonctionner sans seconde mise en page à maintenir (#150). |
