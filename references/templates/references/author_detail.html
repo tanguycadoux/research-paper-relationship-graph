@@ -68,32 +68,11 @@
             <h2 id="author-publications-title" class="mb-3">
                 Publications <span class="font-normal text-gray-500">({{ publications|length }})</span>
             </h2>
-            {% card flush=True %}
-                <table>
-                    <thead>
-                        <tr>
-                            <th scope="col">Titre</th>
-                            <th scope="col">Année</th>
-                            <th scope="col">DOI</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for pub in publications %}
-                            <tr>
-                                <th scope="row" class="font-normal">
-                                    <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
-                                </th>
-                                <td class="text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
-                                <td class="text-gray-600">{{ pub.doi }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3" class="text-gray-500">Aucune publication.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endcard %}
+            {% if publications %}
+                {% include "references/_publication_table.html" with caption="Publications de cet auteur, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated hide_authors=True %}
+            {% else %}
+                <p class="text-gray-600">Aucune publication.</p>
+            {% endif %}
         </section>
     </div>
 {% endblock content %}

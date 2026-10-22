@@ -197,6 +197,9 @@ class CitedReference(models.Model):
     raw = models.JSONField(default=dict, blank=True)
     # Manual identification: kept when the source publication is imported again.
     resolved_manually = models.BooleanField(default=False)
+    # Declared by hand as matching no importable publication (internal report,
+    # talk…): no longer to identify. A manual decision, so resolved_manually too.
+    unidentifiable = models.BooleanField(default=False)
     resolved_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

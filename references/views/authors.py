@@ -8,9 +8,10 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
-from ..models import Author
+from ..models import Author, Publication
 from ..services import author_distinctions, author_duplicates, author_merge
 from ..services.organizations import organization_groups
+from ..services.publication_table import corpus_ids, for_publication_table
 
 
 class AuthorListView(ListView):
@@ -25,8 +26,12 @@ class AuthorDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # distinct: after a merge, one author can hold several slots of a publication.
-        context["publications"] = self.object.publications.distinct().order_by("-publication_date")
+        # pk__in: after a merge, one author can hold several slots of a publication,
+        # which a join would count twice (rows and badges).
+        context["publications"] = for_publication_table(
+            Publication.objects.filter(pk__in=self.object.publications.values("pk"))
+        ).order_by("-publication_date", "title")
+        context["user_pub_ids"] = corpus_ids(self.request.user)
         context["organization_groups"] = organization_groups(self.object)
         return context
 

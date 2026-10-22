@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from ..forms import IdentifyReferenceForm
 from ..models import CitedReference
@@ -15,6 +16,20 @@ def identify_reference(request, pk, position):
         apply_identification(request, ref, form.cleaned_data)
         return redirect("publication_detail", pk=pk)
     return render(request, "references/identify_reference.html", {"ref": ref, "form": form})
+
+
+@login_required
+@require_POST
+def toggle_unidentifiable(request, pk, position):
+    """Declare the reference unidentifiable, or cancel that declaration."""
+    ref = get_object_or_404(CitedReference, source_id=pk, position=position)
+    if ref.unidentifiable:
+        identification.cancel_unidentifiable(ref)
+        messages.success(request, f"Référence n° {position + 1} de nouveau à identifier.")
+    else:
+        identification.declare_unidentifiable(ref, request.user)
+        messages.success(request, f"Référence n° {position + 1} déclarée non identifiable.")
+    return redirect("publication_detail", pk=pk)
 
 
 def initial_values(ref):

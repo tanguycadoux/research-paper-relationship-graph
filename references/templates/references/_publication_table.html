@@ -1,7 +1,8 @@
 {% comment %}
 Table of publications. Context: publications (annotated by
-for_publication_table, for the badges), caption; with corpus_actions, a last
-column to add each publication to the user's corpus or take it away (user_pub_ids).
+for_publication_table, for the first author and the badges), caption; with
+corpus_actions, a last column to add each publication to the user's corpus or
+take it away (user_pub_ids); with hide_authors, no author column (author page).
 {% endcomment %}
 {% load ui %}
 {% card flush=True %}
@@ -10,7 +11,10 @@ column to add each publication to the user's corpus or take it away (user_pub_id
         <thead>
             <tr>
                 <th scope="col">Titre</th>
-                <th scope="col">DOI</th>
+                {% if not hide_authors %}
+                    <th scope="col">Auteurs</th>
+                {% endif %}
+                <th scope="col">Identifiant</th>
                 <th scope="col">Année</th>
                 {% if corpus_actions %}
                     <th scope="col">
@@ -40,7 +44,20 @@ column to add each publication to the user's corpus or take it away (user_pub_id
                             {% badge pub.to_identify|stringformat:"d"|add:" à identifier" variant="warning" %}
                         {% endif %}
                     </td>
-                    <td class="text-gray-600">{{ pub.doi }}</td>
+                    {% if not hide_authors %}
+                        <td class="text-gray-600">
+                            {% if pub.first_author %}
+                                {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                    <td class="text-gray-600">
+                        {% if pub.doi %}
+                            DOI&nbsp;{{ pub.doi }}
+                        {% elif pub.isbn %}
+                            ISBN&nbsp;{{ pub.isbn }}
+                        {% endif %}
+                    </td>
                     <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
                     {% if corpus_actions %}
                         <td class="text-right">

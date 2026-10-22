@@ -162,6 +162,8 @@
                     ne sont reliées
                 {% endif %}
                 à aucune publication : à identifier.
+            {% elif references_unidentifiable %}
+                Toutes les références sont reliées à une publication ou déclarées non identifiables.
             {% elif cited_references %}
                 Toutes les références sont reliées à une publication.
             {% elif references_available %}
@@ -194,7 +196,7 @@
                 </thead>
                 <tbody>
                     {% for ref in cited_references %}
-                        <tr {% if not ref.target %}class="bg-amber-50"{% endif %}>
+                        <tr {% if not ref.target and not ref.unidentifiable %}class="bg-amber-50"{% endif %}>
                             <th scope="row" class="font-normal text-gray-500">{{ ref.position|add:1 }}</th>
                             <td>
                                 {% if ref.target %}
@@ -202,7 +204,9 @@
                                 {% else %}
                                     <span class="text-gray-700">{{ ref.label }}</span>
                                 {% endif %}
-                                {% if ref.resolved_manually %}
+                                {% if ref.unidentifiable %}
+                                    {% badge "non identifiable" %}
+                                {% elif ref.resolved_manually %}
                                     {% badge "identifiée à la main" %}
                                 {% elif not ref.target %}
                                     {% badge "à identifier" variant="warning" %}
@@ -212,7 +216,7 @@
                             {% if user.is_authenticated %}
                                 <td class="text-right">
                                     {% url 'reference_identify' publication.pk ref.position as identify_url %}
-                                    {% if ref.target %}
+                                    {% if ref.target or ref.unidentifiable %}
                                         {% button "Corriger" url=identify_url variant="secondary" icon="edit" icon_only=True %}
                                     {% else %}
                                         {% button "Identifier" url=identify_url variant="warning" %}

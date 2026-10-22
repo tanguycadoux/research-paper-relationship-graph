@@ -17,11 +17,21 @@ from .importer import import_publication
 def with_references_to_identify(publications):
     """
     Annotate publications with to_identify, their number of cited references linked
-    to no publication: one query for the whole list.
+    to no publication and not declared unidentifiable: one query for the whole list.
     """
     return publications.annotate(
-        to_identify=Count("cited_references", filter=Q(cited_references__target__isnull=True))
+        to_identify=Count(
+            "cited_references",
+            filter=Q(
+                cited_references__target__isnull=True,
+                cited_references__unidentifiable=False,
+            ),
+        )
     )
+
+
+def is_to_identify(ref):
+    return ref.target_id is None and not ref.unidentifiable
 
 
 def identify_by_doi(ref, doi, user):
@@ -54,12 +64,34 @@ def identify_without_identifier(ref, title, year, user):
 
 
 def resolve(ref, pub, user):
+    record_decision(ref, pub, user, unidentifiable=False)
+
+
+def declare_unidentifiable(ref, user):
+    """The reference matches no importable publication: unlink it, keep the decision."""
+    record_decision(ref, None, user, unidentifiable=True)
+
+
+def cancel_unidentifiable(ref):
+    """Back to a reference to identify, as given by the sources."""
+    ref.unidentifiable = False
+    ref.resolved_manually = False
+    ref.resolved_by = None
+    ref.resolved_at = None
+    ref.save(update_fields=DECISION_FIELDS)
+
+
+DECISION_FIELDS = ["target", "unidentifiable", "resolved_manually", "resolved_by", "resolved_at"]
+
+
+def record_decision(ref, pub, user, unidentifiable):
     previous = ref.target
     ref.target = pub
+    ref.unidentifiable = unidentifiable
     ref.resolved_manually = True
     ref.resolved_by = user
     ref.resolved_at = timezone.now()
-    ref.save(update_fields=["target", "resolved_manually", "resolved_by", "resolved_at"])
+    ref.save(update_fields=DECISION_FIELDS)
     if previous is not None and previous != pub:
         delete_if_orphan(previous)
 

@@ -8,30 +8,28 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
-from ..models import CitedReference, Publication, UserPublication
+from ..models import CitedReference, Publication
 from ..services.external_records import metadata_status
+from ..services.identification import is_to_identify
 from ..services.importer import import_publication
 from ..services.publication_details import crossref_details
-from ..services.publication_table import for_publication_table, references_available
+from ..services.publication_table import (
+    corpus_ids,
+    for_publication_table,
+    references_available,
+)
 
 
 class PublicationListView(ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
-    queryset = for_publication_table(Publication.objects.exclude(title=""))
+    queryset = for_publication_table(Publication.objects.all())
     ordering = "-publication_date"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
-        if user.is_authenticated:
-            context["user_pub_ids"] = set(
-                UserPublication.objects.filter(user=user).values_list("publication_id", flat=True)
-            )
-        else:
-            context["user_pub_ids"] = set()
-
+        context["user_pub_ids"] = corpus_ids(self.request.user)
         return context
 
 
@@ -41,14 +39,8 @@ class PublicationDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         pub = self.object
-        user = self.request.user
 
-        if user.is_authenticated:
-            context["user_pub_ids"] = set(
-                UserPublication.objects.filter(user=user).values_list("publication_id", flat=True)
-            )
-        else:
-            context["user_pub_ids"] = set()
+        context["user_pub_ids"] = corpus_ids(self.request.user)
         context["belongs_to_user"] = pub.pk in context["user_pub_ids"]
 
         context["cited_references"] = pub.cited_references.select_related("target")
@@ -61,7 +53,10 @@ class PublicationDetailView(DetailView):
         context["metadata_status"] = metadata_status(pub)
         context["references_available"] = references_available(pub)
         context["references_to_identify"] = sum(
-            1 for ref in context["cited_references"] if ref.target_id is None
+            1 for ref in context["cited_references"] if is_to_identify(ref)
+        )
+        context["references_unidentifiable"] = sum(
+            1 for ref in context["cited_references"] if ref.unidentifiable
         )
         context["details"] = crossref_details(pub)
         context["author_slots"] = (
