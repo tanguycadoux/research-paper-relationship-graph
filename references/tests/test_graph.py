@@ -48,9 +48,9 @@ class CitationGraphTests(TestCase):
 
     def test_node_data(self):
         nodes = self.nodes_by_label(publication_graph(self.source))
-        self.assertTrue(nodes["Source"]["isSource"])
+        self.assertEqual(nodes["Source"]["role"], "source")
         self.assertEqual(nodes["Source"]["date"], "2020-01-01")
-        self.assertFalse(nodes["Cité"]["isSource"])
+        self.assertEqual(nodes["Cité"]["role"], "cited")
         self.assertIsNone(nodes["Cité"]["date"])
         self.assertEqual(nodes["Cité"]["citedBy"], 2)
         self.assertEqual(nodes["Cité"]["url"], reverse("publication_detail", args=[self.cited.pk]))
@@ -102,8 +102,9 @@ class CitationGraphTests(TestCase):
         graph = publication_graph(self.cited)
         nodes = self.nodes_by_label(graph)
         self.assertEqual(set(nodes), {"Cité", "Source", "Autre source"})
-        self.assertTrue(nodes["Cité"]["isSource"])
-        self.assertFalse(nodes["Source"]["isSource"])
+        self.assertEqual(nodes["Cité"]["role"], "source")
+        self.assertEqual(nodes["Source"]["role"], "citing")
+        self.assertEqual(nodes["Autre source"]["role"], "citing")
         self.assertEqual(
             {(e["data"]["source"], e["data"]["target"]) for e in graph["edges"]},
             {(str(self.source.pk), str(self.cited.pk)), (str(self.other.pk), str(self.cited.pk))},
@@ -113,6 +114,17 @@ class CitationGraphTests(TestCase):
         user = get_user_model().objects.create_user("bob")
         UserPublication.objects.create(user=user, publication=self.cited)
         self.assertEqual(corpus_graph(user)["edges"], [])
+
+    def test_legend_follows_the_kind_of_graph(self):
+        response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))
+        self.assertContains(response, "Cette publication")
+        self.assertContains(response, "Publication qui la cite")
+        user = get_user_model().objects.create_user("carol")
+        UserPublication.objects.create(user=user, publication=self.source)
+        self.client.force_login(user)
+        response = self.client.get(reverse("corpus_graph"))
+        self.assertContains(response, "Publication de mon corpus")
+        self.assertNotContains(response, "Publication qui la cite")
 
     def test_graph_page_of_a_cited_publication_is_not_empty(self):
         response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))

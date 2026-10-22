@@ -5,6 +5,20 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css" layer(utilities);
 
+/*
+ * Colours of the citation graph (#139), validated as a palette (colour-blind safe on
+ * white). Defined once: the legend uses the classes (bg-graph-source…), and
+ * graph/style.js reads the variables for Cytoscape. "static": always emitted.
+ */
+@theme static {
+    --color-graph-source: #2a78d6;
+    --color-graph-citing: #eb6834;
+    --color-graph-reference: #1baf7a;
+    --color-graph-cited: #a3a29b;
+    --color-graph-edge: #8a8983;
+    --color-graph-edge-strong: #3f3e3b;
+}
+
 /* Default look of the content elements: the templates only add what differs. */
 @layer base {
     h1 {

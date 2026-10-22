@@ -7,11 +7,11 @@ from ..services.graph import corpus_graph, publication_graph
 
 def pub_graph(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
-    context = {"publication": pub, "graph": publication_graph(pub)}
+    context = {"publication": pub, "graph": publication_graph(pub), "graph_kind": "publication"}
     return render(request, "references/publication_graph.html", context)
 
 
 @login_required
 def my_refs_graph(request):
-    context = {"graph": corpus_graph(request.user)}
+    context = {"graph": corpus_graph(request.user), "graph_kind": "corpus"}
     return render(request, "references/user_references_graph.html", context)

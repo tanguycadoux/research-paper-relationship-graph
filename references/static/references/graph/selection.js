@@ -49,8 +49,15 @@ function selectNode(cy, node, card) {
 }
 
 export function bindInteractions(cy, card) {
-    cy.on("mouseover", "node[url]", (event) => event.target.addClass("hovered"));
-    cy.on("mouseout", "node[url]", (event) => event.target.removeClass("hovered"));
+    // Hovering a publication shows its title and darkens its edges.
+    cy.on("mouseover", "node[url]", (event) => {
+        event.target.addClass("hovered");
+        event.target.connectedEdges().addClass("hovered");
+    });
+    cy.on("mouseout", "node[url]", (event) => {
+        event.target.removeClass("hovered");
+        event.target.connectedEdges().removeClass("hovered");
+    });
     cy.on("tap", "node[url]", (event) => selectNode(cy, event.target, card));
     cy.on("tap", (event) => {
         if (event.target === cy) {

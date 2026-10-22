@@ -1,55 +1,73 @@
-// Look of the graph: node colours and the Cytoscape stylesheet.
+// Look of the graph (#139, #140). The colours are defined once, as Tailwind theme
+// variables in assets/css/source.css (--color-graph-*), shared with the HTML legend.
+// The role of a node (source, citing, cited) gives its colour; its number of citations
+// in the base gives its size.
 
-function lightness(citedBy, min, max) {
-    // Same mapping as the former Plotly graph: from 25% (least cited) to 75%.
-    if (max === min) {
-        return 50;
-    }
-    return 25 + ((citedBy - min) * 50) / (max - min);
+const MIN_SIZE = 14;
+const MAX_SIZE = 32;
+
+function color(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(`--color-graph-${name}`).trim();
 }
 
-export function citedByRange(nodes) {
-    const counts = nodes.filter((n) => !n.data.isSource).map((n) => n.data.citedBy);
-    return { min: Math.min(...counts), max: Math.max(...counts) };
+// Area proportional to the number of citations: the diameter follows its square root.
+export function nodeSizes(nodes) {
+    const most = Math.max(1, ...nodes.map((n) => n.data.citedBy));
+    return nodes.map((n) => MIN_SIZE + (MAX_SIZE - MIN_SIZE) * Math.sqrt(n.data.citedBy / most));
 }
 
-export function nodeColor(data, citedRange) {
-    if (data.isSource) {
-        return "lightgreen";
-    }
-    return `hsl(240, 80%, ${lightness(data.citedBy, citedRange.min, citedRange.max)}%)`;
-}
-
-export const STYLE = [
-    {
-        selector: "node",
-        style: {
-            width: 20,
-            height: 20,
-            "background-color": "data(color)",
-            "border-width": 1.5,
-            "border-color": "black",
+export function graphStyle() {
+    return [
+        {
+            selector: "node",
+            style: {
+                width: "data(size)",
+                height: "data(size)",
+                "background-color": color("cited"),
+                // A ring of the surface colour separates overlapping nodes.
+                "border-width": 2,
+                "border-color": "white",
+            },
         },
-    },
-    {
-        selector: "node.hovered",
-        style: {
-            label: "data(label)",
-            "font-size": 12,
-            "text-wrap": "wrap",
-            "text-max-width": 300,
-            "text-background-color": "white",
-            "text-background-opacity": 0.9,
-            "z-index": 10,
+        { selector: 'node[role = "source"]', style: { "background-color": color("source") } },
+        { selector: 'node[role = "citing"]', style: { "background-color": color("citing") } },
+        {
+            selector: "node.hovered",
+            style: {
+                label: "data(label)",
+                "font-size": 12,
+                color: "#0b0b0b",
+                "text-wrap": "wrap",
+                "text-max-width": 300,
+                "text-background-color": "white",
+                "text-background-opacity": 0.9,
+                "z-index": 10,
+            },
         },
-    },
-    {
-        selector: "edge",
-        style: { width: 1.5, "line-color": "black", "curve-style": "straight" },
-    },
-    // Selection (#61): the publication, its references and the publications citing it.
-    { selector: ".faded", style: { opacity: 0.15 } },
-    { selector: "node.selected", style: { "border-width": 4 } },
-    { selector: "edge.reference", style: { width: 3, "line-color": "#1d4ed8", "z-index": 5 } },
-    { selector: "edge.citing", style: { width: 3, "line-color": "#b45309", "z-index": 5 } },
-];
+        // Straight edges, without arrows: a publication cites older ones, on its left.
+        {
+            selector: "edge",
+            style: {
+                width: 1.25,
+                "line-color": color("edge"),
+                opacity: 0.85,
+                "curve-style": "straight",
+            },
+        },
+        {
+            selector: "edge.hovered",
+            style: { width: 2, "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
+        },
+        // Selection (#61): the publication, its references and the publications citing it.
+        { selector: ".faded", style: { opacity: 0.15 } },
+        { selector: "node.selected", style: { "border-width": 3, "border-color": "#0b0b0b" } },
+        {
+            selector: "edge.reference",
+            style: { width: 3, "line-color": color("reference"), opacity: 1, "z-index": 5 },
+        },
+        {
+            selector: "edge.citing",
+            style: { width: 3, "line-color": color("citing"), opacity: 1, "z-index": 5 },
+        },
+    ];
+}

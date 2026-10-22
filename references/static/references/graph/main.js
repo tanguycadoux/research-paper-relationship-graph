@@ -5,7 +5,7 @@ import { drawYearAxis } from "./axis.js";
 import { placeNodes } from "./layout.js";
 import { MARGIN, makeScale, yearRange } from "./scale.js";
 import { bindInteractions } from "./selection.js";
-import { STYLE } from "./style.js";
+import { graphStyle } from "./style.js";
 
 function keepFitted(cy, container) {
     // The container may change size after initialization (page layout, window resize).
@@ -23,7 +23,7 @@ function render() {
     const cy = cytoscape({
         container,
         elements: [...placeNodes(graph.nodes, graph.edges, scale), ...graph.edges],
-        style: STYLE,
+        style: graphStyle(),
         // Axes are already scaled to the container: fitting only corrects small offsets.
         layout: { name: "preset", fit: true, padding: MARGIN / 2 },
         autoungrabify: true,

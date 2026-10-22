@@ -335,11 +335,22 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   barycentre (chaque publication va vers la rangée moyenne de ses voisines, en
   20 passes), puis une petite **simulation verticale** : les publications liées
   s'attirent, une publication s'écarte des liens qui passent sur elle (aucun lien caché
-  derrière un nœud), et deux publications proches en date restent à 32 px l'une de
-  l'autre. Le résultat est étiré à la hauteur du cadre, jamais comprimé. Sur le graphe du
-  corpus de la base réelle : 54 croisements de liens au lieu de 148 avec une rangée par
+  derrière un nœud), et deux publications proches en date ne se chevauchent pas
+  (écart selon leur taille). Les rangées de départ sont espacées de 36 px quelle que soit
+  la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est étiré à la hauteur du cadre, jamais comprimé. Sur le graphe du
+  corpus de la base réelle : 51 croisements de liens au lieu de 147 avec une rangée par
   publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
   publications sans date.
+- **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
+  les données) : `source` (la publication du graphe, ou celles du corpus), `citing` (une
+  publication qui la cite), `cited` (citée seulement, en gris neutre). Sa **taille** suit
+  son nombre de citations dans la base (aire proportionnelle). Les couleurs sont définies
+  une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
+  `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
+  variables. Palette vérifiée (daltonisme, contraste) ; le vert d'eau, peu contrasté sur
+  blanc, est toujours accompagné d'un libellé. Liens droits, gris, sans flèche : une
+  publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
+  ses liens.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
@@ -413,3 +424,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Titre et date corrigés à la main marqués par deux booléens, jamais réécrits par les sources | Seuls ces champs viennent des sources ; des booléens suffisent et se lisent dans l'admin. Un conflit aurait été trop lourd pour une correction volontaire (#146). |
 | 2026-10-23 | Script du graphe en modules ES natifs, sans Node | Le code va presque doubler avec M11 ; les modules du navigateur suffisent, sans outil de construction ni dépendance (#174). |
 | 2026-10-23 | Disposition : ordre par barycentre puis simulation verticale, x restant la date | Croisements de liens divisés par près de trois sur la base réelle, sans dépendance ; fcose écarté (trois fichiers à embarquer, résultat moins prévisible) (#138). |
+| 2026-10-23 | Couleur = rôle du nœud, taille = citations, liens droits gris sans flèche | Palette validée pour le daltonisme ; une seule définition des couleurs pour Cytoscape et la légende ; la flèche surchargeait sans rien apprendre sur une frise (#139, #140). |
