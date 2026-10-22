@@ -20,7 +20,7 @@ function axisLabel(text, x) {
     return label;
 }
 
-export function drawYearAxis(axis, cy, years, scale) {
+export function drawYearAxis(axis, cy, years, scale, hasUndated) {
     const renderedX = (year) => scale.x(year) * cy.zoom() + cy.pan().x;
     const extent = cy.extent();
     // Ticks only over the dated publications, in the visible part of the graph.
@@ -28,10 +28,10 @@ export function drawYearAxis(axis, cy, years, scale) {
     const last = Math.min(scale.year(extent.x2), Math.ceil(years.max));
     const step = tickStep(renderedX(1) - renderedX(0));
     const undatedX = renderedX(scale.undatedYear);
-    const labels = [axisLabel("Non daté", undatedX)];
+    const labels = hasUndated ? [axisLabel("Non daté", undatedX)] : [];
     for (let year = Math.ceil(first / step) * step; year <= last; year += step) {
         const x = renderedX(year);
-        if (Math.abs(x - undatedX) >= MIN_LABEL_SPACING) {
+        if (!hasUndated || Math.abs(x - undatedX) >= MIN_LABEL_SPACING) {
             labels.push(axisLabel(year, x));
         }
     }
