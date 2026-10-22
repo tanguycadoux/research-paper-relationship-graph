@@ -122,6 +122,12 @@ Le client (`crossref_api.py`) s'identifie avec `CROSSREF_MAILTO` pour accéder a
 *polite pool*. Il respecte `Retry-After` sur les erreurs 429, retente les 5xx et les
 erreurs réseau, et ne retente jamais une 404 ni une 403.
 
+**Attente limitée dans une page** (`services/http.py`, #172). L'import est synchrone :
+pendant qu'une page charge, une source en panne n'est retentée qu'une fois, et l'on
+abandonne si elle demande d'attendre plus de 5 s (l'utilisateur pourra réessayer). Les
+commandes (`complete_affiliations`) s'exécutent dans `patient_requests()` : trois
+tentatives, et jusqu'à 60 s d'attente si la source le demande.
+
 ## Corrections manuelles
 
 - **Identifier une référence** (`identification.py`) : par DOI, par ISBN, ou en créant une
@@ -305,3 +311,4 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 | 2026-10-21 | Icônes Material Symbols en SVG inline (`{% icon %}`, commande `add_icon`) | Fonctionne hors ligne, pas de nom affiché pendant le chargement d'une police, stylable avec Tailwind (#33). |
 | 2026-10-21 | URL au pluriel pour toutes les collections (`publications/`, `publications/42/`) | Un seul préfixe par ressource, convention de l'admin Django et des API REST (#110). |
 | 2026-10-21 | Import à la demande des références d'une publication hors corpus | Sa bibliographie est déjà dans la réponse Crossref stockée ; l'importer ne coûte que des lots pour les publications citées, et enrichit la base commune sans toucher aux corpus (#126). |
+| 2026-10-23 | Attente des sources limitée pendant le chargement d'une page, longue pour les commandes | Une page ne doit pas rester bloquée une minute ou plus ; une commande n'a personne qui attend (#172). |

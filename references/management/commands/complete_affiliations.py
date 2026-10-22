@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from references.services.enrichment import complete_existing_publications
+from references.services.http import patient_requests
 
 
 class Command(BaseCommand):
@@ -18,7 +19,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        summary = complete_existing_publications(fetch_missing=options["fetch_missing"])
+        # A command can wait as long as OpenAlex asks: nobody is waiting for a page.
+        with patient_requests():
+            summary = complete_existing_publications(fetch_missing=options["fetch_missing"])
         if options["fetch_missing"]:
             self.stdout.write(f"Publications demandées à OpenAlex : {summary['fetched']}")
         self.stdout.write(f"Publications avec une réponse OpenAlex : {summary['with_openalex']}")

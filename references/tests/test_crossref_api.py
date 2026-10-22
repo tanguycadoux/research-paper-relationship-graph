@@ -4,6 +4,7 @@ import requests
 from django.test import SimpleTestCase, override_settings
 
 from references.services import crossref_api
+from references.services.http import patient_requests
 
 LOGGER = "references.services"
 
@@ -53,9 +54,30 @@ class FetchCrossrefJsonTests(SimpleTestCase):
         sleep.assert_called_once_with(3)
 
     def test_server_errors_use_exponential_backoff_then_give_up(self, get_session, sleep):
-        result, _ = self.fetch(get_session, [make_response(503)] * 3)
+        with patient_requests():
+            result, _ = self.fetch(get_session, [make_response(503)] * 3)
         self.assertIsNone(result)
         self.assertEqual([c.args[0] for c in sleep.call_args_list], [1, 2])
+
+    def test_in_a_page_a_failing_source_is_retried_once(self, get_session, sleep):
+        result, _ = self.fetch(get_session, [make_response(503)] * 3)
+        self.assertIsNone(result)
+        self.assertEqual(get_session.return_value.get.call_count, 2)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [1])
+
+    def test_in_a_page_a_long_retry_after_is_not_waited_for(self, get_session, sleep):
+        responses = [make_response(429, headers={"Retry-After": "30"}), make_response(200, {})]
+        result, logs = self.fetch(get_session, responses)
+        self.assertIsNone(result)
+        sleep.assert_not_called()
+        self.assertIn("given up", logs.output[-1])
+
+    def test_a_command_waits_as_long_as_asked(self, get_session, sleep):
+        responses = [make_response(429, headers={"Retry-After": "30"}), make_response(200, {})]
+        with patient_requests():
+            result, _ = self.fetch(get_session, responses)
+        self.assertEqual(result, {})
+        sleep.assert_called_once_with(30)
 
     def test_network_error_is_retried(self, get_session, sleep):
         responses = [requests.ConnectionError("down"), make_response(200, {})]
