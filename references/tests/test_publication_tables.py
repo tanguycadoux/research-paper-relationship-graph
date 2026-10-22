@@ -3,6 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
+from references.services.publication_table import for_publication_table
 
 
 class PublicationTablesTests(TestCase):
@@ -22,12 +23,30 @@ class PublicationTablesTests(TestCase):
     def test_list_shows_publications_without_title(self):
         response = self.client.get(reverse("publication_list"))
         self.assertIn(self.untitled, response.context["publications"])
-        self.assertContains(response, "10.1234/untitled")
+        self.assertContains(response, "DOI&nbsp;10.1234/untitled")
 
     def test_identifier_column_falls_back_to_the_isbn(self):
         response = self.client.get(reverse("publication_list"))
         self.assertContains(response, '<th scope="col">Identifiant</th>', html=True)
-        self.assertContains(response, "ISBN 9782070368228")
+        self.assertContains(response, "ISBN&nbsp;9782070368228")
+
+    def test_first_author_et_al(self):
+        alan = Author.objects.create(first_name="Alan", last_name="Turing")
+        AuthorPublication.objects.create(author=alan, publication=self.book, order=2)
+        CitedReference.objects.create(source=self.book, position=1, unstructured="Exposé")
+        pub = for_publication_table(Publication.objects.filter(pk=self.book.pk)).get()
+        self.assertEqual((pub.first_author, pub.author_count), ("Ada Lovelace", 2))
+        # The author slots do not multiply the other counts.
+        self.assertEqual(pub.to_identify, 2)
+        response = self.client.get(reverse("publication_list"))
+        self.assertContains(response, '<th scope="col">Auteurs</th>', html=True)
+        self.assertContains(response, "Ada Lovelace&nbsp;et&nbsp;al.")
+
+    def test_single_author_without_et_al(self):
+        pub = for_publication_table(Publication.objects.filter(pk=self.book.pk)).get()
+        # Two slots of the same person: one author.
+        self.assertEqual((pub.first_author, pub.author_count), ("Ada Lovelace", 1))
+        self.assertNotContains(self.client.get(reverse("publication_list")), "et&nbsp;al.")
 
     def test_author_page_uses_the_shared_table(self):
         self.client.force_login(self.user)
@@ -37,6 +56,8 @@ class PublicationTablesTests(TestCase):
         # Counted once despite the two slots.
         self.assertContains(response, "1 à identifier")
         self.assertContains(response, "Ajouter à mes références")
+        # Its own name on every row would say nothing.
+        self.assertNotContains(response, '<th scope="col">Auteurs</th>', html=True)
 
     def test_author_without_publication(self):
         author = Author.objects.create(last_name="Seule")
