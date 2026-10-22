@@ -36,7 +36,7 @@
                             <dd>{{ conflict.proposed_value|default:"(vide)" }}</dd>
                             <dt class="text-gray-500">Détecté le</dt>
                             <dd>
-                                <time datetime="{{ conflict.detected_at|date:'c' }}">{{ conflict.detected_at|date:"j F Y" }}</time>
+                                <time datetime="{{ conflict.detected_at|date:'Y-m-d\TH:i:sO' }}">{{ conflict.detected_at|date:"j F Y" }}</time>
                             </dd>
                         </dl>
                         {% if conflict.is_informative %}
@@ -70,7 +70,7 @@
                         <li>
                             {{ conflict.get_kind_display }} — {{ conflict.publication|default:conflict.author }} :
                             {{ conflict.get_status_display|lower }}{% if conflict.resolved_by %}, par {{ conflict.resolved_by }}{% endif %},
-                            le <time datetime="{{ conflict.resolved_at|date:'c' }}">{{ conflict.resolved_at|date:"j F Y" }}</time>
+                            le <time datetime="{{ conflict.resolved_at|date:'Y-m-d\TH:i:sO' }}">{{ conflict.resolved_at|date:"j F Y" }}</time>
                         </li>
                     {% endfor %}
                 </ul>
