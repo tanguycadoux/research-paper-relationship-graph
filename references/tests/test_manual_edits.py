@@ -57,9 +57,9 @@ class KeptCorrectionsTests(ManualEditsTestCase):
         self.edit(publication_date="2019-06-15")
         self.assertEqual((self.pub.title_edited, self.pub.date_edited), (False, True))
         detail = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
-        # Under the title, with the other corrections, and beside the date itself.
+        # Under the title, with the other corrections: one place for all of them.
+        self.assertContains(detail, "Corrigé à la main :")
         self.assertContains(detail, "date.")
-        self.assertContains(detail, "corrigée à la main")
         parse_publication(self.pub)
         self.assertEqual(self.pub.publication_date, date(2019, 6, 15))
 
