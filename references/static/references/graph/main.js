@@ -22,7 +22,7 @@ function render() {
     const scale = makeScale(years, graph.nodes.length, container);
     const cy = cytoscape({
         container,
-        elements: [...placeNodes(graph.nodes, scale), ...graph.edges],
+        elements: [...placeNodes(graph.nodes, graph.edges, scale), ...graph.edges],
         style: STYLE,
         // Axes are already scaled to the container: fitting only corrects small offsets.
         layout: { name: "preset", fit: true, padding: MARGIN / 2 },
@@ -31,7 +31,8 @@ function render() {
     });
     bindInteractions(cy, document.getElementById("citation-graph-card"));
     const axis = document.getElementById("citation-graph-axis");
-    const drawAxis = () => drawYearAxis(axis, cy, years, scale);
+    const hasUndated = graph.nodes.some((n) => !n.data.date);
+    const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);
     cy.on("viewport", drawAxis);
     drawAxis();
     keepFitted(cy, container);

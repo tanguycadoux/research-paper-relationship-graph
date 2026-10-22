@@ -330,6 +330,16 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
+- **Disposition** (#138, `layout.js`) : x suit la date ; la position verticale rapproche
+  les publications qui se citent, sans dépendance. D'abord un **ordre** par la méthode du
+  barycentre (chaque publication va vers la rangée moyenne de ses voisines, en
+  20 passes), puis une petite **simulation verticale** : les publications liées
+  s'attirent, une publication s'écarte des liens qui passent sur elle (aucun lien caché
+  derrière un nœud), et deux publications proches en date restent à 32 px l'une de
+  l'autre. Le résultat est étiré à la hauteur du cadre, jamais comprimé. Sur le graphe du
+  corpus de la base réelle : 54 croisements de liens au lieu de 148 avec une rangée par
+  publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
+  publications sans date.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
@@ -402,3 +412,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Python 3.14 seulement (développement, CI, `requires-python`) | Une seule version à suivre, celle du développement ; la matrice 3.12/3.14 de #170 n'apportait rien sans autre machine ni déploiement. À revoir si un serveur impose une autre version (#169). |
 | 2026-10-23 | Titre et date corrigés à la main marqués par deux booléens, jamais réécrits par les sources | Seuls ces champs viennent des sources ; des booléens suffisent et se lisent dans l'admin. Un conflit aurait été trop lourd pour une correction volontaire (#146). |
 | 2026-10-23 | Script du graphe en modules ES natifs, sans Node | Le code va presque doubler avec M11 ; les modules du navigateur suffisent, sans outil de construction ni dépendance (#174). |
+| 2026-10-23 | Disposition : ordre par barycentre puis simulation verticale, x restant la date | Croisements de liens divisés par près de trois sur la base réelle, sans dépendance ; fcose écarté (trois fichiers à embarquer, résultat moins prévisible) (#138). |
