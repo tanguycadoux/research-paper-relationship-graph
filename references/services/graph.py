@@ -1,7 +1,7 @@
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.urls import reverse
 
-from ..models import CitedReference, Publication
+from ..models import AuthorPublication, CitedReference, Publication
 
 
 def publication_graph(pub):
@@ -26,7 +26,16 @@ def citation_graph(source_ids):
         .distinct()
     )
     node_ids = set(source_ids) | {target_id for _, target_id in edges}
-    publications = Publication.objects.filter(pk__in=node_ids).annotate(cited_by=Count("citations"))
+    publications = (
+        Publication.objects.filter(pk__in=node_ids)
+        .annotate(cited_by=Count("citations"))
+        .prefetch_related(
+            Prefetch(
+                "authorpublication_set",
+                queryset=AuthorPublication.objects.select_related("author").order_by("order"),
+            )
+        )
+    )
     return {
         "nodes": [node_data(pub, pub.pk in source_ids) for pub in publications],
         "edges": [edge_data(source_id, target_id) for source_id, target_id in edges],
@@ -34,11 +43,18 @@ def citation_graph(source_ids):
 
 
 def node_data(pub, is_source):
+    # Each person once, even with several slots after a merge.
+    authors = list(dict.fromkeys(str(slot.author) for slot in pub.authorpublication_set.all()))
     return {
         "data": {
             "id": str(pub.pk),
             "label": str(pub),
             "date": pub.publication_date.isoformat() if pub.publication_date else None,
+            "doi": pub.doi,
+            "isbn": pub.isbn,
+            # « First author et al. » on the information card.
+            "firstAuthor": authors[0] if authors else "",
+            "authorCount": len(authors),
             "citedBy": pub.cited_by,
             "isSource": is_source,
             "url": reverse("publication_detail", args=[pub.pk]),
