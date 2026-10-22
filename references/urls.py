@@ -55,6 +55,11 @@ urlpatterns = [
         cited_references.identify_reference,
         name="reference_identify",
     ),
+    path(
+        "publications/<int:pk>/references/<int:position>/unidentifiable/",
+        cited_references.toggle_unidentifiable,
+        name="reference_unidentifiable",
+    ),
     # Authors
     path("authors/", authors.AuthorListView.as_view(), name="author_list"),
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),

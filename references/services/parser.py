@@ -143,6 +143,7 @@ def with_manual_resolution(ref, manual):
     previous = manual.get(reference_identity(ref))
     if previous:
         ref.target_id = previous.target_id
+        ref.unidentifiable = previous.unidentifiable
         ref.resolved_manually = True
         ref.resolved_by_id = previous.resolved_by_id
         ref.resolved_at = previous.resolved_at
