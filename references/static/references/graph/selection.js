@@ -1,37 +1,33 @@
 // Selection of a publication (#61): its references and the publications citing it
-// stand out, and the information card describes it.
-
-// French plural: 0 and 1 take the singular.
-function publications(count) {
-    return `${count} publication${count > 1 ? "s" : ""}`;
-}
+// stand out, each with the colour of its relation (nodes and edges), and the compact
+// information card describes it (#187).
 
 function fillCard(card, data, referenceCount, citingCount) {
     const field = (name) => card.querySelector(`[data-card="${name}"]`);
     const showRow = (name, visible) => {
         card.querySelector(`[data-card-row="${name}"]`).hidden = !visible;
     };
+    // The title is the link to the page of the publication.
     field("title").textContent = data.label;
+    field("title").href = data.url;
+    field("venue").textContent = data.venue;
+    field("venue").hidden = !data.venue;
     const etAl = data.authorCount > 1 ? " et al." : "";
     field("authors").textContent = data.firstAuthor + etAl;
     showRow("authors", data.authorCount > 0);
     field("year").textContent = data.date ? data.date.slice(0, 4) : "";
     showRow("year", Boolean(data.date));
-    const doiLink = field("doi").querySelector("a");
-    doiLink.href = `https://doi.org/${data.doi}`;
-    doiLink.firstChild.nodeValue = data.doi;
-    showRow("doi", Boolean(data.doi));
-    field("isbn").textContent = data.isbn;
-    showRow("isbn", Boolean(data.isbn));
-    field("references").textContent = `cite ${publications(referenceCount)}`;
-    field("citing").textContent = `citée par ${publications(citingCount)}`;
-    field("cited-by").textContent = `citée par ${publications(data.citedBy)}`;
-    card.querySelector("[data-card-link] a").href = data.url;
+    field("references").textContent = `cite ${referenceCount}`;
+    field("citing").textContent = `citée par ${citingCount}`;
+    const citations = data.citedBy;
+    field("cited-by").textContent = `${citations} citation${citations > 1 ? "s" : ""} dans la base`;
     card.hidden = false;
 }
 
+const SELECTION_CLASSES = "faded selected reference citing reference-node citing-node";
+
 function clearSelection(cy, card) {
-    cy.elements().removeClass("faded selected reference citing");
+    cy.elements().removeClass(SELECTION_CLASSES);
     card.hidden = true;
 }
 
@@ -44,7 +40,9 @@ function selectNode(cy, node, card) {
     cy.elements().not(kept.union(citing).union(citing.sources())).addClass("faded");
     node.addClass("selected");
     references.addClass("reference");
+    references.targets().not(node).addClass("reference-node");
     citing.addClass("citing");
+    citing.sources().not(node).addClass("citing-node");
     fillCard(card, node.data(), references.length, citing.length);
 }
 

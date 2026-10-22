@@ -11,6 +11,7 @@ from references.models import (
     Publication,
     UserPublication,
 )
+from references.services.external_records import Source, store_record
 from references.services.graph import corpus_graph, publication_graph
 
 
@@ -70,12 +71,28 @@ class CitationGraphTests(TestCase):
         for order, author in enumerate([ada, alan, grace, ada, edsger]):
             AuthorPublication.objects.create(publication=self.source, author=author, order=order)
         nodes = self.nodes_by_label(publication_graph(self.source))
-        self.assertEqual(nodes["Source"]["doi"], "10.1000/source")
-        self.assertEqual(nodes["Source"]["isbn"], "")
         # « Ada Lovelace et al. »: each person counted once (merged slots).
         self.assertEqual(nodes["Source"]["firstAuthor"], "Ada Lovelace")
         self.assertEqual(nodes["Source"]["authorCount"], 4)
         self.assertEqual(nodes["Cité"]["firstAuthor"], "")
+
+    def test_node_venue_from_crossref_then_datacite(self):
+        store_record(
+            self.source, Source.CROSSREF, {"message": {"container-title": ["IEEE Trans. &amp; Co"]}}
+        )
+        store_record(
+            self.cited,
+            Source.DATACITE,
+            {"data": {"attributes": {"container": {"title": "Proc. ECRIS 2016"}}}},
+        )
+        with self.assertNumQueries(3):
+            nodes = self.nodes_by_label(publication_graph(self.source))
+        self.assertEqual(nodes["Source"]["venue"], "IEEE Trans. & Co")
+        self.assertEqual(nodes["Cité"]["venue"], "Proc. ECRIS 2016")
+
+    def test_node_without_venue(self):
+        nodes = self.nodes_by_label(publication_graph(self.source))
+        self.assertEqual(nodes["Source"]["venue"], "")
 
     def test_corpus_graph_merges_the_corpus_publications(self):
         user = get_user_model().objects.create_user("alice")
