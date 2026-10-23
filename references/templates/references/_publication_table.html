@@ -3,6 +3,8 @@ Table of publications. Context: publications (annotated by
 for_publication_table, for the first author and the badges), caption; with
 corpus_actions, a last column to add each publication to the user's corpus or
 take it away (user_pub_ids); with hide_authors, no author column (author page).
+The identifier is hidden below xl, where the content is too narrow for it (#150): it stays on the
+page of each publication.
 {% endcomment %}
 {% load ui %}
 {% card flush=True %}
@@ -14,7 +16,7 @@ take it away (user_pub_ids); with hide_authors, no author column (author page).
                 {% if not hide_authors %}
                     <th scope="col">Auteurs</th>
                 {% endif %}
-                <th scope="col">Identifiant</th>
+                <th scope="col" class="hidden xl:table-cell">Identifiant</th>
                 <th scope="col">Année</th>
                 {% if corpus_actions %}
                     <th scope="col">
@@ -51,7 +53,7 @@ take it away (user_pub_ids); with hide_authors, no author column (author page).
                             {% endif %}
                         </td>
                     {% endif %}
-                    <td class="text-gray-600">
+                    <td class="hidden text-gray-600 xl:table-cell">
                         {% if pub.doi %}
                             DOI&nbsp;{{ pub.doi }}
                         {% elif pub.isbn %}

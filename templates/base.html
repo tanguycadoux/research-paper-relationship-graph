@@ -28,13 +28,13 @@
                         {% endif %}
                         <form action="{% url 'logout' %}" method="post">
                             {% csrf_token %}
-                            {% button "Se déconnecter" variant="secondary" icon="logout" %}
+                            {% button "Se déconnecter" variant="secondary" icon="logout" compact=True %}
                         </form>
                     {% else %}
                         {% url 'login' as login_url %}
                         {% url 'register' as register_url %}
-                        {% button "Se connecter" url=login_url variant="secondary" icon="login" %}
-                        {% button "Créer un compte" url=register_url icon="person_add" %}
+                        {% button "Se connecter" url=login_url variant="secondary" icon="login" compact=True %}
+                        {% button "Créer un compte" url=register_url icon="person_add" compact=True %}
                     {% endif %}
                 </div>
             </div>

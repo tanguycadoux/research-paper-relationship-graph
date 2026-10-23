@@ -4,6 +4,7 @@ Interface components: {% load ui %}, then
     {% button "Fusionner" %}
     {% button "Supprimer" variant="danger" icon="delete" %}
     {% button "Fermer" icon="close" icon_only=True type="button" %}
+    {% button "Se déconnecter" icon="logout" compact=True %}   (icon only on a small screen)
     {% button "Voir la fiche" url=… variant="secondary" %}   (a link: <a href>)
     {% badge "12 à identifier" variant="warning" %}
     {% alert "Import terminé." variant="success" %}
@@ -34,6 +35,9 @@ BUTTON_BASE = (
 BUTTON_WITH_LABEL = "px-3"
 BUTTON_WITH_ICON_AND_LABEL = "pl-[calc(0.375rem-1px)] pr-3"
 BUTTON_ICON_ONLY = "w-8"
+# compact: a 2rem square on a small screen, icon and label from sm (#150). relative keeps
+# the hidden label, absolutely positioned, inside the button.
+BUTTON_COMPACT = "relative w-8 sm:w-auto sm:pl-[calc(0.375rem-1px)] sm:pr-3"
 BUTTON_ICON = "size-5 shrink-0"
 BUTTON_VARIANTS = {
     "primary": (
@@ -87,7 +91,9 @@ ALERT_ICONS = {
 }
 EXTERNAL_LINK_ICON = "ml-0.5 inline-block size-[0.9em] align-[-0.1em]"
 CARD_CLASSES = "rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-CARD_FLUSH_CLASSES = "overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"
+# relative: the texts for screen readers in a wide table (sr-only, absolutely positioned)
+# scroll with it, instead of widening the page (#150).
+CARD_FLUSH_CLASSES = "relative overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"
 CARD_TITLE_CLASSES = "mb-2 text-base font-semibold"
 
 
@@ -134,23 +140,28 @@ def external_link(url, label, **attrs):
 BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value")
 
 
-def button_shape(icon, icon_only):
+def button_shape(icon, icon_only, compact):
     if icon_only:
         return BUTTON_ICON_ONLY
+    if compact:
+        return BUTTON_COMPACT
     return BUTTON_WITH_ICON_AND_LABEL if icon else BUTTON_WITH_LABEL
 
 
 @register.inclusion_tag("components/button.html")
-def button(label, url="", variant="primary", icon=None, icon_only=False, **attrs):
+def button(label, url="", variant="primary", icon=None, icon_only=False, compact=False, **attrs):
     """
     A button, or a link styled as a button when it has a url: <a> navigates,
     <button> acts. type (submit by default), formaction, name and value only
-    make sense on a <button>.
+    make sense on a <button>. compact: only the icon on a small screen, the label
+    still read by screen readers.
     """
     if not label:
         raise template.TemplateSyntaxError("Un bouton a toujours un libellé.")
     if icon_only and not icon:
         raise template.TemplateSyntaxError("icon_only demande une icône.")
+    if compact and not icon:
+        raise template.TemplateSyntaxError("compact demande une icône.")
     unknown = attrs.keys() - set(BUTTON_ONLY_ATTRIBUTES)
     if unknown:
         raise template.TemplateSyntaxError(
@@ -165,10 +176,11 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, **attrs
         "url": url,
         "icon": icon,
         "icon_only": icon_only,
+        "compact": compact,
         "classes": " ".join(
             [
                 BUTTON_BASE,
-                button_shape(icon, icon_only),
+                button_shape(icon, icon_only, compact),
                 variant_classes("button", BUTTON_VARIANTS, variant),
             ]
         ),

@@ -77,6 +77,13 @@ class ButtonTests(SimpleTestCase):
         self.assertIn(" px-3 ", label_only)
         self.assertIn('class="size-5 shrink-0"', with_icon)
 
+    def test_compact_button_shows_only_its_icon_on_a_small_screen(self):
+        html = render('{% button "Se déconnecter" icon="logout" compact=True %}')
+        # The label stays in the button, for screen readers, hidden below sm (#150).
+        self.assertIn('<span class="max-sm:sr-only">Se déconnecter</span>', html)
+        self.assertIn(" relative w-8 sm:w-auto ", html)
+        self.assertNotIn("aria-label", html)
+
     def test_formaction_name_and_value(self):
         html = render('{% button "Garder" formaction="/x/" name="choice" value="keep" %}')
         self.assertIn('formaction="/x/"', html)
@@ -90,6 +97,7 @@ class ButtonTests(SimpleTestCase):
             '{% button "X" variant="rouge" %}',
             '{% button "" %}',
             '{% button "X" icon_only=True %}',
+            '{% button "X" compact=True %}',
             '{% button "X" colour="red" %}',
             '{% button "X" url="/a/" type="button" %}',
             '{% button "X" url="/a/" formaction="/b/" %}',

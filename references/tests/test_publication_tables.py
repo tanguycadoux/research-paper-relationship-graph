@@ -27,7 +27,10 @@ class PublicationTablesTests(TestCase):
 
     def test_identifier_column_falls_back_to_the_isbn(self):
         response = self.client.get(reverse("publication_list"))
-        self.assertContains(response, '<th scope="col">Identifiant</th>', html=True)
+        # Hidden when the content is narrow (#150).
+        self.assertContains(
+            response, '<th scope="col" class="hidden xl:table-cell">Identifiant</th>', html=True
+        )
         self.assertContains(response, "ISBN&nbsp;9782070368228")
 
     def test_first_author_et_al(self):

@@ -4,7 +4,11 @@
        class="{{ classes }}"
        {% if icon_only %}aria-label="{{ label }}" title="{{ label }}"{% endif %}>
         {% if icon %}{% icon icon class=icon_classes %}{% endif %}
-        {% if not icon_only %}{{ label }}{% endif %}
+        {% if compact %}
+            <span class="max-sm:sr-only">{{ label }}</span>
+        {% elif not icon_only %}
+            {{ label }}
+        {% endif %}
     </a>
 {% else %}
     <button type="{{ type }}"
@@ -13,6 +17,10 @@
             {% if name %}name="{{ name }}" value="{{ value }}"{% endif %}
             {% if icon_only %}aria-label="{{ label }}" title="{{ label }}"{% endif %}>
         {% if icon %}{% icon icon class=icon_classes %}{% endif %}
-        {% if not icon_only %}{{ label }}{% endif %}
+        {% if compact %}
+            <span class="max-sm:sr-only">{{ label }}</span>
+        {% elif not icon_only %}
+            {{ label }}
+        {% endif %}
     </button>
 {% endif %}
