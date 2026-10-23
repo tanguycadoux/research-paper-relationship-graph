@@ -124,6 +124,11 @@ class OtherComponentsTests(SimpleTestCase):
                 self.assertIn('<span class="', html)
                 self.assertIn(classes, html)
 
+    def test_interface_text_is_not_selectable(self):
+        # A tap or a double click on a button or a badge never selects its text (#210).
+        self.assertIn("select-none", render('{% button "Fermer" icon="close" %}'))
+        self.assertIn("select-none", render('{% badge "12 à identifier" %}'))
+
     def test_alert_role_depends_on_the_variant(self):
         self.assertIn('role="alert"', render('{% alert "Échec" variant="danger" %}'))
         html = render('{% alert "Import terminé." variant="success" %}')
