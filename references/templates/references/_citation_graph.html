@@ -68,7 +68,9 @@
         </section>
     </div>
     {# Same colours as graph/style.js: the --color-graph-* theme variables (#139). #}
-    <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-700"
+    {# Also drawn under the exported image (graph/export.js). #}
+    <ul id="citation-graph-legend"
+        class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-700"
         aria-label="Légende du graphe">
         <li>
             <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"

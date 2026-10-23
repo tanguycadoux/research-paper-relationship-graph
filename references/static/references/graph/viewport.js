@@ -63,18 +63,22 @@ function union(a, b) {
 // showAllButton shows the whole graph again (#196); it is disabled, rather than hidden,
 // while the whole graph is shown: it stays in view and in place. Returns what a selection
 // needs to move the view (#142): the zoom of the whole graph, and widening the bounds to
-// a view, then restoring them.
+// a view, then restoring them; and whether the whole graph is shown (#175).
 export function bindViewport(cy, container, showAllButton) {
     // The view showing the whole graph, and its visible area in graph coordinates.
     let whole = null;
     // The area the view stays within: the whole graph, widened while a selection needs it.
     let bounds = null;
-    const updateButton = () => {
+    const showsAll = () => {
         const pan = cy.pan();
-        showAllButton.disabled =
+        return (
             Math.abs(cy.zoom() / whole.zoom - 1) < SAME_ZOOM &&
             Math.abs(pan.x - whole.pan.x) < SAME_PAN &&
-            Math.abs(pan.y - whole.pan.y) < SAME_PAN;
+            Math.abs(pan.y - whole.pan.y) < SAME_PAN
+        );
+    };
+    const updateButton = () => {
+        showAllButton.disabled = showsAll();
     };
     const restoreBounds = () => {
         cy.minZoom(whole.zoom);
@@ -117,5 +121,5 @@ export function bindViewport(cy, container, showAllButton) {
         showAll();
     }).observe(container);
     keepScreenSize(cy);
-    return { wholeZoom: () => whole.zoom, allowView, restoreBounds };
+    return { wholeZoom: () => whole.zoom, showsAll, allowView, restoreBounds };
 }

@@ -381,9 +381,13 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   à la vue voulue : dans la vue d'ensemble, un voisin caché sous la carte ne pourrait pas
   être montré autrement.
 - **Export en image** (#175, `export.js`) : un bouton à côté de celui de la vue
-  d'ensemble télécharge le graphe affiché en PNG (`cy.png`, résolution doublée), tel qu'à
-  l'écran, sélection comprise, avec l'axe des années redessiné au-dessus à partir de ses
-  libellés HTML. Pas de SVG : il demanderait une extension à embarquer.
+  d'ensemble télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
+  multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
+  années (au-dessus) et la légende (en dessous, renvoyée à la ligne comme sur la page) sont
+  redessinés depuis leur HTML. Le nom du fichier dit ce que montre l'image :
+  `graphe-corpus`, `graphe-publication-<id>`, suivi de `-selection-<id>` si une
+  publication est sélectionnée, ou de `-zoom` si la vue n'est pas la vue d'ensemble. Pas
+  de SVG : il demanderait une extension à embarquer.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
   chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
   `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`

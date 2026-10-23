@@ -33,7 +33,8 @@ function render() {
     const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);
     cy.on("viewport", drawAxis);
     drawAxis();
-    bindExport(cy, axis, document.querySelector("[data-graph-export]"));
+    const legend = document.getElementById("citation-graph-legend");
+    bindExport(cy, { axis, legend }, document.querySelector("[data-graph-export]"), viewport);
 }
 
 render();
