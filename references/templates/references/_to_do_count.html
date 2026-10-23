@@ -1,10 +1,6 @@
 {% comment %}
 A count of the dashboard's « À faire » (#151): a badge when there is something to do,
-a grey 0 otherwise. Context: count.
+a muted one with 0 otherwise, aligned with the others. Context: count.
 {% endcomment %}
 {% load ui %}
-{% if count %}
-    {% badge count|stringformat:"d" variant="warning" %}
-{% else %}
-    <span class="text-gray-500">0</span>
-{% endif %}
+{% badge count|stringformat:"d" variant=count|yesno:"warning,muted" %}

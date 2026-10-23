@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from references.models import Author, CitedReference, MetadataConflict, Publication, UserPublication
 from references.services import dashboard
+from references.templatetags.ui import BADGE_VARIANTS
 
 
 class DashboardTests(TestCase):
@@ -68,6 +69,12 @@ class DashboardTests(TestCase):
         self.assertContains(response, "À faire")
         self.assertContains(response, "Plus récente")
         self.assertContains(response, "Base commune")
+
+    def test_nothing_to_do_is_a_muted_count(self):
+        # No open conflict: a 0 aligned with the other counts, without drawing the eye.
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("index"))
+        self.assertContains(response, BADGE_VARIANTS["muted"], count=1)
 
     def test_presentation_for_a_visitor(self):
         response = self.client.get(reverse("index"))
