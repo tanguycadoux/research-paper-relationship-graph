@@ -337,7 +337,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   s'attirent, une publication s'écarte des liens qui passent sur elle (aucun lien caché
   derrière un nœud), et deux publications proches en date ne se chevauchent pas
   (écart selon leur taille). Les rangées de départ sont espacées de 36 px quelle que soit
-  la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est étiré à la hauteur du cadre, jamais comprimé. Sur le graphe du
+  la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est ramené à la hauteur du cadre, étiré ou comprimé : les nœuds gardent leur taille à l'écran, un dézoom ne les séparerait pas et perdrait de la largeur ; zoomer sépare ceux que la compression rapproche (#185). Sur le graphe du
   corpus de la base réelle : 51 croisements de liens au lieu de 147 avec une rangée par
   publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
   publications sans date.
@@ -345,7 +345,10 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
   `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
   seulement). Sa **taille** suit
-  son nombre de citations dans la base (aire proportionnelle). Les couleurs sont définies
+  son nombre de citations dans la base (aire proportionnelle). Tailles des nœuds, épaisseurs
+  des liens et libellés sont **fixes à l'écran** (#185) : divisées par le zoom, réévaluées
+  au plus une fois par image (`requestAnimationFrame`) quand le zoom change. Zoomer écarte
+  donc les nœuds sans les grossir, ce qui sépare les publications proches en date. Les couleurs sont définies
   une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
   `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
   variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
@@ -429,3 +432,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Disposition : ordre par barycentre puis simulation verticale, x restant la date | Croisements de liens divisés par près de trois sur la base réelle, sans dépendance ; fcose écarté (trois fichiers à embarquer, résultat moins prévisible) (#138). |
 | 2026-10-23 | Couleur = rôle du nœud, taille = citations, liens droits gris sans flèche | Palette validée pour le daltonisme ; une seule définition des couleurs pour Cytoscape et la légende ; la flèche surchargeait sans rien apprendre sur une frise (#139, #140). |
 | 2026-10-23 | À la sélection, les voisins prennent la couleur de leur relation, liens plus clairs que leurs nœuds ; nœuds cités en vert d'eau | Une même teinte pour un nœud et son lien ; cohérent aussi dans le graphe du corpus, où les citants sont souvent des publications du corpus (#187). |
+| 2026-10-23 | Nœuds, liens et libellés de taille fixe à l'écran ; hauteur de la disposition ramenée au cadre, même comprimée | Sur une frise, zoomer doit écarter les publications tassées, pas les grossir ; à taille fixe, un dézoom ne séparait plus rien et perdait de la largeur (#185). |
