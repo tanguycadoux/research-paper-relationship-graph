@@ -414,7 +414,11 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   Les styles par défaut des éléments sont définis une fois dans la couche `base`.
 - **Composants** en template tags (`references/templatetags/ui.py`) : `button`, `badge`,
   `alert`, `card`, `icon`, `external_link`. **Navigation** décrite dans
-  `templatetags/navigation.py`. **Notifications** : les messages Django s'affichent en
+  `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
+  (#152, `services/pending.py`) : références à identifier dans son corpus, conflits
+  ouverts. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
+  après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
+  compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
   toasts (`static/js/toasts.js`).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mes références », « Cité par » et la page d'un auteur.
@@ -469,3 +473,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Nœuds, liens et libellés de taille fixe à l'écran ; hauteur de la disposition ramenée au cadre, même comprimée | Sur une frise, zoomer doit écarter les publications tassées, pas les grossir ; à taille fixe, un dézoom ne séparait plus rien et perdait de la largeur (#185). |
 | 2026-10-23 | À la sélection, zoom sur l'article et ses voisins à côté de la carte ; à la désélection, retour à la vue d'avant | Retrouver un zoom fait à la main plutôt que la vue d'ensemble ; les bornes de #141 s'élargissent le temps de la sélection, sans quoi un voisin caché sous la carte ne pourrait pas être montré (#142). |
 | 2026-10-23 | Graphe de toute la base public, publications isolées comprises, sans optimisation préalable | Même code que les autres graphes ; la base compte 53 publications. Un banc d'essai sur de grands graphes synthétiques dira où optimiser la disposition (#202), avec le graphe sans frise (#195) (#131). |
+| 2026-10-23 | Compteurs dans la navigation pour les conflits et les références à identifier, sans cache | Toujours justes après une action ; deux requêtes peu coûteuses. Les doublons probables (35 ms, 55 groupes) seraient un badge permanent (#152). |
