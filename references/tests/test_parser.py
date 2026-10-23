@@ -41,6 +41,19 @@ class ParsePublicationTests(TestCase):
         pub.refresh_from_db()
         self.assertEqual(pub.title, "Un article")
         self.assertEqual(str(pub.publication_date), "2020-05-01")
+        self.assertEqual(pub.publication_date_precision, Publication.DatePrecision.MONTH)
+
+    def test_date_precision_follows_the_source(self, _fetch):
+        """#147: a missing month or day is stored as 1, but not shown."""
+        cases = [([2020], "year", "2020"), ([2020, 5, 3], "day", "3 mai 2020")]
+        for parts, precision, shown in cases:
+            with self.subTest(parts=parts):
+                message = crossref_message()
+                message["message"]["issued"] = {"date-parts": [parts]}
+                pub = self.make_publication(message)
+                pub.refresh_from_db()
+                self.assertEqual(pub.publication_date_precision, precision)
+                self.assertEqual(pub.formatted_publication_date, shown)
 
     def test_published_names_are_kept(self, _fetch):
         pub = self.make_publication(crossref_message(authors=[ADA, TURING]))

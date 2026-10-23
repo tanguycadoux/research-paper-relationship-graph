@@ -1,15 +1,28 @@
 from django.conf import settings
 from django.db import models, transaction
+from django.utils.formats import date_format
 
 from .services.doi import normalize_doi
 from .services.isbn import normalize_isbn
 
 
 class Publication(models.Model):
+    class DatePrecision(models.TextChoices):
+        """What the source gives of the date: the missing month or day is stored as 1 (#147)."""
+
+        YEAR = "year", "année"
+        MONTH = "month", "mois"
+        DAY = "day", "jour"
+
+    DATE_FORMATS = {DatePrecision.YEAR: "Y", DatePrecision.MONTH: "F Y", DatePrecision.DAY: "j F Y"}
+
     doi = models.CharField(max_length=255, blank=True)
     isbn = models.CharField("ISBN", max_length=13, blank=True)
     title = models.TextField(blank=True)
     publication_date = models.DateField(null=True, blank=True)
+    publication_date_precision = models.CharField(
+        max_length=5, choices=DatePrecision.choices, default=DatePrecision.DAY
+    )
     # Corrected by hand (« Modifier »): the sources no longer overwrite them (#146).
     title_edited = models.BooleanField(default=False)
     date_edited = models.BooleanField(default=False)
@@ -36,6 +49,15 @@ class Publication(models.Model):
         self.doi = normalize_doi(self.doi)
         self.isbn = normalize_isbn(self.isbn)
         super().save(*args, **kwargs)
+
+    @property
+    def formatted_publication_date(self):
+        """'2023', 'août 2023' or '1 août 2023', as precise as the source."""
+        if not self.publication_date:
+            return ""
+        return date_format(
+            self.publication_date, self.DATE_FORMATS[self.publication_date_precision]
+        )
 
     @property
     def parse_references(self):

@@ -43,8 +43,8 @@ def parse_title(pub, message):
 
 def parse_publication_date(pub, message):
     """
-    Extract the publication date (missing month or day default to 1), unless it was
-    corrected by hand.
+    Extract the publication date and its precision (missing month or day default to 1),
+    unless it was corrected by hand.
     """
     if pub.date_edited:
         return
@@ -64,7 +64,16 @@ def parse_publication_date(pub, message):
         try:
             pub.publication_date = date(year, month, day)
         except ValueError:
-            pass
+            return
+        pub.publication_date_precision = DATE_PRECISIONS[min(len(parts), 3)]
+
+
+# Number of date parts given by the source -> precision of the date.
+DATE_PRECISIONS = {
+    1: Publication.DatePrecision.YEAR,
+    2: Publication.DatePrecision.MONTH,
+    3: Publication.DatePrecision.DAY,
+}
 
 
 def parse_authors(pub, message):

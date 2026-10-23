@@ -6,7 +6,7 @@ fetched for the old one.
 
 from django.db import transaction
 
-from ..models import Author
+from ..models import Author, Publication
 from .books import import_book_metadata
 from .importer import import_publication
 from .parser import parse_publication
@@ -24,6 +24,9 @@ def record_manual_edits(pub, changed_fields):
     for field, flag in SOURCE_FIELDS.items():
         if field in changed_fields:
             setattr(pub, flag, bool(getattr(pub, field)))
+    if pub.date_edited and "publication_date" in changed_fields:
+        # A date typed by hand is a full date (<input type="date">).
+        pub.publication_date_precision = Publication.DatePrecision.DAY
 
 
 def identifier_changed(changed_fields):
