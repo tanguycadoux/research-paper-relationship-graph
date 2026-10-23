@@ -48,8 +48,9 @@
         @apply px-3 py-2 align-top;
     }
 
+    /* Column headers are interface, not content to copy (#210). */
     th {
-        @apply font-medium;
+        @apply font-medium select-none;
     }
 
     tbody tr + tr {

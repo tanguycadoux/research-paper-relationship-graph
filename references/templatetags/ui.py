@@ -26,10 +26,11 @@ register = template.Library()
 
 # Every button is 2rem high, border included, with a 1.25rem icon: the space around
 # the icon, (2rem - 2px - 1.25rem) / 2, is the same on its left as above and below.
-# An icon-only button is a 2rem square.
+# An icon-only button is a 2rem square. select-none: a tap or a double click on an
+# interface element never selects its text (#210), here and on the badges.
 BUTTON_BASE = (
-    "inline-flex h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border "
-    "text-sm font-medium no-underline cursor-pointer focus-visible:outline-2 "
+    "inline-flex h-8 select-none items-center justify-center gap-1.5 whitespace-nowrap "
+    "rounded-md border text-sm font-medium no-underline cursor-pointer focus-visible:outline-2 "
     "focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 )
 BUTTON_WITH_LABEL = "px-3"
@@ -66,7 +67,9 @@ BUTTON_VARIANTS = {
         "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:outline-red-600"
     ),
 }
-BADGE_BASE = "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+BADGE_BASE = (
+    "inline-flex select-none items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+)
 BADGE_VARIANTS = {
     "primary": "bg-blue-100 text-blue-800",
     "secondary": "bg-gray-100 text-gray-800",
