@@ -2,6 +2,7 @@
 // Entry point, loaded as an ES module after cytoscape.min.js (global `cytoscape`).
 
 import { drawYearAxis } from "./axis.js";
+import { bindExport } from "./export.js";
 import { bindFocus } from "./focus.js";
 import { placeNodes } from "./layout.js";
 import { makeScale, yearRange } from "./scale.js";
@@ -32,6 +33,7 @@ function render() {
     const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);
     cy.on("viewport", drawAxis);
     drawAxis();
+    bindExport(cy, axis, document.querySelector("[data-graph-export]"));
 }
 
 render();
