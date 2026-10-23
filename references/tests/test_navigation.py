@@ -43,3 +43,9 @@ class MainNavigationTests(TestCase):
         self.assertIn("Publications", html)
         self.assertNotIn("Mes références", html)
         self.assertNotIn("Conflits", html)
+
+    def test_graph_of_the_base_and_of_the_corpus(self):
+        # Two graphs (#131): /corpus/graph/ does not start with /graph/.
+        self.assertIn("Graphe", self.current_link("/graph/", "page"))
+        self.assertIn("Mon graphe", self.current_link("/corpus/graph/", "page"))
+        self.assertIn("Graphe", render_navigation("/", AnonymousUser()))

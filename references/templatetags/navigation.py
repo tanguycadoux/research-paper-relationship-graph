@@ -19,7 +19,11 @@ NAVIGATION = [
     (
         "Base commune",
         False,
-        [("Publications", "publication_list", "article"), ("Auteurs", "author_list", "group")],
+        [
+            ("Publications", "publication_list", "article"),
+            ("Auteurs", "author_list", "group"),
+            ("Graphe", "base_graph", "hub"),
+        ],
     ),
     (
         "Corrections",
