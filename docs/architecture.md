@@ -73,7 +73,7 @@ references/          application principale
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, axis, selection, style)
+  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, axis, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/
@@ -372,9 +372,17 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   le lien vers la fiche, puis la revue (lue dans la réponse stockée de Crossref ou de
   DataCite, dans la même requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la fiche ; Échap ou
   un clic dans le vide désélectionne.
+- **Recentrage à la sélection** (#142, `focus.js`) : si l'article ou un voisin est caché
+  sous la carte ou hors du cadre, la vue se déplace (animation de 300 ms, aucune avec
+  « réduire les animations ») pour les montrer dans la zone libre, à droite de la carte
+  ou au-dessus, celle où ils paraissent le plus grands. Elle ne zoome jamais, elle dézoome
+  seulement s'il le faut. Dans la vue d'ensemble, rien n'est possible dans les bornes de
+  #141 : elles s'élargissent juste assez pour cette vue, jusqu'au retour à la vue
+  d'ensemble (bouton ou redimensionnement). La désélection ne bouge pas la vue.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
   chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
-  `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran),
+  `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
+  (recentrage à la sélection),
   `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
   et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
@@ -441,3 +449,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Couleur = rôle du nœud, taille = citations, liens droits gris sans flèche | Palette validée pour le daltonisme ; une seule définition des couleurs pour Cytoscape et la légende ; la flèche surchargeait sans rien apprendre sur une frise (#139, #140). |
 | 2026-10-23 | À la sélection, les voisins prennent la couleur de leur relation, liens plus clairs que leurs nœuds ; nœuds cités en vert d'eau | Une même teinte pour un nœud et son lien ; cohérent aussi dans le graphe du corpus, où les citants sont souvent des publications du corpus (#187). |
 | 2026-10-23 | Nœuds, liens et libellés de taille fixe à l'écran ; hauteur de la disposition ramenée au cadre, même comprimée | Sur une frise, zoomer doit écarter les publications tassées, pas les grossir ; à taille fixe, un dézoom ne séparait plus rien et perdait de la largeur (#185). |
+| 2026-10-23 | À la sélection, les bornes de la vue s'élargissent pour montrer la sélection à côté de la carte | Dans la vue d'ensemble, un voisin caché sous la carte ne pouvait pas être montré sans sortir des bornes de #141 ; elles reviennent avec la vue d'ensemble, jamais brusquement (#142). |
