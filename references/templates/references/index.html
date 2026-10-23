@@ -8,12 +8,95 @@
             Constituez votre corpus d'articles et explorez les relations de citation entre eux.
         </p>
     </header>
-    <div class="flex flex-wrap gap-2">
-        {% url 'publication_list' as publications_url %}
-        {% button "Parcourir les publications" url=publications_url icon="article" %}
-        {% if user.is_authenticated %}
-            {% url 'corpus' as corpus_url %}
-            {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
-        {% endif %}
-    </div>
+
+    {% url 'publication_list' as publications_url %}
+    {% url 'author_list' as authors_url %}
+    {% url 'base_graph' as base_graph_url %}
+    {% if user.is_authenticated %}
+        {# Dashboard (#151): my corpus, what waits for an action, the common base. #}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <section aria-labelledby="corpus-title" class="lg:col-span-2">
+                {% card %}
+                    <h2 id="corpus-title" class="mb-2 text-base font-semibold">
+                        Mon corpus <span class="font-normal text-gray-500">({{ corpus.count }})</span>
+                    </h2>
+                    {% if corpus.latest %}
+                        <p class="text-sm text-gray-600">Dernières publications ajoutées :</p>
+                        <ul class="mt-1 mb-4 space-y-1 text-sm">
+                            {% for pub in corpus.latest %}
+                                <li>
+                                    <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                                    {% if pub.publication_date %}
+                                        <span class="text-gray-500">· {{ pub.publication_date|date:"Y" }}</span>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="mb-4 text-sm text-gray-600">
+                            Votre corpus est vide : ajoutez une publication par son DOI depuis « Mes références », ou depuis la liste des publications.
+                        </p>
+                    {% endif %}
+                    <div class="flex flex-wrap gap-2">
+                        {% url 'corpus' as corpus_url %}
+                        {% url 'corpus_graph' as corpus_graph_url %}
+                        {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
+                        {% button "Mon graphe" url=corpus_graph_url variant="secondary" icon="hub" %}
+                    </div>
+                {% endcard %}
+            </section>
+
+            <section aria-labelledby="to-do-title">
+                {% card %}
+                    <h2 id="to-do-title" class="mb-2 text-base font-semibold">À faire</h2>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-baseline justify-between gap-3">
+                            <a href="{% url 'corpus' %}">Références à identifier</a>
+                            {% include "references/_to_do_count.html" with count=to_do.to_identify %}
+                        </li>
+                        <li class="flex items-baseline justify-between gap-3">
+                            <a href="{% url 'conflict_list' %}">Conflits ouverts</a>
+                            {% include "references/_to_do_count.html" with count=to_do.conflicts %}
+                        </li>
+                        <li class="flex items-baseline justify-between gap-3">
+                            <a href="{% url 'author_duplicates' %}">Doublons probables</a>
+                            {% include "references/_to_do_count.html" with count=to_do.duplicates %}
+                        </li>
+                    </ul>
+                {% endcard %}
+            </section>
+        </div>
+    {% else %}
+        <div class="flex flex-wrap gap-2">
+            {% button "Parcourir les publications" url=publications_url icon="article" %}
+            {% button "Graphe de la base" url=base_graph_url variant="secondary" icon="hub" %}
+        </div>
+    {% endif %}
+
+    {# The common base, for everyone. #}
+    <section aria-labelledby="base-title" class="mt-6">
+        {% card %}
+            <h2 id="base-title" class="mb-3 text-base font-semibold">Base commune</h2>
+            {# Figures at the bottom of their column: a label may wrap on a small screen. #}
+            <dl class="mb-4 grid grid-cols-3 gap-4">
+                <div class="flex flex-col">
+                    <dt class="text-sm text-gray-600">Publications</dt>
+                    <dd class="mt-auto text-2xl font-semibold">{{ base.publications }}</dd>
+                </div>
+                <div class="flex flex-col">
+                    <dt class="text-sm text-gray-600">Auteurs</dt>
+                    <dd class="mt-auto text-2xl font-semibold">{{ base.authors }}</dd>
+                </div>
+                <div class="flex flex-col">
+                    <dt class="text-sm text-gray-600">Citations identifiées</dt>
+                    <dd class="mt-auto text-2xl font-semibold">{{ base.citations }}</dd>
+                </div>
+            </dl>
+            <div class="flex flex-wrap gap-2">
+                {% button "Publications" url=publications_url variant="secondary" icon="article" %}
+                {% button "Auteurs" url=authors_url variant="secondary" icon="group" %}
+                {% button "Graphe" url=base_graph_url variant="secondary" icon="hub" %}
+            </div>
+        {% endcard %}
+    </section>
 {% endblock content %}

@@ -73,6 +73,8 @@ BADGE_VARIANTS = {
     "danger": "bg-red-100 text-red-800",
     "warning": "bg-amber-100 text-amber-900",
     "success": "bg-green-100 text-green-800",
+    # Nothing to see: a count of 0 aligned with the others, without drawing the eye.
+    "muted": "bg-gray-50 text-gray-500",
 }
 ALERT_BASE = "flex items-start gap-2 rounded-md border p-3 text-sm"
 ALERT_VARIANTS = {

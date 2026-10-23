@@ -427,6 +427,10 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
   que les jointures ne multiplient pas les décomptes.
+- **Accueil** (#151, `services/dashboard.py`) : connecté, un tableau de bord (mon corpus
+  et ses dernières publications ajoutées, « À faire » avec les références à identifier,
+  les conflits ouverts et les doublons probables, base commune) ; visiteur, une
+  présentation et les chiffres de la base. Nombre de requêtes constant.
 - **Mise en page fluide** (#150), la même sur tous les écrans : aucune page ne déborde
   horizontalement de 390 à 1400 px. Sur petit écran, la navigation devient une bande qui
   défile, les boutons de l'en-tête n'affichent que leur icône (`compact`), les tableaux
