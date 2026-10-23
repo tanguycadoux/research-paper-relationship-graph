@@ -54,6 +54,10 @@ export function bindViewport(cy, container) {
     const showAll = () => {
         bounds = null;
         cy.minZoom(NO_MIN_ZOOM);
+        // fit measures the nodes at their size for the current zoom (#185): once more
+        // with their size for the new zoom, so that the result is the same from any view.
+        cy.fit(undefined, MARGIN / 2);
+        cy.style().update();
         cy.fit(undefined, MARGIN / 2);
         cy.minZoom(cy.zoom());
         bounds = cy.extent();
