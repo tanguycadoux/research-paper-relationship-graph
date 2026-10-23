@@ -432,8 +432,10 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   les conflits ouverts et les doublons probables, base commune) ; visiteur, une
   présentation et les chiffres de la base. Nombre de requêtes constant.
 - **Mise en page fluide** (#150), la même sur tous les écrans : aucune page ne déborde
-  horizontalement de 390 à 1400 px. Sur petit écran, la navigation devient une bande qui
-  défile, les boutons de l'en-tête n'affichent que leur icône (`compact`), les tableaux
+  horizontalement de 390 à 1400 px. Sur petit écran, chaque groupe de la navigation
+  devient un menu (#207 : `<details name>` natifs, ouverts au toucher ou au clic, un seul
+  à la fois, fermés par un clic à l'extérieur ou Échap via `static/js/navigation.js`), les
+  boutons de l'en-tête n'affichent que leur icône (`compact`), les tableaux
   défilent dans leur carte et la colonne Identifiant est masquée sous `xl`.
 - HTML5 sémantique, validé au W3C en fin de jalon.
 
@@ -478,3 +480,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | À la sélection, zoom sur l'article et ses voisins à côté de la carte ; à la désélection, retour à la vue d'avant | Retrouver un zoom fait à la main plutôt que la vue d'ensemble ; les bornes de #141 s'élargissent le temps de la sélection, sans quoi un voisin caché sous la carte ne pourrait pas être montré (#142). |
 | 2026-10-23 | Graphe de toute la base public, publications isolées comprises, sans optimisation préalable | Même code que les autres graphes ; la base compte 53 publications. Un banc d'essai sur de grands graphes synthétiques dira où optimiser la disposition (#202), avec le graphe sans frise (#195) (#131). |
 | 2026-10-23 | Compteurs dans la navigation pour les conflits et les références à identifier, sans cache | Toujours justes après une action ; deux requêtes peu coûteuses. Les doublons probables (35 ms, 55 groupes) seraient un badge permanent (#152). |
+| 2026-10-23 | Sur petit écran, un menu par groupe de navigation, ouvert au toucher ou au clic | Le survol n'existe pas sur écran tactile ; `<details>` natifs, accessibles sans JavaScript ; la navigation est rendue deux fois (menus, barre latérale) pour garder la barre latérale indépendante du script (#207). |

@@ -1,0 +1,12 @@
+{% load ui %}
+<a href="{{ link.url }}"
+   class="{{ link.classes }}"
+   {% if link.current %}aria-current="{{ link.current }}"{% endif %}>
+    {% icon link.icon %}
+    {{ link.label }}
+    {% if link.count %}
+        {# The number is seen; screen readers read « Conflits, 2 en attente ». #}
+        <span class="ml-auto" aria-hidden="true">{% badge link.count.0|stringformat:"d" variant="warning" %}</span>
+        <span class="sr-only">, {{ link.count.0 }} {{ link.count.1 }}</span>
+    {% endif %}
+</a>
