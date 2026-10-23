@@ -22,8 +22,7 @@ function render() {
         autoungrabify: true,
         autounselectify: true,
     });
-    const showAll = bindViewport(cy, container);
-    document.querySelector("[data-graph-show-all] button").addEventListener("click", showAll);
+    bindViewport(cy, container, document.querySelector("[data-graph-show-all] button"));
     bindInteractions(cy, document.getElementById("citation-graph-card"));
     const axis = document.getElementById("citation-graph-axis");
     const hasUndated = graph.nodes.some((n) => !n.data.date);

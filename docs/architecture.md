@@ -360,7 +360,8 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   la vue ne sort jamais de cette emprise : le déplacement est ramené dans les bornes à
   chaque événement `viewport`. L'axe n'affiche donc jamais d'années vides.
   Un bouton en haut à droite du cadre y revient (#196), par le même cadrage que le
-  chargement et le redimensionnement.
+  chargement et le redimensionnement. Il est désactivé (grisé), plutôt que masqué, quand
+  la vue d'ensemble est déjà affichée : il reste visible et à sa place.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
