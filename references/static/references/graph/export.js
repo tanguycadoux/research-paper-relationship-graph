@@ -2,7 +2,7 @@
 // the year axis above it. The axis is HTML, outside the canvas of Cytoscape: its labels
 // are drawn again on the image, where the page shows them.
 
-// Twice the screen resolution, sharp enough for a slide or a report.
+// Twice the size on screen (times the pixel density), sharp enough for a slide or a report.
 const SCALE = 2;
 
 function loadImage(blob) {
@@ -44,17 +44,20 @@ async function exportImage(cy, axis, name) {
         await cy.png({ output: "blob-promise", scale: SCALE, bg: "white" }),
     );
     URL.revokeObjectURL(graph.src);
+    // cy.png also multiplies by the pixel density of the screen: the axis follows the
+    // scale of the image actually produced.
     const width = cy.width();
+    const scale = graph.width / width;
     const canvas = document.createElement("canvas");
-    canvas.width = width * SCALE;
-    canvas.height = axis.offsetHeight * SCALE + graph.height;
+    canvas.width = graph.width;
+    canvas.height = Math.round(axis.offsetHeight * scale) + graph.height;
     const context = canvas.getContext("2d");
     context.fillStyle = "white";
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.scale(SCALE, SCALE);
+    context.scale(scale, scale);
     const top = drawAxis(context, axis, width);
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.drawImage(graph, 0, top * SCALE);
+    context.drawImage(graph, 0, Math.round(top * scale));
     canvas.toBlob((blob) => download(blob, name), "image/png");
 }
 
