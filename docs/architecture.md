@@ -323,7 +323,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   publications de la base qui la citent (#186) ; celui du **corpus** montre les
   publications du corpus et ce qu'elles citent.
 - `services/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre, la date,
-  le DOI, l'ISBN, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
+  la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
   publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
   citations, auteurs par `Prefetch`).
@@ -342,22 +342,25 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
   publications sans date.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
-  les données) : `source` (la publication du graphe, ou celles du corpus), `citing` (une
-  publication qui la cite), `cited` (citée seulement, en gris neutre). Sa **taille** suit
+  les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
+  `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
+  seulement). Sa **taille** suit
   son nombre de citations dans la base (aire proportionnelle). Les couleurs sont définies
   une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
   `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
-  variables. Palette vérifiée (daltonisme, contraste) ; le vert d'eau, peu contrasté sur
-  blanc, est toujours accompagné d'un libellé. Liens droits, gris, sans flèche : une
+  variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
+  droits, gris, sans flèche : une
   publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
   ses liens.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
-- **Sélection** (#61) : un clic sur un article met en évidence ses références (liens
-  bleus) et les articles qui le citent (liens orange), estompe le reste et remplit une
-  carte d'informations HTML (`#citation-graph-card`), en bas à gauche du cadre, où la
-  disposition chronologique laisse de la place. Un double-clic ouvre la fiche ; Échap ou
+- **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
+  vert d'eau) et les articles qui le citent (nœuds orange), chaque lien dans une nuance
+  plus claire de son nœud, et estompe le reste. La carte d'informations HTML
+  (`#citation-graph-card`, en bas à gauche du cadre) est compacte (#187) : le titre est
+  le lien vers la fiche, puis la revue (lue dans la réponse stockée de Crossref ou de
+  DataCite, dans la même requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la fiche ; Échap ou
   un clic dans le vide désélectionne.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
   chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
@@ -425,3 +428,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Script du graphe en modules ES natifs, sans Node | Le code va presque doubler avec M11 ; les modules du navigateur suffisent, sans outil de construction ni dépendance (#174). |
 | 2026-10-23 | Disposition : ordre par barycentre puis simulation verticale, x restant la date | Croisements de liens divisés par près de trois sur la base réelle, sans dépendance ; fcose écarté (trois fichiers à embarquer, résultat moins prévisible) (#138). |
 | 2026-10-23 | Couleur = rôle du nœud, taille = citations, liens droits gris sans flèche | Palette validée pour le daltonisme ; une seule définition des couleurs pour Cytoscape et la légende ; la flèche surchargeait sans rien apprendre sur une frise (#139, #140). |
+| 2026-10-23 | À la sélection, les voisins prennent la couleur de leur relation, liens plus clairs que leurs nœuds ; nœuds cités en vert d'eau | Une même teinte pour un nœud et son lien ; cohérent aussi dans le graphe du corpus, où les citants sont souvent des publications du corpus (#187). |

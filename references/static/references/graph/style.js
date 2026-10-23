@@ -58,16 +58,19 @@ export function graphStyle() {
             selector: "edge.hovered",
             style: { width: 2, "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
         },
-        // Selection (#61): the publication, its references and the publications citing it.
+        // Selection (#61): the publication, its references and the publications citing it,
+        // each with the colour of its relation; edges in a lighter shade of their nodes.
         { selector: ".faded", style: { opacity: 0.15 } },
         { selector: "node.selected", style: { "border-width": 3, "border-color": "#0b0b0b" } },
+        { selector: "node.reference-node", style: { "background-color": color("cited") } },
+        { selector: "node.citing-node", style: { "background-color": color("citing") } },
         {
             selector: "edge.reference",
-            style: { width: 3, "line-color": color("reference"), opacity: 1, "z-index": 5 },
+            style: { width: 3, "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
         },
         {
             selector: "edge.citing",
-            style: { width: 3, "line-color": color("citing"), opacity: 1, "z-index": 5 },
+            style: { width: 3, "line-color": color("citing-light"), opacity: 1, "z-index": 5 },
         },
     ];
 }

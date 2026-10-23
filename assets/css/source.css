@@ -13,8 +13,10 @@
 @theme static {
     --color-graph-source: #2a78d6;
     --color-graph-citing: #eb6834;
-    --color-graph-reference: #1baf7a;
-    --color-graph-cited: #a3a29b;
+    --color-graph-cited: #179e6e;
+    /* Edges of a selection: lighter shades of the nodes they lead to. */
+    --color-graph-citing-light: #f3a485;
+    --color-graph-cited-light: #74c5a8;
     --color-graph-edge: #8a8983;
     --color-graph-edge-strong: #3f3e3b;
 }

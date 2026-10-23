@@ -1,7 +1,11 @@
-from django.db.models import Count, Prefetch, Q
+from django.db.models import CharField, Count, OuterRef, Prefetch, Q, Subquery
+from django.db.models.fields.json import KeyTextTransform, KeyTransform
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 
-from ..models import AuthorPublication, CitedReference, Publication
+from ..models import AuthorPublication, CitedReference, ExternalRecord, Publication
+from .external_records import Source
+from .publication_details import clean_text
 
 
 def publication_graph(pub):
@@ -37,7 +41,7 @@ def citation_graph(source_ids, with_citing=False):
     citing_ids = {source for source, target in edges if target in source_ids} - set(source_ids)
     publications = (
         Publication.objects.filter(pk__in=node_ids)
-        .annotate(cited_by=Count("citations"))
+        .annotate(cited_by=Count("citations"), venue=venue())
         .prefetch_related(
             Prefetch(
                 "authorpublication_set",
@@ -49,6 +53,25 @@ def citation_graph(source_ids, with_citing=False):
         "nodes": [node_data(pub, role(pub.pk, source_ids, citing_ids)) for pub in publications],
         "edges": [edge_data(source_id, target_id) for source_id, target_id in edges],
     }
+
+
+def stored_value(source, *path):
+    """A text value of the stored answer of a source, read by the database (#187)."""
+    *keys, last = path
+    value = "data"
+    for key in keys:
+        value = KeyTransform(key, value)
+    records = ExternalRecord.objects.filter(publication=OuterRef("pk"), source=source)
+    return Subquery(records.annotate(value=KeyTextTransform(last, value)).values("value")[:1])
+
+
+def venue():
+    """Journal or proceedings: Crossref, else DataCite. Read in the same query."""
+    return Coalesce(
+        stored_value(Source.CROSSREF, "message", "container-title", "0"),
+        stored_value(Source.DATACITE, "data", "attributes", "container", "title"),
+        output_field=CharField(),
+    )
 
 
 def role(pk, source_ids, citing_ids):
@@ -66,13 +89,12 @@ def node_data(pub, role):
             "id": str(pub.pk),
             "label": str(pub),
             "date": pub.publication_date.isoformat() if pub.publication_date else None,
-            "doi": pub.doi,
-            "isbn": pub.isbn,
             # « First author et al. » on the information card.
             "firstAuthor": authors[0] if authors else "",
             "authorCount": len(authors),
             "citedBy": pub.cited_by,
             "role": role,
+            "venue": clean_text(pub.venue or ""),
             "url": reverse("publication_detail", args=[pub.pk]),
         }
     }
