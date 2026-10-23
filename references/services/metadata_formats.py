@@ -50,11 +50,27 @@ def datacite_author(creator):
         for identifier in creator.get("nameIdentifiers", [])
         if identifier.get("nameIdentifierScheme") == "ORCID"
     ]
-    family = creator.get("familyName") or creator.get("name", "")
-    author = {"given": creator.get("givenName", ""), "family": family}
+    author = datacite_name(creator)
     if orcids:
         author["ORCID"] = orcids[0]
     return author
+
+
+def datacite_name(creator):
+    """
+    Given and family names of a creator. Some records only give the full name,
+    which DataCite writes "Family, Given" for a person: "Chautard,Frederic" (#159).
+    An organization keeps its name whole, as family name.
+    """
+    given = creator.get("givenName", "")
+    family = creator.get("familyName", "")
+    name = creator.get("name", "")
+    if given or family:
+        return {"given": given, "family": family or name}
+    if creator.get("nameType") != "Organizational" and name.count(",") == 1:
+        family, _, given = name.partition(",")
+        return {"given": given.strip(), "family": family.strip()}
+    return {"given": "", "family": name}
 
 
 def datacite_references(attributes):
