@@ -63,7 +63,7 @@ references/          application principale
     conflicts.py     signalement et décision des conflits entre sources
     Affichage et échanges
     publication_table.py  annotations du tableau commun (premier auteur, badges)
-    publication_details.py  informations de la fiche (revue, financeurs, licences, citations)
+    publication_details.py  informations de la fiche (revue, financeurs, licences, citations, résumé)
     graph.py         construction des données des graphes
     corpus_transfer.py  export JSON et BibTeX du corpus, import JSON
     icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
@@ -229,7 +229,9 @@ distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
 [OpenAlex](https://openalex.org) n'est pas un recours comme DataCite : il est interrogé
 pour **tous** les DOI importés, en plus de Crossref et DataCite, parce qu'il apporte autre
 chose. On y trouve les institutions avec leur identifiant ROR, des ORCID absents de
-Crossref, des identifiants d'auteurs et la date de mise en ligne. Il n'ajoute aucun
+Crossref, des identifiants d'auteurs et la date de mise en ligne, et un
+résumé pour la plupart des articles dont Crossref n'en donne pas (`abstract_inverted_index`,
+remis en texte sur la fiche, avec sa source, #157). Il n'ajoute aucun
 article : seuls ceux déjà importés (corpus et articles cités) sont complétés.
 
 - Un article : une requête unitaire (gratuite). Elle n'est enregistrée que si OpenAlex a

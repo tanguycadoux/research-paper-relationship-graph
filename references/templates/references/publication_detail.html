@@ -89,11 +89,29 @@
                 </ol>
             {% endcard %}
 
-            {% if details.abstract %}
+            {% if abstract %}
                 {% card title="Résumé" %}
-                    <div class="space-y-2 text-sm leading-relaxed">
-                        {% for paragraph in details.abstract %}<p>{{ paragraph }}</p>{% endfor %}
+                    {% if abstract.long %}
+                        {# Folded without JavaScript: the checkbox drives the clamp (#157). #}
+                        <input type="checkbox"
+                               id="abstract-toggle"
+                               class="peer sr-only"
+                               aria-label="Afficher tout le résumé">
+                    {% endif %}
+                    <div class="space-y-2 text-sm leading-relaxed {% if abstract.long %}line-clamp-6 peer-checked:line-clamp-none{% endif %}">
+                        {% for paragraph in abstract.paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
                     </div>
+                    {% if abstract.long %}
+                        <label for="abstract-toggle"
+                               class="mt-1 mb-0 inline-block cursor-pointer font-normal text-blue-700 select-none hover:underline peer-focus-visible:underline peer-checked:hidden">
+                            Lire la suite
+                        </label>
+                        <label for="abstract-toggle"
+                               class="mt-1 mb-0 hidden cursor-pointer font-normal text-blue-700 select-none hover:underline peer-focus-visible:underline peer-checked:inline-block">
+                            Réduire
+                        </label>
+                    {% endif %}
+                    <p class="mt-2 text-xs text-gray-500">Source : {{ abstract.source }}</p>
                 {% endcard %}
             {% endif %}
         </div>
@@ -144,7 +162,8 @@
                             <dt class="text-gray-500">Licences</dt>
                             {% for license in details.licenses %}
                                 <dd>
-                                    {% external_link license license class="break-all" %}
+                                    {% external_link license.url license.label %}
+                                    {% if license.versions %}<span class="text-gray-500">({{ license.versions }})</span>{% endif %}
                                 </dd>
                             {% endfor %}
                         </div>
