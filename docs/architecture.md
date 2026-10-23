@@ -427,6 +427,10 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
   que les jointures ne multiplient pas les décomptes.
+- **Mise en page fluide** (#150), la même sur tous les écrans : aucune page ne déborde
+  horizontalement de 390 à 1400 px. Sur petit écran, la navigation devient une bande qui
+  défile, les boutons de l'en-tête n'affichent que leur icône (`compact`), les tableaux
+  défilent dans leur carte et la colonne Identifiant est masquée sous `xl`.
 - HTML5 sémantique, validé au W3C en fin de jalon.
 
 ## Journal des décisions
