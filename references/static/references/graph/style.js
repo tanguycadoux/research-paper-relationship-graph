@@ -1,6 +1,7 @@
 // Look of the graph (#139, #140). The colours are defined once, as Tailwind theme
 // variables in assets/css/source.css (--color-graph-*), shared with the HTML legend.
-// The role of a node (source, citing, cited) gives its colour; its number of citations
+// The role of a node (source, citing, cited, or other on the graph of the base, #131)
+// gives its colour, the colour of cited by default; its number of citations
 // in the base gives its size. Sizes are given on the screen (#185): zooming spreads the
 // nodes out instead of enlarging them, which separates publications close in date.
 

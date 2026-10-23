@@ -1,0 +1,12 @@
+{% extends "references/base.html" %}
+
+{% block title %}Graphe de la base · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6">
+        <h1>Graphe de la base</h1>
+        <p class="mt-1 text-gray-600">Toutes les publications de la base commune et leurs citations.</p>
+    </header>
+
+    {% include "references/_citation_graph.html" %}
+{% endblock content %}

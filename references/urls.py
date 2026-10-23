@@ -40,6 +40,7 @@ urlpatterns = [
         name="publication_refresh",
     ),
     path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
+    path("graph/", graphs.base_graph_view, name="base_graph"),
     path(
         "publications/<int:pk>/references/import/",
         publications.import_publication_references,

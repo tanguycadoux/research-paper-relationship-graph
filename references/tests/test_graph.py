@@ -1,6 +1,7 @@
 import datetime
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
 from django.urls import reverse
 
@@ -12,7 +13,7 @@ from references.models import (
     UserPublication,
 )
 from references.services.external_records import Source, store_record
-from references.services.graph import corpus_graph, publication_graph
+from references.services.graph import base_graph, corpus_graph, publication_graph
 
 
 class CitationGraphTests(TestCase):
@@ -151,3 +152,62 @@ class CitationGraphTests(TestCase):
         alone = Publication.objects.create(title="Seule")
         response = self.client.get(reverse("publication_graph", args=[alone.pk]))
         self.assertContains(response, "Aucune citation identifiée")
+
+
+class BaseGraphTests(TestCase):
+    """The graph of the whole base (#131)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.source = Publication.objects.create(title="Source")
+        cls.cited = Publication.objects.create(title="Cité")
+        cls.alone = Publication.objects.create(title="Seule")
+        CitedReference.objects.create(source=cls.source, target=cls.cited, position=0)
+        CitedReference.objects.create(source=cls.source, position=1, unstructured="Sans DOI")
+        cls.user = get_user_model().objects.create_user("dave")
+        UserPublication.objects.create(user=cls.user, publication=cls.cited)
+
+    def roles(self, graph):
+        return {node["data"]["label"]: node["data"]["role"] for node in graph["nodes"]}
+
+    def test_every_publication_and_every_resolved_citation(self):
+        graph = base_graph(AnonymousUser())
+        # Publications without identified citations are shown too.
+        self.assertEqual(set(self.roles(graph)), {"Source", "Cité", "Seule"})
+        self.assertEqual(
+            [(e["data"]["source"], e["data"]["target"]) for e in graph["edges"]],
+            [(str(self.source.pk), str(self.cited.pk))],
+        )
+
+    def test_the_corpus_of_the_user_stands_out(self):
+        self.assertEqual(
+            self.roles(base_graph(self.user)),
+            {"Source": "other", "Cité": "source", "Seule": "other"},
+        )
+        self.assertEqual(set(self.roles(base_graph(AnonymousUser())).values()), {"other"})
+
+    def test_query_count_does_not_depend_on_size(self):
+        with self.assertNumQueries(3):
+            base_graph(AnonymousUser())
+        # And the corpus of the user.
+        with self.assertNumQueries(4):
+            base_graph(self.user)
+
+    def test_a_publication_citing_another_twice_gives_one_edge(self):
+        CitedReference.objects.create(source=self.source, target=self.cited, position=2)
+        self.assertEqual(len(base_graph(AnonymousUser())["edges"]), 1)
+        self.assertEqual(len(publication_graph(self.source)["edges"]), 1)
+
+    def test_page_is_public(self):
+        response = self.client.get(reverse("base_graph"))
+        self.assertContains(response, 'id="citation-graph-data"')
+        self.assertContains(response, 'data-graph-export="graphe-base"')
+        self.assertContains(response, "Publication de la base")
+        self.assertNotContains(response, "Publication de mon corpus")
+        self.assertNotContains(response, "Publication qui la cite")
+
+    def test_legend_with_a_corpus(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("base_graph"))
+        self.assertContains(response, "Publication de mon corpus")
+        self.assertContains(response, "Autre publication de la base")

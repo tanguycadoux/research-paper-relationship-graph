@@ -22,6 +22,29 @@ def corpus_graph(user):
     return citation_graph(source_ids)
 
 
+def base_graph(user):
+    """
+    Graph of the whole base (#131), publications without identified citations
+    included: the corpus of a logged-in user stands out (source), the others are
+    plain publications of the base (other).
+    """
+    corpus_ids = (
+        set(user.userpublication_set.values_list("publication_id", flat=True))
+        if user.is_authenticated
+        else set()
+    )
+    edges = list(
+        CitedReference.objects.filter(target__isnull=False)
+        .values_list("source_id", "target_id")
+        # Without the default ordering, whose position would make duplicates distinct.
+        .order_by()
+        .distinct()
+    )
+    return elements(
+        Publication.objects.all(), edges, lambda pk: "source" if pk in corpus_ids else "other"
+    )
+
+
 def citation_graph(source_ids, with_citing=False):
     """
     Return the graph as Cytoscape.js elements: one node per publication, one edge
@@ -34,23 +57,32 @@ def citation_graph(source_ids, with_citing=False):
     edges = list(
         CitedReference.objects.filter(links, target__isnull=False)
         .values_list("source_id", "target_id")
+        # Without the default ordering, whose position would make duplicates distinct.
+        .order_by()
         .distinct()
     )
     node_ids = set(source_ids) | {pk for edge in edges for pk in edge}
     # Publications that cite a source without being one (#139: their own colour).
     citing_ids = {source for source, target in edges if target in source_ids} - set(source_ids)
-    publications = (
-        Publication.objects.filter(pk__in=node_ids)
-        .annotate(cited_by=Count("citations"), venue=venue())
-        .prefetch_related(
-            Prefetch(
-                "authorpublication_set",
-                queryset=AuthorPublication.objects.select_related("author").order_by("order"),
-            )
+    return elements(
+        Publication.objects.filter(pk__in=node_ids),
+        edges,
+        lambda pk: role(pk, source_ids, citing_ids),
+    )
+
+
+def elements(publications, edges, role_of):
+    """The nodes of the publications, with the role role_of gives each, and the edges."""
+    publications = publications.annotate(
+        cited_by=Count("citations"), venue=venue()
+    ).prefetch_related(
+        Prefetch(
+            "authorpublication_set",
+            queryset=AuthorPublication.objects.select_related("author").order_by("order"),
         )
     )
     return {
-        "nodes": [node_data(pub, role(pub.pk, source_ids, citing_ids)) for pub in publications],
+        "nodes": [node_data(pub, role_of(pub.pk)) for pub in publications],
         "edges": [edge_data(source_id, target_id) for source_id, target_id in edges],
     }
 

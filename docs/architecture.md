@@ -319,14 +319,19 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
 
 **Décision : le serveur fournit les données, le navigateur dessine.**
 
-- Deux graphes : celui d'une **publication** montre ses références identifiées et les
+- Trois graphes : celui d'une **publication** montre ses références identifiées et les
   publications de la base qui la citent (#186) ; celui du **corpus** montre les
-  publications du corpus et ce qu'elles citent.
+  publications du corpus et ce qu'elles citent ; celui de **la base** (#131, `/graph/`,
+  public comme la liste des publications) montre toutes les publications, y compris
+  celles sans citation identifiée, et toutes les citations identifiées. Les publications
+  du corpus de la personne connectée y sont en bleu (`source`), les autres en vert d'eau
+  (`other`). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
+  la position rendait distinctes deux citations d'une même publication.
 - `services/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre, la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
   publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
-  citations, auteurs par `Prefetch`).
+  citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
@@ -459,3 +464,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | À la sélection, les voisins prennent la couleur de leur relation, liens plus clairs que leurs nœuds ; nœuds cités en vert d'eau | Une même teinte pour un nœud et son lien ; cohérent aussi dans le graphe du corpus, où les citants sont souvent des publications du corpus (#187). |
 | 2026-10-23 | Nœuds, liens et libellés de taille fixe à l'écran ; hauteur de la disposition ramenée au cadre, même comprimée | Sur une frise, zoomer doit écarter les publications tassées, pas les grossir ; à taille fixe, un dézoom ne séparait plus rien et perdait de la largeur (#185). |
 | 2026-10-23 | À la sélection, zoom sur l'article et ses voisins à côté de la carte ; à la désélection, retour à la vue d'avant | Retrouver un zoom fait à la main plutôt que la vue d'ensemble ; les bornes de #141 s'élargissent le temps de la sélection, sans quoi un voisin caché sous la carte ne pourrait pas être montré (#142). |
+| 2026-10-23 | Graphe de toute la base public, publications isolées comprises, sans optimisation préalable | Même code que les autres graphes ; la base compte 53 publications. Un banc d'essai sur de grands graphes synthétiques dira où optimiser la disposition (#202), avec le graphe sans frise (#195) (#131). |

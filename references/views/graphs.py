@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
 from ..models import Publication
-from ..services.graph import corpus_graph, publication_graph
+from ..services.graph import base_graph, corpus_graph, publication_graph
 
 
 def pub_graph(request, pk):
@@ -15,3 +15,9 @@ def pub_graph(request, pk):
 def my_refs_graph(request):
     context = {"graph": corpus_graph(request.user), "graph_kind": "corpus"}
     return render(request, "references/user_references_graph.html", context)
+
+
+def base_graph_view(request):
+    """The whole base, for everyone, like the list of publications (#131)."""
+    context = {"graph": base_graph(request.user), "graph_kind": "base"}
+    return render(request, "references/base_graph.html", context)
