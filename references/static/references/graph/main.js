@@ -22,8 +22,9 @@ function render() {
         autoungrabify: true,
         autounselectify: true,
     });
-    bindViewport(cy, container, document.querySelector("[data-graph-show-all] button"));
-    bindInteractions(cy, document.getElementById("citation-graph-card"));
+    const showAllButton = document.querySelector("[data-graph-show-all] button");
+    const allowView = bindViewport(cy, container, showAllButton);
+    bindInteractions(cy, document.getElementById("citation-graph-card"), allowView);
     const axis = document.getElementById("citation-graph-axis");
     const hasUndated = graph.nodes.some((n) => !n.data.date);
     const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);
