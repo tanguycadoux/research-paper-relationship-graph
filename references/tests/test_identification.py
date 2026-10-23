@@ -44,6 +44,7 @@ class ManualResolutionSurvivesReimportTests(IdentificationTestCase):
         self.assertEqual(ref.resolved_by, self.user)
         self.assertIsNotNone(ref.resolved_at)
         self.assertEqual(str(pub.publication_date), "2016-01-01")
+        self.assertEqual(pub.formatted_publication_date, "2016")
 
     def test_kept_by_crossref_key(self):
         pub = identification.identify_without_identifier(

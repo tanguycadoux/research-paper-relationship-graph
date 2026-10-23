@@ -58,7 +58,11 @@ def identify_by_isbn(ref, isbn, user):
 def identify_without_identifier(ref, title, year, user):
     """Create a publication without identifier from the reference, and link it."""
     with transaction.atomic():
-        pub = Publication.objects.create(title=title, publication_date=year_to_date(year))
+        pub = Publication.objects.create(
+            title=title,
+            publication_date=year_to_date(year),
+            publication_date_precision=Publication.DatePrecision.YEAR,
+        )
         resolve(ref, pub, user)
     return pub
 

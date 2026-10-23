@@ -8,6 +8,7 @@ from django.urls import reverse
 from references.models import Author, CitedReference, Publication
 from references.services.books import import_book_metadata
 from references.services.parser import parse_publication
+from references.services.publication_edits import restore_source_values
 from references.tests.helpers import crossref_record, with_crossref, without_other_sources
 
 
@@ -62,6 +63,16 @@ class KeptCorrectionsTests(ManualEditsTestCase):
         self.assertContains(detail, "date.")
         parse_publication(self.pub)
         self.assertEqual(self.pub.publication_date, date(2019, 6, 15))
+
+    def test_date_typed_by_hand_is_shown_to_the_day(self):
+        """#147: the source only gives the year; a date typed by hand is a full date."""
+        detail = reverse("publication_detail", args=[self.pub.pk])
+        self.assertContains(self.client.get(detail), "<dd>2020</dd>", html=True)
+        self.edit(publication_date="2019-06-15")
+        self.assertContains(self.client.get(detail), "<dd>15 juin 2019</dd>", html=True)
+        restore_source_values(self.pub)
+        self.pub.refresh_from_db()
+        self.assertEqual(self.pub.formatted_publication_date, "2020")
 
     def test_an_emptied_title_is_filled_again_by_the_source(self):
         self.edit(title="Titre corrigé")
