@@ -5,6 +5,10 @@
              class="relative h-7 shrink-0 overflow-hidden border-b border-gray-100 text-xs text-gray-500"
              aria-hidden="true"></div>
         <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des citations"></div>
+        {# Back to the view on load (#196), top right under the axis (2.5rem: axis and margin). #}
+        <div data-graph-show-all class="absolute top-10 right-3">
+            {% button "Revenir à la vue d'ensemble" variant="secondary" icon="fit_screen" icon_only=True type="button" %}
+        </div>
         {% comment %}
             Filled by graph/selection.js with the selected publication (#61). Bottom left: the
             nodes run from top left (oldest) to bottom right (newest), that corner stays empty.

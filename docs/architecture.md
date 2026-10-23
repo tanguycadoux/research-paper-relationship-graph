@@ -73,7 +73,7 @@ references/          application principale
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphe, en modules ES (main, scale, layout, axis, selection, style)
+  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, axis, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/
@@ -355,6 +355,13 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   droits, gris, sans flèche : une
   publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
   ses liens.
+- **Vue** (#141, `viewport.js`) : la vue d'ensemble (tout le graphe dans le cadre, avec
+  une petite marge) est le zoom minimal, recalculé quand le cadre change de taille, et
+  la vue ne sort jamais de cette emprise : le déplacement est ramené dans les bornes à
+  chaque événement `viewport`. L'axe n'affiche donc jamais d'années vides.
+  Un bouton en haut à droite du cadre y revient (#196), par le même cadrage que le
+  chargement et le redimensionnement. Il est désactivé (grisé), plutôt que masqué, quand
+  la vue d'ensemble est déjà affichée : il reste visible et à sa place.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
@@ -367,6 +374,7 @@ collection…). On corrige alors par fusion ou par correction d'auteur.
   un clic dans le vide désélectionne.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
   chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
+  `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran),
   `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
   et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
