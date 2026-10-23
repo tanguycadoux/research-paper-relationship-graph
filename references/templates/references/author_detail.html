@@ -64,6 +64,21 @@
             </section>
         {% endif %}
 
+        {% if merges %}
+            <section aria-labelledby="author-merges-title">
+                <h2 id="author-merges-title" class="mb-3">Fusions</h2>
+                <ul class="space-y-1 text-sm text-gray-700">
+                    {% for merge in merges %}
+                        <li>
+                            <time datetime="{{ merge.merged_at|date:'Y-m-d\TH:i:sO' }}">{{ merge.merged_at|date:"j F Y" }}</time> :
+                            {{ merge.absorbed_names }}
+                            <span class="text-gray-500">({{ merge.get_reason_display }}, {% if merge.merged_by %}par {{ merge.merged_by }}{% else %}automatique{% endif %})</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+
         <section aria-labelledby="author-publications-title">
             <h2 id="author-publications-title" class="mb-3">
                 Publications <span class="font-normal text-gray-500">({{ publications|length }})</span>
