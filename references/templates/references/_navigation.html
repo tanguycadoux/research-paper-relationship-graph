@@ -1,6 +1,7 @@
 {% load ui %}
+{# select-none: a tap on a menu or a link never selects its text. #}
 <nav aria-label="Navigation principale"
-     class="relative border-b border-gray-200 bg-white md:w-60 md:shrink-0 md:border-r md:border-b-0">
+     class="relative border-b border-gray-200 bg-white select-none md:w-60 md:shrink-0 md:border-r md:border-b-0">
     {% comment %}
         Below md (#207): one menu per group, opening under the bar on its whole width (a
         panel under the last button would leave the screen). Only one is open at a time
