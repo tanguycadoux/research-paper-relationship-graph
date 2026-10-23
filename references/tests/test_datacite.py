@@ -100,6 +100,27 @@ class DataciteMessageTests(SimpleTestCase):
         self.assertEqual(message["author"][1], {"given": "", "family": "CERN"})
         self.assertEqual(message["reference"], [{"key": "datacite-0", "DOI": "10.1000/cited"}])
 
+    def test_full_name_only_is_split(self):
+        """#159: JACoW records on DataCite only give "Family,Given"."""
+        creators = [
+            {"name": "Chautard,Frederic"},
+            {"name": "Chautard, Jean", "nameType": "Personal"},
+            {"name": "University of California, Berkeley", "nameType": "Organizational"},
+            {"name": "Chautard Meghan"},
+            {"name": "A, B, C"},
+        ]
+        record = {"data": {"attributes": {"creators": creators}}}
+        self.assertEqual(
+            datacite_message(record)["author"],
+            [
+                {"given": "Frederic", "family": "Chautard"},
+                {"given": "Jean", "family": "Chautard"},
+                {"given": "", "family": "University of California, Berkeley"},
+                {"given": "", "family": "Chautard Meghan"},
+                {"given": "", "family": "A, B, C"},
+            ],
+        )
+
 
 @without_openalex
 @patch("references.services.importer.fetch_datacite_json", return_value=JACOW)
