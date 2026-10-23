@@ -1,6 +1,7 @@
 // Selection of a publication (#61): its references and the publications citing it
 // stand out, each with the colour of its relation (nodes and edges), and the compact
-// information card describes it (#187).
+// information card describes it (#187); the view zooms on them beside the card, and goes
+// back on deselection (#142).
 
 function fillCard(card, data, referenceCount, citingCount) {
     const field = (name) => card.querySelector(`[data-card="${name}"]`);
@@ -32,7 +33,8 @@ function clearSelection(cy, card) {
 }
 
 // An edge goes from the citing publication to the cited one.
-function selectNode(cy, node, card) {
+// focus: what bindFocus returns.
+function selectNode(cy, node, card, focus) {
     clearSelection(cy, card);
     const references = node.outgoers("edge");
     const citing = node.incomers("edge");
@@ -44,9 +46,15 @@ function selectNode(cy, node, card) {
     citing.addClass("citing");
     citing.sources().not(node).addClass("citing-node");
     fillCard(card, node.data(), references.length, citing.length);
+    focus.show(kept.union(citing.sources()).nodes());
 }
 
-export function bindInteractions(cy, card) {
+function deselect(cy, card, focus) {
+    clearSelection(cy, card);
+    focus.release();
+}
+
+export function bindInteractions(cy, card, focus) {
     // Hovering a publication shows its title and darkens its edges.
     cy.on("mouseover", "node[url]", (event) => {
         event.target.addClass("hovered");
@@ -56,10 +64,10 @@ export function bindInteractions(cy, card) {
         event.target.removeClass("hovered");
         event.target.connectedEdges().removeClass("hovered");
     });
-    cy.on("tap", "node[url]", (event) => selectNode(cy, event.target, card));
+    cy.on("tap", "node[url]", (event) => selectNode(cy, event.target, card, focus));
     cy.on("tap", (event) => {
         if (event.target === cy) {
-            clearSelection(cy, card);
+            deselect(cy, card, focus);
         }
     });
     cy.on("dbltap", "node[url]", (event) => {
@@ -67,10 +75,10 @@ export function bindInteractions(cy, card) {
     });
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
-            clearSelection(cy, card);
+            deselect(cy, card, focus);
         }
     });
     card.querySelector("[data-card-close] button").addEventListener("click", () =>
-        clearSelection(cy, card),
+        deselect(cy, card, focus),
     );
 }
