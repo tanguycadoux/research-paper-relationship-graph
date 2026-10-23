@@ -71,8 +71,9 @@
         @apply focus:border-blue-600 focus:outline-2 focus:outline-blue-600/30;
     }
 
+    /* As wide as the other fields: narrower, Chrome cuts its text (« Aucun fi…er choisi »). */
     input[type="file"] {
-        @apply block text-sm file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5;
+        @apply block w-full max-w-xl text-sm file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5;
     }
 
     input[type="checkbox"],
