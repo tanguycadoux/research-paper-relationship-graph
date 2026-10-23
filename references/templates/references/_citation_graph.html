@@ -20,22 +20,34 @@
                 </h2>
                 <div data-card-close>{% button "Fermer la carte" variant="secondary" icon="close" icon_only=True type="button" %}</div>
             </div>
-            <p class="mt-1 text-gray-500" data-card="venue"></p>
-            <dl class="mt-3 grid grid-cols-2 gap-x-4">
+            {# Author and year speak for themselves: their labels are for screen readers. #}
+            <dl class="mt-2 grid grid-cols-2 gap-x-4">
                 <div data-card-row="authors">
-                    <dt class="text-gray-500">Premier auteur</dt>
+                    <dt class="sr-only">Premier auteur</dt>
                     <dd data-card="authors"></dd>
                 </div>
                 <div data-card-row="year">
-                    <dt class="text-gray-500">Année</dt>
+                    <dt class="sr-only">Année</dt>
                     <dd data-card="year"></dd>
                 </div>
             </dl>
-            <p class="mt-3 text-gray-600">
-                <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="references"></span>
-                · <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span><span data-card="citing"></span>
-                dans ce graphe · <span data-card="cited-by"></span>
-            </p>
+            <p class="mt-1 text-gray-500" data-card="venue"></p>
+            <p class="mt-3 text-xs font-medium tracking-wide text-gray-500 uppercase">Dans ce graphe</p>
+            <dl class="mt-1 grid grid-cols-2 gap-x-4">
+                <div>
+                    <dt class="sr-only">Références</dt>
+                    <dd>
+                        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="references"></span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="sr-only">Citants</dt>
+                    <dd>
+                        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span><span data-card="citing"></span>
+                    </dd>
+                </div>
+            </dl>
+            <p class="mt-2 text-gray-600" data-card="cited-by"></p>
         </section>
     </div>
     {# Same colours as graph/style.js: the --color-graph-* theme variables (#139). #}
