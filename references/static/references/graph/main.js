@@ -2,6 +2,7 @@
 // Entry point, loaded as an ES module after cytoscape.min.js (global `cytoscape`).
 
 import { drawYearAxis } from "./axis.js";
+import { bindFocus } from "./focus.js";
 import { placeNodes } from "./layout.js";
 import { makeScale, yearRange } from "./scale.js";
 import { bindInteractions } from "./selection.js";
@@ -23,8 +24,9 @@ function render() {
         autounselectify: true,
     });
     const showAllButton = document.querySelector("[data-graph-show-all] button");
-    const allowView = bindViewport(cy, container, showAllButton);
-    bindInteractions(cy, document.getElementById("citation-graph-card"), allowView);
+    const viewport = bindViewport(cy, container, showAllButton);
+    const card = document.getElementById("citation-graph-card");
+    bindInteractions(cy, card, bindFocus(cy, card, viewport));
     const axis = document.getElementById("citation-graph-axis");
     const hasUndated = graph.nodes.some((n) => !n.data.date);
     const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);
