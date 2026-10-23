@@ -26,6 +26,61 @@ class PublicationFormTests(TestCase):
         self.assertFalse(Publication.objects.exists())
 
 
+class PublicationIdentifierTests(TestCase):
+    """#145: identifiers are normalized before the uniqueness check."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.existing = Publication.objects.create(
+            doi="10.1109/tasc.2023.1", isbn="9780262035613", title="Existante"
+        )
+
+    def test_doi_is_normalized(self):
+        form = PublicationForm({"doi": "https://doi.org/10.1000/ABC"})
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["doi"], "10.1000/abc")
+
+    def test_invalid_doi_is_refused(self):
+        form = PublicationForm({"doi": "pas un doi"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("doi", form.errors)
+
+    def test_known_doi_in_another_form_is_refused_with_a_link(self):
+        for doi in ("10.1109/tasc.2023.1", "https://doi.org/10.1109/TASC.2023.1"):
+            with self.subTest(doi=doi):
+                form = PublicationForm({"doi": doi})
+                self.assertFalse(form.is_valid())
+                self.assertEqual(len(form.errors["doi"]), 1)
+                error = form.errors["doi"][0]
+                self.assertIn("Une publication avec ce DOI existe déjà", error)
+                self.assertIn(reverse("publication_detail", args=[self.existing.pk]), error)
+
+    def test_known_isbn_is_refused_with_a_link(self):
+        form = PublicationForm({"isbn": "0-262-03561-8"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("Une publication avec cet ISBN existe déjà", form.errors["isbn"][0])
+
+    def test_a_publication_keeps_its_own_identifiers(self):
+        data = {"doi": "https://doi.org/10.1109/TASC.2023.1", "isbn": "0-262-03561-8"}
+        self.assertTrue(PublicationForm(data, instance=self.existing).is_valid())
+
+    def test_creation_page_answers_a_known_doi_without_error_500(self):
+        self.client.force_login(get_user_model().objects.create_user("alice"))
+        response = self.client.post(
+            reverse("publication_create"), {"doi": "https://doi.org/10.1109/TASC.2023.1"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Une publication avec ce DOI existe déjà")
+        self.assertContains(
+            response, f'href="{reverse("publication_detail", args=[self.existing.pk])}"'
+        )
+        self.assertEqual(Publication.objects.count(), 1)
+
+    def test_labels_are_in_french(self):
+        labels = [field.label for field in PublicationForm()]
+        self.assertEqual(labels, ["DOI", "ISBN", "Titre", "Date de publication"])
+
+
 class ListViewsTests(TestCase):
     def test_publications_are_listed_newest_first_undated_last(self):
         Publication.objects.create(title="Ancien", publication_date=date(2000, 1, 1))
