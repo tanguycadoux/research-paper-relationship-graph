@@ -15,6 +15,26 @@ function keepFitted(cy, container) {
     }).observe(container);
 }
 
+// Sizes in the style are divided by the zoom (#185): they are evaluated again when the
+// zoom changes, at most once per frame, so that zooming stays smooth on large graphs.
+function keepScreenSize(cy) {
+    let zoom = cy.zoom();
+    let pending = false;
+    // The layout has already fitted the graph to the frame.
+    cy.style().update();
+    cy.on("viewport", () => {
+        if (pending || cy.zoom() === zoom) {
+            return;
+        }
+        pending = true;
+        requestAnimationFrame(() => {
+            pending = false;
+            zoom = cy.zoom();
+            cy.style().update();
+        });
+    });
+}
+
 function render() {
     const container = document.getElementById("citation-graph");
     const graph = JSON.parse(document.getElementById("citation-graph-data").textContent);
@@ -29,6 +49,7 @@ function render() {
         autoungrabify: true,
         autounselectify: true,
     });
+    keepScreenSize(cy);
     bindInteractions(cy, document.getElementById("citation-graph-card"));
     const axis = document.getElementById("citation-graph-axis");
     const hasUndated = graph.nodes.some((n) => !n.data.date);

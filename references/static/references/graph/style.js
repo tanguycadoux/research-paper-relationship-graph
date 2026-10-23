@@ -1,13 +1,24 @@
 // Look of the graph (#139, #140). The colours are defined once, as Tailwind theme
 // variables in assets/css/source.css (--color-graph-*), shared with the HTML legend.
 // The role of a node (source, citing, cited) gives its colour; its number of citations
-// in the base gives its size.
+// in the base gives its size. Sizes are given on the screen (#185): zooming spreads the
+// nodes out instead of enlarging them, which separates publications close in date.
 
 const MIN_SIZE = 14;
 const MAX_SIZE = 32;
 
 function color(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(`--color-graph-${name}`).trim();
+}
+
+// A length in pixels on the screen, whatever the zoom. Cytoscape evaluates it again when
+// the style is updated (keepScreenSize in main.js).
+function onScreen(pixels) {
+    return (element) => pixels / element.cy().zoom();
+}
+
+function nodeSize(node) {
+    return node.data("size") / node.cy().zoom();
 }
 
 // Area proportional to the number of citations: the diameter follows its square root.
@@ -21,11 +32,11 @@ export function graphStyle() {
         {
             selector: "node",
             style: {
-                width: "data(size)",
-                height: "data(size)",
+                width: nodeSize,
+                height: nodeSize,
                 "background-color": color("cited"),
                 // A ring of the surface colour separates overlapping nodes.
-                "border-width": 2,
+                "border-width": onScreen(2),
                 "border-color": "white",
             },
         },
@@ -35,10 +46,10 @@ export function graphStyle() {
             selector: "node.hovered",
             style: {
                 label: "data(label)",
-                "font-size": 12,
+                "font-size": onScreen(12),
                 color: "#0b0b0b",
                 "text-wrap": "wrap",
-                "text-max-width": 300,
+                "text-max-width": onScreen(300),
                 "text-background-color": "white",
                 "text-background-opacity": 0.9,
                 "z-index": 10,
@@ -48,7 +59,7 @@ export function graphStyle() {
         {
             selector: "edge",
             style: {
-                width: 1.25,
+                width: onScreen(1.25),
                 "line-color": color("edge"),
                 opacity: 0.85,
                 "curve-style": "straight",
@@ -56,21 +67,21 @@ export function graphStyle() {
         },
         {
             selector: "edge.hovered",
-            style: { width: 2, "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
+            style: { width: onScreen(2), "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
         },
         // Selection (#61): the publication, its references and the publications citing it,
         // each with the colour of its relation; edges in a lighter shade of their nodes.
         { selector: ".faded", style: { opacity: 0.15 } },
-        { selector: "node.selected", style: { "border-width": 3, "border-color": "#0b0b0b" } },
+        { selector: "node.selected", style: { "border-width": onScreen(3), "border-color": "#0b0b0b" } },
         { selector: "node.reference-node", style: { "background-color": color("cited") } },
         { selector: "node.citing-node", style: { "background-color": color("citing") } },
         {
             selector: "edge.reference",
-            style: { width: 3, "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
+            style: { width: onScreen(3), "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
         },
         {
             selector: "edge.citing",
-            style: { width: 3, "line-color": color("citing-light"), opacity: 1, "z-index": 5 },
+            style: { width: onScreen(3), "line-color": color("citing-light"), opacity: 1, "z-index": 5 },
         },
     ];
 }

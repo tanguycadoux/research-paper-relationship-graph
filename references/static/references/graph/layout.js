@@ -120,8 +120,9 @@ function separateClose(ys, close, startYs, sizes) {
 
 // Linked publications attract each other; a publication moves away from the edges that
 // pass over it; publications close in date push each other apart, last, so that nodes
-// never overlap. The result is stretched to the available height, never squeezed: a
-// taller graph is shown whole by zooming out.
+// never overlap. The result is scaled to the available height, squeezed if needed: nodes
+// keep their size on the screen (#185), so zooming out would not separate them either,
+// and would lose width; nodes squeezed together are separated by zooming in.
 export function verticalPositions(xs, startYs, sizes, links, top, bottom) {
     const ys = [...startYs];
     const close = closePairs(xs);
@@ -133,9 +134,9 @@ export function verticalPositions(xs, startYs, sizes, links, top, bottom) {
     }
     const min = Math.min(...ys);
     const span = Math.max(...ys) - min;
-    const stretch = span > 0 ? Math.max(1, (bottom - top) / span) : 1;
+    const ratio = span > 0 ? (bottom - top) / span : 1;
     const offset = span > 0 ? top : (top + bottom) / 2;
-    return ys.map((y) => offset + (y - min) * stretch);
+    return ys.map((y) => offset + (y - min) * ratio);
 }
 
 export function placeNodes(nodes, edges, scale) {
