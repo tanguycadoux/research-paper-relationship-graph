@@ -1,4 +1,6 @@
 from django import forms
+from django.urls import reverse
+from django.utils.html import format_html
 
 from .models import Author, Publication
 from .services.doi import is_valid_doi, normalize_doi
@@ -13,6 +15,7 @@ class PublicationForm(forms.ModelForm):
     class Meta:
         model = Publication
         fields = ["doi", "isbn", "title", "publication_date"]
+        labels = {"doi": "DOI", "title": "Titre", "publication_date": "Date de publication"}
         widgets = {
             # <input type="date"> needs ISO dates, whatever the locale.
             "publication_date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
@@ -30,11 +33,32 @@ class PublicationForm(forms.ModelForm):
             raise forms.ValidationError("Indiquez au moins un DOI, un ISBN ou un titre.")
         return cleaned_data
 
+    def clean_doi(self):
+        # Normalized here, not only in Publication.save(): the uniqueness check
+        # must compare normalized values (#145).
+        doi = normalize_doi(self.cleaned_data["doi"])
+        if doi and not is_valid_doi(doi):
+            raise forms.ValidationError("Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
+        self.check_not_taken("doi", doi, "Une publication avec ce DOI existe déjà")
+        return doi
+
     def clean_isbn(self):
         isbn = normalize_isbn(self.cleaned_data["isbn"])
         if isbn and not is_valid_isbn(isbn):
             raise forms.ValidationError("Veuillez entrer un ISBN-10 ou ISBN-13 valide.")
+        self.check_not_taken("isbn", isbn, "Une publication avec cet ISBN existe déjà")
         return isbn
+
+    def check_not_taken(self, field, value, message):
+        """Refuse an identifier held by another publication, with a link to it."""
+        if not value:
+            return
+        existing = Publication.objects.filter(**{field: value}).exclude(pk=self.instance.pk)
+        if other := existing.first():
+            url = reverse("publication_detail", args=[other.pk])
+            raise forms.ValidationError(
+                format_html('{} : <a href="{}">{}</a>.', message, url, other)
+            )
 
 
 class AuthorChoiceField(forms.ModelMultipleChoiceField):
