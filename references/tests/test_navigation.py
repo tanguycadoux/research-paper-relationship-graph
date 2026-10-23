@@ -30,7 +30,8 @@ class MainNavigationTests(TestCase):
     def current_link(self, path, current):
         user = get_user_model().objects.create_user(f"user{path.count('/')}{len(path)}")
         html = render_navigation(path, user)
-        self.assertEqual(html.count("aria-current"), 1)
+        # Once in the menus of a small screen, once in the sidebar (#207).
+        self.assertEqual(html.count("aria-current"), 2)
         return html.split(f'aria-current="{current}"')[1].split("</a>")[0]
 
     def test_current_page(self):
@@ -44,6 +45,21 @@ class MainNavigationTests(TestCase):
         self.assertIn("Publications", html)
         self.assertNotIn("Mes références", html)
         self.assertNotIn("Conflits", html)
+
+    def test_one_menu_per_group_on_a_small_screen(self):
+        user = get_user_model().objects.create_user("gina")
+        html = render_navigation("/authors/merge/", user)
+        self.assertEqual(html.count('<details name="navigation"'), 3)
+        # The menu of the current page stands out.
+        menus = html.split("<summary")[1:]
+        current = [
+            menu for menu in menus if "bg-gray-100 font-semibold" in menu.split("</summary>")[0]
+        ]
+        self.assertEqual(len(current), 1)
+        self.assertIn("Corrections", current[0].split("</summary>")[0])
+
+    def test_a_single_group_keeps_its_links_in_view(self):
+        self.assertNotIn("<details", render_navigation("/", AnonymousUser()))
 
     def test_graph_of_the_base_and_of_the_corpus(self):
         # Two graphs (#131): /corpus/graph/ does not start with /graph/.
@@ -86,6 +102,12 @@ class NavigationCounterTests(TestCase):
             '<span class="sr-only">, 1 à identifier</span>', self.link(html, "Mes références")
         )
         self.assertIn('<span class="sr-only">, 1 en attente</span>', self.link(html, "Conflits"))
+
+    def test_the_menu_of_a_group_shows_the_total_of_its_counters(self):
+        html = render_navigation("/", self.user)
+        corpus_menu = html.split("<summary")[1].split("</summary>")[0]
+        self.assertIn("Mon corpus", corpus_menu)
+        self.assertIn('<span class="sr-only">, 1 à traiter</span>', corpus_menu)
 
     def test_nothing_at_zero(self):
         html = render_navigation("/", self.user)

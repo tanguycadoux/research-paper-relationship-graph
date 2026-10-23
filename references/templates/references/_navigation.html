@@ -1,24 +1,48 @@
 {% load ui %}
 <nav aria-label="Navigation principale"
-     class="flex gap-1 overflow-x-auto border-b border-gray-200 bg-white px-3 py-2 md:block md:w-60 md:shrink-0 md:overflow-visible md:border-r md:border-b-0 md:py-4">
-    {% for title, links in groups %}
-        <p class="hidden px-2 pb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase md:block">{{ title }}</p>
-        <ul class="flex gap-1 md:block md:space-y-0.5 {% if not forloop.last %}md:mb-4{% endif %}">
-            {% for link in links %}
-                <li>
-                    <a href="{{ link.url }}"
-                       class="{{ link.classes }}"
-                       {% if link.current %}aria-current="{{ link.current }}"{% endif %}>
-                        {% icon link.icon %}
-                        {{ link.label }}
-                        {% if link.count %}
-                            {# The number is seen; screen readers read « Conflits, 2 en attente ». #}
-                            <span class="ml-auto" aria-hidden="true">{% badge link.count.0|stringformat:"d" variant="warning" %}</span>
-                            <span class="sr-only">, {{ link.count.0 }} {{ link.count.1 }}</span>
+     class="relative border-b border-gray-200 bg-white md:w-60 md:shrink-0 md:border-r md:border-b-0">
+    {% comment %}
+        Below md (#207): one menu per group, opening under the bar on its whole width (a
+        panel under the last button would leave the screen). Only one is open at a time
+        (name); js/navigation.js closes it on a click outside or Escape. A single group,
+        for a visitor, keeps its links in view.
+    {% endcomment %}
+    <div class="flex gap-0.5 overflow-x-auto px-2 py-2 md:hidden">
+        {% if groups|length == 1 %}
+            <ul class="flex gap-1">
+                {% for link in groups.0.links %}
+                    <li>{% include "references/_navigation_link.html" %}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            {% for group in groups %}
+                <details name="navigation" class="group" data-nav-menu>
+                    <summary class="{{ group.classes }}">
+                        {{ group.title }}
+                        {% if group.count %}
+                            <span aria-hidden="true">{% badge group.count|stringformat:"d" variant="warning" %}</span>
+                            <span class="sr-only">, {{ group.count }} à traiter</span>
                         {% endif %}
-                    </a>
-                </li>
+                        {% icon "expand_more" class="size-4 shrink-0 transition-transform group-open:rotate-180" %}
+                    </summary>
+                    <ul class="absolute inset-x-3 top-full z-20 mt-1 space-y-0.5 rounded-lg border border-gray-200 bg-white p-2 shadow-lg">
+                        {% for link in group.links %}
+                            <li>{% include "references/_navigation_link.html" %}</li>
+                        {% endfor %}
+                    </ul>
+                </details>
             {% endfor %}
-        </ul>
-    {% endfor %}
+        {% endif %}
+    </div>
+    {# From md: the groups follow each other in the sidebar. #}
+    <div class="hidden px-3 py-4 md:block">
+        {% for group in groups %}
+            <p class="px-2 pb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">{{ group.title }}</p>
+            <ul class="space-y-0.5 {% if not forloop.last %}mb-4{% endif %}">
+                {% for link in group.links %}
+                    <li>{% include "references/_navigation_link.html" %}</li>
+                {% endfor %}
+            </ul>
+        {% endfor %}
+    </div>
 </nav>

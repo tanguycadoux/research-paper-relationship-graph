@@ -2,7 +2,8 @@
 The main navigation: {% load navigation %}{% main_navigation %}. The current link is
 the one whose URL is the longest prefix of the page path: « Publications » on a
 publication, « Combiner des auteurs » on a merge confirmation. Some links count what
-waits for an action (#152): « Conflits, 2 en attente ».
+waits for an action (#152): « Conflits, 2 en attente ». Below md, each group is a menu
+(#207); from md, the groups follow each other in a sidebar.
 """
 
 from django import template
@@ -49,6 +50,11 @@ COUNTERS = {
 LINK_BASE = (
     "relative flex items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-sm no-underline"
 )
+# The button of a menu, tighter than a link: three of them fit in 390 px (#207).
+MENU_BASE = (
+    "relative flex cursor-pointer list-none items-center gap-1 whitespace-nowrap rounded-md "
+    "px-1.5 py-1.5 text-sm [&::-webkit-details-marker]:hidden"
+)
 LINK_CURRENT = "bg-gray-100 font-semibold text-gray-900"
 LINK_OTHER = "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
 
@@ -70,24 +76,32 @@ def main_navigation(context):
     ]
     path = context["request"].path
     current = current_url([url for _, links in groups for _, url, _, _ in links], path)
+    return {"groups": [navigation_group(title, links, current, path) for title, links in groups]}
+
+
+def navigation_group(title, links, current, path):
+    """
+    A group with its links. On a small screen, a group is a menu (#207): it stands out
+    when it holds the current page, and shows the total of its counters.
+    """
+    links = [
+        {
+            "label": label,
+            "url": url,
+            "icon": icon,
+            "current": ("page" if url == path else "true") if url == current else "",
+            "classes": f"{LINK_BASE} {LINK_CURRENT if url == current else LINK_OTHER}",
+            "count": count,
+        }
+        for label, url, icon, count in links
+    ]
+    holds_current = any(link["current"] for link in links)
     return {
-        "groups": [
-            (
-                title,
-                [
-                    {
-                        "label": label,
-                        "url": url,
-                        "icon": icon,
-                        "current": ("page" if url == path else "true") if url == current else "",
-                        "classes": f"{LINK_BASE} {LINK_CURRENT if url == current else LINK_OTHER}",
-                        "count": count,
-                    }
-                    for label, url, icon, count in links
-                ],
-            )
-            for title, links in groups
-        ]
+        "title": title,
+        "links": links,
+        "current": holds_current,
+        "classes": f"{MENU_BASE} {LINK_CURRENT if holds_current else LINK_OTHER}",
+        "count": sum(link["count"][0] for link in links if link["count"]),
     }
 
 
