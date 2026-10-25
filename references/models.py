@@ -104,6 +104,8 @@ class ExternalRecord(models.Model):
         OPENALEX = "openalex", "OpenAlex"
         OPENLIBRARY = "openlibrary", "Open Library"
         ORCID = "orcid", "ORCID"
+        # The LaTeX bibliography of an arXiv preprint, not its metadata (#227).
+        ARXIV = "arxiv", "arXiv"
 
     publication = models.ForeignKey(
         Publication, on_delete=models.CASCADE, related_name="external_records"

@@ -40,6 +40,11 @@ def is_arxiv(doi):
     return doi.lower().startswith(ARXIV_PREFIX)
 
 
+def arxiv_id(doi):
+    """1706.03762 for 10.48550/arXiv.1706.03762."""
+    return doi[len(ARXIV_PREFIX) :]
+
+
 def declared_version(datacite_data):
     """The DOI of the published version that an arXiv record declares, or None."""
     attributes = (datacite_data or {}).get("data", {}).get("attributes", {})
@@ -152,3 +157,22 @@ def merge_into_published(preprint, published):
         published.preprint_doi = arxiv_doi
         published.save()
     return published
+
+
+# What the page of an arXiv preprint says about its bibliography.
+BIBLIOGRAPHY_NOT_FETCHED = "not_fetched"
+BIBLIOGRAPHY_PDF_ONLY = "pdf"
+BIBLIOGRAPHY_NOT_FOUND = "none"
+BIBLIOGRAPHY_FOUND = "found"
+
+
+def arxiv_bibliography(pub):
+    """Where the bibliography of an arXiv preprint stands; None for another publication."""
+    if not is_arxiv(pub.doi):
+        return None
+    record = pub.external_records.filter(source=Source.ARXIV, data__isnull=False).first()
+    if record is None:
+        return BIBLIOGRAPHY_NOT_FETCHED
+    if record.data.get("source") == "pdf":
+        return BIBLIOGRAPHY_PDF_ONLY
+    return BIBLIOGRAPHY_FOUND if record.data.get("entries") else BIBLIOGRAPHY_NOT_FOUND

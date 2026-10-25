@@ -14,6 +14,7 @@ from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
 from ..services.importer import import_publication
 from ..services.organizations import numbered_affiliations
+from ..services.preprints import BIBLIOGRAPHY_NOT_FETCHED, arxiv_bibliography
 from ..services.publication_details import crossref_details, publication_abstract
 from ..services.publication_edits import (
     identifier_changed,
@@ -72,6 +73,16 @@ class PublicationDetailView(DetailView):
         ).order_by("-publication_date", "title")
         context["metadata_status"] = metadata_status(pub)
         context["references_available"] = references_available(pub)
+        context["arxiv_bibliography"] = arxiv_bibliography(pub)
+        # The bibliography of a preprint is fetched by the same action (#227).
+        context["can_import_references"] = (
+            self.request.user.is_authenticated
+            and not context["cited_references"]
+            and (
+                context["references_available"]
+                or context["arxiv_bibliography"] == BIBLIOGRAPHY_NOT_FETCHED
+            )
+        )
         context["references_to_identify"] = sum(
             1 for ref in context["cited_references"] if is_to_identify(ref)
         )
