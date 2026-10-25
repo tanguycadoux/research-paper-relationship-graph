@@ -7,6 +7,7 @@ from ..forms import IdentifyReferenceForm
 from ..models import CitedReference, Publication
 from ..services import candidates, identification
 from ..services.doi import is_valid_doi, normalize_doi
+from ..services.doi_registration import is_unregistered_doi, unregistered_message
 from ..services.external_records import Source
 from ..services.metadata_formats import bibliography_source
 
@@ -90,19 +91,14 @@ def initial_values(ref):
     }
 
 
-ACM_PSEUDO_DOI_PREFIX = "10.5555/"
-
-
 def refuse_unregistered_doi(form):
     """Put an error on the DOI field if doi.org does not know it (#240); return True then."""
     data = form.cleaned_data
     if data["method"] != IdentifyReferenceForm.METHOD_DOI:
         return False
-    if not identification.is_unregistered_doi(data["doi"]):
+    if not is_unregistered_doi(data["doi"]):
         return False
-    message = "Ce DOI n'est enregistré nulle part (doi.org ne le connaît pas)."
-    if data["doi"].startswith(ACM_PSEUDO_DOI_PREFIX):
-        message += " Les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des DOI."
+    message = unregistered_message(data["doi"])
     form.add_error("doi", message + " Sans DOI, identifiez-la « Sans identifiant ».")
     return True
 

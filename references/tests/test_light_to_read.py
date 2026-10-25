@@ -8,6 +8,7 @@ from django.urls import reverse
 from references.models import CitedReference, Publication, UserPublication
 from references.services.corpus import add_to_corpus, change_reading_status
 from references.services.corpus_transfer import EXPORT_FORMAT, import_corpus
+from references.tests.helpers import without_doi_org
 
 TO_READ = UserPublication.ReadingStatus.TO_READ
 READ = UserPublication.ReadingStatus.READ
@@ -17,6 +18,7 @@ def imported(pub, **_):
     return pub
 
 
+@without_doi_org
 @patch("references.services.corpus.import_publication", side_effect=imported)
 class LightToReadTests(TestCase):
     """A publication « à lire » enters the corpus without its bibliography (#234)."""
@@ -121,6 +123,7 @@ class LightToReadTests(TestCase):
         self.assertEqual(self.entry().reading_status, READ)
 
 
+@without_doi_org
 @patch("references.services.corpus.import_publication", side_effect=imported)
 class ImportAsToReadTests(TestCase):
     """The box « importer comme à lire » of the file import (#234)."""

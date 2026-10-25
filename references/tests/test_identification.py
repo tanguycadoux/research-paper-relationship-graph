@@ -7,9 +7,9 @@ from django.urls import reverse
 from references.forms import IdentifyReferenceForm
 from references.models import CitedReference, Publication, UserPublication
 from references.services import identification
-from references.services.doi import is_registered
 from references.services.parser import parse_publication
 from references.tests.helpers import (
+    doi_org_answers,
     with_crossref,
     without_candidate_search,
     without_other_sources,
@@ -152,7 +152,7 @@ class UnregisteredDoiTests(IdentificationTestCase):
 
     def post_doi(self, doi, registered):
         self.client.force_login(self.user)
-        with patch("references.services.identification.is_registered", return_value=registered):
+        with doi_org_answers(registered):
             return self.client.post(
                 reverse("reference_identify", args=[self.source.pk, 0]),
                 {"method": "doi", "doi": doi},
@@ -161,7 +161,7 @@ class UnregisteredDoiTests(IdentificationTestCase):
     def test_unregistered_doi_is_refused(self, _fetch):
         response = self.post_doi(self.ACM_DOI, registered=False)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Ce DOI n&#x27;est enregistré nulle part")
+        self.assertContains(response, "n&#x27;est enregistré nulle part")
         self.assertContains(response, "ACM Digital Library")
         self.assertIsNone(self.ref(0).target)
         self.assertFalse(Publication.objects.filter(doi=self.ACM_DOI).exists())
@@ -170,31 +170,6 @@ class UnregisteredDoiTests(IdentificationTestCase):
         response = self.post_doi("10.1000/ghost", registered=None)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.ref(0).target.doi, "10.1000/ghost")
-
-    def test_doi_of_the_base_is_not_checked(self, _fetch):
-        known = Publication.objects.create(doi="10.1000/known", title="Connue")
-        existing = with_crossref(known, {"message": {}})
-        with patch("references.services.identification.is_registered") as registered:
-            self.assertFalse(identification.is_unregistered_doi("10.1000/known"))
-        registered.assert_not_called()
-        self.post_doi("10.1000/known", registered=False)
-        self.assertEqual(self.ref(0).target, existing)
-
-    def test_empty_publication_of_the_base_does_not_vouch_for_its_doi(self, _fetch):
-        Publication.objects.create(doi=self.ACM_DOI)  # left by a former identification
-        self.post_doi(self.ACM_DOI, registered=False)
-        self.assertIsNone(self.ref(0).target)
-
-
-@patch("references.services.doi.get_json")
-class IsRegisteredTests(TestCase):
-    def test_answers_of_doi_org(self, get_json):
-        get_json.return_value = [{"DOI": "10.1038/nature14539", "RA": "Crossref"}]
-        self.assertTrue(is_registered("10.1038/nature14539"))
-        get_json.return_value = [{"DOI": "10.5555/x", "status": "DOI does not exist"}]
-        self.assertFalse(is_registered("10.5555/x"))
-        get_json.return_value = None
-        self.assertIsNone(is_registered("10.5555/x"))
 
 
 class OrphanTargetTests(IdentificationTestCase):

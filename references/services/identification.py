@@ -10,7 +10,6 @@ from django.utils import timezone
 
 from ..models import Publication
 from .books import find_or_import_book
-from .doi import is_registered
 from .external_records import has_metadata
 from .importer import import_publication
 
@@ -45,18 +44,6 @@ def identify_by_doi(ref, doi, user):
     pub = imported or pub
     resolve(ref, pub, user)
     return pub, bool(imported)
-
-
-def is_unregistered_doi(doi):
-    """
-    A DOI that doi.org says does not exist, and that no publication of the base with
-    metadata carries: linking it would leave an empty publication (#240). When
-    doi.org cannot answer, the DOI is accepted.
-    """
-    known = Publication.objects.with_doi(doi).first()
-    if known is not None and has_metadata(known):
-        return False
-    return is_registered(doi) is False
 
 
 def identify_by_isbn(ref, isbn, user):
