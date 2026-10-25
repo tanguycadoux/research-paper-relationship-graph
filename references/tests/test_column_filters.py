@@ -82,6 +82,9 @@ class PublicationColumnFilterTests(TestCase):
         self.assertContains(response, 'aria-label="Filtrer la colonne Titre (filtre actif)"')
         self.assertContains(response, 'aria-label="Filtrer la colonne Auteurs"')
         self.assertRegex(response.content.decode(), r'name="title"\s+value="electron"')
+        # The cursor goes to the field when the panel opens, without a click.
+        self.assertRegex(response.content.decode(), r'id="filter-title-value"\s+autofocus')
+        self.assertRegex(response.content.decode(), r'id="filter-year-from"\s+autofocus')
         # The form of another column keeps this filter and the sort.
         self.assertContains(response, '<input type="hidden" name="title" value="electron">')
         self.assertContains(response, '<input type="hidden" name="sort" value="title">')
