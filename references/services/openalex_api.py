@@ -72,6 +72,34 @@ def work_dois(work):
     return list(dict.fromkeys(doi for doi in dois if doi))
 
 
+# What the list of citing works shows: the authorships are needed for the first author.
+CITING_FIELDS = "id,doi,display_name,publication_year,publication_date,authorships,cited_by_count"
+
+
+def fetch_citing_works(work_id, sort, count):
+    """
+    The first count works citing an OpenAlex work ('W2741809807'), in the order of
+    sort ('cited_by_count:desc'). Return (total, works), or None if the request
+    failed. A filtered list: it uses the daily budget (#163).
+    """
+    params = {
+        "filter": f"cites:{work_id}",
+        "sort": sort,
+        "per-page": count,
+        "select": CITING_FIELDS,
+    } | contact_params()
+    data = http.get_json(
+        OPENALEX_WORKS_URL,
+        params=params,
+        service="OpenAlex",
+        subject=f"works citing {work_id}",
+        contact=settings.CROSSREF_MAILTO,
+    )
+    if data is None:
+        return None
+    return (data.get("meta") or {}).get("count", 0), data.get("results") or []
+
+
 def contact_params():
     mailto = settings.CROSSREF_MAILTO
     return {"mailto": mailto} if mailto else {}

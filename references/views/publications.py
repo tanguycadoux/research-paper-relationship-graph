@@ -9,7 +9,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
 from ..models import CitedReference, Publication, UserPublication
-from ..services import filters, tags
+from ..services import filters, incoming_citations, tags
 from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
 from ..services.importer import import_publication
@@ -79,6 +79,7 @@ class PublicationDetailView(DetailView):
                 pk__in=CitedReference.objects.filter(target=pub).values("source")
             )
         ).order_by("-publication_date", "title")
+        context |= incoming_citations_context(self.request, pub)
         context["metadata_status"] = metadata_status(pub)
         context["references_available"] = references_available(pub)
         context["arxiv_bibliography"] = arxiv_bibliography(pub)
@@ -108,6 +109,21 @@ class PublicationDetailView(DetailView):
             .order_by("order")
         )
         return context
+
+
+def incoming_citations_context(request, pub):
+    """Beyond the base, according to OpenAlex, once someone asked (#163)."""
+    citations = getattr(pub, "incoming_citations", None)
+    order = request.GET.get("citants", "")
+    order = order if order in incoming_citations.ORDERS else "citees"
+    return {
+        "incoming_citations": citations,
+        "citing_order": order,
+        "citing_orders": incoming_citations.ORDERS,
+        "citing_works": (
+            incoming_citations.citing_works(citations, request.user, order) if citations else []
+        ),
+    }
 
 
 class PublicationCreateView(LoginRequiredMixin, CreateView):
@@ -208,3 +224,20 @@ def import_publication_references(request, pk):
     else:
         messages.error(request, f"Impossible de récupérer les métadonnées de « {pub} ».")
     return redirect("publication_detail", pk=pub.pk)
+
+
+@login_required
+@require_POST
+def fetch_incoming_citations(request, pk):
+    """Ask OpenAlex for the works that cite a publication (#163)."""
+    pub = get_object_or_404(Publication, pk=pk)
+    try:
+        citations = incoming_citations.fetch(pub)
+    except incoming_citations.IncomingCitationsError as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(
+            request,
+            f"OpenAlex recense {citations.total} publication(s) qui citent « {pub} ».",
+        )
+    return redirect(reverse("publication_detail", args=[pub.pk]) + "#incoming-title")

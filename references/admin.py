@@ -6,6 +6,7 @@ from .models import (
     AuthorMerge,
     CitedReference,
     ExternalRecord,
+    IncomingCitations,
     MetadataConflict,
     OrcidRecord,
     Organization,
@@ -98,3 +99,9 @@ class MetadataConflictAdmin(admin.ModelAdmin):
 class OrcidRecordAdmin(admin.ModelAdmin):
     list_display = ("orcid", "fetched_at", "search_fetched_at")
     search_fields = ("orcid",)
+
+
+@admin.register(IncomingCitations)
+class IncomingCitationsAdmin(admin.ModelAdmin):
+    list_display = ("publication", "total", "fetched_at")
+    list_select_related = ("publication",)

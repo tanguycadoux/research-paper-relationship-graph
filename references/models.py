@@ -454,3 +454,23 @@ class MetadataConflict(models.Model):
     def is_informative(self):
         """Nothing to accept: the conflict can only be acknowledged."""
         return self.kind in (self.Kind.AUTHORS_MISMATCH, self.Kind.SHARED_ORCID)
+
+
+class IncomingCitations(models.Model):
+    """
+    The works that cite a publication according to OpenAlex (#163), fetched on demand
+    from its page: the most cited and the most recent, not all of them. Shown as
+    suggestions; none becomes a Publication until someone adds it.
+    """
+
+    publication = models.OneToOneField(
+        Publication, on_delete=models.CASCADE, related_name="incoming_citations"
+    )
+    # Every citing work known to OpenAlex, beyond those kept.
+    total = models.PositiveIntegerField()
+    # [{openalex, doi, title, year, date, first_author, author_count, cited_by}]
+    works = models.JSONField(default=list, blank=True)
+    fetched_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"{self.publication} – {self.total} citation(s) selon OpenAlex"

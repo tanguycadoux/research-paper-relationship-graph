@@ -42,6 +42,11 @@ urlpatterns = [
         publications.trigger_import_publication,
         name="publication_refresh",
     ),
+    path(
+        "publications/<int:pk>/incoming-citations/",
+        publications.fetch_incoming_citations,
+        name="publication_incoming_citations",
+    ),
     path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
     path("graph/", graphs.base_graph_view, name="base_graph"),
     path(

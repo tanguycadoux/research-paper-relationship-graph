@@ -84,11 +84,12 @@ def add_to_user_refs(request, pk):
 @login_required
 @require_POST
 def add_publication_to_user_refs_by_identifier(request):
+    """From the corpus page, or from a work citing a publication (#163), with next."""
     identifier = request.POST.get("identifier", "")
     doi = normalize_doi(identifier)
     if is_valid_doi(doi) and is_unregistered_doi(doi):
         messages.error(request, f"{unregistered_message(doi)} Rien n'a été ajouté.")
-        return redirect("corpus")
+        return back_or_corpus(request)
     pub = find_or_create(doi=identifier, isbn=identifier)
     if pub is None:
         messages.error(
@@ -96,9 +97,16 @@ def add_publication_to_user_refs_by_identifier(request):
             "Veuillez entrer un DOI (de la forme 10.xxxx/…) ou un ISBN valide "
             "(10 ou 13 chiffres, avec ou sans tirets).",
         )
-        return redirect("corpus")
+        return back_or_corpus(request)
 
     add_and_report(request, pub, requested_status(request))
+    return back_or_corpus(request)
+
+
+def back_or_corpus(request):
+    next_url = request.POST.get("next", "")
+    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return redirect(next_url)
     return redirect("corpus")
 
 

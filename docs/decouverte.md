@@ -28,3 +28,30 @@ la moins citée.
   d'ajout sont ceux des autres tableaux (« à lire », puis « + »).
 - **Accès** : la navigation (« Mon corpus › Suggestions ») et le bouton « Suggestions »
   de « Mes références », qui garde le tag filtré.
+
+## Citations entrantes
+
+Section « Cité dans toute la littérature » de la fiche d'une publication avec DOI
+(`services/incoming_citations.py`, modèle `IncomingCitations`, #163). « Cité par » ne
+voit que les bibliographies importées dans la base ; OpenAlex connaît les publications
+qui citent celle-ci partout (`GET /works?filter=cites:W…`).
+
+- **À la demande seulement** : un bouton de la fiche (connecté), jamais à l'import. Un
+  article ancien peut avoir des milliers de citants, et chaque liste filtrée consomme le
+  budget quotidien gratuit d'OpenAlex (environ 1 000 requêtes par jour et par adresse IP,
+  sans clé).
+- **Deux requêtes au plus** : les 25 plus citées (`PER_ORDER`), puis les 25 plus récentes
+  si les premières ne sont pas toutes les citantes. Le total vient de `meta.count`. L'id
+  OpenAlex de la publication vient de sa réponse OpenAlex stockée, sinon d'une recherche
+  par DOI, gratuite.
+- **Cache** : la réponse résumée est gardée en base avec sa date ; « Relancer la
+  recherche » la remplace. Ce n'est pas le cache HTTP de développement (`http.py`) : c'est
+  une donnée affichée, qui doit tenir en production. Si OpenAlex ne répond pas, rien
+  n'est remplacé.
+- **Pas de `Publication` créée** pour un citant : le tableau les montre (les plus citées
+  ou les plus récentes, `?citants=`) ; un citant déjà dans la base renvoie à sa fiche,
+  marqué s'il est dans le corpus. Les boutons d'ajout passent par son DOI
+  (`corpus_add_by_identifier`, avec `next`) : la publication n'est créée qu'à ce
+  moment. Un citant sans DOI renvoie à OpenAlex, sans ajout possible.
+- OpenAlex peut avoir deux fiches pour un même article (prépublication et version
+  publiée) : elles apparaissent telles quelles.
