@@ -13,9 +13,11 @@ from django.utils import timezone
 from ..models import Publication, UserPublication
 from .corpus import add_identified, find_or_create, with_reading_status
 from .external_records import Source, records_by_source
+from .tags import InvalidTag, tag_entry, tags_by_publication
 
 EXPORT_FORMAT = "research-paper-relationship-graph/corpus"
-# Version 2 adds the reading status (#164) as an optional key: version 1 still imports.
+# Version 2 adds the reading status (#164) and the tags (#130) as optional keys:
+# version 1 still imports.
 EXPORT_VERSION = 2
 IMPORTED_VERSIONS = (1, 2)
 
@@ -33,13 +35,21 @@ def exportable(publications):
 
 
 def export_corpus(user):
+    publications = exportable(with_reading_status(corpus_publications(user), user))
+    tags = tags_by_publication(user, publications)
     return {
         "format": EXPORT_FORMAT,
         "version": EXPORT_VERSION,
         "exported_at": timezone.now().isoformat(),
         "publications": [
-            {"doi": pub.doi, "isbn": pub.isbn, "title": pub.title, "status": pub.reading_status}
-            for pub in exportable(with_reading_status(corpus_publications(user), user))
+            {
+                "doi": pub.doi,
+                "isbn": pub.isbn,
+                "title": pub.title,
+                "status": pub.reading_status,
+                "tags": [tag.name for tag in tags[pub.pk]],
+            }
+            for pub in publications
         ],
     }
 
@@ -64,11 +74,11 @@ def import_corpus(user, data, default_status=""):
 
 def import_entries(user, entries, default_status=""):
     """
-    Add the publications of entries ({doi, isbn, title}, and status from an export)
-    to the corpus of user, the new ones with default_status when an entry has none:
-    « à lire » leaves the bibliographies aside (#234). Only publications without stored metadata
-    are fetched from the external sources. The status of an entry never replaces one
-    the user chose.
+    Add the publications of entries ({doi, isbn, title}, and status and tags from an
+    export) to the corpus of user, the new ones with default_status when an entry has
+    none: « à lire » leaves the bibliographies aside (#234). Only publications without
+    stored metadata are fetched from the external sources. The status of an entry
+    never replaces one the user chose; its tags are added to those of the user.
     """
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
@@ -92,7 +102,19 @@ def import_entries(user, entries, default_status=""):
             else:
                 report.without_metadata.append(pub)
         keep_status(user, pub, file_status)
+        add_tags(user, pub, entry.get("tags"))
     return report
+
+
+def add_tags(user, pub, names):
+    entry = UserPublication.objects.filter(user=user, publication=pub).first()
+    if entry is None or not isinstance(names, list):
+        return
+    for name in filter(lambda name: isinstance(name, str), names):
+        try:
+            tag_entry(entry, name)
+        except InvalidTag:
+            pass
 
 
 def keep_status(user, pub, status):
@@ -132,10 +154,11 @@ def corpus_bibtex(user):
     publications = exportable(
         corpus_publications(user).prefetch_related("authorpublication_set__author")
     )
-    return "\n".join(bibtex_entry(pub, keys) for pub in publications)
+    tags = tags_by_publication(user, publications)
+    return "\n".join(bibtex_entry(pub, keys, tags[pub.pk]) for pub in publications)
 
 
-def bibtex_entry(pub, keys):
+def bibtex_entry(pub, keys, tags=()):
     crossref = (records_by_source(pub).get(Source.CROSSREF) or {}).get("message", {})
     entry_type = ENTRY_TYPES.get(crossref.get("type"), "book" if pub.isbn else "misc")
     fields = {
@@ -144,6 +167,8 @@ def bibtex_entry(pub, keys):
         "year": str(pub.publication_date.year) if pub.publication_date else "",
         "doi": pub.doi,
         "isbn": pub.isbn,
+        # Zotero reads « Projet A/Groupe A » as one tag.
+        "keywords": ", ".join(bibtex_escape(tag.name) for tag in tags),
     }
     venue = next(iter(crossref.get("container-title", [])), "")
     if entry_type in VENUE_FIELDS:

@@ -45,6 +45,7 @@ references/          application principale
     Import et analyse
     importer.py      orchestration : récupération puis analyse
     corpus.py        ajout au corpus par DOI ou ISBN (import avec les références)
+    tags.py          tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre et filtre
     parser.py        réponse de la source vers les modèles
     titles.py        nettoyage des titres (entités HTML, balisage JATS)
     latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
@@ -124,6 +125,8 @@ correction.
 erDiagram
     User ||--o{ UserPublication : "corpus"
     Publication ||--o{ UserPublication : ""
+    User ||--o{ Tag : "tags"
+    UserPublication }o--o{ Tag : "classée par"
     Publication ||--o{ CitedReference : "cite"
     CitedReference }o--o| Publication : "résolue en (facultatif)"
     Publication ||--o{ AuthorPublication : ""
@@ -140,7 +143,8 @@ erDiagram
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
 | `OrcidRecord` | Ce qu'ORCID a répondu sur une personne, stocké tel quel : l'enregistrement public (noms, résumé des travaux, `data`), demandé depuis la fiche auteur, et les noms donnés par la recherche groupée (`search_data`, `{}` si ORCID ne connaît pas la personne), chacun avec sa date. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
-| `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi). |
+| `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi), et ses tags. |
+| `Tag` | Un tag d'un utilisateur, hiérarchique : son nom est un chemin, « Projet A/Groupe A », dont les parents existent implicitement. Unique par utilisateur, casse ignorée ; un tag qui ne classe plus aucune publication est oublié. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
 
 **Décision : les corrections sont communes à tous les utilisateurs.** Les publications,
@@ -682,3 +686,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Import de fichiers BibTeX et RIS sans dépendance, par une lecture tolérante des seuls identifiants | Le DOI, l'identifiant arXiv (champ `eprint`, ou écrit dans le journal comme chez Google Scholar) et l'ISBN suffisent ; le reste vient des sources. Une entrée illisible ou sans identifiant est listée dans le rapport, jamais devinée (#165). |
 | 2026-10-25 | Statut de lecture : un champ de choix sur `UserPublication`, vide par défaut ; filtre et tri par une sous-requête | Un statut sert à filtrer, trier et compter, ce qu'un tag libre ne permet pas ; « à lire » par défaut serait faux pour les publications déjà lues. Filtrer à nouveau sur `userpublication__` joindrait les entrées de tous les utilisateurs. Export JSON en version 2, la version 1 s'importe toujours ; un statut importé ne remplace jamais celui qu'on a choisi (#164). |
 | 2026-10-25 | Publication « à lire » ajoutée au corpus sans sa bibliographie, importée quand le statut change | Une liste de lecture ne doit pas remplir la base commune ni le compteur « à identifier » (un article de physique : 100 références, 88 publications créées) ; l'ajout sans statut reste complet, c'est le flux principal. Revenir à « à lire » ne supprime rien : les références appartiennent à la base commune (#234). |
+| 2026-10-25 | Tags hiérarchiques propres à chaque utilisateur, chemins séparés par « / », parents implicites ; filtre par les badges et la carte « Tags », sans colonne | Un article peut servir plusieurs projets et un groupe différent dans chacun ; « : » sert déjà aux opérateurs de recherche. Un jugement par projet (« Projet B/Écarté ») reste une convention : un vrai modèle de projet seulement si le besoin apparaît. Une colonne de plus faisait déborder le tableau (#130). |

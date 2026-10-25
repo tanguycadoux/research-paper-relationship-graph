@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from django.db.models import F, Q
 
 from ..models import UserPublication
+from . import tags
 from .search import Normalized, author_named, contains
 
 YEAR = re.compile(r"^\d{4}$")
@@ -90,6 +91,28 @@ class ChoiceFilter:
 
     def describe(self, value):
         return self.choices[value][0].lower()
+
+
+class TagFilter:
+    """
+    A tag of the user's corpus, its descendants included (#130). No column: the tag
+    badges and the list of tags of my references set it.
+    """
+
+    kind = "tag"
+    params = ("tag",)
+
+    def __init__(self, user):
+        self.user = user
+
+    def read(self, data, errors):
+        return data.get("tag", "").strip() or None
+
+    def apply(self, queryset, value):
+        return queryset.filter(tags.tagged(self.user, value))
+
+    def describe(self, value):
+        return f"« {tags.label(value)} »"
 
 
 @dataclass
@@ -175,6 +198,12 @@ CORPUS = Filters(
         )
     }
 )
+
+
+def corpus_filters(user):
+    """My references: the columns of CORPUS, and the tags of the user."""
+    return Filters(CORPUS.columns | {"tag": ("Tag", TagFilter(user))})
+
 
 AUTHORS = Filters(
     {

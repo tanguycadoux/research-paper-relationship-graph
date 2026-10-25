@@ -45,8 +45,8 @@ class ExportTests(TestCase):
         self.assertEqual(
             data["publications"],
             [
-                {"doi": "10.1000/a", "isbn": "", "title": "Article", "status": ""},
-                {"doi": "", "isbn": "9780262035613", "title": "Livre", "status": ""},
+                {"doi": "10.1000/a", "isbn": "", "title": "Article", "status": "", "tags": []},
+                {"doi": "", "isbn": "9780262035613", "title": "Livre", "status": "", "tags": []},
             ],
         )
 

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models, transaction
+from django.db.models.functions import Lower
 from django.utils.formats import date_format
 
 from .services.doi import normalize_doi
@@ -346,6 +347,32 @@ class CitedReference(models.Model):
         return " ".join(filter(None, [". ".join(filter(None, [title, source])), year]))
 
 
+class Tag(models.Model):
+    """
+    A tag of a user, to organize their corpus (#130). Hierarchical: the name is a
+    path, « Projet A/Groupe A », whose parents exist implicitly (services/tags.py).
+    """
+
+    SEPARATOR = "/"
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField("nom", max_length=200)
+
+    class Meta:
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(Lower("name"), "user", name="unique_tag_per_user"),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def label(self):
+        """« Projet A › Groupe A »."""
+        return " › ".join(self.name.split(self.SEPARATOR))
+
+
 class UserPublication(models.Model):
     """A publication in the corpus of a user."""
 
@@ -361,6 +388,7 @@ class UserPublication(models.Model):
     reading_status = models.CharField(
         "statut de lecture", max_length=10, choices=ReadingStatus.choices, blank=True
     )
+    tags = models.ManyToManyField(Tag, blank=True, related_name="entries")
 
     class Meta:
         constraints = [

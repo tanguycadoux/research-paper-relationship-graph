@@ -64,6 +64,9 @@
                 <p class="text-sm text-gray-600">Connectez-vous pour enregistrer cette publication.</p>
             {% endif %}
         </div>
+        {% if belongs_to_user %}
+            {% include "references/_entry_tags.html" %}
+        {% endif %}
         {% if metadata_status == "missing" %}
             {% if user.is_authenticated and publication.doi %}
                 {% alert "Les métadonnées de cette publication n'ont pas encore été récupérées : « Rafraîchir les métadonnées » interroge les sources." variant="warning" %}
