@@ -13,6 +13,7 @@ from ..services import filters, tags
 from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
 from ..services.importer import import_publication
+from ..services.jacow import is_jacow
 from ..services.organizations import numbered_affiliations
 from ..services.preprints import BIBLIOGRAPHY_NOT_FETCHED, arxiv_bibliography
 from ..services.publication_details import crossref_details, publication_abstract
@@ -82,6 +83,7 @@ class PublicationDetailView(DetailView):
         context["references_available"] = references_available(pub)
         context["arxiv_bibliography"] = arxiv_bibliography(pub)
         context["version_proposal"] = proposal_message(pub)
+        context["uncertain_author_order"] = is_jacow(pub.doi)
         # The bibliography of a preprint is fetched by the same action (#227).
         context["can_import_references"] = (
             self.request.user.is_authenticated
