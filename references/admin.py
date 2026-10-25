@@ -56,7 +56,8 @@ class CitedReferenceAdmin(admin.ModelAdmin):
 
 @admin.register(UserPublication)
 class UserPublicationAdmin(admin.ModelAdmin):
-    list_display = ("pk", "user", "publication", "added_at")
+    list_display = ("pk", "user", "publication", "added_at", "reading_status")
+    list_filter = ("reading_status",)
     list_select_related = ("user", "publication")
 
 

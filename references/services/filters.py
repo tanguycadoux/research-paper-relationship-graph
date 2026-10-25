@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 
 from django.db.models import F, Q
 
+from ..models import UserPublication
 from .search import Normalized, author_named, contains
 
 YEAR = re.compile(r"^\d{4}$")
@@ -152,6 +153,26 @@ PUBLICATIONS = Filters(
             ),
         ),
         "year": ("Année", YearsFilter()),
+    }
+)
+
+# My references: the reading status, annotated by corpus.with_reading_status (#164).
+CORPUS = Filters(
+    PUBLICATIONS.columns
+    | {
+        "status": (
+            "Lecture",
+            ChoiceFilter(
+                "status",
+                {
+                    **{
+                        value: (label, Q(reading_status=value))
+                        for value, label in UserPublication.ReadingStatus.choices
+                    },
+                    "none": ("Sans statut", Q(reading_status="")),
+                },
+            ),
+        )
     }
 )
 

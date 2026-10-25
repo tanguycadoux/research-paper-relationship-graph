@@ -6,10 +6,10 @@ list is sorted, not the page shown.
 
 from dataclasses import dataclass
 
-from django.db.models import F, OuterRef, Subquery, Value
+from django.db.models import Case, F, OuterRef, Subquery, Value, When
 from django.db.models.functions import Concat
 
-from ..models import AuthorPublication
+from ..models import AuthorPublication, UserPublication
 from .search import Normalized
 
 
@@ -76,6 +76,20 @@ PUBLICATIONS = Sorting(
     },
     ties=[Normalized(F("title"))],
     default=Sort("year", descending=True),
+)
+
+
+def reading_rank():
+    """À lire, en cours, lu, then the publications without status."""
+    statuses = UserPublication.ReadingStatus.values
+    return Case(*(When(reading_status=status, then=rank) for rank, status in enumerate(statuses)))
+
+
+# My references: the reading status, annotated by corpus.with_reading_status (#164).
+CORPUS = Sorting(
+    columns=PUBLICATIONS.columns | {"status": Column(reading_rank())},
+    ties=PUBLICATIONS.ties,
+    default=PUBLICATIONS.default,
 )
 
 AUTHORS = Sorting(

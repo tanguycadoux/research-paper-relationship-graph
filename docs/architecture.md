@@ -101,6 +101,7 @@ static/
   js/toasts.js       notifications
   js/navigation.js   menus de la navigation sur petit écran
   js/search.js       raccourci Ctrl+K vers la barre de recherche
+  js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
   vendor/cytoscape/  Cytoscape.js embarqué
 docs/                cette documentation
 ```
@@ -139,7 +140,7 @@ erDiagram
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
 | `OrcidRecord` | Ce qu'ORCID a répondu sur une personne, stocké tel quel : l'enregistrement public (noms, résumé des travaux, `data`), demandé depuis la fiche auteur, et les noms donnés par la recherche groupée (`search_data`, `{}` si ORCID ne connaît pas la personne), chacun avec sa date. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
-| `UserPublication` | Le corpus d'un utilisateur. |
+| `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi). |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
 
 **Décision : les corrections sont communes à tous les utilisateurs.** Les publications,
@@ -676,3 +677,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Prépublication arXiv remplacée par la version publiée déclarée par ses auteurs ; DOI arXiv gardé dans `preprint_doi` | La version publiée est celle qu'on cite, et Crossref en donne la bibliographie ; plus de la moitié des prépublications en ont une. Un champ plutôt qu'une table d'identifiants : une prépublication n'a qu'un DOI arXiv (#227). |
 | 2026-10-25 | Bibliographie d'une prépublication sans version publiée tirée de ses sources LaTeX ; liens seulement sur les identifiants écrits par les auteurs | Le seul texte officiel de sa bibliographie ; OpenAlex et Semantic Scholar rapprochent automatiquement et se trompent (#227). Téléchargé une fois, pour les seules prépublications d'un corpus, comme arXiv le demande. |
 | 2026-10-25 | Import de fichiers BibTeX et RIS sans dépendance, par une lecture tolérante des seuls identifiants | Le DOI, l'identifiant arXiv (champ `eprint`, ou écrit dans le journal comme chez Google Scholar) et l'ISBN suffisent ; le reste vient des sources. Une entrée illisible ou sans identifiant est listée dans le rapport, jamais devinée (#165). |
+| 2026-10-25 | Statut de lecture : un champ de choix sur `UserPublication`, vide par défaut ; filtre et tri par une sous-requête | Un statut sert à filtrer, trier et compter, ce qu'un tag libre ne permet pas ; « à lire » par défaut serait faux pour les publications déjà lues. Filtrer à nouveau sur `userpublication__` joindrait les entrées de tous les utilisateurs. Export JSON en version 2, la version 1 s'importe toujours ; un statut importé ne remplace jamais celui qu'on a choisi (#164). |

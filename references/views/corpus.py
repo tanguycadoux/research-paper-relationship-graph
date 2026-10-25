@@ -6,9 +6,9 @@ from django.views.decorators.http import require_POST
 
 from ..models import Publication, UserPublication
 from ..services import filters
-from ..services.corpus import add_identified, find_or_create
+from ..services.corpus import add_identified, find_or_create, with_reading_status
 from ..services.publication_table import for_publication_table
-from ..services.sorting import PUBLICATIONS
+from ..services.sorting import CORPUS
 from .pagination import page_of
 
 
@@ -88,19 +88,36 @@ def remove_from_user_refs(request, pk):
 
 
 @login_required
+@require_POST
+def set_reading_status(request, pk):
+    entry = get_object_or_404(UserPublication, user=request.user, publication_id=pk)
+    status = request.POST.get("status", "")
+    if status and status not in UserPublication.ReadingStatus.values:
+        messages.error(request, "Statut de lecture inconnu.")
+        return redirect_back(request, pk)
+    entry.reading_status = status
+    entry.save(update_fields=["reading_status"])
+    label = entry.get_reading_status_display().lower() if status else "aucun"
+    messages.success(request, f"Statut de lecture de « {entry.publication} » : {label}.")
+    return redirect_back(request, pk)
+
+
+@login_required
 def my_references(request):
     pubs = Publication.objects.filter(userpublication__user=request.user)
-    sort = PUBLICATIONS.read(request.GET.get("sort"))
-    active_filters = filters.PUBLICATIONS.read(request.GET)
-    shown = for_publication_table(filters.PUBLICATIONS.apply(pubs, active_filters))
-    page = page_of(request, PUBLICATIONS.apply(shown, sort))
+    sort = CORPUS.read(request.GET.get("sort"))
+    active_filters = filters.CORPUS.read(request.GET)
+    listed = with_reading_status(pubs, request.user)
+    shown = for_publication_table(filters.CORPUS.apply(listed, active_filters))
+    page = page_of(request, CORPUS.apply(shown, sort))
     context = {
         "publications": page.object_list,
         "page_obj": page,
-        "sorting": PUBLICATIONS,
+        "sorting": CORPUS,
         "sort": sort,
-        "filters": filters.PUBLICATIONS,
+        "filters": filters.CORPUS,
         "active_filters": active_filters,
+        "reading_statuses": UserPublication.ReadingStatus.choices,
         "corpus_count": pubs.count(),
         "not_exportable": pubs.filter(doi="", isbn="").count(),
     }

@@ -25,6 +25,7 @@
                         {% csrf_token %}
                         {% button "Retirer de mes références" variant="danger-light" icon="remove" %}
                     </form>
+                    {% include "references/_reading_status_form.html" with pub=publication status=reading_status %}
                 {% else %}
                     <form method="post" action="{% url 'corpus_add' publication.pk %}">
                         {% csrf_token %}
