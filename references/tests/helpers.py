@@ -49,3 +49,13 @@ def without_orcid(target):
 def without_other_sources(target):
     """Mock every source other than Crossref (DataCite, OpenAlex, ORCID) as knowing nothing."""
     return without_orcid(without_openalex(without_datacite(target)))
+
+
+def without_candidate_search(target):
+    """Mock the searches of the identification page as finding nothing (#160)."""
+    for name in ("search_crossref", "search_datacite_title"):
+        target = patch(f"references.services.candidates.{name}", new=lambda text: [])(target)
+    return patch(
+        "references.services.candidates.fetch_datacite_works",
+        new=lambda dois: dict.fromkeys(dois),
+    )(target)

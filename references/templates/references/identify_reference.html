@@ -34,7 +34,86 @@
                 </p>
             {% endif %}
         {% endcard %}
-        {% card %}
+        {% card title="Publications candidates" %}
+            {% if search_failed %}
+                <div class="mb-3">
+                    {% alert "Crossref ou DataCite n'a pas répondu : la liste peut être incomplète." variant="warning" %}
+                </div>
+            {% endif %}
+            {% if candidates %}
+                <ol class="divide-y divide-gray-100">
+                    {% for candidate in candidates %}
+                        <li class="flex flex-col gap-3 py-3 first:pt-0 sm:flex-row sm:items-start sm:justify-between">
+                            <div class="min-w-0 space-y-1">
+                                <p class="font-medium">
+                                    {% if candidate.publication %}
+                                        <a href="{% url 'publication_detail' candidate.publication.pk %}">{{ candidate.title }}</a>
+                                    {% else %}
+                                        {{ candidate.title }}
+                                    {% endif %}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    {{ candidate.authors|join:", " }}
+                                    {% if candidate.year %}· {{ candidate.year }}{% endif %}
+                                    {% if candidate.venue %}· {{ candidate.venue }}{% endif %}
+                                </p>
+                                <p class="flex flex-wrap items-center gap-2 text-sm">
+                                    {% if candidate.doi %}
+                                        {% external_link "https://doi.org/"|add:candidate.doi candidate.doi class="break-all" %}
+                                    {% endif %}
+                                    {% if candidate.kind %}
+                                        {% badge candidate.kind %}
+                                    {% endif %}
+                                    {% if candidate.publication %}
+                                        {% badge "Dans la base" variant="primary" %}
+                                    {% endif %}
+                                </p>
+                                <p class="flex flex-wrap gap-2">
+                                    {% if candidate.same_title %}
+                                        {% badge "Titre identique" variant="success" icon="check_circle" %}
+                                    {% else %}
+                                        {% badge "Titre proche" variant="warning" icon="warning" %}
+                                    {% endif %}
+                                    {% if candidate.year_found %}
+                                        {% badge "Année concordante" variant="success" icon="check_circle" %}
+                                    {% endif %}
+                                    {% if candidate.author_found %}
+                                        {% badge "Premier auteur cité" variant="success" icon="check_circle" %}
+                                    {% elif candidate.author_found is False %}
+                                        {% badge "Premier auteur absent" variant="warning" icon="warning" %}
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <form method="post"
+                                  action="{% url 'reference_candidate' ref.source.pk ref.position %}"
+                                  class="shrink-0">
+                                {% csrf_token %}
+                                {% if candidate.publication %}
+                                    <input type="hidden" name="publication" value="{{ candidate.publication.pk }}">
+                                {% else %}
+                                    <input type="hidden" name="doi" value="{{ candidate.doi }}">
+                                {% endif %}
+                                {% button "C'est celle-ci" variant="secondary" icon="check_circle" %}
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% elif not search_failed %}
+                <p class="text-sm text-gray-600">
+                    Aucune publication proche, ni dans la base, ni chez Crossref ou DataCite.
+                </p>
+            {% endif %}
+            <form method="post"
+                  action="{% url 'reference_search_again' ref.source.pk ref.position %}"
+                  class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3">
+                {% csrf_token %}
+                {% button "Relancer la recherche" variant="secondary" icon="refresh" %}
+                {% if ref.candidates_fetched_at %}
+                    <span class="text-xs text-gray-500">Recherche du <time datetime="{{ ref.candidates_fetched_at|date:'Y-m-d' }}">{{ ref.candidates_fetched_at|date:"j F Y" }}</time></span>
+                {% endif %}
+            </form>
+        {% endcard %}
+        {% card title="Identifier à la main" %}
             {# Only the fields of the checked method are shown, in CSS (:has), without script. #}
             <form method="post" class="group space-y-6">
                 {% csrf_token %}
