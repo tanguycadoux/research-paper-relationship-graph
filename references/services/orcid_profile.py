@@ -1,7 +1,8 @@
 """
-Profile of an author from their public ORCID record (#59): the official name, the
-other names they declared, and their works already in the base where they do not
-appear. Informative only: nothing is changed in the base.
+Profile of an author from what ORCID answered: the official name and the other
+names they declared, from the full record (#59) or else from the grouped search
+made at import (#220); and, from the full record only, their works already in the
+base where they do not appear. Informative only: nothing is changed in the base.
 """
 
 from django.utils import timezone
@@ -26,11 +27,16 @@ def refresh_orcid_record(author):
 
 
 def orcid_profile(author):
-    """The profile of the author from their stored ORCID record, or None."""
-    records = OrcidRecord.objects.filter(orcid=author.orcid, data__isnull=False)
-    record = records.first() if author.orcid else None
+    """
+    The profile of the author from what ORCID answered, or None if never asked.
+    Without the full record, the names come from the grouped search and the works
+    are unknown (has_works); unknown is True when ORCID does not know the ORCID.
+    """
+    record = OrcidRecord.objects.filter(orcid=author.orcid).first() if author.orcid else None
     if record is None:
         return None
+    if record.data is None:
+        return search_profile(record)
     person = record.data.get("person") or {}
     groups = (record.data.get("activities-summary") or {}).get("works", {}).get("group") or []
     in_base = Publication.objects.filter(doi__in={doi for g in groups for doi in group_dois(g)})
@@ -44,6 +50,21 @@ def orcid_profile(author):
             "-publication_date", "title"
         ),
         "fetched_at": record.fetched_at,
+        "has_works": True,
+    }
+
+
+def search_profile(record):
+    """The names given by the grouped search, without the works."""
+    entry = record.search_data or {}
+    names = f"{entry.get('given-names') or ''} {entry.get('family-names') or ''}"
+    return {
+        "name": names.strip(),
+        "credit_name": entry.get("credit-name") or "",
+        "other_names": entry.get("other-name") or [],
+        "fetched_at": record.search_fetched_at,
+        "has_works": False,
+        "unknown": not entry,
     }
 
 

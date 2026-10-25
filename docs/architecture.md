@@ -368,7 +368,9 @@ déclare, souvent plus complet que le nom publié, mais rien n'est écrasé :
 - un nom **corrigé à la main** (`name_edited`) n'est jamais modifié, et un nom non public
   ne change rien.
 
-Le bouton de la fiche applique les mêmes règles au nom de l'enregistrement complet. Sur la
+Le bouton de la fiche applique les mêmes règles au nom de l'enregistrement complet. Tant
+que celui-ci n'a pas été demandé, la fiche montre les noms de la recherche groupée et
+propose « Charger les travaux depuis ORCID ». Sur la
 base réelle : 59 ORCID en 2 requêtes, 42 prénoms complétés, 2 conflits légitimes (un nom
 mal découpé par Crossref, « E. Fernandez Mora » ; un vrai désaccord).
 

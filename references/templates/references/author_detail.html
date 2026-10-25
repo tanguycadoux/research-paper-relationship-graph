@@ -22,11 +22,13 @@
 
     <div class="space-y-8">
         {% if author.orcid %}
-            {# Asked on demand only, never at import (#59) #}
+            {# Names from the grouped search at import (#220); works on demand only (#59) #}
             <section aria-labelledby="author-orcid-title">
                 <h2 id="author-orcid-title" class="mb-3">Profil ORCID</h2>
                 {% card %}
-                    {% if orcid_profile %}
+                    {% if orcid_profile.unknown %}
+                        <p class="text-sm text-gray-600">ORCID ne connaît pas cet identifiant, ou le garde privé.</p>
+                    {% elif orcid_profile %}
                         <dl class="space-y-3 text-sm">
                             <div>
                                 <dt class="text-gray-500">Nom</dt>
@@ -53,7 +55,11 @@
                             <div>
                                 <dt class="text-gray-500">Travaux déclarés</dt>
                                 <dd>
-                                    {{ orcid_profile.work_count }}, dont {{ orcid_profile.in_base_count }} dans la base
+                                    {% if orcid_profile.has_works %}
+                                        {{ orcid_profile.work_count }}, dont {{ orcid_profile.in_base_count }} dans la base
+                                    {% else %}
+                                        Pas encore chargés.
+                                    {% endif %}
                                 </dd>
                             </div>
                         </dl>
@@ -74,19 +80,23 @@
                                 {% endfor %}
                             </ul>
                         {% endif %}
+                    {% else %}
+                        <p class="text-sm text-gray-600">Pas encore demandé à ORCID.</p>
+                    {% endif %}
+                    {% if orcid_profile %}
                         <p class="mt-4 text-xs text-gray-500">
                             Récupéré le <time datetime="{{ orcid_profile.fetched_at|date:'Y-m-d\TH:i:sO' }}">{{ orcid_profile.fetched_at|date:"j F Y" }}</time>.
                         </p>
-                    {% else %}
-                        <p class="text-sm text-gray-600">Pas encore demandé à ORCID.</p>
                     {% endif %}
                     {% if user.is_authenticated %}
                         <form method="post"
                               action="{% url 'author_orcid_refresh' author.pk %}"
                               class="mt-3">
                             {% csrf_token %}
-                            {% if orcid_profile %}
+                            {% if orcid_profile.has_works %}
                                 {% button "Actualiser depuis ORCID" variant="secondary" icon="refresh" %}
+                            {% elif orcid_profile and not orcid_profile.unknown %}
+                                {% button "Charger les travaux depuis ORCID" variant="secondary" icon="download" %}
                             {% else %}
                                 {% button "Compléter depuis ORCID" variant="secondary" icon="download" %}
                             {% endif %}

@@ -106,6 +106,32 @@ class OrcidProfileTests(TestCase):
         self.assertIsNone(orcid_profile(self.author))
         self.assertIsNone(orcid_profile(Author.objects.create(last_name="Sans ORCID")))
 
+    def test_names_from_the_grouped_search_without_works(self):
+        # #220: the import asked the names only, the works are not loaded yet.
+        search = {
+            "orcid-id": ORCID,
+            "given-names": "Josiah",
+            "family-names": "Carberry",
+            "other-name": ["J. Carberry"],
+        }
+        OrcidRecord.objects.create(
+            orcid=ORCID, search_data=search, search_fetched_at=timezone.now()
+        )
+        self.client.force_login(get_user_model().objects.create_user("alice"))
+        response = self.client.get(self.url)
+        self.assertContains(response, "Josiah Carberry")
+        self.assertContains(response, "J. Carberry")
+        self.assertContains(response, "Pas encore chargés.")
+        self.assertContains(response, "Charger les travaux depuis ORCID")
+        self.assertNotContains(response, "Pas encore demandé")
+
+    def test_orcid_unknown_to_the_grouped_search(self):
+        OrcidRecord.objects.create(orcid=ORCID, search_data={}, search_fetched_at=timezone.now())
+        self.client.force_login(get_user_model().objects.create_user("alice"))
+        response = self.client.get(self.url)
+        self.assertContains(response, "ORCID ne connaît pas cet identifiant")
+        self.assertContains(response, "Compléter depuis ORCID")
+
     def test_record_survives_a_merge(self):
         self.store()
         other = Author.objects.create(first_name="Josiah", last_name="Carberry")
