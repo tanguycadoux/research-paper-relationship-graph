@@ -8,10 +8,8 @@
         <h1>Auteurs</h1>
     </header>
 
-    {% if authors or filter.q %}
-        {% include "references/_list_filter.html" with label="Filtrer les auteurs" placeholder="Filtrer : nom, prénom ou ORCID…" %}
-    {% endif %}
-    {% if authors %}
+    {% if authors or active_filters %}
+        {% filter_summary %}
         {% card flush=True %}
             <table>
                 <caption class="sr-only">Auteurs de la base commune</caption>
@@ -19,7 +17,7 @@
                     <tr>
                         {% column_header "Nom" "last_name" %}
                         {% column_header "Prénom" "first_name" %}
-                        <th scope="col">ORCID</th>
+                        {% column_header "ORCID" "orcid" %}
                     </tr>
                 </thead>
                 <tbody>
@@ -31,13 +29,15 @@
                             <td>{{ author.first_name }}</td>
                             <td class="text-gray-600">{{ author.orcid }}</td>
                         </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-gray-600">Aucun auteur ne correspond aux filtres.</td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
         {% endcard %}
         {% pagination page_obj %}
-    {% elif filter.q %}
-        <p class="text-gray-600">Aucun auteur ne correspond à ce filtre.</p>
     {% else %}
         <p class="text-gray-600">Aucun auteur dans la base.</p>
     {% endif %}

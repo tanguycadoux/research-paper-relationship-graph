@@ -74,11 +74,13 @@ class PublicationSortTests(TestCase):
         # Sorted by year, newest first: a click reverses it; the page starts over.
         self.assertRegex(
             response.content.decode(),
-            r'<th scope="col" aria-sort="descending">\s*<a href="\?sort=year"',
+            r'<th scope="col" aria-sort="descending">\s*<div[^>]*>\s*<a href="\?sort=year"',
         )
         self.assertContains(response, 'href="?sort=title"')
         self.assertContains(response, 'href="?sort=author"')
-        self.assertContains(response, '<th scope="col" class="hidden xl:table-cell">Identifiant')
+        # Not sortable, but filterable (#115).
+        self.assertNotContains(response, "sort=identifier")
+        self.assertContains(response, 'popovertarget="filter-identifier"')
 
     def test_headers_keep_the_search(self):
         response = self.client.get(reverse("search"), {"q": "dune", "sort": "title"})

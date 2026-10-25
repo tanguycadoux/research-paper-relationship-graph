@@ -15,21 +15,17 @@
             <h2 id="corpus-title" class="mb-3">
                 Publications
                 <span class="font-normal text-gray-500">
-                    {% if filter.q %}
+                    {% if active_filters %}
                         ({{ page_obj.paginator.count }} sur {{ corpus_count }})
                     {% else %}
                         ({{ corpus_count }})
                     {% endif %}
                 </span>
             </h2>
-            {% if publications or filter.q %}
-                {% include "references/_list_filter.html" with label="Filtrer mon corpus" placeholder="Filtrer : titre, auteur, année:2020..2024…" %}
-            {% endif %}
-            {% if publications %}
+            {% if publications or active_filters %}
+                {% filter_summary %}
                 {% include "references/_publication_table.html" with caption="Publications de mon corpus" %}
                 {% pagination page_obj %}
-            {% elif filter.q %}
-                <p class="text-gray-600">Aucune publication de votre corpus ne correspond à ce filtre.</p>
             {% else %}
                 <p class="text-gray-600">Aucune publication dans votre corpus.</p>
             {% endif %}

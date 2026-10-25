@@ -12,7 +12,8 @@ Interface components: {% load ui %}, then
     {% icon "delete" class="size-5" %}
     {% external_link "https://doi.org/"|add:pub.doi pub.doi class="break-all" %}
     {% pagination page_obj %}   (below a list in pages, its URL parameters kept)
-    {% column_header "Année" "year" %}   (a <th>, sortable when the view gives sorting)
+    {% column_header "Année" "year" %}   (a <th>, sortable and filterable if the view says so)
+    {% filter_summary %}   (the active filters of the table, each removable)
 
 The Tailwind classes of each variant are written in full here, once: Tailwind
 finds them by scanning this file.
@@ -301,20 +302,83 @@ def pagination(context, page):
 # A sortable column header: a link that looks like the header, its arrow beside it.
 COLUMN_LINK_CLASSES = "inline-flex items-center gap-1 text-inherit hover:text-gray-900"
 ARIA_SORT = {False: "ascending", True: "descending"}
+# The funnel of a filterable column, blue while the filter is on.
+FILTER_BUTTON_BASE = (
+    "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded "
+    "focus-visible:outline-2 focus-visible:outline-blue-700"
+)
+FILTER_BUTTON_OFF = f"{FILTER_BUTTON_BASE} text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+FILTER_BUTTON_ON = f"{FILTER_BUTTON_BASE} bg-blue-100 text-blue-800 hover:bg-blue-200"
+# Its panel, a popover: in the top layer, the scrolling card of the table cannot cut it.
+# Under its button where anchor positioning exists (flipped near the right edge), in the
+# middle of the screen elsewhere. The header styles (select-none…) are undone.
+FILTER_PANEL_CLASSES = (
+    "w-64 rounded-lg border border-gray-200 bg-white p-3 text-left text-sm font-normal "
+    "text-gray-900 shadow-lg select-text "
+    "supports-[position-area:bottom]:inset-auto supports-[position-area:bottom]:m-1 "
+    "[position-area:bottom_span-right] [position-try-fallbacks:flip-inline]"
+)
+
+
+def url_without(request, params):
+    """The current URL without some parameters, back to the first page."""
+    query = request.GET.copy()
+    for param in (*params, "page"):
+        query.pop(param, None)
+    return f"?{query.urlencode()}" if query else request.path
+
+
+def column_filter(request, filters, active, column):
+    """The filter panel of a column, or None if the column has no filter."""
+    if not filters or column not in filters.columns:
+        return None
+    label, column_filter = filters.columns[column]
+    value = active.values.get(column) if active else None
+    kept = [
+        (name, item)
+        for name, items in request.GET.lists()
+        if name not in (*column_filter.params, "page")
+        for item in items
+    ]
+    return {
+        "id": f"filter-{column}",
+        "kind": column_filter.kind,
+        "label": label,
+        "params": column_filter.params,
+        "data": {param: request.GET.get(param, "") for param in column_filter.params},
+        "raw": request.GET.get(column_filter.params[0], ""),
+        "choices": [
+            (key, choice[0]) for key, choice in getattr(column_filter, "choices", {}).items()
+        ],
+        "active": value is not None,
+        "kept": kept,
+        "remove_url": url_without(request, column_filter.params),
+        "button_classes": FILTER_BUTTON_ON if value is not None else FILTER_BUTTON_OFF,
+        "panel_classes": FILTER_PANEL_CLASSES,
+    }
 
 
 @register.inclusion_tag("components/column_header.html", takes_context=True)
 def column_header(context, label, column, classes=""):
     """
-    A column header, {% column_header "Année" "year" %}: with sorting and sort in the
-    context (services/sorting.py), a link that sorts by the column, or reverses it, back
-    to the first page, the other parameters kept (#115).
+    A column header, {% column_header "Année" "year" %} (#115). With sorting and sort in
+    the context (services/sorting.py), a link that sorts by the column, or reverses it;
+    with filters and active_filters (services/filters.py), a funnel that opens its filter.
+    Both go back to the first page and keep the other parameters.
     """
+    request = context["request"]
     sorting, sort = context.get("sorting"), context.get("sort")
-    header = {"label": label, "classes": classes, "url": ""}
+    header = {
+        "label": label,
+        "classes": classes,
+        "url": "",
+        "filter": column_filter(
+            request, context.get("filters"), context.get("active_filters"), column
+        ),
+    }
     if not sorting or column not in sorting.columns:
         return header
-    query = context["request"].GET.copy()
+    query = request.GET.copy()
     query.pop("page", None)
     query["sort"] = sorting.next_sort(sort, column).param
     sorted_here = sort.column == column
@@ -323,6 +387,34 @@ def column_header(context, label, column, classes=""):
         "aria_sort": ARIA_SORT[sort.descending] if sorted_here else "",
         "arrow": ("arrow_downward" if sort.descending else "arrow_upward") if sorted_here else "",
         "link_classes": COLUMN_LINK_CLASSES,
+    }
+
+
+@register.inclusion_tag("components/filter_summary.html", takes_context=True)
+def filter_summary(context):
+    """
+    {% filter_summary %} above a filtered table: each active filter, which a click
+    removes, and the errors of the filters. Nothing without a filter.
+    """
+    request, filters = context["request"], context.get("filters")
+    active = context.get("active_filters")
+    if not filters or not active:
+        # A wrong year alone is no filter, but still an error to show.
+        return {"active": [], "errors": active.errors if active is not None else []}
+    all_params = [param for _, f in filters.columns.values() for param in f.params]
+    items = []
+    for column, value in active.values.items():
+        label, column_filter = filters.columns[column]
+        items.append(
+            {
+                "text": f"{label} {column_filter.describe(value)}",
+                "remove_url": url_without(request, column_filter.params),
+            }
+        )
+    return {
+        "active": items,
+        "errors": active.errors,
+        "clear_url": url_without(request, all_params),
     }
 
 

@@ -12,14 +12,10 @@
         {% endif %}
     </header>
 
-    {% if publications or filter.q %}
-        {% include "references/_list_filter.html" with label="Filtrer les publications" placeholder="Filtrer : titre, auteur, année:2020..2024…" %}
-    {% endif %}
-    {% if publications %}
+    {% if publications or active_filters %}
+        {% filter_summary %}
         {% include "references/_publication_table.html" with caption="Publications de la base commune" corpus_actions=user.is_authenticated %}
         {% pagination page_obj %}
-    {% elif filter.q %}
-        <p class="text-gray-600">Aucune publication ne correspond à ce filtre.</p>
     {% else %}
         <p class="text-gray-600">Aucune publication dans la base.</p>
     {% endif %}
