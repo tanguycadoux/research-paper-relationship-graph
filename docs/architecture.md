@@ -72,7 +72,8 @@ references/          application principale
     corpus_transfer.py  export JSON et BibTeX du corpus, import JSON
     icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
-    ui.py            composants d'interface : button, badge, alert, card, icon, external_link
+    ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
+                     pagination
     navigation.py    navigation principale (groupes, lien courant)
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
@@ -489,7 +490,7 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 - **Tailwind**, compilé par django-tailwind-cli depuis `assets/css/source.css`, sans Node.
   Les styles par défaut des éléments sont définis une fois dans la couche `base`.
 - **Composants** en template tags (`references/templatetags/ui.py`) : `button`, `badge`,
-  `alert`, `card`, `icon`, `external_link`. **Navigation** décrite dans
+  `alert`, `card`, `icon`, `external_link`, `pagination`. **Navigation** décrite dans
   `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
   (#152, `services/pending.py`) : références à identifier dans son corpus, conflits
   ouverts. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
@@ -503,6 +504,15 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
   que les jointures ne multiplient pas les décomptes.
+- **Listes paginées** (#154, `views/pagination.py`) : les publications, « Mes
+  références » et les auteurs par pages de 50. Les annotations du tableau ne sont
+  calculées que pour la page, et le nombre de requêtes ne dépend pas de la taille de la
+  base. Le tri finit sur l'identifiant, pour que des lignes de même date ou de même nom
+  ne passent pas d'une page à l'autre. Une page invalide ou au-delà de la dernière mène
+  à la première ou à la dernière plutôt qu'à une erreur 404 : après le retrait de la
+  dernière ligne d'une page, le retour sur cette page fonctionne encore. Le composant
+  `{% pagination %}` garde les autres paramètres de l'URL (tri, filtres) ; sous `sm`, il
+  ne montre que les lignes affichées et les liens Précédente et Suivante.
 - **Accueil** (#151, `services/dashboard.py`) : connecté, un tableau de bord (mon corpus
   et ses dernières publications ajoutées, « À faire » avec les références à identifier,
   les conflits ouverts et les doublons probables, base commune) ; visiteur, une
@@ -562,3 +572,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Fiche publication : affiliations numérotées, les plus précises de chaque signature | Lisible comme un article, chaque organisation une seule fois ; l'ancêtre déclaré à côté de sa sous-entité n'apprend rien, la fiche auteur garde le regroupement par tutelle (#155). |
 | 2026-10-25 | ORCID interrogé à la demande depuis la fiche auteur, réponse stockée par ORCID, affichage seulement | Jamais à l'import (plus de 1 000 auteurs possibles) ; rattachée à l'ORCID, la réponse survit aux fusions ; les rapprochements automatiques attendront de voir les données (#59). |
 | 2026-10-25 | Noms des auteurs complétés depuis ORCID à l'import, en recherche groupée ; nom différent signalé, nom corrigé à la main protégé | Le nom déclaré par la personne est plus complet que le nom publié ; une requête pour 50 personnes reste compatible avec un import ; un ORCID mal attribué ne doit pas propager un faux nom (#220). |
+| 2026-10-25 | Listes par pages de 50, côté serveur ; page hors limites ramenée à la plus proche | Les annotations du tableau ne coûtent que pour la page affichée ; le tri et les filtres de #115 resteront dans l'URL ; une page vidée par un retrait ne doit pas finir en erreur 404 (#154). |

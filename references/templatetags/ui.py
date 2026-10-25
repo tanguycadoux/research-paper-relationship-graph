@@ -11,6 +11,7 @@ Interface components: {% load ui %}, then
     {% card title="Informations" %}…{% endcard %}
     {% icon "delete" class="size-5" %}
     {% external_link "https://doi.org/"|add:pub.doi pub.doi class="break-all" %}
+    {% pagination page_obj %}   (below a list in pages, its URL parameters kept)
 
 The Tailwind classes of each variant are written in full here, once: Tailwind
 finds them by scanning this file.
@@ -244,6 +245,56 @@ def card(content, title="", level=2, flush=False):
     if not title:
         return format_html('<div class="{}">{}</div>', classes, content)
     return format_html('<section class="{}">{}{}</section>', classes, heading, content)
+
+
+# Links of the pagination: secondary buttons; the page shown, a primary one that is not a
+# link. Previous and next keep their icon on the outer side. relative: the hidden « Page »
+# stays inside its link.
+PAGE_LINK_CLASSES = f"{BUTTON_BASE} relative min-w-8 px-2 {BUTTON_VARIANTS['secondary']}"
+PAGE_CURRENT_CLASSES = (
+    "relative inline-flex h-8 min-w-8 select-none items-center justify-center rounded-md border "
+    "border-transparent bg-blue-700 px-2 text-sm font-medium text-white"
+)
+PAGE_PREVIOUS_CLASSES = f"{BUTTON_BASE} {BUTTON_WITH_ICON_AND_LABEL} {BUTTON_VARIANTS['secondary']}"
+PAGE_NEXT_CLASSES = f"{BUTTON_BASE} pl-3 pr-[calc(0.375rem-1px)] {BUTTON_VARIANTS['secondary']}"
+
+
+def page_url(request, number):
+    """The current URL at another page, its other parameters (sort, filters) kept."""
+    query = request.GET.copy()
+    if number == 1:
+        query.pop("page", None)
+    else:
+        query["page"] = number
+    return f"?{query.urlencode()}" if query else request.path
+
+
+@register.inclusion_tag("components/pagination.html", takes_context=True)
+def pagination(context, page):
+    """
+    {% pagination page_obj %}: rows shown, previous and next, page numbers (from sm,
+    first and last ones always, … between). Nothing on a single page.
+    """
+    request = context["request"]
+    numbers = page.paginator.get_elided_page_range(page.number, on_each_side=1, on_ends=1)
+    return {
+        "page": page,
+        "pages": [
+            {
+                "number": number,
+                "current": number == page.number,
+                "url": "" if number == page.paginator.ELLIPSIS else page_url(request, number),
+            }
+            for number in numbers
+        ],
+        "previous_url": page_url(request, page.number - 1) if page.has_previous() else "",
+        "next_url": page_url(request, page.number + 1) if page.has_next() else "",
+        "link_classes": PAGE_LINK_CLASSES,
+        "current_classes": PAGE_CURRENT_CLASSES,
+        "previous_classes": PAGE_PREVIOUS_CLASSES,
+        "next_classes": PAGE_NEXT_CLASSES,
+        "icon_classes": BUTTON_ICON,
+    }
 
 
 TOAST_CLASSES = "pointer-events-auto shadow-lg"

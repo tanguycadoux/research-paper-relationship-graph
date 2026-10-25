@@ -25,14 +25,16 @@ from ..services.publication_table import (
     for_publication_table,
     references_available,
 )
+from .pagination import PageMixin
 
 
-class PublicationListView(ListView):
+class PublicationListView(PageMixin, ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
     queryset = for_publication_table(Publication.objects.all())
-    ordering = "-publication_date"
+    # Ties broken down to the id: rows of equal date must not move between pages.
+    ordering = ("-publication_date", "title", "pk")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
