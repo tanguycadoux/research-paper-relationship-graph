@@ -6,8 +6,19 @@
 {% block content %}
     <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1>Mes références</h1>
-        {% url 'corpus_graph' as graph_url %}
-        {% button "Mon graphe" url=graph_url variant="secondary" icon="hub" %}
+        <div class="flex flex-wrap gap-2">
+            {# The suggestions of the tag filtered on, if any (#162). #}
+            {% url 'corpus_suggestions' as suggestions_url %}
+            {% if active_tag %}
+                {% with tag_query=active_tag|urlencode %}
+                    {% button "Suggestions" url=suggestions_url|add:"?tag="|add:tag_query variant="secondary" icon="lightbulb" %}
+                {% endwith %}
+            {% else %}
+                {% button "Suggestions" url=suggestions_url variant="secondary" icon="lightbulb" %}
+            {% endif %}
+            {% url 'corpus_graph' as graph_url %}
+            {% button "Mon graphe" url=graph_url variant="secondary" icon="hub" %}
+        </div>
     </header>
 
     {# The cards go under the table below xl: beside it, the reading status column does not fit. #}
