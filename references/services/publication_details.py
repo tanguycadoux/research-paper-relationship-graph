@@ -1,11 +1,13 @@
 """
 Information already present in the stored Crossref answer of a publication,
 displayed without any new request: venue, citation count, funders (named after
-OpenAlex when it knows them), licenses, subjects and abstract.
+OpenAlex when it knows them), licenses and subjects. The abstract comes from
+Crossref, or else from OpenAlex.
 """
 
 import html
 import re
+from urllib.parse import urlsplit
 
 from .external_records import Source, records_by_source
 
@@ -14,6 +16,31 @@ JATS_PARAGRAPH = re.compile(r"</?jats:p[^>]*>")
 TAG = re.compile(r"<[^>]+>")
 SPACES = re.compile(r"\s+")
 SPACE_BEFORE_PUNCTUATION = re.compile(r"\s+([.,;:!?)])")
+
+# Beyond this length, the abstract is folded (#157).
+LONG_ABSTRACT = 800
+
+CREATIVE_COMMONS = re.compile(
+    r"creativecommons\.org/(?:licenses|publicdomain)/([a-z-]+)/(\d+(?:\.\d+)?)", re.IGNORECASE
+)
+STM_POLICY = re.compile(r"doi\.org/10\.15223/policy-(\d+)", re.IGNORECASE)
+# Licenses of publishers, by URL without its scheme.
+PUBLISHER_LICENSES = {
+    "ieeexplore.ieee.org/Xplorehelp/downloads/license-information/IEEE.html": (
+        "Licence de l'éditeur IEEE"
+    ),
+    "ieeexplore.ieee.org/Xplorehelp/downloads/license-information/USG.html": (
+        "Œuvre du gouvernement des États-Unis (IEEE)"
+    ),
+    "iopscience.iop.org/info/page/text-and-data-mining": "Fouille de textes autorisée (IOP)",
+}
+# Version of the work a Crossref license applies to.
+LICENSE_VERSIONS = {
+    "vor": "version publiée",
+    "am": "manuscrit accepté",
+    "tdm": "fouille de textes",
+    "stm-asf": "partage d'articles",
+}
 
 
 def crossref_details(pub):
@@ -28,9 +55,61 @@ def crossref_details(pub):
         "citation_count": message.get("is-referenced-by-count"),
         "subjects": [clean_text(subject) for subject in message.get("subject", [])],
         "funders": funder_labels(message.get("funder", []), openalex_funders),
-        "licenses": list(dict.fromkeys(lic["URL"] for lic in message.get("license", []))),
-        "abstract": abstract_paragraphs(message.get("abstract", "")),
+        "licenses": license_labels(message.get("license", [])),
     }
+
+
+def publication_abstract(pub):
+    """
+    {"paragraphs", "source", "long"} of the abstract given by Crossref, or else by
+    OpenAlex (#157); None when neither gives one.
+    """
+    records = records_by_source(pub)
+    message = (records.get(Source.CROSSREF) or {}).get("message") or {}
+    paragraphs, source = abstract_paragraphs(message.get("abstract", "")), "Crossref"
+    if not paragraphs:
+        work = records.get(Source.OPENALEX) or {}
+        text = inverted_index_text(work.get("abstract_inverted_index"))
+        paragraphs, source = [text] if text else [], "OpenAlex"
+    if not paragraphs:
+        return None
+    long = sum(len(paragraph) for paragraph in paragraphs) > LONG_ABSTRACT
+    return {"paragraphs": paragraphs, "source": source, "long": long}
+
+
+def inverted_index_text(inverted_index):
+    """OpenAlex gives the abstract as {word: [positions]}: put the words back in order."""
+    if not inverted_index:
+        return ""
+    words = {position: word for word, positions in inverted_index.items() for position in positions}
+    return clean_text(" ".join(words[position] for position in sorted(words)))
+
+
+def license_labels(licenses):
+    """{"url", "label", "versions"} of each license, versions being those it applies to."""
+    versions = {}
+    for lic in licenses:
+        kinds = versions.setdefault(lic["URL"], [])
+        version = LICENSE_VERSIONS.get(lic.get("content-version"))
+        if version and version not in kinds:
+            kinds.append(version)
+    return [
+        {"url": url, "label": license_label(url), "versions": ", ".join(kinds)}
+        for url, kinds in versions.items()
+    ]
+
+
+def license_label(url):
+    """'CC BY 4.0', a known publisher license, or else the site that publishes it."""
+    if match := CREATIVE_COMMONS.search(url):
+        kind, version = match.groups()
+        name = "CC0" if kind.lower() == "zero" else "CC " + kind.upper()
+        return f"{name} {version}"
+    if match := STM_POLICY.search(url):
+        return f"Politique de partage STM n° {int(match.group(1))}"
+    parts = urlsplit(url)
+    known = PUBLISHER_LICENSES.get(parts.netloc + parts.path)
+    return known or f"Licence publiée par {parts.netloc or url}"
 
 
 def funder_labels(funders, openalex_funders=()):
