@@ -4,22 +4,31 @@ Application Django pour analyser les relations entre articles scientifiques.
 Quand on ajoute un article à son corpus, ses métadonnées et celles des articles qu'il
 cite sont récupérées depuis [Crossref](https://www.crossref.org/), ou
 [DataCite](https://datacite.org/) pour les DOI qu'il ne connaît pas (actes de conférence,
-Zenodo), puis complétées par [OpenAlex](https://openalex.org/) (institutions, ORCID). Les
-livres sont identifiés par leur ISBN, avec [Open Library](https://openlibrary.org/) en
-recours.
+prépublications arXiv, Zenodo), puis complétées par [OpenAlex](https://openalex.org/)
+(institutions, ORCID, résumé) et [ORCID](https://orcid.org/) (noms des auteurs). La
+bibliographie d'une prépublication sans version publiée est lue dans ses sources LaTeX
+sur [arXiv](https://arxiv.org/). Les livres sont identifiés par leur ISBN, avec
+[Open Library](https://openlibrary.org/) en recours.
 
 Fonctionnalités :
-- un **corpus** personnel, exportable en JSON (réimportable) et en BibTeX ;
+- un **corpus** personnel, avec statut de lecture et tags hiérarchiques, importable
+  depuis un fichier BibTeX, RIS ou un export JSON, exportable en JSON et en BibTeX ;
 - une **base commune** de publications et d'auteurs, corrigée par tous : identification
-  des références citées, fusion d'auteurs et de publications, doublons probables, conflits
-  entre sources ;
-- un **graphe des citations** sur une frise chronologique, pour son corpus ou pour une
-  publication ;
+  assistée des références citées (candidats proposés, en série), fusion d'auteurs et de
+  publications, doublons probables, conflits entre sources ;
+- les **prépublications arXiv** remplacées par leur version publiée, déclarée par les
+  auteurs ou proposée d'après OpenAlex ;
+- une **recherche** à opérateurs, des tableaux triables et filtrables ;
+- un **graphe des citations** sur une frise chronologique, pour une publication, son
+  corpus ou toute la base ;
 - les **affiliations** des auteurs, regroupées par organisation de tutelle.
 
 Documentation :
-- [Architecture](docs/architecture.md) : organisation du code, modèle de données, sources
-  interrogées et journal des décisions ;
+- [Architecture](docs/architecture.md) : principe, organisation du code, modèle de
+  données, et liens vers les documents détaillés ([sources de métadonnées](docs/sources.md),
+  avec le schéma d'un import ; [corrections](docs/corrections.md) ;
+  [graphes](docs/graphes.md) ; [interface](docs/interface.md) ;
+  [journal des décisions](docs/decisions.md)) ;
 - [Contribuer](CONTRIBUTING.md) : règles du projet, branches, messages de commit, tests.
 
 ## Installation
@@ -130,6 +139,16 @@ python manage.py complete_affiliations
 # Idem, en demandant d'abord à OpenAlex les publications qui n'ont pas encore de réponse
 # (une requête par lot de 50 publications)
 python manage.py complete_affiliations --fetch-missing
+
+# Compléter depuis ORCID les noms des auteurs déjà en base (--refresh : tout redemander)
+python manage.py complete_orcid_names
+
+# Fusionner les auteurs déjà en base qui portent le même ORCID
+python manage.py merge_same_orcid
+
+# Remplacer les prépublications arXiv par leur version publiée déclarée, et proposer
+# dans « Conflits » celle que trouve OpenAlex
+python manage.py replace_preprints
 
 # Développement : vider la base en gardant les comptes et le cache des sources
 python manage.py reset_data
