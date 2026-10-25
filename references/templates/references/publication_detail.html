@@ -355,4 +355,108 @@
             <p class="text-sm text-gray-600">Aucune publication de la base ne la cite.</p>
         {% endif %}
     </section>
+    {# Beyond the base, according to OpenAlex, on demand (#163). #}
+    {% if publication.doi %}
+        <section aria-labelledby="incoming-title" class="mt-8">
+            <header class="flex flex-wrap items-start justify-between gap-3">
+                <h2 id="incoming-title">
+                    Cité dans toute la littérature
+                    {% if incoming_citations %}
+                        <span class="font-normal text-gray-500">({{ incoming_citations.total }})</span>
+                    {% endif %}
+                </h2>
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'publication_incoming_citations' publication.pk %}">
+                        {% csrf_token %}
+                        {% if incoming_citations %}
+                            {% button "Relancer la recherche" variant="secondary" icon="refresh" %}
+                        {% else %}
+                            {% button "Chercher les publications qui la citent" variant="secondary" icon="search" %}
+                        {% endif %}
+                    </form>
+                {% endif %}
+            </header>
+            {% if incoming_citations %}
+                <p class="mt-1 mb-3 text-sm text-gray-500">
+                    Selon OpenAlex, le {{ incoming_citations.fetched_at|date:"j F Y" }}.
+                    {% if citing_works|length < incoming_citations.total %}
+                        Seules les {{ citing_works|length }} plus citées et plus récentes sont affichées.
+                    {% endif %}
+                    Elles n'entrent dans la base que si vous les ajoutez.
+                </p>
+                {% if citing_works %}
+                    <nav aria-label="Ordre des publications qui la citent" class="mb-3 flex flex-wrap gap-2 text-sm">
+                        {% for key, order in citing_orders.items %}
+                            <a href="?citants={{ key }}#incoming-title"
+                               {% if key == citing_order %}aria-current="true" class="font-semibold"{% endif %}>{{ order.1 }}</a>
+                        {% endfor %}
+                    </nav>
+                    {% card flush=True %}
+                        <table>
+                            <caption class="sr-only">Publications qui la citent selon OpenAlex</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Titre</th>
+                                    <th scope="col">Auteurs</th>
+                                    <th scope="col">Année</th>
+                                    <th scope="col" class="whitespace-nowrap text-right">Citée par</th>
+                                    {% if user.is_authenticated %}
+                                        <th scope="col">
+                                            <span class="sr-only">Mon corpus</span>
+                                        </th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for work in citing_works %}
+                                    <tr>
+                                        <td>
+                                            {% if work.publication %}
+                                                <a href="{% url 'publication_detail' work.publication.pk %}">{{ work.title }}</a>
+                                                {% if work.in_corpus %}
+                                                    {% badge "dans mon corpus" icon="bookmarks" %}
+                                                {% endif %}
+                                            {% elif work.doi %}
+                                                {% external_link "https://doi.org/"|add:work.doi work.title %}
+                                            {% else %}
+                                                {% external_link "https://openalex.org/"|add:work.openalex work.title %}
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-gray-600">
+                                            {{ work.first_author }}{% if work.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                                        </td>
+                                        <td class="whitespace-nowrap text-gray-600">{{ work.year|default_if_none:"" }}</td>
+                                        <td class="text-right text-gray-600">{{ work.cited_by }}</td>
+                                        {% if user.is_authenticated %}
+                                            <td class="text-right">
+                                                {% if work.doi and not work.in_corpus %}
+                                                    {# By the DOI: the publication is created only now. #}
+                                                    <form method="post"
+                                                          action="{% url 'corpus_add_by_identifier' %}"
+                                                          class="flex justify-end gap-1">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="identifier" value="{{ work.doi }}">
+                                                        <input type="hidden" name="next" value="{{ request.get_full_path }}#incoming-title">
+                                                        {% button "Ajouter à mes références, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                                                        {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
+                                                    </form>
+                                                {% endif %}
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endcard %}
+                {% else %}
+                    <p class="text-sm text-gray-600">OpenAlex ne connaît aucune publication qui la cite.</p>
+                {% endif %}
+            {% else %}
+                <p class="mt-1 text-sm text-gray-500">
+                    OpenAlex connaît les publications qui la citent hors de la base. Elles ne sont
+                    cherchées qu'à la demande et n'entrent dans la base que si vous les ajoutez.
+                </p>
+            {% endif %}
+        </section>
+    {% endif %}
 {% endblock content %}

@@ -28,7 +28,7 @@ le statut de lecture et les tags sont propres à chaque utilisateur.
 | [sources.md](sources.md) | Sources de métadonnées : ce que chacune apporte, **schéma du parcours d'un import**, requêtes HTTP, DataCite, prépublications arXiv, JACoW, OpenAlex et affiliations, ORCID, livres, contradictions entre sources |
 | [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
 | [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export |
-| [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag |
+| [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag ; citations entrantes selon OpenAlex |
 | [interface.md](interface.md) | Navigation, tableaux, pagination, tri, filtres, recherche, accueil, mise en page |
 | [decisions.md](decisions.md) | Journal des décisions, avec leurs raisons et leurs tickets |
 
@@ -54,7 +54,8 @@ references/          application principale
     http.py          requêtes communes (session, nouvelles tentatives, cache de développement)
     crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
     datacite_api.py  client DataCite (DOI par DOI ou par lots, recherche par titre)
-    openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions, DOI d'une œuvre)
+    openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions, DOI d'une œuvre,
+                     publications qui en citent une)
     openlibrary_api.py  client Open Library (recherche par ISBN)
     arxiv_api.py     client arXiv (sources LaTeX d'une prépublication, une à la fois)
     orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne, noms par lots)
@@ -96,6 +97,7 @@ references/          application principale
     conflicts.py     signalement et décision des conflits entre sources
     Découverte
     suggestions.py   publications citées par plusieurs articles du corpus ou d'un tag
+    incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
     Affichage et échanges
     search.py        analyse de la barre de recherche, comparaison sans casse ni accents
     sorting.py       colonnes triables des tableaux (publications, auteurs)
@@ -160,6 +162,7 @@ erDiagram
     User ||--o{ Tag : "tags"
     UserPublication }o--o{ Tag : "classée par"
     Publication ||--o{ ExternalRecord : "réponses des sources"
+    Publication ||--o| IncomingCitations : "citants selon OpenAlex"
     Publication ||--o{ CitedReference : "cite"
     CitedReference }o--o| Publication : "résolue en (facultatif)"
     Publication ||--o{ AuthorPublication : ""
@@ -173,6 +176,7 @@ erDiagram
 |---|---|
 | `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. `preprint_doi` garde le DOI arXiv d'une prépublication remplacée par sa version publiée (#227) : unique, il retrouve la publication quand on importe ou cite ce DOI (`Publication.objects.with_doi`). Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. La date est un `DateField` : un mois ou un jour absent de la source est stocké à 1, et `publication_date_precision` (année, mois, jour) dit ce que la source donne vraiment ; la fiche affiche « 2023 », « août 2023 » ou « 1 août 2023 » (#147). Une date saisie à la main est précise au jour. |
 | `ExternalRecord` | La réponse brute d'une source externe (Crossref, DataCite, OpenAlex, arXiv, Open Library) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
+| `IncomingCitations` | Les publications qui en citent une selon OpenAlex, demandées depuis sa fiche (#163) : le nombre total et un résumé des 25 plus citées et des 25 plus récentes (`works`), avec la date. Aucune ne devient une `Publication` tant qu'on ne l'ajoute pas. Détails dans [decouverte.md](decouverte.md#citations-entrantes). |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que la source la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`) ; une référence peut aussi être déclarée non identifiable (`unidentifiable`, avec la même trace). Ces décisions sont conservées au ré-import. Les candidats trouvés pour la page d'identification sont gardés en cache (`candidates`, `candidates_fetched_at`). Détails dans [corrections.md](corrections.md#identifier-une-référence). |
 | `Author` | Une personne (entité résolue). Un nom corrigé à la main est marqué (`name_edited`) : ORCID ne le modifie plus. |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion, et les organisations déclarées sur cette signature. |
