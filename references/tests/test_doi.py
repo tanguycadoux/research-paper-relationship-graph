@@ -53,12 +53,12 @@ class DoiPersistenceTests(TestCase):
 
     def test_add_by_doi_reuses_existing_publication(self, _fetch):
         existing = Publication.objects.create(doi="10.1000/abc")
-        url = reverse("corpus_add_by_doi")
-        self.client.post(url, {"doi": "https://doi.org/10.1000/ABC"})
+        url = reverse("corpus_add_by_identifier")
+        self.client.post(url, {"identifier": "https://doi.org/10.1000/ABC"})
         self.assertEqual(Publication.objects.count(), 1)
         self.assertTrue(UserPublication.objects.filter(publication=existing).exists())
 
     def test_add_by_doi_rejects_invalid_doi(self, _fetch):
-        url = reverse("corpus_add_by_doi")
-        self.client.post(url, {"doi": "not a doi"})
+        url = reverse("corpus_add_by_identifier")
+        self.client.post(url, {"identifier": "not a doi"})
         self.assertFalse(Publication.objects.exists())

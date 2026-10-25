@@ -6,12 +6,12 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.forms import IdentifyReferenceForm, PublicationForm
-from references.models import CitedReference, Publication
+from references.models import CitedReference, Publication, UserPublication
 from references.services.books import find_or_import_book
 from references.services.isbn import is_valid_isbn, normalize_isbn
 from references.services.metadata_formats import openlibrary_message
 from references.services.openlibrary_api import fetch_openlibrary_book
-from references.tests.helpers import with_openlibrary
+from references.tests.helpers import with_openlibrary, without_other_sources
 
 DEEP_LEARNING = "9780262035613"
 OPENLIBRARY_DOC = {
@@ -140,3 +140,36 @@ class IdentifyByIsbnViewTests(TestCase):
         ref.refresh_from_db()
         self.assertEqual(ref.target.title, "Deep Learning")
         self.assertTrue(ref.resolved_manually)
+
+
+@without_other_sources
+@patch("references.services.importer.fetch_crossref_json")
+@patch("references.services.books.fetch_openlibrary_book", return_value=OPENLIBRARY_DOC)
+@patch("references.services.books.fetch_crossref_by_isbn", return_value=None)
+class AddByIsbnViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user("alice")
+        self.client.force_login(self.user)
+
+    def add(self, identifier):
+        url = reverse("corpus_add_by_identifier")
+        return self.client.post(url, {"identifier": identifier}, follow=True)
+
+    def test_book_is_added_by_isbn10_with_hyphens(self, _crossref, _openlibrary, fetch_doi):
+        self.add("0-262-03561-8")
+        book = Publication.objects.get(isbn=DEEP_LEARNING)
+        self.assertEqual(book.title, "Deep Learning")
+        self.assertTrue(UserPublication.objects.filter(user=self.user, publication=book).exists())
+        fetch_doi.assert_not_called()
+
+    def test_unknown_isbn_is_added_without_data(self, _crossref, openlibrary, fetch_doi):
+        openlibrary.return_value = None
+        response = self.add(DEEP_LEARNING)
+        self.assertContains(response, "ISBN inconnu de Crossref et d&#x27;Open Library")
+        self.assertTrue(UserPublication.objects.filter(publication__isbn=DEEP_LEARNING).exists())
+        fetch_doi.assert_not_called()
+
+    def test_invalid_identifier_names_both_formats(self, _crossref, _openlibrary, _fetch_doi):
+        response = self.add("9780262035614")
+        self.assertContains(response, "Veuillez entrer un DOI (de la forme 10.xxxx/…) ou un ISBN")
+        self.assertFalse(Publication.objects.exists())

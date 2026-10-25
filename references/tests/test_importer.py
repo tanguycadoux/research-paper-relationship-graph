@@ -121,7 +121,7 @@ class AddToCorpusViewTests(TestCase):
         self.client.force_login(self.user)
 
     def test_add_by_doi_imports_publication_and_references(self, fetch, fetch_works):
-        self.client.post(reverse("corpus_add_by_doi"), {"doi": SOURCE_DOI})
+        self.client.post(reverse("corpus_add_by_identifier"), {"identifier": SOURCE_DOI})
         pub = Publication.objects.get(doi=SOURCE_DOI)
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=pub).exists())
         self.assertTrue(pub.parse_references)
@@ -136,7 +136,7 @@ class AddToCorpusViewTests(TestCase):
         fetch.reset_mock()
 
         fetch_works.reset_mock()
-        self.client.post(reverse("corpus_add_by_doi"), {"doi": CITED_DOI})
+        self.client.post(reverse("corpus_add_by_identifier"), {"identifier": CITED_DOI})
 
         self.assertEqual(CitedReference.objects.filter(source=cited).count(), 1)
         fetch.assert_not_called()
@@ -151,6 +151,6 @@ class AddToCorpusViewTests(TestCase):
 
     def test_message_reports_a_failed_import(self, fetch, fetch_works):
         response = self.client.post(
-            reverse("corpus_add_by_doi"), {"doi": "10.1000/unknown"}, follow=True
+            reverse("corpus_add_by_identifier"), {"identifier": "10.1000/unknown"}, follow=True
         )
         self.assertContains(response, "n&#x27;ont pas pu être récupérées")

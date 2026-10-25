@@ -161,7 +161,9 @@ class ReplacementTests(TestCase):
     def test_adding_by_doi_says_so(self):
         self.sources()
         self.client.force_login(self.user)
-        response = self.client.post(reverse("corpus_add_by_doi"), {"doi": ARXIV}, follow=True)
+        response = self.client.post(
+            reverse("corpus_add_by_identifier"), {"identifier": ARXIV}, follow=True
+        )
         self.assertContains(response, f"La prépublication arXiv {ARXIV} a été remplacée")
         self.assertEqual(Publication.objects.get().doi, JOURNAL)
 

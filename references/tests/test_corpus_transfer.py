@@ -97,9 +97,7 @@ class ImportTests(TestCase):
 
     def test_book_without_metadata_is_never_sent_to_the_doi_sources(self, fetch, fetch_works):
         book = Publication.objects.create(isbn="9780262035613")
-        with patch(
-            "references.services.corpus_transfer.find_or_import_book", return_value=(book, False)
-        ):
+        with patch("references.services.corpus.find_or_import_book", return_value=(book, False)):
             report = import_corpus(self.user, export_of({"isbn": "978-0-262-03561-3"}))
         self.assertEqual(report.without_metadata, [book])
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=book).exists())
