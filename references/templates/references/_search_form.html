@@ -1,0 +1,22 @@
+{% comment %}
+Search bar of the search page and the home page (#153). Context: field_id, q. Ctrl+K
+(js/search.js) puts the cursor in it.
+{% endcomment %}
+{% load ui %}
+<search>
+    <form action="{% url 'search' %}" method="get" class="flex gap-2">
+        <label for="{{ field_id }}" class="sr-only">Rechercher des publications et des auteurs</label>
+        <input type="search"
+               id="{{ field_id }}"
+               name="q"
+               value="{{ q }}"
+               placeholder="Titre, auteur, DOI…"
+               aria-describedby="{{ field_id }}-help"
+               aria-keyshortcuts="Control+K Meta+K"
+               data-search-input>
+        {% button "Rechercher" icon="search" compact=True %}
+    </form>
+    <p id="{{ field_id }}-help" class="mt-2 text-sm text-gray-600">
+        Précisez avec <code>auteur:</code>, <code>titre:</code>, <code>année:2020..2024</code> ou <code>doi:</code> ; des guillemets gardent une expression entière.
+    </p>
+</search>

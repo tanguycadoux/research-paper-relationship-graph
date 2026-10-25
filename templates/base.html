@@ -7,6 +7,7 @@
         <title>{% block title %}{% endblock title %}Gestionnaire de références</title>
         {% tailwind_css %}
         <script src="{% static 'js/navigation.js' %}" defer></script>
+        <script src="{% static 'js/search.js' %}" defer></script>
         {% block head %}{% endblock head %}
     </head>
     <body class="flex min-h-screen flex-col bg-gray-50 text-gray-900 antialiased">
@@ -20,7 +21,34 @@
                     <span class="sm:hidden">Références</span>
                     <span class="hidden sm:inline">Gestionnaire de références</span>
                 </a>
+                {% block header_search %}
+                    {% comment %}
+                        Search from every page (#153), Ctrl+K (⌘K on a Mac) to reach it. On a small
+                        screen, a link to the search page, which has its own bar.
+                    {% endcomment %}
+                    <search class="hidden max-w-md flex-1 md:block">
+                        <form action="{% url 'search' %}" method="get" class="relative">
+                            <label for="site-search" class="sr-only">Rechercher des publications et des auteurs</label>
+                            <input type="search"
+                                   id="site-search"
+                                   name="q"
+                                   placeholder="Rechercher…"
+                                   aria-keyshortcuts="Control+K Meta+K"
+                                   class="pr-16"
+                                   data-search-input>
+                            <kbd class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border border-gray-200 bg-gray-50 px-1.5 font-sans text-xs text-gray-500"
+                                 aria-hidden="true"
+                                 data-search-shortcut>Ctrl K</kbd>
+                        </form>
+                    </search>
+                {% endblock header_search %}
                 <div class="flex items-center gap-2 text-sm">
+                    {% block header_search_link %}
+                        {% url 'search' as search_url %}
+                        <div class="md:hidden" data-search-link="{{ search_url }}">
+                            {% button "Rechercher" url=search_url variant="secondary" icon="search" icon_only=True %}
+                        </div>
+                    {% endblock header_search_link %}
                     {% if user.is_authenticated %}
                         {% url 'admin:index' as admin_url %}
                         <span class="hidden text-gray-600 sm:inline">{{ user.username }}</span>

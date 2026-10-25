@@ -10,10 +10,12 @@ from .views import (
     home,
     publication_merge,
     publications,
+    search,
 )
 
 urlpatterns = [
     path("", home.index, name="index"),
+    path("search/", search.search, name="search"),
     # Publications
     path("publications/", publications.PublicationListView.as_view(), name="publication_list"),
     path(
