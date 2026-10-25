@@ -47,25 +47,25 @@ class TagTests(TestCase):
 
     def test_known_levels_keep_their_case(self):
         tags.tag_entry(self.entries[0], "Projet Été/Groupe A")
-        tag = tags.tag_entry(self.entries[1], " projet été / groupe a ")
+        tag = tags.tag_entry(self.entries[1], " projet été / groupe a ").tag
         self.assertEqual(tag.name, "Projet Été/Groupe A")
-        tag = tags.tag_entry(self.entries[2], "PROJET ÉTÉ/Écarté")
+        tag = tags.tag_entry(self.entries[2], "PROJET ÉTÉ/Écarté").tag
         self.assertEqual(tag.name, "Projet Été/Écarté")
         self.assertEqual(Tag.objects.filter(user=self.alice).count(), 2)
 
     def test_tags_belong_to_each_user(self):
         tags.tag_entry(self.entries[0], "Projet A")
         bob_entry = UserPublication.objects.create(user=self.bob, publication=self.pubs[0])
-        self.assertEqual(tags.tag_entry(bob_entry, "projet a").name, "projet a")
+        self.assertEqual(tags.tag_entry(bob_entry, "projet a").tag.name, "projet a")
         self.assertEqual(Tag.objects.count(), 2)
 
     def test_empty_and_too_long_names(self):
-        self.assertIsNone(tags.tag_entry(self.entries[0], " / "))
+        self.assertIsNone(tags.tag_entry(self.entries[0], " / ").tag)
         with self.assertRaises(tags.InvalidTag):
             tags.tag_entry(self.entries[0], "x" * 201)
 
     def test_unused_tags_are_forgotten(self):
-        tag = tags.tag_entry(self.entries[0], "A/B")
+        tag = tags.tag_entry(self.entries[0], "A/B").tag
         tags.tag_entry(self.entries[1], "A/B")
         tags.untag_entry(self.entries[0], tag)
         self.assertTrue(Tag.objects.filter(pk=tag.pk).exists())
@@ -124,7 +124,7 @@ class TagTests(TestCase):
         url = reverse("corpus_tag", args=[outside.pk])
         self.assertEqual(self.client.post(url, {"name": "A"}).status_code, 404)
         bob_entry = UserPublication.objects.create(user=self.bob, publication=self.pubs[0])
-        bob_tag = tags.tag_entry(bob_entry, "B")
+        bob_tag = tags.tag_entry(bob_entry, "B").tag
         url = reverse("corpus_untag", args=[self.pubs[0].pk, bob_tag.pk])
         self.assertEqual(self.client.post(url).status_code, 404)
 
