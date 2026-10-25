@@ -19,6 +19,7 @@ from references.services.latex_bibliography import (
     references,
     written_identifier,
 )
+from references.services.metadata_formats import bibliography_source
 from references.tests.helpers import without_openalex, without_orcid
 
 ARXIV = "10.48550/arxiv.1706.03762"
@@ -242,6 +243,13 @@ class DetailTests(TestCase):
         response = self.page({"source": "pdf", "format": "none", "entries": []})
         self.assertContains(response, "Bibliographie indisponible")
         self.assertNotContains(response, "Importer ses références")
+
+    def test_bibliography_source(self):
+        pub = Publication.objects.create(doi=ARXIV)
+        store_record(pub, Source.DATACITE, datacite_preprint())
+        self.assertEqual(bibliography_source(pub), Source.DATACITE)
+        store_record(pub, Source.ARXIV, read_eprint(tar_gz({"ms.tex": INLINE_TEX})))
+        self.assertEqual(bibliography_source(pub), Source.ARXIV)
 
     def test_no_bibliography_in_the_sources(self):
         response = self.page({"source": "tar", "format": "none", "entries": []})

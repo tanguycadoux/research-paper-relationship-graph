@@ -120,6 +120,7 @@ class IdentifyReferenceViewTests(IdentificationTestCase):
         self.client.force_login(self.user)
         response = self.client.get(self.url(0))
         self.assertContains(response, "Goodfellow I. Deep Learning")
+        self.assertContains(response, "Telle que donnée par Crossref")
 
     def test_identify_without_identifier(self, _fetch):
         self.client.force_login(self.user)

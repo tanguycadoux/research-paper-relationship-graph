@@ -10,7 +10,7 @@
         <h1 class="mt-1">Identifier une référence</h1>
     </header>
     <div class="space-y-6">
-        {% card title="Telle que donnée par Crossref" %}
+        {% card title=reference_title %}
             <blockquote class="border-l-4 border-gray-200 pl-3 text-sm text-gray-700">
                 {{ ref.label|default:"(aucun texte)" }}
             </blockquote>
@@ -35,39 +35,40 @@
             {% endif %}
         {% endcard %}
         {% card %}
-            <form method="post" class="space-y-6">
+            {# Only the fields of the checked method are shown, in CSS (:has), without script. #}
+            <form method="post" class="group space-y-6">
                 {% csrf_token %}
-                <fieldset class="space-y-1">
+                <fieldset>
                     <legend>{{ form.method.label }}</legend>
-                    <div class="text-sm">{{ form.method }}</div>
+                    <div class="flex flex-wrap gap-x-6 gap-y-2">
+                        {% for radio in form.method %}
+                            <label for="{{ radio.id_for_label }}"
+                                   class="mb-0 flex items-center gap-2 font-normal">
+                                {{ radio.tag }} {{ radio.choice_label }}
+                            </label>
+                        {% endfor %}
+                    </div>
                     {{ form.method.errors }}
                 </fieldset>
-                <fieldset class="space-y-1">
-                    <legend>Par DOI</legend>
-                    <label for="{{ form.doi.id_for_label }}"
-                           class="font-normal text-gray-600">{{ form.doi.label }}</label>
+                <div class="hidden space-y-1 group-has-[input[value=doi]:checked]:block">
+                    <label for="{{ form.doi.id_for_label }}">{{ form.doi.label }}</label>
                     {{ form.doi }}
                     {{ form.doi.errors }}
-                </fieldset>
-                <fieldset class="space-y-1">
-                    <legend>Par ISBN</legend>
-                    <label for="{{ form.isbn.id_for_label }}"
-                           class="font-normal text-gray-600">{{ form.isbn.label }}</label>
+                </div>
+                <div class="hidden space-y-1 group-has-[input[value=isbn]:checked]:block">
+                    <label for="{{ form.isbn.id_for_label }}">{{ form.isbn.label }}</label>
                     {{ form.isbn }}
                     {{ form.isbn.errors }}
                     <p class="text-xs text-gray-500">Recherché dans Crossref, puis dans Open Library.</p>
-                </fieldset>
-                <fieldset class="space-y-1">
-                    <legend>Sans identifiant</legend>
-                    <label for="{{ form.title.id_for_label }}"
-                           class="font-normal text-gray-600">{{ form.title.label }}</label>
+                </div>
+                <div class="hidden space-y-1 group-has-[input[value=none]:checked]:block">
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
                     {{ form.title }}
                     {{ form.title.errors }}
-                    <label for="{{ form.year.id_for_label }}"
-                           class="mt-2 font-normal text-gray-600">{{ form.year.label }}</label>
+                    <label for="{{ form.year.id_for_label }}" class="mt-2">{{ form.year.label }}</label>
                     {{ form.year }}
                     {{ form.year.errors }}
-                </fieldset>
+                </div>
                 {% button "Identifier" %}
             </form>
         {% endcard %}
