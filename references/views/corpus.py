@@ -8,6 +8,7 @@ from ..models import Publication, UserPublication
 from ..services.corpus import add_to_corpus
 from ..services.doi import is_valid_doi, normalize_doi
 from ..services.publication_table import for_publication_table
+from ..services.sorting import PUBLICATIONS
 from .pagination import page_of
 
 
@@ -63,13 +64,14 @@ def remove_from_user_refs(request, pk):
 
 @login_required
 def my_references(request):
-    pubs = for_publication_table(
-        Publication.objects.filter(userpublication__user=request.user)
-    ).order_by("-publication_date", "title", "pk")
-    page = page_of(request, pubs)
+    pubs = for_publication_table(Publication.objects.filter(userpublication__user=request.user))
+    sort = PUBLICATIONS.read(request.GET.get("sort"))
+    page = page_of(request, PUBLICATIONS.apply(pubs, sort))
     context = {
         "publications": page.object_list,
         "page_obj": page,
+        "sorting": PUBLICATIONS,
+        "sort": sort,
         "not_exportable": pubs.filter(doi="", isbn="").count(),
     }
     return render(request, "references/user_references.html", context)

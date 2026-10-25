@@ -12,6 +12,7 @@ Interface components: {% load ui %}, then
     {% icon "delete" class="size-5" %}
     {% external_link "https://doi.org/"|add:pub.doi pub.doi class="break-all" %}
     {% pagination page_obj %}   (below a list in pages, its URL parameters kept)
+    {% column_header "Année" "year" %}   (a <th>, sortable when the view gives sorting)
 
 The Tailwind classes of each variant are written in full here, once: Tailwind
 finds them by scanning this file.
@@ -294,6 +295,34 @@ def pagination(context, page):
         "previous_classes": PAGE_PREVIOUS_CLASSES,
         "next_classes": PAGE_NEXT_CLASSES,
         "icon_classes": BUTTON_ICON,
+    }
+
+
+# A sortable column header: a link that looks like the header, its arrow beside it.
+COLUMN_LINK_CLASSES = "inline-flex items-center gap-1 text-inherit hover:text-gray-900"
+ARIA_SORT = {False: "ascending", True: "descending"}
+
+
+@register.inclusion_tag("components/column_header.html", takes_context=True)
+def column_header(context, label, column, classes=""):
+    """
+    A column header, {% column_header "Année" "year" %}: with sorting and sort in the
+    context (services/sorting.py), a link that sorts by the column, or reverses it, back
+    to the first page, the other parameters kept (#115).
+    """
+    sorting, sort = context.get("sorting"), context.get("sort")
+    header = {"label": label, "classes": classes, "url": ""}
+    if not sorting or column not in sorting.columns:
+        return header
+    query = context["request"].GET.copy()
+    query.pop("page", None)
+    query["sort"] = sorting.next_sort(sort, column).param
+    sorted_here = sort.column == column
+    return header | {
+        "url": f"?{query.urlencode()}",
+        "aria_sort": ARIA_SORT[sort.descending] if sorted_here else "",
+        "arrow": ("arrow_downward" if sort.descending else "arrow_upward") if sorted_here else "",
+        "link_classes": COLUMN_LINK_CLASSES,
     }
 
 

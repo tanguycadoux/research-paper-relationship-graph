@@ -1,0 +1,11 @@
+{% load ui %}
+<th scope="col"{% if classes %} class="{{ classes }}"{% endif %}{% if aria_sort %} aria-sort="{{ aria_sort }}"{% endif %}>
+    {% if url %}
+        <a href="{{ url }}" class="{{ link_classes }}">
+            {{ label }}
+            {% if arrow %}{% icon arrow class="size-4 shrink-0" %}{% endif %}
+        </a>
+    {% else %}
+        {{ label }}
+    {% endif %}
+</th>

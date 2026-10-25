@@ -14,6 +14,7 @@ from ..services.orcid_merge import merge_same_orcid
 from ..services.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.organizations import organization_groups
 from ..services.publication_table import corpus_ids, for_publication_table
+from ..services.sorting import AUTHORS
 from .pagination import PageMixin
 
 
@@ -21,7 +22,13 @@ class AuthorListView(PageMixin, ListView):
     model = Author
     template_name = "references/authors_list.html"
     context_object_name = "authors"
-    ordering = ("last_name", "first_name", "pk")
+
+    def get_queryset(self):
+        self.sort = AUTHORS.read(self.request.GET.get("sort"))
+        return AUTHORS.apply(Author.objects.all(), self.sort)
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(**kwargs) | {"sorting": AUTHORS, "sort": self.sort}
 
 
 class AuthorDetailView(DetailView):

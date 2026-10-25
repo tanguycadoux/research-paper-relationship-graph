@@ -13,7 +13,7 @@
     </header>
 
     {% if publications %}
-        {% include "references/_publication_table.html" with caption="Publications de la base commune, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated %}
+        {% include "references/_publication_table.html" with caption="Publications de la base commune" corpus_actions=user.is_authenticated %}
         {% pagination page_obj %}
     {% else %}
         <p class="text-gray-600">Aucune publication dans la base.</p>

@@ -25,6 +25,7 @@ from ..services.publication_table import (
     for_publication_table,
     references_available,
 )
+from ..services.sorting import PUBLICATIONS
 from .pagination import PageMixin
 
 
@@ -32,13 +33,18 @@ class PublicationListView(PageMixin, ListView):
     model = Publication
     template_name = "references/publications_list.html"
     context_object_name = "publications"
-    queryset = for_publication_table(Publication.objects.all())
-    # Ties broken down to the id: rows of equal date must not move between pages.
-    ordering = ("-publication_date", "title", "pk")
+
+    def get_queryset(self):
+        self.sort = PUBLICATIONS.read(self.request.GET.get("sort"))
+        return PUBLICATIONS.apply(for_publication_table(Publication.objects.all()), self.sort)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["user_pub_ids"] = corpus_ids(self.request.user)
+        context |= {
+            "user_pub_ids": corpus_ids(self.request.user),
+            "sorting": PUBLICATIONS,
+            "sort": self.sort,
+        }
         return context
 
 

@@ -3,6 +3,7 @@ from django.shortcuts import render
 from ..models import Publication
 from ..services.publication_table import corpus_ids, for_publication_table
 from ..services.search import filter_publications, parse, search_authors
+from ..services.sorting import PUBLICATIONS
 from .pagination import page_of
 
 # Beyond, the query is too vague for a list of names: the page says how many match.
@@ -15,14 +16,15 @@ def search(request):
     query = parse(text)
     context = {"q": text, "query": query}
     if query:
-        publications = for_publication_table(
-            filter_publications(Publication.objects.all(), query)
-        ).order_by("-publication_date", "title", "pk")
-        page = page_of(request, publications)
+        publications = for_publication_table(filter_publications(Publication.objects.all(), query))
+        sort = PUBLICATIONS.read(request.GET.get("sort"))
+        page = page_of(request, PUBLICATIONS.apply(publications, sort))
         authors = search_authors(query).order_by("last_name", "first_name", "pk")
         context |= {
             "publications": page.object_list,
             "page_obj": page,
+            "sorting": PUBLICATIONS,
+            "sort": sort,
             "authors": authors[:AUTHORS_SHOWN],
             "author_count": authors.count(),
             "user_pub_ids": corpus_ids(request.user),
