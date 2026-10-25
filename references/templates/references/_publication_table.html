@@ -91,8 +91,9 @@ always beside the reading status: it stays on the page of each publication.
                                       class="flex justify-end gap-1">
                                     {% csrf_token %}
                                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
+                                    {# « + » last: aligned with « − » of the rows in the corpus. #}
                                     {% button "Ajouter à mes références, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                                    {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
                                 </form>
                             {% endif %}
                         </td>
