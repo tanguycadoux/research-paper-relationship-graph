@@ -13,6 +13,7 @@ from .books import find_or_import_book
 from .doi import is_valid_doi, normalize_doi
 from .importer import import_publication
 from .isbn import is_valid_isbn, normalize_isbn
+from .publication_moves import move_corpus_entries
 
 PUBLICATION_URL = re.compile(r"/publications/(\d+)/?")
 
@@ -31,7 +32,7 @@ def find_merge_target(text):
     text = text.strip()
     doi = normalize_doi(text)
     if is_valid_doi(doi):
-        return Publication.objects.filter(doi=doi).first() or import_new_doi(doi)
+        return Publication.objects.with_doi(doi).first() or import_new_doi(doi)
     isbn = normalize_isbn(text)
     if is_valid_isbn(isbn):
         return Publication.objects.filter(isbn=isbn).first() or find_or_import_book(isbn)[0]
@@ -41,8 +42,7 @@ def find_merge_target(text):
 
 def import_new_doi(doi):
     pub = Publication.objects.create(doi=doi)
-    import_publication(pub)
-    return pub
+    return import_publication(pub) or pub
 
 
 def merge_summary(duplicate):
@@ -68,10 +68,3 @@ def merge_publication(duplicate, into, user):
     )
     move_corpus_entries(duplicate, into)
     duplicate.delete()
-
-
-def move_corpus_entries(duplicate, into):
-    users_of_target = UserPublication.objects.filter(publication=into).values("user_id")
-    UserPublication.objects.filter(publication=duplicate).exclude(
-        user_id__in=users_of_target
-    ).update(publication=into)

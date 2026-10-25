@@ -108,7 +108,10 @@ class PublicationUpdateView(LoginRequiredMixin, UpdateView):
         record_manual_edits(form.instance, form.changed_data)
         response = super().form_valid(form)
         if identifier_changed(form.changed_data):
-            report_refetch(self.request, self.object, refetch_after_identifier_change(self.object))
+            imported = refetch_after_identifier_change(self.object)
+            # A preprint DOI may lead to its published version, already in the base (#227).
+            self.object = imported or self.object
+            report_refetch(self.request, self.object, imported)
         else:
             messages.success(self.request, f"« {self.object} » a été modifiée.")
         return response
@@ -160,7 +163,8 @@ def trigger_import_publication(request, pk):
     Crossref for a publication whose data was already fetched.
     """
     pub = get_object_or_404(Publication, pk=pk)
-    if import_publication(pub, with_references=pub.parse_references, force_fetch=True):
+    if imported := import_publication(pub, with_references=pub.parse_references, force_fetch=True):
+        pub = imported
         messages.success(request, f"Métadonnées rafraîchies pour « {pub} ».")
     else:
         messages.error(request, f"Impossible de récupérer les métadonnées de « {pub} ».")
@@ -175,7 +179,8 @@ def import_publication_references(request, pk):
     to the user's corpus: its references join the shared base (#23).
     """
     pub = get_object_or_404(Publication, pk=pk)
-    if import_publication(pub, with_references=True):
+    if imported := import_publication(pub, with_references=True):
+        pub = imported
         count = pub.cited_references.count()
         messages.success(request, f"{count} référence(s) importée(s) pour « {pub} ».")
     else:

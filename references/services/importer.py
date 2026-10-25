@@ -7,6 +7,7 @@ from .enrichment import complete_cited_with_openalex, complete_with_openalex
 from .external_records import Source, has_metadata, store_record
 from .orcid_names import complete_names
 from .parser import parse_publication
+from .preprints import published_version, replace_cited_preprints
 
 
 def import_publication(pub, *, with_references=False, force_fetch=False):
@@ -14,11 +15,15 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     Make sure the publication has its metadata, then parse it, and complete it
     with OpenAlex, and the names of its authors with ORCID. With references, the
     cited publications are imported too, without their own references (the names
-    of their authors are left to the complete_orcid_names command). Return False
-    if the metadata could not be retrieved.
+    of their authors are left to the complete_orcid_names command). An arXiv
+    preprint that declares its published version is replaced by it (#227).
+
+    Return the publication imported: pub, or the published version already in the
+    base that the preprint merged into. None if the metadata could not be retrieved.
     """
     if not ensure_metadata(pub, force_fetch=force_fetch):
-        return False
+        return None
+    pub = published_version(pub)
     complete_with_openalex(pub, force_fetch=force_fetch)
     with transaction.atomic():
         parse_publication(pub, parse_references=with_references)
@@ -26,7 +31,7 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     if with_references:
         import_cited_publications(pub)
         complete_cited_with_openalex(pub)
-    return True
+    return pub
 
 
 def ensure_metadata(pub, force_fetch=False):
@@ -57,7 +62,8 @@ def import_cited_publications(pub):
     Import the cited publications never fetched: one Crossref request per batch
     of DOIs, then one DataCite request per batch for the DOIs Crossref does not
     know. A DOI unknown to both is stored as such, so that later imports do not
-    request it again (an explicit action can still retry it).
+    request it again (an explicit action can still retry it). Cited arXiv preprints
+    that declare their published version are replaced by it.
     """
     targets = {target.doi: target for target in unfetched_cited_publications(pub)}
     if not targets:
@@ -66,6 +72,10 @@ def import_cited_publications(pub):
     with transaction.atomic():
         for doi, records in answers.items():
             store_cited_work(targets[doi], records)
+    preprints = [targets[doi] for doi, records in answers.items() if Source.DATACITE in records]
+    for published in replace_cited_preprints(preprints):
+        with transaction.atomic():
+            parse_publication(published, parse_references=False)
 
 
 def fetch_cited_works(dois):

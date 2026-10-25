@@ -145,6 +145,15 @@
                             </dd>
                         </div>
                     {% endif %}
+                    {% if publication.preprint_doi %}
+                        {# The arXiv preprint replaced by this published version (#227). #}
+                        <div>
+                            <dt class="text-gray-500">Prépublication</dt>
+                            <dd>
+                                {% external_link "https://doi.org/"|add:publication.preprint_doi publication.preprint_doi class="break-all" %}
+                            </dd>
+                        </div>
+                    {% endif %}
                     {% if publication.isbn %}
                         <div>
                             <dt class="text-gray-500">ISBN</dt>

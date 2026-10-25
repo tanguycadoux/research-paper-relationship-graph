@@ -6,6 +6,19 @@ from .services.doi import normalize_doi
 from .services.isbn import normalize_isbn
 
 
+class PublicationQuerySet(models.QuerySet):
+    def with_doi(self, doi):
+        """By its DOI, or by the DOI of the preprint it replaced (#227)."""
+        return self.filter(models.Q(doi=doi) | models.Q(preprint_doi=doi))
+
+    def with_dois(self, dois):
+        return self.filter(models.Q(doi__in=dois) | models.Q(preprint_doi__in=dois))
+
+    def get_or_create_doi(self, doi):
+        """The publication of a DOI, or of the preprint it replaced, else a new one."""
+        return self.with_doi(doi).first() or self.create(doi=doi)
+
+
 class Publication(models.Model):
     class DatePrecision(models.TextChoices):
         """What the source gives of the date: the missing month or day is stored as 1 (#147)."""
@@ -17,6 +30,9 @@ class Publication(models.Model):
     DATE_FORMATS = {DatePrecision.YEAR: "Y", DatePrecision.MONTH: "F Y", DatePrecision.DAY: "j F Y"}
 
     doi = models.CharField(max_length=255, blank=True)
+    # The arXiv DOI of a preprint replaced by its published version (#227): importing
+    # or citing it finds this publication again.
+    preprint_doi = models.CharField("DOI de la prépublication", max_length=255, blank=True)
     isbn = models.CharField("ISBN", max_length=13, blank=True)
     title = models.TextField(blank=True)
     publication_date = models.DateField(null=True, blank=True)
@@ -32,10 +48,17 @@ class Publication(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
 
+    objects = PublicationQuerySet.as_manager()
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["doi"], condition=~models.Q(doi=""), name="unique_non_empty_doi"
+            ),
+            models.UniqueConstraint(
+                fields=["preprint_doi"],
+                condition=~models.Q(preprint_doi=""),
+                name="unique_non_empty_preprint_doi",
             ),
             models.UniqueConstraint(
                 fields=["isbn"], condition=~models.Q(isbn=""), name="unique_non_empty_isbn"
@@ -47,6 +70,7 @@ class Publication(models.Model):
 
     def save(self, *args, **kwargs):
         self.doi = normalize_doi(self.doi)
+        self.preprint_doi = normalize_doi(self.preprint_doi)
         self.isbn = normalize_isbn(self.isbn)
         super().save(*args, **kwargs)
 

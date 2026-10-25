@@ -13,6 +13,23 @@ from ..services.sorting import PUBLICATIONS
 from .pagination import page_of
 
 
+def add_and_report(request, pub):
+    """
+    Add pub to the corpus and say how it went. Return the publication added: the
+    published version of a preprint, maybe (#227).
+    """
+    asked_doi = pub.doi
+    imported = add_to_corpus(request.user, pub)
+    report_addition(request, imported or pub, imported)
+    if imported and asked_doi and imported.preprint_doi == asked_doi:
+        messages.info(
+            request,
+            f"La prépublication arXiv {asked_doi} a été remplacée par sa version publiée, "
+            f"DOI {imported.doi}.",
+        )
+    return imported or pub
+
+
 def report_addition(request, pub, imported):
     if imported:
         messages.success(request, f"« {pub} » a été ajouté à votre corpus.")
@@ -35,9 +52,8 @@ def redirect_back(request, pk):
 @login_required
 @require_POST
 def add_to_user_refs(request, pk):
-    pub = get_object_or_404(Publication, pk=pk)
-    report_addition(request, pub, add_to_corpus(request.user, pub))
-    return redirect_back(request, pk)
+    pub = add_and_report(request, get_object_or_404(Publication, pk=pk))
+    return redirect_back(request, pub.pk)
 
 
 @login_required
@@ -49,8 +65,7 @@ def add_publication_to_user_refs_by_doi(request):
         messages.error(request, "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
         return redirect("corpus")
 
-    pub, _ = Publication.objects.get_or_create(doi=normalized_doi)
-    report_addition(request, pub, add_to_corpus(request.user, pub))
+    add_and_report(request, Publication.objects.get_or_create_doi(normalized_doi))
     return redirect("corpus")
 
 

@@ -45,7 +45,8 @@ def refetch_after_identifier_change(pub):
     """
     The DOI or ISBN now designates another work: drop what was fetched for the old
     one (answers of the sources, author slots, bibliography), then import the new
-    one. Return False if no metadata could be retrieved.
+    one. Return the publication imported (the published version of a preprint DOI,
+    maybe), or None if no metadata could be retrieved.
     """
     with transaction.atomic():
         author_ids = list(pub.authors.values_list("pk", flat=True))
@@ -56,5 +57,5 @@ def refetch_after_identifier_change(pub):
     if pub.doi:
         return import_publication(pub, with_references=pub.parse_references)
     if pub.isbn:
-        return import_book_metadata(pub)
-    return False
+        return pub if import_book_metadata(pub) else None
+    return None
