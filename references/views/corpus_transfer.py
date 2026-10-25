@@ -106,6 +106,13 @@ def report_import(request, report):
             f"{len(report.ignored)} entrée(s) ignorée(s), sans DOI, identifiant arXiv ni "
             f"ISBN valide : {listed(report.ignored)}.",
         )
+    if report.unregistered:
+        messages.warning(
+            request,
+            f"{len(report.unregistered)} entrée(s) ignorée(s), dont le DOI n'est enregistré "
+            "nulle part (les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des "
+            f"DOI) : {listed(report.unregistered)}.",
+        )
 
 
 def listed(titles, limit=10):

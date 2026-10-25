@@ -46,9 +46,25 @@ def without_orcid(target):
     )(target)
 
 
+def doi_org_answers(registered):
+    """Mock doi.org as giving the same answer for every DOI: True, False, or None (#240)."""
+    return patch(
+        "references.services.doi_registration.registered_dois",
+        new=lambda dois: dict.fromkeys(dois, registered),
+    )
+
+
+def without_doi_org(target):
+    """Mock doi.org as unreachable: every DOI is accepted, without request."""
+    return doi_org_answers(None)(target)
+
+
 def without_other_sources(target):
-    """Mock every source other than Crossref (DataCite, OpenAlex, ORCID) as knowing nothing."""
-    return without_orcid(without_openalex(without_datacite(target)))
+    """
+    Mock every source other than Crossref (DataCite, OpenAlex, ORCID, doi.org) as
+    knowing nothing.
+    """
+    return without_doi_org(without_orcid(without_openalex(without_datacite(target))))
 
 
 def without_candidate_search(target):

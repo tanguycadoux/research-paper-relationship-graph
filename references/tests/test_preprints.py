@@ -16,7 +16,7 @@ from references.services.preprints import (
     is_published_version,
     similar_titles,
 )
-from references.tests.helpers import with_crossref, without_openalex, without_orcid
+from references.tests.helpers import with_crossref, without_doi_org, without_openalex, without_orcid
 
 ARXIV = "10.48550/arxiv.2403.00171"
 JOURNAL = "10.1109/tasc.2024.3358777"
@@ -82,6 +82,7 @@ class DeclarationTests(SimpleTestCase):
         self.assertFalse(is_published_version(TITLE, None))
 
 
+@without_doi_org
 @without_orcid
 @without_openalex
 class ReplacementTests(TestCase):
