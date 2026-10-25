@@ -60,11 +60,17 @@
                           enctype="multipart/form-data"
                           class="space-y-3">
                         {% csrf_token %}
-                        <label for="corpus-file">Importer un export JSON</label>
+                        <label for="corpus-file">Importer un fichier JSON, BibTeX ou RIS</label>
+                        <p id="corpus-file-help" class="text-gray-600">
+                            Un export de cette application, ou de Zotero (Exporter la collection…).
+                            Seuls le DOI, l'identifiant arXiv et l'ISBN de chaque entrée sont lus :
+                            les données viennent des sources.
+                        </p>
                         <input type="file"
                                id="corpus-file"
                                name="file"
-                               accept=".json,application/json"
+                               accept=".json,.bib,.ris,application/json"
+                               aria-describedby="corpus-file-help"
                                required>
                         {% button "Importer" variant="secondary" icon="upload" %}
                     </form>

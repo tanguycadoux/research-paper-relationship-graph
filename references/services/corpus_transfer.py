@@ -1,6 +1,7 @@
 """
 Export of a user's corpus, and import of such an export: as JSON (identifiers
-only, the shared corrections stay in the database) or as BibTeX (export only).
+only, the shared corrections stay in the database) or as BibTeX. The import also
+reads the BibTeX and RIS files of reference managers (bibliography_files).
 """
 
 import re
@@ -50,21 +51,26 @@ class ImportReport:
     added: list = field(default_factory=list)
     already_there: list = field(default_factory=list)
     without_metadata: list = field(default_factory=list)
-    ignored: int = 0
+    # Titles of the entries without a valid DOI or ISBN.
+    ignored: list = field(default_factory=list)
 
 
 def import_corpus(user, data):
+    """Add the publications of an export of this application to the corpus of user."""
+    return import_entries(user, export_entries(data))
+
+
+def import_entries(user, entries):
     """
-    Add the publications of an export to the corpus of user. Only publications
-    without stored metadata are fetched from the external sources.
+    Add the publications of entries ({doi, isbn, title}) to the corpus of user. Only
+    publications without stored metadata are fetched from the external sources.
     """
-    entries = export_entries(data)
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
     for entry in entries:
         pub = find_or_create(entry.get("doi"), entry.get("isbn"))
         if pub is None:
-            report.ignored += 1
+            report.ignored.append(str(entry.get("title") or ""))
         elif pub.pk in in_corpus:
             report.already_there.append(pub)
         else:
