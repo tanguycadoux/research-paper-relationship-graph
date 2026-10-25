@@ -7,6 +7,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from ..models import UserPublication
 from ..services.bibliography_files import file_entries
 from ..services.corpus_transfer import (
     InvalidExport,
@@ -55,9 +56,11 @@ def import_file(request):
         )
         return redirect("corpus")
     text = decoded(upload.read())
+    # « à lire »: the bibliographies are left aside, the import is much faster (#234).
+    default_status = UserPublication.ReadingStatus.TO_READ if request.POST.get("to_read") else ""
     if text.lstrip().startswith(("{", "[")):
         try:
-            report = import_corpus(request.user, json.loads(text))
+            report = import_corpus(request.user, json.loads(text), default_status)
         except json.JSONDecodeError:
             messages.error(request, "Le fichier n'est pas un JSON valide.")
             return redirect("corpus")
@@ -73,7 +76,7 @@ def import_file(request):
                 "application, ni un fichier BibTeX ou RIS.",
             )
             return redirect("corpus")
-        report = import_entries(request.user, entries)
+        report = import_entries(request.user, entries, default_status)
     report_import(request, report)
     return redirect("corpus")
 

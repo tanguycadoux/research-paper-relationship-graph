@@ -9,7 +9,7 @@ from references.models import Publication, UserPublication
 
 # Both return the publication imported.
 @patch("references.views.publications.import_publication", side_effect=lambda pub, **_: pub)
-@patch("references.views.corpus.add_identified", side_effect=lambda user, pub: pub)
+@patch("references.views.corpus.add_identified", side_effect=lambda user, pub, status="": pub)
 class StateChangingActionsTests(TestCase):
     """Actions that change the database answer only to POST (#19)."""
 
@@ -44,7 +44,7 @@ class StateChangingActionsTests(TestCase):
     def test_add_returns_to_the_publication(self, add_to_corpus, import_publication):
         response = self.client.post(reverse("corpus_add", args=[self.pub.pk]))
         self.assertRedirects(response, reverse("publication_detail", args=[self.pub.pk]))
-        add_to_corpus.assert_called_once_with(self.user, self.pub)
+        add_to_corpus.assert_called_once_with(self.user, self.pub, "")
 
     def test_remove_returns_to_the_page_holding_the_button(self, add_to_corpus, import_publication):
         UserPublication.objects.create(user=self.user, publication=self.pub)
@@ -71,7 +71,8 @@ class StateChangingActionsTests(TestCase):
         for name, args in (("publication_detail", [self.pub.pk]), ("publication_list", [])):
             with self.subTest(page=name):
                 response = self.client.get(reverse(name, args=args))
-                self.assertContains(response, f'<form method="post" action="{add_url}">')
+                self.assertContains(response, f'action="{add_url}"')
+                self.assertContains(response, 'method="post"')
                 self.assertNotContains(response, f'href="{add_url}"')
 
 

@@ -87,9 +87,12 @@ class Publication(models.Model):
     def parse_references(self):
         """
         Whether the cited references are imported: as long as the publication is in
-        the corpus of at least one user. Those already imported stay when it leaves.
+        the corpus of at least one user, other than « à lire » (#234). Those already
+        imported stay when it leaves.
         """
-        return self.userpublication_set.exists()
+        return self.userpublication_set.exclude(
+            reading_status=UserPublication.ReadingStatus.TO_READ
+        ).exists()
 
 
 class ExternalRecord(models.Model):
