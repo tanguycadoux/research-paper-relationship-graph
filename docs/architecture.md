@@ -219,6 +219,11 @@ tentatives, et jusqu'à 60 s d'attente si la source le demande.
   - Les réponses des sources sont gardées sur la référence (deux requêtes au premier
     affichage, puis aucune) ; « Relancer la recherche » les oublie. Une source qui ne
     répond pas n'est pas mise en cache.
+  - Un DOI saisi à la main est d'abord soumis à doi.org (`doi.is_registered`, #240) : s'il
+    n'existe pas, le formulaire le refuse au lieu de créer une publication vide. Les
+    identifiants `10.5555/…` de l'ACM Digital Library ressemblent à des DOI sans en être.
+    La requête est évitée si une publication de la base, avec métadonnées, porte ce DOI ;
+    si doi.org ne répond pas, le DOI est accepté avec l'avertissement habituel.
 - **Modifier une publication** (`publication_edits.py`, #146) : un titre ou une date
   corrigés sont marqués et ne sont plus réécrits par les analyses suivantes ; la fiche le
   signale, et « Revenir aux valeurs des sources » relit la réponse stockée, sans requête.
@@ -717,3 +722,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Un tag n'accompagne jamais l'un de ses sous-tags sur une publication ; renommer un tag renomme ses sous-tags et fusionne avec un nom existant | Le filtre inclut les sous-tags : « Projet » à côté de « Projet/Groupe » n'apporte rien. Le plus précis remplace le moins précis, le moins précis n'est pas ajouté ; même règle à l'import et après une fusion. Renommer par chemin permet aussi de déplacer un tag dans l'arbre (#130). |
 | 2026-10-25 | Publications candidates par Crossref (texte complet) et DataCite (titre seul), vérifiées ici, gardées sur la référence | Mesuré sur la base : Crossref seul trouve 9 références sur 32 et aucune en physique, les actes JACoW et les prépublications arXiv étant chez DataCite ; ensemble, 22 sur 32. Le score de Crossref n'admet pas de seuil (une copie de 2020 passe devant l'original) : titre, année et auteur sont vérifiés de notre côté. Semantic Scholar n'apporterait presque rien : les manques restants n'ont pas de DOI (#160). |
 | 2026-10-25 | Code JACoW écrit dans une référence relié à l'import, après confirmation de DataCite | C'est un identifiant écrit par les auteurs, comme un identifiant arXiv ; la publication n'est créée que si DataCite connaît le DOI et que le titre concorde, pour ne pas remplir la base de publications vides (#160). |
+| 2026-10-25 | Un DOI saisi pour identifier une référence est refusé si doi.org ne le connaît pas | L'ACM affiche des `10.5555/…` qui ne sont pas des DOI ; les relier laissait une publication vide (publication 244 de la base). doi.org (`/ra/`) répond pour toutes les agences, en une requête légère et définitive. Pas de vérification sur « C'est celle-ci » : les candidats viennent de Crossref ou de DataCite (#240). |

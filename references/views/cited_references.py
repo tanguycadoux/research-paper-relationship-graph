@@ -15,7 +15,7 @@ from ..services.metadata_formats import bibliography_source
 def identify_reference(request, pk, position):
     ref = get_object_or_404(CitedReference, source_id=pk, position=position)
     form = IdentifyReferenceForm(request.POST or None, initial=initial_values(ref))
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and form.is_valid() and not refuse_unregistered_doi(form):
         apply_identification(request, ref, form.cleaned_data)
         return redirect("publication_detail", pk=pk)
     found, search_failed = candidates.candidates_for(ref)
@@ -88,6 +88,23 @@ def initial_values(ref):
         "title": candidates.cited_title(ref),
         "year": candidates.cited_year(ref),
     }
+
+
+ACM_PSEUDO_DOI_PREFIX = "10.5555/"
+
+
+def refuse_unregistered_doi(form):
+    """Put an error on the DOI field if doi.org does not know it (#240); return True then."""
+    data = form.cleaned_data
+    if data["method"] != IdentifyReferenceForm.METHOD_DOI:
+        return False
+    if not identification.is_unregistered_doi(data["doi"]):
+        return False
+    message = "Ce DOI n'est enregistré nulle part (doi.org ne le connaît pas)."
+    if data["doi"].startswith(ACM_PSEUDO_DOI_PREFIX):
+        message += " Les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des DOI."
+    form.add_error("doi", message + " Sans DOI, identifiez-la « Sans identifiant ».")
+    return True
 
 
 def apply_identification(request, ref, data):
