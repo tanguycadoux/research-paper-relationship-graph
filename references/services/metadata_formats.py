@@ -4,17 +4,24 @@ Crossref, which the parser reads.
 """
 
 from .external_records import Source, records_by_source
+from .latex_bibliography import references as latex_references
 
 # When several sources know a publication, the first one is used.
 PRIORITY = [Source.CROSSREF, Source.DATACITE, Source.OPENLIBRARY]
 
 
 def metadata_message(pub):
-    """Message of the preferred source that knows the publication, or None."""
+    """
+    Message of the preferred source that knows the publication, or None. Without a
+    bibliography there, an arXiv preprint takes the one of its LaTeX sources (#227).
+    """
     records = records_by_source(pub)
     for source in PRIORITY:
         if source in records:
-            return CONVERTERS[source](records[source])
+            message = CONVERTERS[source](records[source])
+            if not message.get("reference") and Source.ARXIV in records:
+                message["reference"] = latex_references(records[Source.ARXIV])
+            return message
     return None
 
 

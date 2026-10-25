@@ -230,9 +230,21 @@
                 Les sources listent {{ references_available }} référence{% if references_available > 1 %}s{% endif %}
                 pour cette publication. Elles ne sont importées automatiquement que pour les
                 publications d'un corpus.
+            {% elif arxiv_bibliography == "not_fetched" %}
+                La bibliographie de cette prépublication arXiv se trouve dans ses sources LaTeX :
+                elle est récupérée pour les publications d'un corpus.
+            {% elif arxiv_bibliography == "pdf" %}
+                Bibliographie indisponible : cette prépublication a été déposée sur arXiv en PDF
+                seul, sans les sources LaTeX qui la contiennent.
+            {% elif arxiv_bibliography == "none" %}
+                Bibliographie introuvable dans les sources LaTeX déposées sur arXiv.
+            {% endif %}
+            {% if cited_references and arxiv_bibliography == "found" %}
+                Bibliographie tirée des sources LaTeX déposées sur arXiv : seules les références
+                dont les auteurs ont écrit l'identifiant (DOI ou arXiv) sont reliées d'office.
             {% endif %}
         </p>
-        {% if not cited_references and references_available and user.is_authenticated %}
+        {% if can_import_references %}
             <form method="post"
                   action="{% url 'publication_import_references' publication.pk %}"
                   class="mb-3">

@@ -1,13 +1,14 @@
 from django.db import transaction
 
 from ..models import Author, Publication
+from .arxiv_api import fetch_arxiv_eprint
 from .crossref_api import fetch_crossref_json, fetch_crossref_works
 from .datacite_api import fetch_datacite_json, fetch_datacite_works
 from .enrichment import complete_cited_with_openalex, complete_with_openalex
-from .external_records import Source, has_metadata, store_record
+from .external_records import Source, has_metadata, has_record, store_record
 from .orcid_names import complete_names
 from .parser import parse_publication
-from .preprints import published_version, replace_cited_preprints
+from .preprints import arxiv_id, is_arxiv, published_version, replace_cited_preprints
 
 
 def import_publication(pub, *, with_references=False, force_fetch=False):
@@ -24,6 +25,8 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     if not ensure_metadata(pub, force_fetch=force_fetch):
         return None
     pub = published_version(pub)
+    if with_references and is_arxiv(pub.doi):
+        ensure_arxiv_bibliography(pub, force_fetch=force_fetch)
     complete_with_openalex(pub, force_fetch=force_fetch)
     with transaction.atomic():
         parse_publication(pub, parse_references=with_references)
@@ -47,6 +50,18 @@ def ensure_metadata(pub, force_fetch=False):
             store_record(pub, source, json_data)
             return True
     return False
+
+
+def ensure_arxiv_bibliography(pub, force_fetch=False):
+    """
+    The LaTeX sources of a preprint without published version, read once for its
+    bibliography (#227); only when its references are wanted.
+    """
+    if has_record(pub, Source.ARXIV) and not force_fetch:
+        return
+    data = fetch_arxiv_eprint(arxiv_id(pub.doi))
+    if data is not None:
+        store_record(pub, Source.ARXIV, data)
 
 
 def doi_sources():

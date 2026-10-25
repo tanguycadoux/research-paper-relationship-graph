@@ -1,6 +1,7 @@
 """
-JSON GET requests to external APIs (Crossref, Open Library): shared session,
-retries on rate limiting (429), server and network errors, and logging.
+GET requests to external APIs (Crossref, Open Library…), JSON or files (arXiv
+e-prints): shared session, retries on rate limiting (429), server and network errors,
+and logging.
 
 A request made while a page loads keeps the user waiting: it is retried once, and
 given up when the source asks to wait longer than a few seconds. Management
@@ -50,11 +51,39 @@ def get_json(url, *, params=None, headers=None, service, subject, contact=""):
     Return the decoded JSON of a GET request, or None if it cannot be retrieved.
     A 404 (unknown resource) or a 403 (access refused) is not retried.
     """
+    response = _get(url, params, headers, service, subject, contact)
+    return None if response is None else _parse_json(response, service, subject)
+
+
+def get_bytes(url, *, service, subject, max_bytes):
+    """
+    Return the body of a GET request (a file), or None if it cannot be retrieved or
+    is larger than max_bytes: read as it arrives, it is dropped beyond the limit.
+    """
+    response = _get(url, None, None, service, subject, "", stream=True)
+    if response is None:
+        return None
+    content = bytearray()
+    try:
+        for chunk in response.iter_content(chunk_size=65536):
+            content += chunk
+            if len(content) > max_bytes:
+                response.close()
+                logger.warning("%s: %s exceeds %s bytes, given up", service, subject, max_bytes)
+                return None
+    except requests.RequestException as error:
+        logger.warning("%s network error while reading %s: %s", service, subject, error)
+        return None
+    return bytes(content)
+
+
+def _get(url, params, headers, service, subject, contact, stream=False):
+    """The 200 response of a GET request, retried as the limits allow, or None."""
     limits = _limits.get()
     for attempt in range(1, limits.attempts + 1):
-        response = _request(url, params, headers, service, subject, contact)
+        response = _request(url, params, headers, service, subject, contact, stream)
         if response is not None and response.status_code == 200:
-            return _parse_json(response, service, subject)
+            return response
         if not _should_retry(response) or attempt == limits.attempts:
             _log_failure(response, service, subject)
             return None
@@ -77,7 +106,7 @@ def _get_session():
     return requests.Session()
 
 
-def _request(url, params, headers, service, subject, contact):
+def _request(url, params, headers, service, subject, contact, stream=False):
     """Send one request. Return None on network error."""
     logger.info("%s request for %s", service, subject)
     try:
@@ -86,6 +115,7 @@ def _request(url, params, headers, service, subject, contact):
             params=params or None,
             headers={"User-Agent": user_agent(contact)} | (headers or {}),
             timeout=REQUEST_TIMEOUT,
+            stream=stream,
         )
     except requests.RequestException as error:
         logger.warning("%s network error for %s: %s", service, subject, error)

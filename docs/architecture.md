@@ -38,6 +38,7 @@ references/          application principale
     datacite_api.py  client DataCite (DOI par DOI ou par lots)
     openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions)
     openlibrary_api.py  client Open Library (recherche par ISBN)
+    arxiv_api.py     client arXiv (sources LaTeX d'une prépublication, une à la fois)
     orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne, noms par lots)
     external_records.py  stockage des réponses des sources (ExternalRecord), statut des métadonnées
     metadata_formats.py  conversion de chaque source vers le format lu par le parser
@@ -46,6 +47,7 @@ references/          application principale
     corpus.py        ajout au corpus (import avec les références)
     parser.py        réponse de la source vers les modèles
     titles.py        nettoyage des titres (entités HTML, balisage JATS)
+    latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
     author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
     enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
     affiliations.py  rattachement des organisations aux signatures
@@ -238,6 +240,27 @@ Garde-fous, puisqu'on ne remplace que sur une information fiable :
 Toutes les recherches par DOI passent par `Publication.objects.with_doi` /
 `get_or_create_doi`, qui regardent aussi `preprint_doi`. La commande `replace_preprints`
 applique le remplacement aux publications déjà en base, sans nouvel appel à DataCite.
+
+### Bibliographie tirée des sources arXiv
+
+Une prépublication sans version publiée déclarée n'a de bibliographie nulle part
+ailleurs que dans le texte de ses auteurs. arXiv ne lance pas BibTeX : les auteurs
+déposent le `.bbl`, ou écrivent `thebibliography` dans le `.tex`. Quand une telle
+prépublication entre dans un corpus (ou par « Importer ses références »), son e-print
+est téléchargé **une fois** (`arxiv_api.py`, 30 Mo au plus, lu en mémoire sans rien
+extraire sur le disque) ; les entrées `\bibitem` sont stockées brutes dans un
+`ExternalRecord` de source `arxiv` (`latex_bibliography.read_eprint`). À la lecture, elles
+deviennent des références au format Crossref, au texte nettoyé du LaTeX (accents,
+`\newblock`, `{\em …}`, `\bibinfo`…) : `metadata_message` les prend quand la source
+prioritaire (DataCite) n'a pas de bibliographie. Un nettoyage amélioré s'applique donc
+sans nouveau téléchargement.
+
+Seuls les identifiants **écrits par les auteurs** relient une référence : un DOI, ou un
+identifiant arXiv (DOI `10.48550/arXiv.…`, lui-même remplacé par sa version publiée s'il
+en déclare une). Les autres restent « à identifier ». Sur « Attention Is All You Need » :
+40 références, 22 reliées, 18 à identifier. La fiche dit d'où vient la bibliographie, ou
+pourquoi elle manque : prépublication déposée en PDF seul (environ 30 % en physique des
+accélérateurs), ou sources sans bibliographie.
 
 ## Fusion d'auteurs
 
@@ -647,3 +670,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Tri par colonne côté serveur, dans l'URL ; légendes des tableaux triables sans ordre annoncé | Un tri en JavaScript ne trierait que la page affichée ; `aria-sort` dit l'ordre courant, qu'une légende fixe contredirait (#115). |
 | 2026-10-25 | Filtres dans les en-têtes de colonne (popover), sans barre au-dessus du tableau | Souhait de l'utilisateur, à la manière d'un tableur ; la recherche globale garde le texte libre et les opérateurs. Le popover échappe au défilement de la carte sans JavaScript (#115). |
 | 2026-10-25 | Prépublication arXiv remplacée par la version publiée déclarée par ses auteurs ; DOI arXiv gardé dans `preprint_doi` | La version publiée est celle qu'on cite, et Crossref en donne la bibliographie ; plus de la moitié des prépublications en ont une. Un champ plutôt qu'une table d'identifiants : une prépublication n'a qu'un DOI arXiv (#227). |
+| 2026-10-25 | Bibliographie d'une prépublication sans version publiée tirée de ses sources LaTeX ; liens seulement sur les identifiants écrits par les auteurs | Le seul texte officiel de sa bibliographie ; OpenAlex et Semantic Scholar rapprochent automatiquement et se trompent (#227). Téléchargé une fois, pour les seules prépublications d'un corpus, comme arXiv le demande. |
