@@ -8,6 +8,23 @@
             <a href="{% url 'publication_detail' ref.source.pk %}">{{ ref.source }}</a>
         </p>
         <h1 class="mt-1">Identifier une référence</h1>
+        {% if series %}
+            {# Same place for « Passer » and « Terminer » from one reference to the next (#242). #}
+            <nav aria-label="Identification en série"
+                 class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold text-gray-900">{{ series.left }}</span>
+                    référence{{ series.left|pluralize }} à identifier dans cette publication,
+                    dont {{ series.after }} après celle-ci.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    {% url 'reference_skip' ref.source.pk ref.position as skip_url %}
+                    {% button "Passer" url=skip_url variant="secondary" icon="skip_next" %}
+                    {% url 'publication_detail' ref.source.pk as finish_url %}
+                    {% button "Terminer" url=finish_url variant="secondary" %}
+                </div>
+            </nav>
+        {% endif %}
     </header>
     <div class="space-y-6">
         {% card title=reference_title %}
@@ -88,6 +105,7 @@
                                   action="{% url 'reference_candidate' ref.source.pk ref.position %}"
                                   class="shrink-0">
                                 {% csrf_token %}
+                                {% if series %}<input type="hidden" name="serie" value="1">{% endif %}
                                 {% if candidate.publication %}
                                     <input type="hidden" name="publication" value="{{ candidate.publication.pk }}">
                                 {% else %}
@@ -107,6 +125,7 @@
                   action="{% url 'reference_search_again' ref.source.pk ref.position %}"
                   class="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-3">
                 {% csrf_token %}
+                {% if series %}<input type="hidden" name="serie" value="1">{% endif %}
                 {% button "Relancer la recherche" variant="secondary" icon="refresh" %}
                 {% if ref.candidates_fetched_at %}
                     <span class="text-xs text-gray-500">Recherche du <time datetime="{{ ref.candidates_fetched_at|date:'Y-m-d' }}">{{ ref.candidates_fetched_at|date:"j F Y" }}</time></span>
@@ -156,6 +175,7 @@
                   action="{% url 'reference_unidentifiable' ref.source.pk ref.position %}"
                   class="space-y-3">
                 {% csrf_token %}
+                {% if series %}<input type="hidden" name="serie" value="1">{% endif %}
                 {% if ref.unidentifiable %}
                     <p class="text-sm text-gray-600">Elle redeviendra une référence à identifier.</p>
                     {% button "Annuler « non identifiable »" variant="secondary" icon="undo" %}

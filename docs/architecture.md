@@ -237,6 +237,11 @@ des données périmées. Les tests le désactivent.
     écartée et listée). Les identifiants `10.5555/…` de l'ACM Digital Library ressemblent
     à des DOI sans en être. La requête est évitée si une publication de la base, avec
     métadonnées, porte ce DOI ; si doi.org ne répond pas, le DOI est accepté.
+  - **En série** (#242) : « Identifier en série », sur la fiche, enchaîne les références
+    à identifier de la publication, par position. Après chaque décision, la page passe à
+    la suivante au lieu de revenir à la fiche ; « Passer » la laisse à identifier, et
+    « Terminer » revient à la fiche. La série tient dans l'URL (`?serie=1`) et dans un
+    champ caché des formulaires : pas de session ni de modèle.
 - **Modifier une publication** (`publication_edits.py`, #146) : un titre ou une date
   corrigés sont marqués et ne sont plus réécrits par les analyses suivantes ; la fiche le
   signale, et « Revenir aux valeurs des sources » relit la réponse stockée, sans requête.

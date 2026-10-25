@@ -260,6 +260,12 @@
                 {% button "Importer ses références" icon="download" %}
             </form>
         {% endif %}
+        {% if user.is_authenticated and first_to_identify %}
+            <p class="mb-3">
+                {% url 'reference_identify' publication.pk first_to_identify.position as series_url %}
+                {% button "Identifier en série" url=series_url|add:"?serie=1" icon="playlist_play" %}
+            </p>
+        {% endif %}
         {% card flush=True %}
             <table>
                 <thead>

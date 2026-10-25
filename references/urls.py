@@ -78,6 +78,11 @@ urlpatterns = [
         cited_references.toggle_unidentifiable,
         name="reference_unidentifiable",
     ),
+    path(
+        "publications/<int:pk>/references/<int:position>/skip/",
+        cited_references.skip_reference,
+        name="reference_skip",
+    ),
     # Authors
     path("authors/", authors.AuthorListView.as_view(), name="author_list"),
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
