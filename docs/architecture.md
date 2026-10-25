@@ -44,7 +44,7 @@ references/          application principale
     metadata_formats.py  conversion de chaque source vers le format lu par le parser
     Import et analyse
     importer.py      orchestration : récupération puis analyse
-    corpus.py        ajout au corpus (import avec les références)
+    corpus.py        ajout au corpus par DOI ou ISBN (import avec les références)
     parser.py        réponse de la source vers les modèles
     titles.py        nettoyage des titres (entités HTML, balisage JATS)
     latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
@@ -147,9 +147,12 @@ Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
 
 ## Import Crossref
 
-1. Les vues appellent **explicitement** les services : `services/corpus.add_to_corpus`
-   pour un ajout au corpus, quel que soit le chemin, et `services/importer.import_publication`
-   dans les autres cas. Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
+1. Les vues appellent **explicitement** les services : `services/corpus.add_identified`
+   pour un ajout au corpus, quel que soit le chemin (formulaire, bouton, import de fichier),
+   et `services/importer.import_publication` dans les autres cas. `add_identified` envoie
+   une publication avec DOI à `add_to_corpus` ; un livre sans DOI, trouvé par son ISBN
+   (Crossref puis Open Library, `books.find_or_import_book`), n'est jamais envoyé aux sources
+   de DOI. `corpus.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée. Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
    de signal.
 2. Les métadonnées d'un article ne sont récupérées que si aucune source ne l'a encore décrit.
    Le seul moyen de rappeler Crossref pour un article déjà récupéré est le bouton

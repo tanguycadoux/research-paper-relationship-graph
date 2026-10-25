@@ -96,8 +96,8 @@ urlpatterns = [
     path("corpus/import/", corpus_transfer.import_json, name="corpus_import"),
     path(
         "corpus/add/",
-        corpus.add_publication_to_user_refs_by_doi,
-        name="corpus_add_by_doi",
+        corpus.add_publication_to_user_refs_by_identifier,
+        name="corpus_add_by_identifier",
     ),
     path(
         "corpus/<int:pk>/add/",

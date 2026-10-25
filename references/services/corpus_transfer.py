@@ -10,11 +10,8 @@ from dataclasses import dataclass, field
 from django.utils import timezone
 
 from ..models import Publication, UserPublication
-from .books import find_or_import_book
-from .corpus import add_to_corpus
-from .doi import is_valid_doi, normalize_doi
-from .external_records import Source, has_metadata, records_by_source
-from .isbn import is_valid_isbn, normalize_isbn
+from .corpus import add_identified, find_or_create
+from .external_records import Source, records_by_source
 
 EXPORT_FORMAT = "research-paper-relationship-graph/corpus"
 EXPORT_VERSION = 1
@@ -65,14 +62,14 @@ def import_corpus(user, data):
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
     for entry in entries:
-        pub = find_or_create(entry)
+        pub = find_or_create(entry.get("doi"), entry.get("isbn"))
         if pub is None:
             report.ignored += 1
         elif pub.pk in in_corpus:
             report.already_there.append(pub)
         else:
             in_corpus.add(pub.pk)
-            imported = add_book(user, pub) if not pub.doi else add_to_corpus(user, pub)
+            imported = add_identified(user, pub)
             # The publication imported may be the published version of a preprint (#227).
             if imported:
                 report.added.append(imported)
@@ -90,25 +87,6 @@ def export_entries(data):
     if not isinstance(entries, list):
         raise InvalidExport("L'export ne contient pas de liste de publications.")
     return [entry for entry in entries if isinstance(entry, dict)]
-
-
-def find_or_create(entry):
-    """The publication of an entry, by DOI first, then by ISBN; None without a valid one."""
-    doi = normalize_doi(str(entry.get("doi") or ""))
-    if is_valid_doi(doi):
-        return Publication.objects.get_or_create_doi(doi)
-    isbn = normalize_isbn(str(entry.get("isbn") or ""))
-    if is_valid_isbn(isbn):
-        return Publication.objects.filter(isbn=isbn).first() or find_or_import_book(isbn)[0]
-    return None
-
-
-def add_book(user, pub):
-    """A book without DOI is never sent to the DOI sources: only its stored data is used."""
-    if has_metadata(pub):
-        return add_to_corpus(user, pub)
-    UserPublication.objects.get_or_create(user=user, publication=pub)
-    return False
 
 
 # BibTeX

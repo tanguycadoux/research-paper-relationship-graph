@@ -6,8 +6,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import Publication, UserPublication
 from ..services import filters
-from ..services.corpus import add_to_corpus
-from ..services.doi import is_valid_doi, normalize_doi
+from ..services.corpus import add_identified, find_or_create
 from ..services.publication_table import for_publication_table
 from ..services.sorting import PUBLICATIONS
 from .pagination import page_of
@@ -19,7 +18,7 @@ def add_and_report(request, pub):
     published version of a preprint, maybe (#227).
     """
     asked_doi = pub.doi
-    imported = add_to_corpus(request.user, pub)
+    imported = add_identified(request.user, pub)
     report_addition(request, imported or pub, imported)
     if imported and asked_doi and imported.preprint_doi == asked_doi:
         messages.info(
@@ -33,11 +32,17 @@ def add_and_report(request, pub):
 def report_addition(request, pub, imported):
     if imported:
         messages.success(request, f"« {pub} » a été ajouté à votre corpus.")
-    else:
+    elif pub.doi:
         messages.warning(
             request,
             f"« {pub} » a été ajouté à votre corpus, mais ses données n'ont pas pu être "
             "récupérées (DOI inconnu de Crossref et de DataCite, ou service injoignable).",
+        )
+    else:
+        messages.warning(
+            request,
+            f"« {pub} » a été ajouté à votre corpus, mais ses données n'ont pas pu être "
+            "récupérées (ISBN inconnu de Crossref et d'Open Library, ou service injoignable).",
         )
 
 
@@ -58,14 +63,18 @@ def add_to_user_refs(request, pk):
 
 @login_required
 @require_POST
-def add_publication_to_user_refs_by_doi(request):
-    normalized_doi = normalize_doi(request.POST.get("doi", ""))
-
-    if not is_valid_doi(normalized_doi):
-        messages.error(request, "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
+def add_publication_to_user_refs_by_identifier(request):
+    identifier = request.POST.get("identifier", "")
+    pub = find_or_create(doi=identifier, isbn=identifier)
+    if pub is None:
+        messages.error(
+            request,
+            "Veuillez entrer un DOI (de la forme 10.xxxx/…) ou un ISBN valide "
+            "(10 ou 13 chiffres, avec ou sans tirets).",
+        )
         return redirect("corpus")
 
-    add_and_report(request, Publication.objects.get_or_create_doi(normalized_doi))
+    add_and_report(request, pub)
     return redirect("corpus")
 
 

@@ -9,7 +9,7 @@ from references.models import Publication, UserPublication
 
 # Both return the publication imported.
 @patch("references.views.publications.import_publication", side_effect=lambda pub, **_: pub)
-@patch("references.views.corpus.add_to_corpus", side_effect=lambda user, pub: pub)
+@patch("references.views.corpus.add_identified", side_effect=lambda user, pub: pub)
 class StateChangingActionsTests(TestCase):
     """Actions that change the database answer only to POST (#19)."""
 

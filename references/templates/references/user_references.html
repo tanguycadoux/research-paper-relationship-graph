@@ -32,11 +32,11 @@
         </section>
 
         <div class="space-y-6">
-            {% card title="Ajouter par DOI" %}
-                <form method="post" action="{% url 'corpus_add_by_doi' %}" class="space-y-3">
+            {% card title="Ajouter par DOI ou ISBN" %}
+                <form method="post" action="{% url 'corpus_add_by_identifier' %}" class="space-y-3">
                     {% csrf_token %}
-                    <label for="doi" class="sr-only">DOI</label>
-                    <input type="text" id="doi" name="doi" placeholder="10.xxxx/…" required>
+                    <label for="identifier" class="sr-only">DOI ou ISBN</label>
+                    <input type="text" id="identifier" name="identifier" placeholder="10.xxxx/… ou 978-…" required>
                     {% button "Ajouter" icon="add" %}
                 </form>
             {% endcard %}
