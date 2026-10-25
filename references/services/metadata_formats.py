@@ -16,13 +16,32 @@ def metadata_message(pub):
     bibliography there, an arXiv preprint takes the one of its LaTeX sources (#227).
     """
     records = records_by_source(pub)
-    for source in PRIORITY:
-        if source in records:
-            message = CONVERTERS[source](records[source])
-            if not message.get("reference") and Source.ARXIV in records:
-                message["reference"] = latex_references(records[Source.ARXIV])
-            return message
-    return None
+    source = preferred_source(records)
+    if source is None:
+        return None
+    message = CONVERTERS[source](records[source])
+    if takes_latex_references(message, records):
+        message["reference"] = latex_references(records[Source.ARXIV])
+    return message
+
+
+def bibliography_source(pub):
+    """Source the bibliography of the publication comes from, or None."""
+    records = records_by_source(pub)
+    source = preferred_source(records)
+    if source is None:
+        return None
+    if takes_latex_references(CONVERTERS[source](records[source]), records):
+        return Source.ARXIV
+    return source
+
+
+def preferred_source(records):
+    return next((source for source in PRIORITY if source in records), None)
+
+
+def takes_latex_references(message, records):
+    return not message.get("reference") and Source.ARXIV in records
 
 
 def crossref_message(data):
