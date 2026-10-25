@@ -76,6 +76,15 @@
         {% elif metadata_status == "unknown" %}
             {% alert "Aucune des sources interrogées (Crossref, DataCite, Open Library…) ne connaît cette publication." %}
         {% endif %}
+        {% if version_proposal %}
+            <div class="mt-3 space-y-2">
+                {% alert version_proposal %}
+                {% if user.is_authenticated %}
+                    {% url 'conflict_list' as conflicts_url %}
+                    {% button "Trancher dans « Conflits »" url=conflicts_url variant="secondary" %}
+                {% endif %}
+            </div>
+        {% endif %}
     </header>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">

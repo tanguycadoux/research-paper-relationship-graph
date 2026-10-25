@@ -23,10 +23,12 @@ def without_openalex(target):
     target = patch("references.services.enrichment.fetch_openalex_work", new=lambda doi: None)(
         target
     )
-    return patch(
-        "references.services.enrichment.fetch_openalex_works",
-        new=lambda dois: {doi: None for doi in dois},
-    )(target)
+    for module in ("enrichment", "published_versions"):
+        target = patch(
+            f"references.services.{module}.fetch_openalex_works",
+            new=lambda dois: {doi: None for doi in dois},
+        )(target)
+    return target
 
 
 def without_datacite(target):

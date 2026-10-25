@@ -7,6 +7,8 @@ a filtered list request uses a small part of a daily budget (about 1,000 batches
 a day without key).
 """
 
+import re
+
 from django.conf import settings
 
 from . import http
@@ -15,6 +17,7 @@ from .doi import normalize_doi
 OPENALEX_WORKS_URL = "https://api.openalex.org/works"
 OPENALEX_INSTITUTIONS_URL = "https://api.openalex.org/institutions"
 BATCH_SIZE = 50
+DOI_URL = re.compile(r"^https?://(?:dx\.)?doi\.org/", re.IGNORECASE)
 
 
 def fetch_openalex_work(doi):
@@ -53,8 +56,20 @@ def _fetch_batch(dois):
     )
     if data is None:
         return {}
-    found = {normalize_doi(work.get("doi") or ""): work for work in data.get("results", [])}
+    found = {doi: work for work in data.get("results", []) for doi in work_dois(work)}
     return {doi: found.get(doi) for doi in dois}
+
+
+def work_dois(work):
+    """
+    Every DOI of an OpenAlex work, main one first. A work groups the versions of an
+    article: the work of an arXiv preprint may be known by its journal DOI (#227).
+    """
+    urls = [work.get("doi")] + [
+        location.get("landing_page_url") for location in work.get("locations") or []
+    ]
+    dois = [normalize_doi(url) for url in urls if url and DOI_URL.match(url)]
+    return list(dict.fromkeys(doi for doi in dois if doi))
 
 
 def contact_params():

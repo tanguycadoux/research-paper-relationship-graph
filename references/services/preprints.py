@@ -13,7 +13,7 @@ import re
 
 from django.db import transaction
 
-from ..models import Author, CitedReference, Publication
+from ..models import Author, CitedReference, MetadataConflict, Publication
 from .crossref_api import fetch_crossref_json, fetch_crossref_works
 from .doi import is_valid_doi, normalize_doi
 from .external_records import Source, store_record
@@ -149,6 +149,10 @@ def merge_into_published(preprint, published):
     """The published version, already in the base, takes the place of the preprint."""
     CitedReference.objects.filter(target=preprint).update(target=published)
     move_corpus_entries(preprint, published)
+    # The decision on a published version proposed for the preprint stays traced.
+    preprint.conflicts.filter(kind=MetadataConflict.Kind.PUBLISHED_VERSION).update(
+        publication=published
+    )
     author_ids = list(preprint.authors.values_list("pk", flat=True))
     arxiv_doi = preprint.doi
     preprint.delete()
