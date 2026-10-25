@@ -9,6 +9,7 @@ from django.utils import timezone
 from ..models import OrcidRecord, Publication
 from .doi import normalize_doi
 from .orcid_api import fetch_orcid_record
+from .orcid_names import update_holders
 
 
 def refresh_orcid_record(author):
@@ -19,12 +20,15 @@ def refresh_orcid_record(author):
     OrcidRecord.objects.update_or_create(
         orcid=author.orcid, defaults={"data": data, "fetched_at": timezone.now()}
     )
+    name = (data.get("person") or {}).get("name")
+    update_holders(author.orcid, value(name, "given-names"), value(name, "family-name"))
     return True
 
 
 def orcid_profile(author):
     """The profile of the author from their stored ORCID record, or None."""
-    record = OrcidRecord.objects.filter(orcid=author.orcid).first() if author.orcid else None
+    records = OrcidRecord.objects.filter(orcid=author.orcid, data__isnull=False)
+    record = records.first() if author.orcid else None
     if record is None:
         return None
     person = record.data.get("person") or {}

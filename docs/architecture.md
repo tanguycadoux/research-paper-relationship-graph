@@ -37,7 +37,7 @@ references/          application principale
     datacite_api.py  client DataCite (DOI par DOI ou par lots)
     openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions)
     openlibrary_api.py  client Open Library (recherche par ISBN)
-    orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne)
+    orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne, noms par lots)
     external_records.py  stockage des réponses des sources (ExternalRecord), statut des métadonnées
     metadata_formats.py  conversion de chaque source vers le format lu par le parser
     Import et analyse
@@ -52,6 +52,7 @@ references/          application principale
     orcid_completion.py  ORCID manquants complétés depuis OpenAlex
     orcid_merge.py   fusion automatique des auteurs qui ont le même ORCID
     orcid_profile.py profil ORCID d'un auteur, demandé depuis sa fiche
+    orcid_names.py   noms des auteurs complétés depuis ORCID
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
     Identifiants et noms
     doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
@@ -76,6 +77,7 @@ references/          application principale
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
+    complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
@@ -120,10 +122,10 @@ erDiagram
 | `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. La date est un `DateField` : un mois ou un jour absent de la source est stocké à 1, et `publication_date_precision` (année, mois, jour) dit ce que la source donne vraiment ; la fiche affiche « 2023 », « août 2023 » ou « 1 août 2023 » (#147). Une date saisie à la main est précise au jour. |
 | `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
-| `Author` | Une personne (entité résolue). |
+| `Author` | Une personne (entité résolue). Un nom corrigé à la main est marqué (`name_edited`) : ORCID ne le modifie plus. |
 | `AuthorMerge` | La trace d'une fusion d'auteurs : auteur conservé, auteurs absorbés tels qu'ils étaient (noms, ORCID), motif (manuelle ou même ORCID), qui (vide pour une fusion automatique) et quand. Les traces d'un auteur absorbé passent à l'auteur conservé. |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
-| `OrcidRecord` | L'enregistrement public ORCID d'une personne (noms, résumé des travaux), stocké tel quel avec sa date de récupération. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
+| `OrcidRecord` | Ce qu'ORCID a répondu sur une personne, stocké tel quel : l'enregistrement public (noms, résumé des travaux, `data`), demandé depuis la fiche auteur, et les noms donnés par la recherche groupée (`search_data`, `{}` si ORCID ne connaît pas la personne), chacun avec sa date. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
 | `UserPublication` | Le corpus d'un utilisateur. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
@@ -183,6 +185,8 @@ tentatives, et jusqu'à 60 s d'attente si la source le demande.
   Un champ vidé redevient celui de la source. Un **nouveau DOI ou ISBN** désigne une autre
   œuvre : les réponses des sources, les signatures et la bibliographie de l'ancien sont
   supprimées (avec les auteurs restés sans publication), puis le nouveau est importé.
+- **Modifier un auteur** : un prénom ou un nom changé marque le nom comme corrigé
+  (`name_edited`), et ORCID ne le modifie plus (#220).
 - **« Cette publication est en fait… »** (`publication_merge.py`) : une publication sans
   DOI ni ISBN peut être fusionnée dans une autre, désignée par un DOI, un ISBN ou le lien
   de sa page. Ses citations sont reportées et marquées comme corrections manuelles, ses
@@ -330,14 +334,16 @@ fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
 7. Deux valeurs toutes deux justes (dates, nombres de citations) sont affichées avec leur
    source.
 
-## ORCID, à la demande
+## ORCID
 
-L'API publique ORCID (`https://pub.orcid.org/v3.0/<orcid>/record`) répond sans clé,
-en JSON quand on le demande (en-tête `Accept`). Une seule requête donne le profil et le
-résumé des travaux. Elle n'est **jamais faite à l'import** : un article peut avoir plus de
-1 000 auteurs. Le bouton « Compléter depuis ORCID » de la fiche d'un auteur qui a un
-ORCID la fait à la demande, et la réponse est stockée (`OrcidRecord`). En cas d'échec,
-l'enregistrement déjà stocké est gardé.
+L'API publique ORCID répond sans clé, en JSON quand on le demande (en-tête `Accept`).
+
+**Profil, à la demande.** L'enregistrement d'une personne
+(`https://pub.orcid.org/v3.0/<orcid>/record`) donne en une requête le profil et le résumé
+des travaux. Il n'est **jamais demandé à l'import** : un article peut avoir plus de 1 000
+auteurs. Le bouton « Compléter depuis ORCID » de la fiche d'un auteur qui a un ORCID le
+demande, et la réponse est stockée (`OrcidRecord`). En cas d'échec, l'enregistrement déjà
+stocké est gardé.
 
 La fiche montre, à titre d'information, sans rien modifier dans la base (#59) :
 - le nom officiel, le nom d'usage et les autres noms déclarés (« J. Carberry ») ;
@@ -345,9 +351,30 @@ La fiche montre, à titre d'information, sans rien modifier dans la base (#59) :
 - les travaux de la base où l'auteur ne figure pas parmi les signataires : un nom publié
   rattaché à un autre auteur, ou un ORCID manquant.
 
-Les autres noms permettraient plus tard de rapprocher automatiquement les initiales, et
-les travaux de relier un auteur à ses articles. On attend de voir ce que donnent les
-données avant de rien automatiser.
+**Noms, à l'import** (`services/orcid_names.py`, #220). La recherche étendue
+(`/expanded-search/?q=orcid:(A OR B …)`) donne les noms de 50 personnes en une requête
+(mesuré : une URL de 1 200 caractères, une demi-seconde). À l'import d'une publication,
+les auteurs dont l'ORCID n'a jamais été demandé le sont en une requête groupée ; ceux des
+publications citées sont laissés à la commande `complete_orcid_names`, qui traite aussi
+les auteurs déjà en base (`--refresh` redemande tout). ORCID donne le nom que la personne
+déclare, souvent plus complet que le nom publié, mais rien n'est écrasé :
+- un prénom qui **prolonge** le prénom connu le complète, mot par mot : « T. » devient
+  « Thomas », « A. K. » devient « Angie K. » ; un prénom moins complet ne change rien ;
+- le **nom de famille** de la base est gardé, sa casse étant plus fiable (« SIMON »,
+  « vallcorba » sur ORCID) ; un prénom tout en minuscules ou en majuscules est remis en
+  forme ;
+- un nom qui **diffère** vraiment est signalé comme conflit (« Nom différent selon
+  ORCID ») : un ORCID peut être mal attribué, notamment par la complétion OpenAlex ;
+- un nom **corrigé à la main** (`name_edited`) n'est jamais modifié, et un nom non public
+  ne change rien.
+
+Le bouton de la fiche applique les mêmes règles au nom de l'enregistrement complet. Sur la
+base réelle : 59 ORCID en 2 requêtes, 42 prénoms complétés, 2 conflits légitimes (un nom
+mal découpé par Crossref, « E. Fernandez Mora » ; un vrai désaccord).
+
+Les autres noms déclarés permettraient plus tard de rapprocher automatiquement des
+auteurs, et les travaux de relier un auteur à ses articles. On attend de voir ce que
+donnent les données avant de l'automatiser.
 
 ## Livres et ISBN
 
@@ -532,3 +559,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Auteurs de même ORCID fusionnés automatiquement, sauf s'ils ont été déclarés distincts (conflit signalé) ; fusions tracées en base | Un ORCID désigne une seule personne ; une distinction déclarée par un humain signale une erreur de données à regarder plutôt qu'à écraser (#158). |
 | 2026-10-25 | Fiche publication : affiliations numérotées, les plus précises de chaque signature | Lisible comme un article, chaque organisation une seule fois ; l'ancêtre déclaré à côté de sa sous-entité n'apprend rien, la fiche auteur garde le regroupement par tutelle (#155). |
 | 2026-10-25 | ORCID interrogé à la demande depuis la fiche auteur, réponse stockée par ORCID, affichage seulement | Jamais à l'import (plus de 1 000 auteurs possibles) ; rattachée à l'ORCID, la réponse survit aux fusions ; les rapprochements automatiques attendront de voir les données (#59). |
+| 2026-10-25 | Noms des auteurs complétés depuis ORCID à l'import, en recherche groupée ; nom différent signalé, nom corrigé à la main protégé | Le nom déclaré par la personne est plus complet que le nom publié ; une requête pour 50 personnes reste compatible avec un import ; un ORCID mal attribué ne doit pas propager un faux nom (#220). |

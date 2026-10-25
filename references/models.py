@@ -79,6 +79,7 @@ class ExternalRecord(models.Model):
         DATACITE = "datacite", "DataCite"
         OPENALEX = "openalex", "OpenAlex"
         OPENLIBRARY = "openlibrary", "Open Library"
+        ORCID = "orcid", "ORCID"
 
     publication = models.ForeignKey(
         Publication, on_delete=models.CASCADE, related_name="external_records"
@@ -104,6 +105,8 @@ class Author(models.Model):
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
     orcid = models.CharField(max_length=50, blank=True)
+    # Corrected by hand: ORCID never changes the name again (#220).
+    name_edited = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip()
@@ -121,14 +124,17 @@ class Author(models.Model):
 
 class OrcidRecord(models.Model):
     """
-    Public ORCID record of a person (names, works), stored as is, asked on demand
-    from the author page (#59). Keyed by the ORCID, not by the author: it survives
-    the merges.
+    What ORCID answered about a person, stored as is. Keyed by the ORCID, not by
+    the author: it survives the merges. data is the public record (names, works),
+    asked on demand from the author page (#59); search_data the names given by
+    the grouped search at import (#220), {} when ORCID does not know the person.
     """
 
     orcid = models.CharField(max_length=50, unique=True)
-    data = models.JSONField()
-    fetched_at = models.DateTimeField()
+    data = models.JSONField(null=True, blank=True)
+    fetched_at = models.DateTimeField(null=True, blank=True)
+    search_data = models.JSONField(null=True, blank=True)
+    search_fetched_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.orcid
@@ -337,6 +343,7 @@ class MetadataConflict(models.Model):
         AUTHORS_MISMATCH = "authors_mismatch", "Auteurs différents selon les sources"
         ORCID = "orcid", "ORCID différent"
         SHARED_ORCID = "shared_orcid", "ORCID porté par des auteurs déclarés distincts"
+        ORCID_NAME = "orcid_name", "Nom différent selon ORCID"
 
     class Status(models.TextChoices):
         OPEN = "open", "Ouvert"

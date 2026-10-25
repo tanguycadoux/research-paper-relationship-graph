@@ -36,7 +36,8 @@ class PublicationAdmin(admin.ModelAdmin):
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
-    list_display = ("pk", "first_name", "last_name", "orcid", "display_publications")
+    list_display = ("pk", "first_name", "last_name", "orcid", "name_edited", "display_publications")
+    list_filter = ("name_edited",)
     search_fields = ("first_name", "last_name", "orcid")
     ordering = ("last_name",)
 
@@ -94,5 +95,5 @@ class MetadataConflictAdmin(admin.ModelAdmin):
 
 @admin.register(OrcidRecord)
 class OrcidRecordAdmin(admin.ModelAdmin):
-    list_display = ("orcid", "fetched_at")
+    list_display = ("orcid", "fetched_at", "search_fetched_at")
     search_fields = ("orcid",)
