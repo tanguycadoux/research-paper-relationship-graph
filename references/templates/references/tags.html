@@ -43,14 +43,15 @@
                                        required>
                                 {% button "Renommer" variant="secondary" icon="edit" icon_only=True %}
                             </form>
-                            {# Native confirmation: the deletion is asked again once the details are open, in the flow of the row. #}
-                            <details>
-                                <summary class="w-fit cursor-pointer list-none rounded-md border border-red-200 px-2 py-1 text-sm text-red-700 hover:bg-red-50">
-                                    Supprimer…
-                                </summary>
+                            {# The deletion is confirmed in a popover: over the page, closed by a click outside. #}
+                            {% with counter=forloop.counter|stringformat:"d" %}
+                                {% with panel_id="delete-tag-"|add:counter %}
+                                {% button "Supprimer…" type="button" variant="danger-light" popovertarget=panel_id %}
                                 <form method="post"
                                       action="{% url 'tag_delete' %}"
-                                      class="mt-2 w-72 max-w-full space-y-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm">
+                                      popover
+                                      id="{{ panel_id }}"
+                                      class="{% popover_panel_classes %} space-y-2">
                                     {% csrf_token %}
                                     <input type="hidden" name="path" value="{{ item.path }}">
                                     <p>
@@ -58,7 +59,8 @@
                                     </p>
                                     {% button "Supprimer le tag" variant="danger" icon="delete" %}
                                 </form>
-                            </details>
+                                {% endwith %}
+                            {% endwith %}
                         </div>
                     </li>
                 {% endfor %}

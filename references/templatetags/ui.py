@@ -145,7 +145,7 @@ def external_link(url, label, **attrs):
     )
 
 
-BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value")
+BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value", "popovertarget")
 
 
 def button_shape(icon, icon_only, compact):
@@ -161,7 +161,7 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, compact
     """
     A button, or a link styled as a button when it has a url: <a> navigates,
     <button> acts. type (submit by default), formaction, name and value only
-    make sense on a <button>. compact: only the icon on a small screen, the label
+    make sense on a <button>, as popovertarget (the id of the popover it opens). compact: only the icon on a small screen, the label
     still read by screen readers.
     """
     if not label:
@@ -197,6 +197,7 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, compact
         "formaction": attrs.get("formaction", ""),
         "name": attrs.get("name", ""),
         "value": attrs.get("value", ""),
+        "popovertarget": attrs.get("popovertarget", ""),
     }
 
 
@@ -309,10 +310,11 @@ FILTER_BUTTON_BASE = (
 )
 FILTER_BUTTON_OFF = f"{FILTER_BUTTON_BASE} text-gray-400 hover:bg-gray-100 hover:text-gray-700"
 FILTER_BUTTON_ON = f"{FILTER_BUTTON_BASE} bg-blue-100 text-blue-800 hover:bg-blue-200"
-# Its panel, a popover: in the top layer, the scrolling card of the table cannot cut it.
-# Under its button where anchor positioning exists (flipped near the right edge), in the
-# middle of the screen elsewhere. The header styles (select-none…) are undone.
-FILTER_PANEL_CLASSES = (
+# A panel opened by a button, a popover: in the top layer, a scrolling card cannot cut it;
+# a click outside closes it, and opening another one closes it too. Under its button where
+# anchor positioning exists (flipped near the right edge), in the middle of the screen
+# elsewhere. The header styles (select-none…) are undone, for the filters of the columns.
+POPOVER_PANEL_CLASSES = (
     "w-64 rounded-lg border border-gray-200 bg-white p-3 text-left text-sm font-normal "
     "text-gray-900 shadow-lg select-text "
     "supports-[position-area:bottom]:inset-auto supports-[position-area:bottom]:m-1 "
@@ -354,7 +356,7 @@ def column_filter(request, filters, active, column):
         "kept": kept,
         "remove_url": url_without(request, column_filter.params),
         "button_classes": FILTER_BUTTON_ON if value is not None else FILTER_BUTTON_OFF,
-        "panel_classes": FILTER_PANEL_CLASSES,
+        "panel_classes": POPOVER_PANEL_CLASSES,
     }
 
 
@@ -433,3 +435,9 @@ def message_toast(message):
         "classes": f"{context['classes']} {TOAST_CLASSES}",
         "autohide": variant in AUTOHIDE_VARIANTS,
     }
+
+
+@register.simple_tag
+def popover_panel_classes():
+    """{% popover_panel_classes %}: the classes of a panel opened by a button (popover)."""
+    return POPOVER_PANEL_CLASSES
