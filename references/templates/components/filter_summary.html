@@ -1,0 +1,27 @@
+{% load ui %}
+{% if active or errors %}
+    <div class="mb-3 space-y-2">
+        {% for error in errors %}
+            {% alert error variant="warning" %}
+        {% endfor %}
+        {% if active %}
+            <ul class="flex flex-wrap items-center gap-2 text-sm" aria-label="Filtres actifs">
+                {% for item in active %}
+                    <li>
+                        <a href="{{ item.remove_url }}"
+                           class="inline-flex items-center gap-1 rounded-full bg-blue-100 py-0.5 pr-1.5 pl-2.5 text-blue-800 no-underline hover:bg-blue-200">
+                            {{ item.text }}
+                            {% icon "close" class="size-4" %}
+                            <span class="sr-only">(retirer ce filtre)</span>
+                        </a>
+                    </li>
+                {% endfor %}
+                {% if active|length > 1 %}
+                    <li>
+                        <a href="{{ clear_url }}">Retirer tous les filtres</a>
+                    </li>
+                {% endif %}
+            </ul>
+        {% endif %}
+    </div>
+{% endif %}

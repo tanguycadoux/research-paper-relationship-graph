@@ -1,10 +1,88 @@
 {% load ui %}
 <th scope="col"{% if classes %} class="{{ classes }}"{% endif %}{% if aria_sort %} aria-sort="{{ aria_sort }}"{% endif %}>
-    {% if url %}
-        <a href="{{ url }}" class="{{ link_classes }}">
+    {% if url or filter %}
+        <div class="flex items-center gap-1">
+        {% if url %}
+            <a href="{{ url }}" class="{{ link_classes }}">
+                {{ label }}
+                {% if arrow %}{% icon arrow class="size-4 shrink-0" %}{% endif %}
+            </a>
+        {% else %}
             {{ label }}
-            {% if arrow %}{% icon arrow class="size-4 shrink-0" %}{% endif %}
-        </a>
+        {% endif %}
+        {% if filter %}
+            {# The button that opens a popover is its implicit anchor: no anchor name needed. #}
+            <button type="button"
+                    popovertarget="{{ filter.id }}"
+                    class="{{ filter.button_classes }}"
+                    aria-label="Filtrer la colonne {{ filter.label }}{% if filter.active %} (filtre actif){% endif %}"
+                    title="Filtrer la colonne {{ filter.label }}">
+                {% icon "filter_list" class="size-4" %}
+            </button>
+            {# autofocus: the browser puts the cursor in the first field when the panel opens. #}
+            <div popover id="{{ filter.id }}" class="{{ filter.panel_classes }}">
+                <form method="get" class="space-y-3">
+                    {% for name, value in filter.kept %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+                    {% if filter.kind == "text" %}
+                        <label for="{{ filter.id }}-value" class="block font-medium">{{ filter.label }} contenant</label>
+                        <input type="search"
+                               id="{{ filter.id }}-value"
+                               autofocus
+                               name="{{ filter.params.0 }}"
+                               value="{{ filter.raw }}">
+                    {% elif filter.kind == "years" %}
+                        <fieldset class="space-y-2">
+                            <legend class="mb-1 font-medium">Années</legend>
+                            <div class="flex items-center gap-2">
+                                <label for="{{ filter.id }}-from" class="w-6">De</label>
+                                <input type="number"
+                                       id="{{ filter.id }}-from"
+                                       autofocus
+                                       name="year_from"
+                                       value="{{ filter.data.year_from }}"
+                                       min="1000"
+                                       max="2999"
+                                       inputmode="numeric">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="{{ filter.id }}-to" class="w-6">À</label>
+                                <input type="number"
+                                       id="{{ filter.id }}-to"
+                                       name="year_to"
+                                       value="{{ filter.data.year_to }}"
+                                       min="1000"
+                                       max="2999"
+                                       inputmode="numeric">
+                            </div>
+                        </fieldset>
+                    {% elif filter.kind == "choice" %}
+                        <fieldset class="space-y-1">
+                            <legend class="mb-1 font-medium">{{ filter.label }}</legend>
+                            <label class="flex items-center gap-2">
+                                <input type="radio" name="{{ filter.params.0 }}" value="" {% if not filter.active %}checked autofocus{% endif %}>
+                                Tous
+                            </label>
+                            {% for value, choice_label in filter.choices %}
+                                <label class="flex items-center gap-2">
+                                    <input type="radio"
+                                           name="{{ filter.params.0 }}"
+                                           value="{{ value }}"
+                                           {% if filter.raw == value %}checked autofocus{% endif %}>
+                                    {{ choice_label }}
+                                </label>
+                            {% endfor %}
+                        </fieldset>
+                    {% endif %}
+                    <div class="flex flex-wrap gap-2">
+                        {% button "Filtrer" icon="filter_list" %}
+                        {% if filter.active %}
+                            {% button "Retirer" url=filter.remove_url variant="secondary" %}
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+        </div>
     {% else %}
         {{ label }}
     {% endif %}

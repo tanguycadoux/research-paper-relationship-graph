@@ -69,6 +69,7 @@ references/          application principale
     Affichage et échanges
     search.py        analyse de la barre de recherche, comparaison sans casse ni accents
     sorting.py       colonnes triables des tableaux (publications, auteurs)
+    filters.py       filtres par colonne des tableaux (texte, plage d'années, choix)
     publication_table.py  annotations du tableau commun (premier auteur, badges)
     publication_details.py  informations de la fiche (revue, financeurs, licences, citations, résumé)
     graph.py         construction des données des graphes
@@ -76,7 +77,7 @@ references/          application principale
     icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
-                     pagination, column_header
+                     pagination, column_header, filter_summary
     navigation.py    navigation principale (groupes, lien courant)
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
@@ -495,7 +496,7 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 - **Tailwind**, compilé par django-tailwind-cli depuis `assets/css/source.css`, sans Node.
   Les styles par défaut des éléments sont définis une fois dans la couche `base`.
 - **Composants** en template tags (`references/templatetags/ui.py`) : `button`, `badge`,
-  `alert`, `card`, `icon`, `external_link`, `pagination`, `column_header`. **Navigation** décrite dans
+  `alert`, `card`, `icon`, `external_link`, `pagination`, `column_header`, `filter_summary`. **Navigation** décrite dans
   `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
   (#152, `services/pending.py`) : références à identifier dans son corpus, conflits
   ouverts. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
@@ -528,6 +529,21 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   un clic sur une autre colonne commence par son sens naturel (années récentes d'abord,
   noms de A à Z), et revient à la première page en gardant la recherche. Sans `sorting`
   dans le contexte (page d'un auteur, « Cité par »), les en-têtes restent simples.
+- **Filtres par colonne** (#115, `services/filters.py`), comme dans un tableur : un
+  entonnoir dans l'en-tête ouvre un panneau avec le champ de la colonne. Publications :
+  titre et auteurs (texte contenu, sans casse ni accents), identifiant (avec DOI, avec
+  ISBN, sans identifiant), années (de, à). Auteurs : nom, prénom (texte), ORCID (avec,
+  sans). Chaque filtre a ses paramètres d'URL (`?title=…&year_from=2018`) : le tri, la
+  pagination et les autres filtres le gardent, et le formulaire d'une colonne reprend
+  les autres en champs cachés. Le panneau est un `popover` HTML : affiché au-dessus de
+  la page, la carte qui fait défiler le tableau ne le coupe pas ; sans JavaScript, il se
+  ferme par Échap ou un clic à l'extérieur. Il est placé sous son bouton par le
+  positionnement par ancre CSS (ancre implicite du bouton qui l'ouvre, retourné près du
+  bord droit), au milieu de l'écran dans un navigateur qui ne le connaît pas. L'entonnoir
+  d'un filtre actif est bleu ; `{% filter_summary %}` liste les filtres actifs au-dessus
+  du tableau, chacun retiré d'un clic, et les erreurs (année mal écrite). Un tableau
+  filtré sans résultat reste affiché, pour changer les filtres. La recherche (`/search/`)
+  et la page d'un auteur n'ont pas de filtres.
 - **Recherche** (#153, `services/search.py`, `/search/?q=…`) : une seule barre, du
   texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
   année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
@@ -604,3 +620,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Listes par pages de 50, côté serveur ; page hors limites ramenée à la plus proche | Les annotations du tableau ne coûtent que pour la page affichée ; le tri et les filtres de #115 resteront dans l'URL ; une page vidée par un retrait ne doit pas finir en erreur 404 (#154). |
 | 2026-10-25 | Recherche : une seule barre à opérateurs ; casse et accents ignorés par une fonction SQL enregistrée sur la connexion | Un seul analyseur, réutilisé par les filtres des tableaux (#115), plutôt qu'un formulaire à plusieurs champs ; sans migration ni champ dénormalisé à tenir à jour lors des corrections et des fusions. Parcours complet de la table, négligeable à cette taille ; FTS5 si la base grossit vraiment (#153). |
 | 2026-10-25 | Tri par colonne côté serveur, dans l'URL ; légendes des tableaux triables sans ordre annoncé | Un tri en JavaScript ne trierait que la page affichée ; `aria-sort` dit l'ordre courant, qu'une légende fixe contredirait (#115). |
+| 2026-10-25 | Filtres dans les en-têtes de colonne (popover), sans barre au-dessus du tableau | Souhait de l'utilisateur, à la manière d'un tableur ; la recherche globale garde le texte libre et les opérateurs. Le popover échappe au défilement de la carte sans JavaScript (#115). |

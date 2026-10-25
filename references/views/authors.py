@@ -9,7 +9,7 @@ from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author, Publication
-from ..services import author_distinctions, author_duplicates, author_merge
+from ..services import author_distinctions, author_duplicates, author_merge, filters
 from ..services.orcid_merge import merge_same_orcid
 from ..services.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.organizations import organization_groups
@@ -25,10 +25,18 @@ class AuthorListView(PageMixin, ListView):
 
     def get_queryset(self):
         self.sort = AUTHORS.read(self.request.GET.get("sort"))
-        return AUTHORS.apply(Author.objects.all(), self.sort)
+        self.active_filters = filters.AUTHORS.read(self.request.GET)
+        return AUTHORS.apply(
+            filters.AUTHORS.apply(Author.objects.all(), self.active_filters), self.sort
+        )
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs) | {"sorting": AUTHORS, "sort": self.sort}
+        return super().get_context_data(**kwargs) | {
+            "sorting": AUTHORS,
+            "sort": self.sort,
+            "filters": filters.AUTHORS,
+            "active_filters": self.active_filters,
+        }
 
 
 class AuthorDetailView(DetailView):

@@ -12,7 +12,8 @@
         {% endif %}
     </header>
 
-    {% if publications %}
+    {% if publications or active_filters %}
+        {% filter_summary %}
         {% include "references/_publication_table.html" with caption="Publications de la base commune" corpus_actions=user.is_authenticated %}
         {% pagination page_obj %}
     {% else %}

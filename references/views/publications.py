@@ -9,6 +9,7 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
 from ..models import CitedReference, Publication
+from ..services import filters
 from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
 from ..services.importer import import_publication
@@ -36,7 +37,9 @@ class PublicationListView(PageMixin, ListView):
 
     def get_queryset(self):
         self.sort = PUBLICATIONS.read(self.request.GET.get("sort"))
-        return PUBLICATIONS.apply(for_publication_table(Publication.objects.all()), self.sort)
+        self.active_filters = filters.PUBLICATIONS.read(self.request.GET)
+        publications = filters.PUBLICATIONS.apply(Publication.objects.all(), self.active_filters)
+        return PUBLICATIONS.apply(for_publication_table(publications), self.sort)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -44,6 +47,8 @@ class PublicationListView(PageMixin, ListView):
             "user_pub_ids": corpus_ids(self.request.user),
             "sorting": PUBLICATIONS,
             "sort": self.sort,
+            "filters": filters.PUBLICATIONS,
+            "active_filters": self.active_filters,
         }
         return context
 
