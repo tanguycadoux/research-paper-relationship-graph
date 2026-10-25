@@ -20,3 +20,27 @@ def name_parts(name):
 def same_person_name(first, second):
     """Same words in any order: 'Thomas Thuillier' and 'Thuillier, Thomas'."""
     return sorted(name_parts(first)) == sorted(name_parts(second))
+
+
+def same_words_up_to_initials(first, second):
+    """
+    Same words in any order, an initial standing for a whole word: 'E. Fernandez Mora'
+    and 'Fernandez Mora, Elena'.
+    """
+    left, right = name_parts(first), name_parts(second)
+    if len(left) != len(right):
+        return False
+    # Whole words first, so that an initial does not take the word another one matches.
+    for part in sorted(left, key=len, reverse=True):
+        match = next((word for word in right if word == part), None)
+        if match is None:
+            match = next((word for word in right if is_initial_of(part, word)), None)
+        if match is None:
+            return False
+        right.remove(match)
+    return True
+
+
+def is_initial_of(part, word):
+    short, long = sorted((part, word), key=len)
+    return len(short) == 1 and long.startswith(short)

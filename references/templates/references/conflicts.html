@@ -29,13 +29,36 @@
                                 <a href="{% url 'author_detail' conflict.author.pk %}">{{ conflict.author }}</a>
                             {% endif %}
                         </h3>
+                        {% if conflict.names %}
+                            <table class="mb-3 w-auto">
+                                <thead class="bg-white">
+                                    <tr>
+                                        <td></td>
+                                        <th scope="col">Prénom</th>
+                                        <th scope="col">Nom</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row" class="font-normal text-gray-500">Valeur retenue</th>
+                                        <td>{{ conflict.names.current.given|default:"(vide)" }}</td>
+                                        <td>{{ conflict.names.current.family|default:"(vide)" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row" class="font-normal text-gray-500">Proposée par {{ conflict.get_source_display }}</th>
+                                        <td>{{ conflict.names.proposed.given|default:"(vide)" }}</td>
+                                        <td>{{ conflict.names.proposed.family|default:"(vide)" }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        {% endif %}
                         <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
                             {% if conflict.kind == "shared_orcid" %}
                                 <dt class="text-gray-500">ORCID</dt>
                                 <dd>{{ conflict.current_value }}</dd>
                                 <dt class="text-gray-500">Porté aussi par</dt>
                                 <dd>{{ conflict.proposed_value }}</dd>
-                            {% else %}
+                            {% elif not conflict.names %}
                                 <dt class="text-gray-500">Valeur retenue</dt>
                                 <dd>{{ conflict.current_value|default:"(vide)" }}</dd>
                                 <dt class="text-gray-500">Proposée par {{ conflict.get_source_display }}</dt>
@@ -50,6 +73,11 @@
                             <p class="mt-3 text-sm text-gray-500">
                                 Un ORCID désigne une seule personne, mais ces auteurs ont été déclarés distincts : ils ne sont pas fusionnés.
                                 Corrigez l'ORCID de l'un d'eux, ou fusionnez-les à la main.
+                            </p>
+                        {% elif conflict.names.split_differently %}
+                            <p class="mt-3 text-sm text-gray-500">
+                                Mêmes mots, répartis autrement entre prénom et nom. ORCID est rempli par la personne elle-même,
+                                mais elle a pu se tromper de champ, comme l'éditeur de la publication.
                             </p>
                         {% elif conflict.kind == "orcid_name" %}
                             <p class="mt-3 text-sm text-gray-500">
@@ -87,7 +115,7 @@
                         <li>
                             {{ conflict.get_kind_display }} — {{ conflict.publication|default:conflict.author }} :
                             {{ conflict.get_status_display|lower }}{% if conflict.resolved_by %}, par {{ conflict.resolved_by }}{% endif %},
-                            le <time datetime="{{ conflict.resolved_at|date:'Y-m-d\TH:i:sO' }}">{{ conflict.resolved_at|date:"j F Y" }}</time>
+                            le <time datetime="{{ conflict.resolved_at|date:'Y-m-d\TH:i:sO' }}">{{ conflict.resolved_at|date:"j F Y à H:i:s" }}</time>
                         </li>
                     {% endfor %}
                 </ul>

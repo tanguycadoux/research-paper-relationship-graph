@@ -13,10 +13,14 @@ RECENT_DECISIONS = 20
 @login_required
 def conflicts_view(request):
     related = ("publication", "author", "resolved_by")
+    open_conflicts = list(
+        MetadataConflict.objects.filter(status=conflicts.Status.OPEN).select_related(*related)
+    )
+    for conflict in open_conflicts:
+        if conflict.kind == conflicts.Kind.ORCID_NAME:
+            conflict.names = conflicts.compare_names(conflict)
     context = {
-        "open_conflicts": MetadataConflict.objects.filter(
-            status=conflicts.Status.OPEN
-        ).select_related(*related),
+        "open_conflicts": open_conflicts,
         "recent_decisions": MetadataConflict.objects.exclude(status=conflicts.Status.OPEN)
         .select_related(*related)
         .order_by("-resolved_at")[:RECENT_DECISIONS],
