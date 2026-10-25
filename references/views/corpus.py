@@ -12,6 +12,8 @@ from ..services.corpus import (
     find_or_create,
     with_reading_status,
 )
+from ..services.doi import is_valid_doi, normalize_doi
+from ..services.doi_registration import is_unregistered_doi, unregistered_message
 from ..services.publication_table import for_publication_table
 from ..services.sorting import CORPUS
 from .pagination import page_of
@@ -83,6 +85,10 @@ def add_to_user_refs(request, pk):
 @require_POST
 def add_publication_to_user_refs_by_identifier(request):
     identifier = request.POST.get("identifier", "")
+    doi = normalize_doi(identifier)
+    if is_valid_doi(doi) and is_unregistered_doi(doi):
+        messages.error(request, f"{unregistered_message(doi)} Rien n'a été ajouté.")
+        return redirect("corpus")
     pub = find_or_create(doi=identifier, isbn=identifier)
     if pub is None:
         messages.error(

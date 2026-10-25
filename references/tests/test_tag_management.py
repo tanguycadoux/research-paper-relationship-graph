@@ -5,6 +5,7 @@ from django.urls import reverse
 from references.models import Publication, Tag, UserPublication
 from references.services import tags
 from references.services.corpus_transfer import EXPORT_FORMAT, import_corpus
+from references.tests.helpers import without_doi_org
 
 
 class TagsTestCase(TestCase):
@@ -28,6 +29,7 @@ class TagsTestCase(TestCase):
         return sorted(Tag.objects.filter(user=user or self.alice).values_list("name", flat=True))
 
 
+@without_doi_org
 class RedundantTagsTests(TagsTestCase):
     """A tag beside one of its descendants is redundant: the filter includes them."""
 

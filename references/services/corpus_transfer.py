@@ -12,6 +12,8 @@ from django.utils import timezone
 
 from ..models import Publication, UserPublication
 from .corpus import add_identified, find_or_create, with_reading_status
+from .doi import is_valid_doi, normalize_doi
+from .doi_registration import unregistered_dois
 from .external_records import Source, records_by_source
 from .tags import InvalidTag, tag_entry, tags_by_publication
 
@@ -65,6 +67,8 @@ class ImportReport:
     without_metadata: list = field(default_factory=list)
     # Titles of the entries without a valid DOI or ISBN.
     ignored: list = field(default_factory=list)
+    # Titles of the entries whose only identifier is a DOI unknown to doi.org (#240).
+    unregistered: list = field(default_factory=list)
 
 
 def import_corpus(user, data, default_status=""):
@@ -78,17 +82,22 @@ def import_entries(user, entries, default_status=""):
     export) to the corpus of user, the new ones with default_status when an entry has
     none: « à lire » leaves the bibliographies aside (#234). Only publications without
     stored metadata are fetched from the external sources. The status of an entry
-    never replaces one the user chose; its tags are added to those of the user.
+    never replaces one the user chose; its tags are added to those of the user. A DOI
+    that doi.org does not know is dropped, the ISBN of the entry used instead if any.
     """
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
-    for entry in entries:
-        pub = find_or_create(entry.get("doi"), entry.get("isbn"))
+    dois = [entry_doi(entry) for entry in entries]
+    unregistered = unregistered_dois([doi for doi in dois if is_valid_doi(doi)])
+    for entry, doi in zip(entries, dois, strict=True):
+        fake_doi = doi in unregistered
+        pub = find_or_create("" if fake_doi else doi, entry.get("isbn"))
         file_status = entry.get("status")
         if file_status not in UserPublication.ReadingStatus.values:
             file_status = ""
         if pub is None:
-            report.ignored.append(str(entry.get("title") or ""))
+            dropped = report.unregistered if fake_doi else report.ignored
+            dropped.append(str(entry.get("title") or ""))
             continue
         if pub.pk in in_corpus:
             report.already_there.append(pub)
@@ -104,6 +113,10 @@ def import_entries(user, entries, default_status=""):
         keep_status(user, pub, file_status)
         add_tags(user, pub, entry.get("tags"))
     return report
+
+
+def entry_doi(entry):
+    return normalize_doi(str(entry.get("doi") or ""))
 
 
 def add_tags(user, pub, names):

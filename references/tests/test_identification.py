@@ -9,6 +9,7 @@ from references.models import CitedReference, Publication, UserPublication
 from references.services import identification
 from references.services.parser import parse_publication
 from references.tests.helpers import (
+    doi_org_answers,
     with_crossref,
     without_candidate_search,
     without_other_sources,
@@ -139,6 +140,36 @@ class IdentifyReferenceViewTests(IdentificationTestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("publication_detail", args=[self.source.pk]))
         self.assertContains(response, self.url(0))
+
+
+@without_candidate_search
+@without_other_sources
+@patch("references.services.importer.fetch_crossref_json", return_value=None)
+class UnregisteredDoiTests(IdentificationTestCase):
+    """A DOI that doi.org does not know is refused, not linked to an empty publication (#240)."""
+
+    ACM_DOI = "10.5555/2627435.2670313"
+
+    def post_doi(self, doi, registered):
+        self.client.force_login(self.user)
+        with doi_org_answers(registered):
+            return self.client.post(
+                reverse("reference_identify", args=[self.source.pk, 0]),
+                {"method": "doi", "doi": doi},
+            )
+
+    def test_unregistered_doi_is_refused(self, _fetch):
+        response = self.post_doi(self.ACM_DOI, registered=False)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "n&#x27;est enregistré nulle part")
+        self.assertContains(response, "ACM Digital Library")
+        self.assertIsNone(self.ref(0).target)
+        self.assertFalse(Publication.objects.filter(doi=self.ACM_DOI).exists())
+
+    def test_doi_linked_when_doi_org_cannot_answer(self, _fetch):
+        response = self.post_doi("10.1000/ghost", registered=None)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.ref(0).target.doi, "10.1000/ghost")
 
 
 class OrphanTargetTests(IdentificationTestCase):
