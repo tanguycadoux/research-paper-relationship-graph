@@ -161,8 +161,8 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, compact
     """
     A button, or a link styled as a button when it has a url: <a> navigates,
     <button> acts. type (submit by default), formaction, name and value only
-    make sense on a <button>, as popovertarget (the id of the popover it opens). compact: only the icon on a small screen, the label
-    still read by screen readers.
+    make sense on a <button>, as popovertarget (the id of the popover it opens).
+    compact: only the icon on a small screen, the label still read by screen readers.
     """
     if not label:
         raise template.TemplateSyntaxError("Un bouton a toujours un libellé.")
