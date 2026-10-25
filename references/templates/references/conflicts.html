@@ -58,6 +58,30 @@
                                 <dd>{{ conflict.current_value }}</dd>
                                 <dt class="text-gray-500">Porté aussi par</dt>
                                 <dd>{{ conflict.proposed_value }}</dd>
+                            {% elif conflict.kind == "published_version" %}
+                                <dt class="text-gray-500">Prépublication</dt>
+                                <dd>
+                                    {% external_link "https://doi.org/"|add:conflict.current_value conflict.current_value class="break-all" %}
+                                </dd>
+                                <dt class="text-gray-500">Version publiée selon OpenAlex</dt>
+                                <dd class="space-y-1">
+                                    <p class="font-medium">{{ conflict.details.title|default:"(sans titre)" }}</p>
+                                    <p class="text-gray-600">
+                                        {{ conflict.details.venue|default:"(revue inconnue)" }}{% if conflict.details.year %} · {{ conflict.details.year }}{% endif %}
+                                    </p>
+                                    <p>
+                                        {% external_link "https://doi.org/"|add:conflict.proposed_value conflict.proposed_value class="break-all" %}
+                                    </p>
+                                    <p class="flex flex-wrap gap-2">
+                                        {% if conflict.details.same_title %}
+                                            {% badge "Titre identique" variant="success" icon="check_circle" %}
+                                        {% else %}
+                                            {% badge "Titre proche" variant="warning" icon="warning" %}
+                                        {% endif %}
+                                        {% badge "Premier auteur identique" variant="success" icon="check_circle" %}
+                                        {% badge "Année concordante" variant="success" icon="check_circle" %}
+                                    </p>
+                                </dd>
                             {% elif not conflict.names %}
                                 <dt class="text-gray-500">Valeur retenue</dt>
                                 <dd>{{ conflict.current_value|default:"(vide)" }}</dd>
@@ -78,6 +102,13 @@
                             <p class="mt-3 text-sm text-gray-500">
                                 Mêmes mots, répartis autrement entre prénom et nom. ORCID est rempli par la personne elle-même,
                                 mais elle a pu se tromper de champ, comme l'éditeur de la publication.
+                            </p>
+                        {% elif conflict.kind == "published_version" %}
+                            <p class="mt-3 text-sm text-gray-500">
+                                OpenAlex regroupe cette prépublication avec une version publiée ; Crossref confirme le type de publication,
+                                le premier auteur et l'année. Ce regroupement reste automatique : vérifiez avant de prendre la valeur proposée.
+                                La prépublication est alors remplacée par sa version publiée (ou fusionnée avec elle si elle est déjà dans
+                                la base), qui garde les citations et les corpus.
                             </p>
                         {% elif conflict.kind == "orcid_name" %}
                             <p class="mt-3 text-sm text-gray-500">

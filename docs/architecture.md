@@ -92,6 +92,7 @@ references/          application principale
     complete_affiliations.py  affiliations des publications déjà en base
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
     replace_preprints.py  prépublications arXiv déjà en base remplacées par leur version publiée
+                     déclarée, ou version trouvée par OpenAlex proposée dans « Conflits »
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
@@ -292,6 +293,30 @@ Garde-fous, puisqu'on ne remplace que sur une information fiable :
 Toutes les recherches par DOI passent par `Publication.objects.with_doi` /
 `get_or_create_doi`, qui regardent aussi `preprint_doi`. La commande `replace_preprints`
 applique le remplacement aux publications déjà en base, sans nouvel appel à DataCite.
+
+### Version publiée trouvée par OpenAlex
+
+Quand les auteurs ne déclarent rien, OpenAlex regroupe souvent la prépublication et sa
+version publiée sous une même œuvre : ses `locations` donnent les DOI de toutes les
+versions (`openalex_api.work_dois`). Ce regroupement est automatique et parfois faux (il
+range les copies `10.65215/…` avec « Attention Is All You Need ») : la version n'est donc
+jamais appliquée d'office, mais **proposée** comme conflit « Version publiée selon
+OpenAlex » (`services/published_versions.py`).
+
+- À la fin d'un import, pour la publication et, avec ses références, celles qu'elle cite :
+  les DOI non arXiv de leur œuvre OpenAlex sont vérifiés chez Crossref en une requête par
+  lot. Le premier qui passe les garde-fous ci-dessus et deux de plus (même premier auteur,
+  année au moins égale à celle de la prépublication) est proposé ; une prépublication
+  n'est examinée qu'une fois.
+- « Prendre la valeur proposée » redemande la version à Crossref, la remplace comme une
+  version déclarée (`replace_preprint`, ou fusion si elle est déjà en base, le conflit
+  suivant la version publiée), puis la réimporte. Sans réponse de Crossref, rien n'est
+  décidé.
+- La fiche de la prépublication signale la proposition tant qu'elle est ouverte.
+- `replace_preprints` propose aussi les versions des prépublications déjà en base, en
+  redemandant leur œuvre OpenAlex quand elle manque. Les lots OpenAlex rangeaient l'œuvre
+  sous son seul DOI principal : une prépublication connue par le DOI de sa revue passait
+  pour inconnue. Ils la retrouvent désormais par tous les DOI de l'œuvre.
 
 ### Bibliographie tirée des sources arXiv
 
@@ -744,3 +769,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Publications candidates par Crossref (texte complet) et DataCite (titre seul), vérifiées ici, gardées sur la référence | Mesuré sur la base : Crossref seul trouve 9 références sur 32 et aucune en physique, les actes JACoW et les prépublications arXiv étant chez DataCite ; ensemble, 22 sur 32. Le score de Crossref n'admet pas de seuil (une copie de 2020 passe devant l'original) : titre, année et auteur sont vérifiés de notre côté. Semantic Scholar n'apporterait presque rien : les manques restants n'ont pas de DOI (#160). |
 | 2026-10-25 | Code JACoW écrit dans une référence relié à l'import, après confirmation de DataCite | C'est un identifiant écrit par les auteurs, comme un identifiant arXiv ; la publication n'est créée que si DataCite connaît le DOI et que le titre concorde, pour ne pas remplir la base de publications vides (#160). |
 | 2026-10-25 | Un DOI saisi pour identifier une référence ou ajouter au corpus (à la main ou par fichier) est refusé si doi.org ne le connaît pas | L'ACM affiche des `10.5555/…` qui ne sont pas des DOI ; les relier laissait une publication vide (publication 244 de la base). doi.org (`/ra/`) répond pour toutes les agences, en une requête légère et définitive. Pas de vérification sur « C'est celle-ci » : les candidats viennent de Crossref ou de DataCite (#240). |
+| 2026-10-25 | Version publiée trouvée par OpenAlex proposée comme conflit, jamais appliquée d'office | Le regroupement des versions par OpenAlex est automatique et parfois faux (copies `10.65215/…` d'« Attention »). La page « Conflits » trace la décision, la partage et ne la redemande pas ; Crossref vérifie le type, le titre, le premier auteur et l'année avant toute proposition (#227, étape 3). |

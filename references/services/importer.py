@@ -10,6 +10,7 @@ from .jacow import link_jacow_references
 from .orcid_names import complete_names
 from .parser import parse_publication
 from .preprints import arxiv_id, is_arxiv, published_version, replace_cited_preprints
+from .published_versions import suggest_published_versions
 
 
 def import_publication(pub, *, with_references=False, force_fetch=False):
@@ -37,7 +38,15 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
         import_cited_publications(pub)
         link_jacow_references(pub)
         complete_cited_with_openalex(pub)
+    suggest_published_versions(checked_for_versions(pub, with_references))
     return pub
+
+
+def checked_for_versions(pub, with_references):
+    """pub and, with its references, the publications it cites (#227, step 3)."""
+    if not with_references:
+        return [pub]
+    return [pub, *Publication.objects.filter(citations__source=pub).distinct()]
 
 
 def ensure_metadata(pub, force_fetch=False):

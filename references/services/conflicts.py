@@ -15,7 +15,9 @@ Status = MetadataConflict.Status
 MAX_LISTED_NAMES = 15
 
 
-def report_conflict(kind, *, field, current, proposed, source, publication=None, author=None):
+def report_conflict(
+    kind, *, field, current, proposed, source, publication=None, author=None, details=None
+):
     """
     Report a conflict once: the same (object, field, proposed value) is never
     reported again, even after a decision, so that re-imports do not reopen it.
@@ -26,7 +28,7 @@ def report_conflict(kind, *, field, current, proposed, source, publication=None,
         author=author,
         field=field,
         proposed_value=proposed,
-        defaults={"current_value": current, "source": source},
+        defaults={"current_value": current, "source": source, "details": details or {}},
     )
     return conflict
 

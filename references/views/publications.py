@@ -27,6 +27,7 @@ from ..services.publication_table import (
     for_publication_table,
     references_available,
 )
+from ..services.published_versions import proposal_message
 from ..services.sorting import PUBLICATIONS
 from .pagination import PageMixin
 
@@ -80,6 +81,7 @@ class PublicationDetailView(DetailView):
         context["metadata_status"] = metadata_status(pub)
         context["references_available"] = references_available(pub)
         context["arxiv_bibliography"] = arxiv_bibliography(pub)
+        context["version_proposal"] = proposal_message(pub)
         # The bibliography of a preprint is fetched by the same action (#227).
         context["can_import_references"] = (
             self.request.user.is_authenticated

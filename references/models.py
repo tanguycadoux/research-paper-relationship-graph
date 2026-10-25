@@ -414,6 +414,7 @@ class MetadataConflict(models.Model):
         ORCID = "orcid", "ORCID différent"
         SHARED_ORCID = "shared_orcid", "ORCID porté par des auteurs déclarés distincts"
         ORCID_NAME = "orcid_name", "Nom différent selon ORCID"
+        PUBLISHED_VERSION = "published_version", "Version publiée selon OpenAlex"
 
     class Status(models.TextChoices):
         OPEN = "open", "Ouvert"
@@ -431,6 +432,9 @@ class MetadataConflict(models.Model):
     field = models.CharField(max_length=50)
     current_value = models.TextField(blank=True)
     proposed_value = models.TextField(blank=True)
+    # What the page shows of the proposed value without a request: the title, venue
+    # and year of a published version (#227).
+    details = models.JSONField(default=dict, blank=True)
     # Empty when the value does not come from a source (shared ORCID typed by hand).
     source = models.CharField(max_length=20, choices=ExternalRecord.Source.choices, blank=True)
     detected_at = models.DateTimeField(auto_now_add=True)
