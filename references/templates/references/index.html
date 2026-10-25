@@ -1,6 +1,10 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
+{# The page has its own bar. #}
+{% block header_search %}{% endblock header_search %}
+{% block header_search_link %}{% endblock header_search_link %}
+
 {% block content %}
     <header class="mb-6">
         <h1>Gestionnaire de références</h1>
@@ -8,6 +12,8 @@
             Constituez votre corpus d'articles et explorez les relations de citation entre eux.
         </p>
     </header>
+
+    <div class="mb-6">{% include "references/_search_form.html" with field_id="home-search" %}</div>
 
     {% url 'publication_list' as publications_url %}
     {% url 'author_list' as authors_url %}

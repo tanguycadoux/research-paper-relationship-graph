@@ -1,0 +1,53 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}{% if q %}{{ q }} · {% endif %}Recherche · {% endblock title %}
+
+{# The page has its own bar. #}
+{% block header_search %}{% endblock header_search %}
+{% block header_search_link %}{% endblock header_search_link %}
+
+{% block content %}
+    <header class="mb-6">
+        <h1 class="mb-4">Recherche</h1>
+        {% include "references/_search_form.html" with field_id="search-q" %}
+    </header>
+
+    {% for error in query.errors %}
+        <div class="mb-4">{% alert error variant="warning" %}</div>
+    {% endfor %}
+
+    {% if query %}
+        {% if authors %}
+            <section aria-labelledby="authors-title" class="mb-6">
+                <h2 id="authors-title" class="mb-3">
+                    Auteurs <span class="font-normal text-gray-500">({{ author_count }})</span>
+                </h2>
+                <ul class="flex flex-wrap gap-x-4 gap-y-1">
+                    {% for author in authors %}
+                        <li>
+                            <a href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if author_count > authors|length %}
+                    <p class="mt-2 text-sm text-gray-600">
+                        Les {{ authors|length }} premiers par nom : précisez la recherche pour trouver les autres.
+                    </p>
+                {% endif %}
+            </section>
+        {% endif %}
+
+        <section aria-labelledby="publications-title">
+            <h2 id="publications-title" class="mb-3">
+                Publications <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
+            </h2>
+            {% if publications %}
+                {% include "references/_publication_table.html" with caption="Publications trouvées, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated %}
+                {% pagination page_obj %}
+            {% else %}
+                <p class="text-gray-600">Aucune publication ne correspond à cette recherche.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+{% endblock content %}

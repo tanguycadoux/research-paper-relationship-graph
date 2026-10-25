@@ -1,0 +1,30 @@
+from django.shortcuts import render
+
+from ..models import Publication
+from ..services.publication_table import corpus_ids, for_publication_table
+from ..services.search import filter_publications, parse, search_authors
+from .pagination import page_of
+
+# Beyond, the query is too vague for a list of names: the page says how many match.
+AUTHORS_SHOWN = 20
+
+
+def search(request):
+    """Publications in pages, then the first matching authors (#153)."""
+    text = request.GET.get("q", "").strip()
+    query = parse(text)
+    context = {"q": text, "query": query}
+    if query:
+        publications = for_publication_table(
+            filter_publications(Publication.objects.all(), query)
+        ).order_by("-publication_date", "title", "pk")
+        page = page_of(request, publications)
+        authors = search_authors(query).order_by("last_name", "first_name", "pk")
+        context |= {
+            "publications": page.object_list,
+            "page_obj": page,
+            "authors": authors[:AUTHORS_SHOWN],
+            "author_count": authors.count(),
+            "user_pub_ids": corpus_ids(request.user),
+        }
+    return render(request, "references/search.html", context)

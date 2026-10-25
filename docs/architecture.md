@@ -29,7 +29,8 @@ references/          application principale
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
     cited_references.py (identification d'une référence),
     publication_merge.py (« Cette publication est en fait… »),
-    corpus_transfer.py (export et import du corpus)
+    corpus_transfer.py (export et import du corpus),
+    search.py (recherche), pagination.py (listes par pages)
   services/          logique métier, sans dépendance aux vues
     Sources externes
     http.py          requêtes JSON communes (session, nouvelles tentatives, journalisation)
@@ -66,6 +67,7 @@ references/          application principale
     author_distinctions.py  auteurs déclarés différents
     conflicts.py     signalement et décision des conflits entre sources
     Affichage et échanges
+    search.py        analyse de la barre de recherche, comparaison sans casse ni accents
     publication_table.py  annotations du tableau commun (premier auteur, badges)
     publication_details.py  informations de la fiche (revue, financeurs, licences, citations, résumé)
     graph.py         construction des données des graphes
@@ -90,6 +92,8 @@ static/
   css/tailwind.css   feuille compilée, non versionnée
   icons/             icônes SVG
   js/toasts.js       notifications
+  js/navigation.js   menus de la navigation sur petit écran
+  js/search.js       raccourci Ctrl+K vers la barre de recherche
   vendor/cytoscape/  Cytoscape.js embarqué
 docs/                cette documentation
 ```
@@ -513,6 +517,20 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   dernière ligne d'une page, le retour sur cette page fonctionne encore. Le composant
   `{% pagination %}` garde les autres paramètres de l'URL (tri, filtres) ; sous `sm`, il
   ne montre que les lignes affichées et les liens Précédente et Suivante.
+- **Recherche** (#153, `services/search.py`, `/search/?q=…`) : une seule barre, du
+  texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
+  année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
+  auteurs et les identifiants ; les mots d'un `auteur:` doivent appartenir à la même
+  personne ; un `titre:` entre guillemets est une expression. Un opérateur inconnu reste
+  du texte (« Re:thinking ») ; une année mal écrite est signalée sans bloquer le reste.
+  Résultats : les publications par pages, et les 20 premiers auteurs (sauf si la
+  question porte sur des titres, des années ou des identifiants). Les comparaisons
+  ignorent la casse et les accents grâce à `normalized()`, une fonction SQL enregistrée
+  sur chaque connexion SQLite (`connection_created`) : le `LIKE` de SQLite ne replie que
+  l'ASCII, et il n'a pas d'`unaccent`. La barre est dans l'en-tête de toutes les pages
+  (une icône vers `/search/` sous `md`) ; l'accueil et la page de recherche ont la leur,
+  plus grande, avec l'aide de la syntaxe. Ctrl+K (⌘K sur Mac) y place le curseur, ou
+  ouvre la page de recherche quand aucune barre n'est affichée (`static/js/search.js`).
 - **Accueil** (#151, `services/dashboard.py`) : connecté, un tableau de bord (mon corpus
   et ses dernières publications ajoutées, « À faire » avec les références à identifier,
   les conflits ouverts et les doublons probables, base commune) ; visiteur, une
@@ -573,3 +591,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | ORCID interrogé à la demande depuis la fiche auteur, réponse stockée par ORCID, affichage seulement | Jamais à l'import (plus de 1 000 auteurs possibles) ; rattachée à l'ORCID, la réponse survit aux fusions ; les rapprochements automatiques attendront de voir les données (#59). |
 | 2026-10-25 | Noms des auteurs complétés depuis ORCID à l'import, en recherche groupée ; nom différent signalé, nom corrigé à la main protégé | Le nom déclaré par la personne est plus complet que le nom publié ; une requête pour 50 personnes reste compatible avec un import ; un ORCID mal attribué ne doit pas propager un faux nom (#220). |
 | 2026-10-25 | Listes par pages de 50, côté serveur ; page hors limites ramenée à la plus proche | Les annotations du tableau ne coûtent que pour la page affichée ; le tri et les filtres de #115 resteront dans l'URL ; une page vidée par un retrait ne doit pas finir en erreur 404 (#154). |
+| 2026-10-25 | Recherche : une seule barre à opérateurs ; casse et accents ignorés par une fonction SQL enregistrée sur la connexion | Un seul analyseur, réutilisé par les filtres des tableaux (#115), plutôt qu'un formulaire à plusieurs champs ; sans migration ni champ dénormalisé à tenir à jour lors des corrections et des fusions. Parcours complet de la table, négligeable à cette taille ; FTS5 si la base grossit vraiment (#153). |
