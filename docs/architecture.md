@@ -92,7 +92,8 @@ references/          application principale
     complete_affiliations.py  affiliations des publications déjà en base
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
     replace_preprints.py  prépublications arXiv déjà en base remplacées par leur version publiée
-    reset_data.py    développement : efface toutes les données sauf les comptes (DEBUG seulement)
+    reset_data.py    développement : efface toutes les données sauf les comptes et le cache
+                     des sources (DEBUG seulement)
     complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
@@ -201,6 +202,14 @@ pendant qu'une page charge, une source en panne n'est retentée qu'une fois, et 
 abandonne si elle demande d'attendre plus de 5 s (l'utilisateur pourra réessayer). Les
 commandes (`complete_affiliations`) s'exécutent dans `patient_requests()` : trois
 tentatives, et jusqu'à 60 s d'attente si la source le demande.
+
+**Cache des réponses en développement.** Avec `DEBUG`, la session partagée est une
+`CachedSession` de `requests-cache` (dépendance de développement) : les réponses 200 sont
+gardées 7 jours dans `.http_cache.sqlite`, à part de la base. `reset_data` vide la base
+mais garde ce cache (`--clear-http-cache` le vide aussi) : réimporter après un reset ne
+redemande rien aux sources. En production, les réponses stockées (`ExternalRecord`)
+évitent déjà de redemander une publication connue ; un cache HTTP n'y apporterait que
+des données périmées. Les tests le désactivent.
 
 ## Corrections manuelles
 

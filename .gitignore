@@ -14,6 +14,7 @@ htmlcov/
 # Django
 db.sqlite3
 db.sqlite3-journal
+.http_cache.sqlite
 staticfiles/
 
 # Tailwind: downloaded CLI and compiled stylesheet

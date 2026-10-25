@@ -33,6 +33,10 @@ if not SECRET_KEY:
     # Development only: fixed so that sessions survive the autoreloader's restarts.
     SECRET_KEY = "django-insecure-development-only"
 
+# Development only: responses of the external sources kept for 7 days, apart from the
+# database, so that importing again after reset_data does not wait for them.
+HTTP_CACHE_PATH = BASE_DIR / ".http_cache.sqlite" if DEBUG else None
+
 # Comma-separated, e.g. "example.org,www.example.org". Empty is fine with DEBUG (localhost).
 ALLOWED_HOSTS = [host for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host]
 

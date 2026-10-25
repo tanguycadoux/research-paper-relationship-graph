@@ -3,6 +3,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from references.services import http
+
 CONFIRMATION = "oui"
 
 
@@ -10,7 +12,8 @@ class Command(BaseCommand):
     help = (
         "Développement : efface toutes les données de l'application (publications, "
         "auteurs, organisations, références, corpus, tags, conflits…) et ne garde que les "
-        "comptes utilisateurs. Refusé hors DEBUG."
+        "comptes utilisateurs et le cache des réponses des sources (sauf avec "
+        "--clear-http-cache). Refusé hors DEBUG."
     )
 
     def add_arguments(self, parser):
@@ -21,10 +24,21 @@ class Command(BaseCommand):
             dest="interactive",
             help="Ne pas demander de confirmation.",
         )
+        parser.add_argument(
+            "--clear-http-cache",
+            action="store_true",
+            help="Vider aussi le cache des réponses des sources (gardé par défaut).",
+        )
 
-    def handle(self, *args, interactive, **options):
+    def handle(self, *args, interactive, clear_http_cache, **options):
         if not settings.DEBUG:
             raise CommandError("Commande de développement : refusée quand DEBUG est désactivé.")
+        if clear_http_cache:
+            cleared = http.clear_cache()
+            self.stdout.write("Cache des sources vidé." if cleared else "Pas de cache des sources.")
+        self.delete_data(interactive)
+
+    def delete_data(self, interactive):
         models = list(apps.get_app_config("references").get_models())
         counts = {model.__name__: model.objects.count() for model in models}
         if not any(counts.values()):
