@@ -1,0 +1,38 @@
+{% load ui %}
+{% if page.has_other_pages %}
+    <nav aria-label="Pagination"
+         class="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-gray-600">
+            {{ page.start_index }}&nbsp;à&nbsp;{{ page.end_index }} sur {{ page.paginator.count }}
+        </p>
+        <ul class="flex flex-wrap items-center gap-1">
+            {% if previous_url %}
+                <li>
+                    <a href="{{ previous_url }}" rel="prev" class="{{ previous_classes }}">
+                        {% icon "chevron_left" class=icon_classes %}
+                        Précédente
+                    </a>
+                </li>
+            {% endif %}
+            {% for item in pages %}
+                <li class="max-sm:hidden">
+                    {% if item.current %}
+                        <span aria-current="page" class="{{ current_classes }}"><span class="sr-only">Page</span> {{ item.number }}</span>
+                    {% elif item.url %}
+                        <a href="{{ item.url }}" class="{{ link_classes }}"><span class="sr-only">Page</span> {{ item.number }}</a>
+                    {% else %}
+                        <span class="px-1 text-gray-500">{{ item.number }}</span>
+                    {% endif %}
+                </li>
+            {% endfor %}
+            {% if next_url %}
+                <li>
+                    <a href="{{ next_url }}" rel="next" class="{{ next_classes }}">
+                        Suivante
+                        {% icon "chevron_right" class=icon_classes %}
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}

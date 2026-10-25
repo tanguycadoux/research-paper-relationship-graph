@@ -13,10 +13,11 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <section aria-labelledby="corpus-title" class="lg:col-span-2">
             <h2 id="corpus-title" class="mb-3">
-                Publications <span class="font-normal text-gray-500">({{ publications|length }})</span>
+                Publications <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
             </h2>
             {% if publications %}
                 {% include "references/_publication_table.html" with caption="Publications de mon corpus, des plus récentes aux plus anciennes" %}
+                {% pagination page_obj %}
             {% else %}
                 <p class="text-gray-600">Aucune publication dans votre corpus.</p>
             {% endif %}
