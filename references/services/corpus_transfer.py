@@ -57,21 +57,26 @@ class ImportReport:
     ignored: list = field(default_factory=list)
 
 
-def import_corpus(user, data):
+def import_corpus(user, data, default_status=""):
     """Add the publications of an export of this application to the corpus of user."""
-    return import_entries(user, export_entries(data))
+    return import_entries(user, export_entries(data), default_status)
 
 
-def import_entries(user, entries):
+def import_entries(user, entries, default_status=""):
     """
     Add the publications of entries ({doi, isbn, title}, and status from an export)
-    to the corpus of user. Only publications without stored metadata are fetched from
-    the external sources. The status of an entry never replaces one the user chose.
+    to the corpus of user, the new ones with default_status when an entry has none:
+    « à lire » leaves the bibliographies aside (#234). Only publications without stored metadata
+    are fetched from the external sources. The status of an entry never replaces one
+    the user chose.
     """
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
     for entry in entries:
         pub = find_or_create(entry.get("doi"), entry.get("isbn"))
+        file_status = entry.get("status")
+        if file_status not in UserPublication.ReadingStatus.values:
+            file_status = ""
         if pub is None:
             report.ignored.append(str(entry.get("title") or ""))
             continue
@@ -79,14 +84,14 @@ def import_entries(user, entries):
             report.already_there.append(pub)
         else:
             in_corpus.add(pub.pk)
-            imported = add_identified(user, pub)
+            imported = add_identified(user, pub, file_status or default_status)
             # The publication imported may be the published version of a preprint (#227).
             if imported:
                 report.added.append(imported)
                 pub = imported
             else:
                 report.without_metadata.append(pub)
-        keep_status(user, pub, entry.get("status"))
+        keep_status(user, pub, file_status)
     return report
 
 

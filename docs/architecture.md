@@ -154,7 +154,10 @@ Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
    et `services/importer.import_publication` dans les autres cas. `add_identified` envoie
    une publication avec DOI à `add_to_corpus` ; un livre sans DOI, trouvé par son ISBN
    (Crossref puis Open Library, `books.find_or_import_book`), n'est jamais envoyé aux sources
-   de DOI. `corpus.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée. Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
+   de DOI. `corpus.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée.
+   Une publication ajoutée « à lire » n'importe que ses propres métadonnées : sa bibliographie
+   attend que son statut change (`corpus.change_reading_status`), et `Publication.parse_references`
+   ne compte que les entrées d'un autre statut (#234). Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
    de signal.
 2. Les métadonnées d'un article ne sont récupérées que si aucune source ne l'a encore décrit.
    Le seul moyen de rappeler Crossref pour un article déjà récupéré est le bouton
@@ -678,3 +681,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Bibliographie d'une prépublication sans version publiée tirée de ses sources LaTeX ; liens seulement sur les identifiants écrits par les auteurs | Le seul texte officiel de sa bibliographie ; OpenAlex et Semantic Scholar rapprochent automatiquement et se trompent (#227). Téléchargé une fois, pour les seules prépublications d'un corpus, comme arXiv le demande. |
 | 2026-10-25 | Import de fichiers BibTeX et RIS sans dépendance, par une lecture tolérante des seuls identifiants | Le DOI, l'identifiant arXiv (champ `eprint`, ou écrit dans le journal comme chez Google Scholar) et l'ISBN suffisent ; le reste vient des sources. Une entrée illisible ou sans identifiant est listée dans le rapport, jamais devinée (#165). |
 | 2026-10-25 | Statut de lecture : un champ de choix sur `UserPublication`, vide par défaut ; filtre et tri par une sous-requête | Un statut sert à filtrer, trier et compter, ce qu'un tag libre ne permet pas ; « à lire » par défaut serait faux pour les publications déjà lues. Filtrer à nouveau sur `userpublication__` joindrait les entrées de tous les utilisateurs. Export JSON en version 2, la version 1 s'importe toujours ; un statut importé ne remplace jamais celui qu'on a choisi (#164). |
+| 2026-10-25 | Publication « à lire » ajoutée au corpus sans sa bibliographie, importée quand le statut change | Une liste de lecture ne doit pas remplir la base commune ni le compteur « à identifier » (un article de physique : 100 références, 88 publications créées) ; l'ajout sans statut reste complet, c'est le flux principal. Revenir à « à lire » ne supprime rien : les références appartiennent à la base commune (#234). |

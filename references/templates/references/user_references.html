@@ -38,7 +38,13 @@
                     {% csrf_token %}
                     <label for="identifier" class="sr-only">DOI ou ISBN</label>
                     <input type="text" id="identifier" name="identifier" placeholder="10.xxxx/… ou 978-…" required>
-                    {% button "Ajouter" icon="add" %}
+                    <div class="flex flex-wrap gap-2">
+                        {% button "Ajouter" icon="add" %}
+                        {% button "Ajouter à lire" variant="secondary" icon="bookmark_add" name="status" value="to_read" %}
+                    </div>
+                    <p class="text-sm text-gray-600">
+                        « À lire » : sans sa bibliographie, importée quand vous changerez son statut.
+                    </p>
                 </form>
             {% endcard %}
 
@@ -73,6 +79,10 @@
                                accept=".json,.bib,.ris,application/json"
                                aria-describedby="corpus-file-help"
                                required>
+                        <label class="flex items-center gap-2 font-normal">
+                            <input type="checkbox" name="to_read" value="1">
+                            Importer comme « à lire », sans les bibliographies : bien plus rapide
+                        </label>
                         {% button "Importer" variant="secondary" icon="upload" %}
                     </form>
                 </div>

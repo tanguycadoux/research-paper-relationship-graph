@@ -86,9 +86,13 @@ always beside the reading status: it stays on the page of each publication.
                                     {% button "Retirer de mes références" variant="danger-light" icon="remove" icon_only=True %}
                                 </form>
                             {% else %}
-                                <form method="post" action="{% url 'corpus_add' pub.pk %}">
+                                <form method="post"
+                                      action="{% url 'corpus_add' pub.pk %}"
+                                      class="flex justify-end gap-1">
                                     {% csrf_token %}
                                     <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    {# « + » last: aligned with « − » of the rows in the corpus. #}
+                                    {% button "Ajouter à mes références, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
                                     {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
                                 </form>
                             {% endif %}

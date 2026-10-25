@@ -27,9 +27,13 @@
                     </form>
                     {% include "references/_reading_status_form.html" with pub=publication status=reading_status %}
                 {% else %}
-                    <form method="post" action="{% url 'corpus_add' publication.pk %}">
+                    {# « À lire »: without its bibliography until the status changes (#234). #}
+                    <form method="post"
+                          action="{% url 'corpus_add' publication.pk %}"
+                          class="flex flex-wrap gap-2">
                         {% csrf_token %}
                         {% button "Ajouter à mes références" variant="success-light" icon="add" %}
+                        {% button "Ajouter à lire" variant="secondary" icon="bookmark_add" name="status" value="to_read" %}
                     </form>
                 {% endif %}
             {% endif %}
@@ -230,10 +234,10 @@
             {% elif references_available %}
                 Les sources listent {{ references_available }} référence{% if references_available > 1 %}s{% endif %}
                 pour cette publication. Elles ne sont importées automatiquement que pour les
-                publications d'un corpus.
+                publications d'un corpus, sauf celles « à lire ».
             {% elif arxiv_bibliography == "not_fetched" %}
                 La bibliographie de cette prépublication arXiv se trouve dans ses sources LaTeX :
-                elle est récupérée pour les publications d'un corpus.
+                elle est récupérée pour les publications d'un corpus, sauf celles « à lire ».
             {% elif arxiv_bibliography == "pdf" %}
                 Bibliographie indisponible : cette prépublication a été déposée sur arXiv en PDF
                 seul, sans les sources LaTeX qui la contiennent.

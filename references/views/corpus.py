@@ -6,20 +6,31 @@ from django.views.decorators.http import require_POST
 
 from ..models import Publication, UserPublication
 from ..services import filters
-from ..services.corpus import add_identified, find_or_create, with_reading_status
+from ..services.corpus import (
+    add_identified,
+    change_reading_status,
+    find_or_create,
+    with_reading_status,
+)
 from ..services.publication_table import for_publication_table
 from ..services.sorting import CORPUS
 from .pagination import page_of
 
 
-def add_and_report(request, pub):
+def requested_status(request):
+    """The reading status of the button that added a publication: « à lire », or none."""
+    status = request.POST.get("status", "")
+    return status if status in UserPublication.ReadingStatus.values else ""
+
+
+def add_and_report(request, pub, status=""):
     """
     Add pub to the corpus and say how it went. Return the publication added: the
     published version of a preprint, maybe (#227).
     """
     asked_doi = pub.doi
-    imported = add_identified(request.user, pub)
-    report_addition(request, imported or pub, imported)
+    imported = add_identified(request.user, pub, status)
+    report_addition(request, imported or pub, imported, status)
     if imported and asked_doi and imported.preprint_doi == asked_doi:
         messages.info(
             request,
@@ -29,8 +40,14 @@ def add_and_report(request, pub):
     return imported or pub
 
 
-def report_addition(request, pub, imported):
-    if imported:
+def report_addition(request, pub, imported, status=""):
+    if imported and status == UserPublication.ReadingStatus.TO_READ:
+        messages.success(
+            request,
+            f"« {pub} » a été ajouté à votre corpus, à lire : sa bibliographie sera importée "
+            "quand vous changerez son statut.",
+        )
+    elif imported:
         messages.success(request, f"« {pub} » a été ajouté à votre corpus.")
     elif pub.doi:
         messages.warning(
@@ -57,7 +74,8 @@ def redirect_back(request, pk):
 @login_required
 @require_POST
 def add_to_user_refs(request, pk):
-    pub = add_and_report(request, get_object_or_404(Publication, pk=pk))
+    pub = get_object_or_404(Publication, pk=pk)
+    pub = add_and_report(request, pub, requested_status(request))
     return redirect_back(request, pub.pk)
 
 
@@ -74,7 +92,7 @@ def add_publication_to_user_refs_by_identifier(request):
         )
         return redirect("corpus")
 
-    add_and_report(request, pub)
+    add_and_report(request, pub, requested_status(request))
     return redirect("corpus")
 
 
@@ -95,11 +113,21 @@ def set_reading_status(request, pk):
     if status and status not in UserPublication.ReadingStatus.values:
         messages.error(request, "Statut de lecture inconnu.")
         return redirect_back(request, pk)
-    entry.reading_status = status
-    entry.save(update_fields=["reading_status"])
+    imported = change_reading_status(entry, status)
     label = entry.get_reading_status_display().lower() if status else "aucun"
-    messages.success(request, f"Statut de lecture de « {entry.publication} » : {label}.")
-    return redirect_back(request, pk)
+    report = f"Statut de lecture de « {entry.publication} » : {label}."
+    if imported is None:
+        messages.warning(
+            request, f"{report} Sa bibliographie n'a pas pu être récupérée (service injoignable ?)."
+        )
+    elif imported:
+        count = imported.cited_references.count()
+        messages.success(
+            request, f"{report} Sa bibliographie a été importée : {count} référence(s)."
+        )
+    else:
+        messages.success(request, report)
+    return redirect_back(request, imported.pk if imported else pk)
 
 
 @login_required

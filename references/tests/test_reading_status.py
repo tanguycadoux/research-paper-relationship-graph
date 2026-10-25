@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -60,7 +62,8 @@ class ReadingStatusTests(TestCase):
         self.assertContains(self.set_status(self.read, "fini"), "Statut de lecture inconnu")
         self.assertEqual(self.entry(self.read).reading_status, READ)
 
-    def test_only_my_own_entries(self):
+    @patch("references.services.corpus.import_publication", side_effect=lambda pub, **_: pub)
+    def test_only_my_own_entries(self, _import):
         outside = Publication.objects.create(title="Hors corpus")
         self.assertEqual(self.set_status(outside, "read").status_code, 404)
         self.set_status(self.to_read, "reading")
