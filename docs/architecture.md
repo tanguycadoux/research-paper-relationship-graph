@@ -1,19 +1,35 @@
 # Architecture
 
-Ce document décrit l'organisation du projet et les décisions de conception. Il est mis
-à jour dans la même pull request que tout changement d'architecture. Les règles de
-contribution (branches, commits, tests, conventions d'interface) sont dans
-[CONTRIBUTING.md](../CONTRIBUTING.md).
+Ce document décrit l'organisation du projet et renvoie aux documents détaillés. La
+documentation est mise à jour dans la même pull request que tout changement
+d'architecture. Les règles de contribution (branches, commits, tests, conventions
+d'interface) sont dans [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Principe
 
-L'utilisateur ajoute un article à son **corpus**. L'application récupère alors depuis
-Crossref les métadonnées de cet article et celles des articles qu'il cite. Les articles
-cités ne sont pas explorés plus loin, sauf s'ils sont eux-mêmes ajoutés à un corpus.
+L'utilisateur ajoute un article à son **corpus**. L'application récupère alors ses
+métadonnées et celles des articles qu'il cite : chez Crossref, ou chez DataCite pour les
+DOI que Crossref ne connaît pas (actes de conférence, prépublications arXiv, Zenodo),
+complétées par OpenAlex (institutions, ORCID, résumé) et ORCID (noms des auteurs). Les
+articles cités ne sont pas explorés plus loin, sauf s'ils sont eux-mêmes ajoutés à un
+corpus. Un article ajouté « à lire » n'importe que ses propres métadonnées.
 
-Les données Crossref sont parfois incomplètes : DOI manquant dans une référence, auteurs
-écrits de plusieurs façons. L'utilisateur peut les corriger : saisie d'un DOI, fusion
-d'auteurs.
+Les données des sources sont parfois incomplètes ou contradictoires : référence sans DOI,
+auteurs écrits de plusieurs façons, ORCID ou nom différents selon la source. L'utilisateur
+les corrige (identification d'une référence, fusion d'auteurs ou de publications,
+décision sur un conflit), et ces corrections sont **communes à tous** : les publications,
+les auteurs et les décisions forment une base de connaissances partagée. Seuls le corpus,
+le statut de lecture et les tags sont propres à chaque utilisateur.
+
+## Documents
+
+| Document | Contenu |
+|---|---|
+| [sources.md](sources.md) | Sources de métadonnées : ce que chacune apporte, **schéma du parcours d'un import**, requêtes HTTP, DataCite, prépublications arXiv, JACoW, OpenAlex et affiliations, ORCID, livres, contradictions entre sources |
+| [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
+| [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export |
+| [interface.md](interface.md) | Navigation, tableaux, pagination, tri, filtres, recherche, accueil, mise en page |
+| [decisions.md](decisions.md) | Journal des décisions, avec leurs raisons et leurs tickets |
 
 ## Organisation du code
 
@@ -27,30 +43,31 @@ references/          application principale
   urls.py            routes, au pluriel pour les collections (publications/, authors/…)
   views/             vues fines, une par domaine
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
-    cited_references.py (identification d'une référence),
+    cited_references.py (identification d'une référence, en série),
     publication_merge.py (« Cette publication est en fait… »),
     corpus_transfer.py (export et import du corpus),
     search.py (recherche), pagination.py (listes par pages)
   services/          logique métier, sans dépendance aux vues
     Sources externes
-    http.py          requêtes JSON communes (session, nouvelles tentatives, journalisation)
+    http.py          requêtes communes (session, nouvelles tentatives, cache de développement)
     crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
     datacite_api.py  client DataCite (DOI par DOI ou par lots, recherche par titre)
-    openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions)
+    openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions, DOI d'une œuvre)
     openlibrary_api.py  client Open Library (recherche par ISBN)
     arxiv_api.py     client arXiv (sources LaTeX d'une prépublication, une à la fois)
     orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne, noms par lots)
+    doi_registration.py  existence des DOI saisis, demandée à doi.org
     external_records.py  stockage des réponses des sources (ExternalRecord), statut des métadonnées
-    metadata_formats.py  conversion de chaque source vers le format lu par le parser
+    metadata_formats.py  conversion de chaque source vers le format lu par le parser, priorité
     Import et analyse
     importer.py      orchestration : récupération puis analyse
-    corpus.py        ajout au corpus par DOI ou ISBN (import avec les références)
+    corpus.py        ajout au corpus par DOI ou ISBN, statut de lecture
     tags.py          tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
                      renommage et suppression
     parser.py        réponse de la source vers les modèles
     titles.py        nettoyage des titres (entités HTML, balisage JATS)
     latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
-    jacow.py         références reliées par le code JACoW écrit par leurs auteurs
+    jacow.py         actes JACoW : codes écrits dans les références, ordre des auteurs incertain
     author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
     enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
     affiliations.py  rattachement des organisations aux signatures
@@ -59,16 +76,17 @@ references/          application principale
     orcid_merge.py   fusion automatique des auteurs qui ont le même ORCID
     orcid_profile.py profil ORCID d'un auteur, demandé depuis sa fiche
     orcid_names.py   noms des auteurs complétés depuis ORCID
-    preprints.py     prépublications arXiv remplacées par leur version publiée
+    preprints.py     prépublications arXiv remplacées par leur version publiée déclarée
+    published_versions.py  version publiée trouvée par OpenAlex, proposée comme conflit
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
     Identifiants et noms
     doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
-    doi_registration.py  existence des DOI saisis, demandée à doi.org (#240)
-    names.py         normalisation des noms de personnes
+    names.py         normalisation et comparaison des noms de personnes
     Corrections
-    identification.py  identification manuelle des références, « non identifiable »
+    identification.py  identification manuelle des références, « non identifiable », série
     candidates.py    publications candidates d'une référence (Crossref, DataCite, base)
     publication_merge.py  fusion d'une publication sans identifiant dans une autre
+    publication_moves.py  report des entrées de corpus d'une publication vers une autre
     publication_edits.py  corrections de « Modifier » : titre et date protégés, nouvel identifiant
     author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
     author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
@@ -80,29 +98,31 @@ references/          application principale
     filters.py       filtres par colonne des tableaux (texte, plage d'années, choix)
     publication_table.py  annotations du tableau commun (premier auteur, badges)
     publication_details.py  informations de la fiche (revue, financeurs, licences, citations, résumé)
+    pending.py       compteurs de la navigation (références à identifier, conflits ouverts)
+    dashboard.py     tableau de bord de l'accueil
     graph.py         construction des données des graphes
     corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
     bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
     icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
-                     pagination, column_header, filter_summary
-    navigation.py    navigation principale (groupes, lien courant)
+                     pagination, column_header, filter_summary, popover_panel_classes
+    navigation.py    navigation principale (groupes, lien courant, compteurs)
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
+    complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
     replace_preprints.py  prépublications arXiv déjà en base remplacées par leur version publiée
                      déclarée, ou version trouvée par OpenAlex proposée dans « Conflits »
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
-    complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
-assets/css/source.css  source Tailwind (styles de base des éléments)
+assets/css/source.css  source Tailwind (styles de base des éléments, couleurs du graphe)
 static/
   css/tailwind.css   feuille compilée, non versionnée
   icons/             icônes SVG
@@ -119,14 +139,15 @@ Règles :
 - Les **vues** restent fines : elles valident l'entrée, appellent un service et rendent
   la réponse.
 - Les **services** portent la logique et se testent sans HTTP.
-- Les tests ne font **aucun appel réseau** : Crossref est simulé, et le test runner
-  (`config/test_runner.py`) fait échouer toute connexion réseau.
+- Les tests ne font **aucun appel réseau** : toutes les sources sont simulées
+  (`references/tests/helpers.py`), et le test runner (`config/test_runner.py`) fait
+  échouer toute connexion réseau et désactive le cache de développement.
 
 ## Modèle de données
 
-Le modèle sépare **ce que dit Crossref** (données brutes, jamais modifiées) de **ce qu'on
-en déduit** (entités résolues, corrigeables). Ainsi, un ré-import n'écrase jamais une
-correction.
+Le modèle sépare **ce que disent les sources** (réponses brutes, jamais modifiées) de
+**ce qu'on en déduit** (entités résolues, corrigeables). Ainsi, un ré-import n'écrase
+jamais une correction.
 
 ```mermaid
 erDiagram
@@ -134,639 +155,28 @@ erDiagram
     Publication ||--o{ UserPublication : ""
     User ||--o{ Tag : "tags"
     UserPublication }o--o{ Tag : "classée par"
+    Publication ||--o{ ExternalRecord : "réponses des sources"
     Publication ||--o{ CitedReference : "cite"
     CitedReference }o--o| Publication : "résolue en (facultatif)"
     Publication ||--o{ AuthorPublication : ""
     Author ||--o{ AuthorPublication : ""
+    AuthorPublication }o--o{ Organization : "affiliations"
+    Publication ||--o{ MetadataConflict : "conflits"
+    Author ||--o{ MetadataConflict : "conflits"
 ```
 
 | Modèle | Rôle |
 |---|---|
 | `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. `preprint_doi` garde le DOI arXiv d'une prépublication remplacée par sa version publiée (#227) : unique, il retrouve la publication quand on importe ou cite ce DOI (`Publication.objects.with_doi`). Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. La date est un `DateField` : un mois ou un jour absent de la source est stocké à 1, et `publication_date_precision` (année, mois, jour) dit ce que la source donne vraiment ; la fiche affiche « 2023 », « août 2023 » ou « 1 août 2023 » (#147). Une date saisie à la main est précise au jour. |
-| `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
-| `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. Les candidats trouvés pour la page d'identification sont gardés en cache (`candidates`, `candidates_fetched_at`). |
+| `ExternalRecord` | La réponse brute d'une source externe (Crossref, DataCite, OpenAlex, arXiv, Open Library) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
+| `CitedReference` | Une entrée de la bibliographie d'un article, telle que la source la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`) ; une référence peut aussi être déclarée non identifiable (`unidentifiable`, avec la même trace). Ces décisions sont conservées au ré-import. Les candidats trouvés pour la page d'identification sont gardés en cache (`candidates`, `candidates_fetched_at`). Détails dans [corrections.md](corrections.md#identifier-une-référence). |
 | `Author` | Une personne (entité résolue). Un nom corrigé à la main est marqué (`name_edited`) : ORCID ne le modifie plus. |
+| `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion, et les organisations déclarées sur cette signature. |
 | `AuthorMerge` | La trace d'une fusion d'auteurs : auteur conservé, auteurs absorbés tels qu'ils étaient (noms, ORCID), motif (manuelle ou même ORCID), qui (vide pour une fusion automatique) et quand. Les traces d'un auteur absorbé passent à l'auteur conservé. |
-| `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
+| `AuthorDistinction` | Une paire d'auteurs déclarés différents par un utilisateur (qui, quand) : la paire n'est plus proposée comme doublon et n'est jamais fusionnée automatiquement. |
 | `OrcidRecord` | Ce qu'ORCID a répondu sur une personne, stocké tel quel : l'enregistrement public (noms, résumé des travaux, `data`), demandé depuis la fiche auteur, et les noms donnés par la recherche groupée (`search_data`, `{}` si ORCID ne connaît pas la personne), chacun avec sa date. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
+| `MetadataConflict` | Une valeur d'une source qui contredit une valeur connue, sur une publication ou un auteur : type, valeur retenue, valeur proposée, source, ce que la page affiche de la proposition (`details`), décision (ouvert, existant gardé, proposée retenue, vu), qui et quand. Signalé une seule fois. Détails dans [corrections.md](corrections.md#conflits). |
 | `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi), et ses tags. |
 | `Tag` | Un tag d'un utilisateur, hiérarchique : son nom est un chemin, « Projet A/Groupe A », dont les parents existent implicitement. Unique par utilisateur, casse ignorée ; un tag qui ne classe plus aucune publication est oublié. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
-
-**Décision : les corrections sont communes à tous les utilisateurs.** Les publications,
-les auteurs, les DOI saisis et les fusions forment une base de connaissances partagée.
-Seul le corpus (`UserPublication`) est propre à chaque utilisateur.
-
-## Import Crossref
-
-1. Les vues appellent **explicitement** les services : `services/corpus.add_identified`
-   pour un ajout au corpus, quel que soit le chemin (formulaire, bouton, import de fichier),
-   et `services/importer.import_publication` dans les autres cas. `add_identified` envoie
-   une publication avec DOI à `add_to_corpus` ; un livre sans DOI, trouvé par son ISBN
-   (Crossref puis Open Library, `books.find_or_import_book`), n'est jamais envoyé aux sources
-   de DOI. `corpus.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée.
-   Une publication ajoutée « à lire » n'importe que ses propres métadonnées : sa bibliographie
-   attend que son statut change (`corpus.change_reading_status`), et `Publication.parse_references`
-   ne compte que les entrées d'un autre statut (#234). Créer une `Publication` n'appelle jamais Crossref : il n'y a pas
-   de signal.
-2. Les métadonnées d'un article ne sont récupérées que si aucune source ne l'a encore décrit.
-   Le seul moyen de rappeler Crossref pour un article déjà récupéré est le bouton
-   « Rafraîchir les métadonnées » (`force_fetch`).
-3. Pour un article du corpus, les références sont analysées, puis les articles cités
-   jamais récupérés sont importés, sans leurs propres références : on ne descend que d'un
-   niveau.
-4. Ces articles cités sont récupérés **par lots de 50** en une requête
-   (`/works?filter=doi:A,doi:B,…`). Un DOI absent de la réponse est marqué comme
-   récupéré, sans données, pour ne pas être redemandé par les imports suivants. Une
-   action explicite (ajout au corpus, rafraîchissement) peut le redemander.
-   Les fiches de ces requêtes de liste contiennent les mêmes auteurs et références qu'une
-   requête unitaire. Il leur manque seulement des champs secondaires (`original-title`,
-   `short-title`, `subject`, `subtitle`).
-
-Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
-Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une
-transaction, sans les appels réseau. Les auteurs et les publications citées sont
-résolus par requêtes groupées, et les créations passent par `bulk_create` : le nombre de
-requêtes SQL ne croît pas avec le nombre d'auteurs ou de références.
-
-**Décision : l'import est synchrone.** Grâce aux lots, il ne prend que quelques secondes
-et ne demande aucune infrastructure supplémentaire. Le service est isolé des vues, si
-bien qu'il pourra passer en tâche de fond plus tard sans toucher au reste.
-
-Le client (`crossref_api.py`) s'identifie avec `CROSSREF_MAILTO` pour accéder au
-*polite pool*. Il respecte `Retry-After` sur les erreurs 429, retente les 5xx et les
-erreurs réseau, et ne retente jamais une 404 ni une 403.
-
-**Attente limitée dans une page** (`services/http.py`, #172). L'import est synchrone :
-pendant qu'une page charge, une source en panne n'est retentée qu'une fois, et l'on
-abandonne si elle demande d'attendre plus de 5 s (l'utilisateur pourra réessayer). Les
-commandes (`complete_affiliations`) s'exécutent dans `patient_requests()` : trois
-tentatives, et jusqu'à 60 s d'attente si la source le demande.
-
-**Cache des réponses en développement.** Avec `DEBUG`, la session partagée est une
-`CachedSession` de `requests-cache` (dépendance de développement) : les réponses 200 sont
-gardées 7 jours dans `.http_cache.sqlite`, à part de la base. `reset_data` vide la base
-mais garde ce cache (`--clear-http-cache` le vide aussi) : réimporter après un reset ne
-redemande rien aux sources. En production, les réponses stockées (`ExternalRecord`)
-évitent déjà de redemander une publication connue ; un cache HTTP n'y apporterait que
-des données périmées. Les tests le désactivent.
-
-## Corrections manuelles
-
-- **Identifier une référence** (`identification.py`) : par DOI, par ISBN, ou en créant une
-  publication sans identifiant, ou la déclarer non identifiable. La correction est tracée et
-  survit aux ré-imports. La page propose d'abord des **publications candidates**
-  (`candidates.py`, #160), jamais reliées sans un clic sur « C'est celle-ci » :
-  - Crossref sur le texte complet de la référence (`query.bibliographic`), DataCite sur
-    son titre seul (actes JACoW, prépublications arXiv ; sur le texte complet, DataCite
-    exige tous les mots et ne trouve rien), le DOI d'un code JACoW écrit dans la
-    référence, et les publications de la base au titre proche. Le titre est le champ
-    structuré, ou la phrase qui suit les auteurs dans le texte brut.
-  - Le score de Crossref ne se compare pas d'une recherche à l'autre : chaque candidat est
-    vérifié ici. Titres proches dans les deux sens (le plus long au plus deux fois plus
-    long), année à ±1 près, premier auteur exigé si le titre n'est que proche ; copies
-    ResearchGate écartées. Sur les 32 références à identifier de la base, le bon candidat
-    sort en tête pour les 22 qui ont un DOI.
-  - Les réponses des sources sont gardées sur la référence (deux requêtes au premier
-    affichage, puis aucune) ; « Relancer la recherche » les oublie. Une source qui ne
-    répond pas n'est pas mise en cache.
-  - Un DOI saisi à la main est d'abord soumis à doi.org (`doi_registration.py`, #240) :
-    s'il n'existe pas, le formulaire le refuse au lieu de créer une publication vide. Même
-    règle pour l'ajout au corpus par DOI et pour l'import d'un fichier (une requête pour
-    20 DOI ; une entrée au faux DOI passe par son ISBN si elle en a un, sinon elle est
-    écartée et listée). Les identifiants `10.5555/…` de l'ACM Digital Library ressemblent
-    à des DOI sans en être. La requête est évitée si une publication de la base, avec
-    métadonnées, porte ce DOI ; si doi.org ne répond pas, le DOI est accepté.
-  - **En série** (#242) : « Identifier en série », sur la fiche, enchaîne les références
-    à identifier de la publication, par position. Après chaque décision, la page passe à
-    la suivante au lieu de revenir à la fiche ; « Passer » la laisse à identifier, et
-    « Terminer » revient à la fiche. La série tient dans l'URL (`?serie=1`) et dans un
-    champ caché des formulaires : pas de session ni de modèle.
-- **Modifier une publication** (`publication_edits.py`, #146) : un titre ou une date
-  corrigés sont marqués et ne sont plus réécrits par les analyses suivantes ; la fiche le
-  signale, et « Revenir aux valeurs des sources » relit la réponse stockée, sans requête.
-  Un champ vidé redevient celui de la source. Un **nouveau DOI ou ISBN** désigne une autre
-  œuvre : les réponses des sources, les signatures et la bibliographie de l'ancien sont
-  supprimées (avec les auteurs restés sans publication), puis le nouveau est importé.
-- **Modifier un auteur** : un prénom ou un nom changé marque le nom comme corrigé
-  (`name_edited`), et ORCID ne le modifie plus (#220).
-- **« Cette publication est en fait… »** (`publication_merge.py`) : une publication sans
-  DOI ni ISBN peut être fusionnée dans une autre, désignée par un DOI, un ISBN ou le lien
-  de sa page. Ses citations sont reportées et marquées comme corrections manuelles, ses
-  entrées de corpus sont reportées sans doublon, puis elle est supprimée. Une publication
-  identifiée ne peut pas être fusionnée de cette façon.
-
-## DOI enregistrés chez DataCite
-
-Un DOI est attribué par une seule agence. **Crossref** couvre la plupart des articles,
-**DataCite** les actes de conférence (JACoW, très cités en physique des accélérateurs),
-les dépôts Zenodo et les jeux de données. Crossref répond « inconnu » pour un DOI DataCite.
-
-- Un DOI isolé : Crossref, puis DataCite (`/dois/<doi>`).
-- Les articles cités : un lot Crossref, puis **un lot DataCite** (`/dois?ids=A,B,…`) pour
-  les seuls DOI que Crossref ne connaît pas. Un DOI inconnu des deux n'est enregistré
-  comme tel que si DataCite a répondu : en cas de panne, il est retenté au prochain import.
-- Une fiche DataCite (titres, créateurs avec ORCID, date) est convertie au format lu par le
-  parser. Elle ne contient en général pas de bibliographie : seuls les liens déclarés
-  `References` ou `Cites` vers des DOI deviennent des références.
-
-### Prépublications arXiv et version publiée
-
-Les DOI arXiv (`10.48550/arXiv.…`) sont chez DataCite, sans bibliographie (#227). Quand
-les auteurs déclarent sur arXiv le DOI de la version publiée, DataCite le donne en
-`IsVersionOf` : la publication est alors **remplacée** par cette version
-(`services/preprints.py`), dont Crossref fournit métadonnées et bibliographie. Elle garde
-ses entrées de corpus, ses citations et ses corrections ; le DOI arXiv passe dans
-`preprint_doi`. Si la version publiée est déjà en base, la prépublication fusionne avec
-elle (corpus et citations déplacés). Les références citées importées par lots le sont
-aussi, avec un lot Crossref pour les versions déclarées.
-
-Garde-fous, puisqu'on ne remplace que sur une information fiable :
-- seul le préfixe arXiv compte (chez Zenodo, `IsVersionOf` relie une version à son concept) ;
-- Crossref doit connaître le DOI comme publication (article de revue ou de conférence,
-  chapitre, livre), jamais `posted-content` : des copies d'articles arXiv sont déposées
-  ailleurs sous de nouveaux DOI (`10.65215/…` pour « Attention Is All You Need ») ;
-- les titres doivent se ressembler (60 % des mots du plus court dans l'autre) : une faute
-  de frappe dans le DOI déclaré désignerait un autre article.
-
-Toutes les recherches par DOI passent par `Publication.objects.with_doi` /
-`get_or_create_doi`, qui regardent aussi `preprint_doi`. La commande `replace_preprints`
-applique le remplacement aux publications déjà en base, sans nouvel appel à DataCite.
-
-### Version publiée trouvée par OpenAlex
-
-Quand les auteurs ne déclarent rien, OpenAlex regroupe souvent la prépublication et sa
-version publiée sous une même œuvre : ses `locations` donnent les DOI de toutes les
-versions (`openalex_api.work_dois`). Ce regroupement est automatique et parfois faux (il
-range les copies `10.65215/…` avec « Attention Is All You Need ») : la version n'est donc
-jamais appliquée d'office, mais **proposée** comme conflit « Version publiée selon
-OpenAlex » (`services/published_versions.py`).
-
-- À la fin d'un import, pour la publication et, avec ses références, celles qu'elle cite :
-  les DOI non arXiv de leur œuvre OpenAlex sont vérifiés chez Crossref en une requête par
-  lot. Le premier qui passe les garde-fous ci-dessus et deux de plus (même premier auteur,
-  année au moins égale à celle de la prépublication) est proposé ; une prépublication
-  n'est examinée qu'une fois.
-- « Prendre la valeur proposée » redemande la version à Crossref, la remplace comme une
-  version déclarée (`replace_preprint`, ou fusion si elle est déjà en base, le conflit
-  suivant la version publiée), puis la réimporte. Sans réponse de Crossref, rien n'est
-  décidé.
-- La fiche de la prépublication signale la proposition tant qu'elle est ouverte.
-- `replace_preprints` propose aussi les versions des prépublications déjà en base, en
-  redemandant leur œuvre OpenAlex quand elle manque. Les lots OpenAlex rangeaient l'œuvre
-  sous son seul DOI principal : une prépublication connue par le DOI de sa revue passait
-  pour inconnue. Ils la retrouvent désormais par tous les DOI de l'œuvre.
-
-### Bibliographie tirée des sources arXiv
-
-Une prépublication sans version publiée déclarée n'a de bibliographie nulle part
-ailleurs que dans le texte de ses auteurs. arXiv ne lance pas BibTeX : les auteurs
-déposent le `.bbl`, ou écrivent `thebibliography` dans le `.tex`. Quand une telle
-prépublication entre dans un corpus (ou par « Importer ses références »), son e-print
-est téléchargé **une fois** (`arxiv_api.py`, 30 Mo au plus, lu en mémoire sans rien
-extraire sur le disque) ; les entrées `\bibitem` sont stockées brutes dans un
-`ExternalRecord` de source `arxiv` (`latex_bibliography.read_eprint`). À la lecture, elles
-deviennent des références au format Crossref, au texte nettoyé du LaTeX (accents,
-`\newblock`, `{\em …}`, `\bibinfo`…) : `metadata_message` les prend quand la source
-prioritaire (DataCite) n'a pas de bibliographie. Un nettoyage amélioré s'applique donc
-sans nouveau téléchargement.
-
-Seuls les identifiants **écrits par les auteurs** relient une référence : un DOI, ou un
-identifiant arXiv (DOI `10.48550/arXiv.…`, lui-même remplacé par sa version publiée s'il
-en déclare une). Les autres restent « à identifier ». Sur « Attention Is All You Need » :
-40 références, 22 reliées, 18 à identifier. La fiche dit d'où vient la bibliographie, ou
-pourquoi elle manque : prépublication déposée en PDF seul (environ 30 % en physique des
-accélérateurs), ou sources sans bibliographie.
-
-### Code JACoW écrit dans une référence
-
-Les actes des conférences d'accélérateurs (JACoW) ont leurs DOI chez DataCite, sous une
-forme fixe : `10.18429/JACoW-<CONFÉRENCE><ANNÉE>-<CODE>` (vérifié sur 5 000 de leurs 26 000
-DOI ; les autres formes sont des volumes entiers). Un code `JACoW-IPAC2019-WEPRB007` écrit
-dans une référence est donc un identifiant des auteurs : à l'import d'une bibliographie,
-`jacow.link_jacow_references` le relie, mais seulement si DataCite connaît le DOI **et**
-que son titre se retrouve dans la référence. Sinon rien n'est créé : un code faux ou trop
-ancien ne laisse pas de publication vide dans la base.
-
-## Fusion d'auteurs
-
-`services/author_merge.py` : pour chaque champ (prénom, nom, ORCID), on propose les valeurs
-des auteurs fusionnés, ou une autre valeur saisie. Par défaut, on prend la forme la plus
-complète : sans initiale, pas tout en capitales, puis la plus longue. Pour l'ORCID, on
-prend le premier existant. Deux ORCID différents désignent en général deux personnes :
-la fusion demande alors une confirmation explicite. Les noms publiés restent sur chaque
-publication (`AuthorPublication`), si bien qu'aucune variante n'est perdue et que la
-fusion résiste aux ré-imports.
-
-**Doublons probables** (`services/author_duplicates.py`). Les auteurs sont regroupés par
-nom de famille normalisé, sans accents ni casse. Deux prénoms sont compatibles mot à mot :
-identiques, ou une initiale qui correspond à la première lettre de l'autre (« J.-L. » et
-« Jean Luc »). Un auteur n'entre dans un groupe que s'il est compatible avec **tous** ses
-membres : sinon, « J. » relierait « John » et « James ». Deux ORCID différents ne sont
-jamais regroupés, et deux auteurs qui ont le **même** ORCID le sont toujours, quelle que
-soit l'écriture de leurs noms. Les noms de famille sont comparés sans tenir compte des
-tirets ni de la ponctuation (« Correia-Machado » = « Correia Machado »). Une **tutelle commune** (organisation de plus haut niveau, par exemple le CEA)
-déclarée par au moins deux auteurs d'un groupe est affichée et fait remonter le groupe.
-Ce n'est qu'un indice : des organisations différentes ne séparent jamais deux auteurs,
-car les chercheurs changent de laboratoire. Les groupes qui comptent exactement un ORCID viennent en premier. La
-page renvoie vers la fusion habituelle, après qu'on a éventuellement décoché des auteurs.
-On peut aussi déclarer les auteurs cochés comme **personnes différentes**
-(`AuthorDistinction`, paire stockée une fois, avec qui l'a déclarée et quand) : la paire
-n'est plus jamais proposée, comme deux ORCID différents. Lors d'une fusion, les
-distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
-
-**Même ORCID** (`services/orcid_merge.py`, #158). Un ORCID désigne une seule personne :
-quand un auteur reçoit un ORCID déjà porté par un autre (complétion depuis OpenAlex,
-« Modifier », fusion manuelle, conflit d'ORCID accepté), ils sont fusionnés
-automatiquement dans le plus ancien, avec la forme de nom la plus complète. Le cas venait
-surtout de la complétion OpenAlex : « S. Prestemon », publié sans ORCID, devenait un
-second auteur qui recevait ensuite l'ORCID de « Soren Prestemon ». Des auteurs **déclarés
-distincts** ne sont jamais fusionnés : l'ORCID partagé est signalé comme conflit
-informatif. La commande `merge_same_orcid` traite les auteurs déjà en base. Chaque fusion,
-manuelle ou automatique, est tracée (`AuthorMerge`) et listée sur la fiche de l'auteur.
-
-## OpenAlex, source complémentaire
-
-[OpenAlex](https://openalex.org) n'est pas un recours comme DataCite : il est interrogé
-pour **tous** les DOI importés, en plus de Crossref et DataCite, parce qu'il apporte autre
-chose. On y trouve les institutions avec leur identifiant ROR, des ORCID absents de
-Crossref, des identifiants d'auteurs et la date de mise en ligne, et un
-résumé pour la plupart des articles dont Crossref n'en donne pas (`abstract_inverted_index`,
-remis en texte sur la fiche, avec sa source, #157). Il n'ajoute aucun
-article : seuls ceux déjà importés (corpus et articles cités) sont complétés.
-
-- Un article : une requête unitaire (gratuite). Elle n'est enregistrée que si OpenAlex a
-  répondu, pour pouvoir la retenter en cas de panne.
-- Les articles cités : un lot par 50 DOI (`filter=doi:A|B|…`). Un DOI absent d'une
-  réponse est enregistré comme inconnu.
-- Conditions (vérifiées le 2026-10-21) : API gratuite et sans clé. Une requête unitaire
-  est illimitée. Les requêtes par lots consomment un budget quotidien d'environ 1 000 lots
-  sans clé.
-
-### Affiliations
-
-Une affiliation est une propriété de la **signature** (`AuthorPublication.organizations`),
-pas de la personne : « sur cet article, X a déclaré le laboratoire Y ». Les périodes d'un
-auteur dans une organisation (première et dernière publication) **se calculent** et ne
-sont pas stockées : un changement de laboratoire apparaît naturellement.
-
-Les institutions viennent d'OpenAlex. Elles sont rattachées aux signatures par **position
-et nom publié** : les mots du nom sont comparés quel que soit leur ordre, si bien que
-« Thuillier, Thomas » (DataCite) correspond à « Thomas Thuillier ». Si le nombre d'auteurs
-ou un nom diffère, rien n'est rattaché pour l'article. Une organisation est reconnue par
-son identifiant OpenAlex ou par son ROR. Les liens sont recréés à chaque analyse, puisque
-les signatures le sont aussi.
-
-**Hiérarchie.** Les auteurs déclarent souvent plusieurs niveaux à la fois (« IRFU, CEA
-Paris-Saclay »). OpenAlex donne la **lignée** de chaque institution, c'est-à-dire tous ses
-ancêtres : IRFU appartient à la Direction de la Recherche Fondamentale, qui appartient au
-CEA. Chaque organisation connaît ses ancêtres. Ceux qui ne figurent dans aucune signature
-sont récupérés pendant l'étape OpenAlex, en une requête groupée (`/institutions?filter=
-openalex:…`), pour que le parser n'ait jamais à appeler le réseau. Sur la fiche d'un
-auteur, les organisations sont **regroupées par tutelle** (organisation sans ancêtre),
-avec le détail des entités déclarées. Une unité mixte (CEA Paris-Saclay : CEA et
-Université Paris-Saclay) apparaît sous chacune de ses tutelles.
-
-Sur la fiche d'une publication, les affiliations sont présentées **comme dans un
-article** : chaque auteur porte en exposant le numéro de ses affiliations, listées une
-seule fois sous les auteurs, dans l'ordre d'apparition. Une signature n'affiche que ses
-organisations **les plus précises** : celles qui sont l'ancêtre d'une autre organisation
-de la même signature sont retirées (IRFU plutôt que IRFU et CEA).
-
-La commande `complete_affiliations` complète les publications déjà en base à partir des
-données OpenAlex stockées, sans les redemander. L'option `--fetch-missing` interroge
-d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse. L'option
-`--refresh-ancestors` redemande les ancêtres déjà connus, pour réparer leurs propres
-ancêtres. Avant la correction de cette étape, un ancêtre récupéré n'était relié qu'aux
-organisations déjà en base : la DRF, simple ancêtre d'IRFU, perdait son lien vers le CEA
-nommé dans le même article, et passait pour une tutelle sur la fiche auteur.
-
-### ORCID complétés depuis OpenAlex
-
-Pour les auteurs rapprochés (même position, même nom publié), l'ORCID donné par OpenAlex
-est attribué à l'**auteur** s'il n'en a pas. S'il en a un autre, rien ne change et un
-conflit est signalé : « Prendre la valeur proposée » remplace alors l'ORCID. L'ORCID
-publié de la signature (`published_orcid`, donnée Crossref) n'est jamais modifié : il fait
-partie de la clé qui retrouve un auteur au ré-import. Mesuré sur la base réelle : les
-auteurs avec ORCID passent de 35 à 74 sur 135, sans conflit. 11 ORCID se retrouvent
-alors chacun sur plusieurs auteurs : ce sont des doublons certains.
-
-### Informations contradictoires entre sources
-
-Comparaison faite sur 50 articles réels : 7 « années différentes », qui sont en fait la
-date de mise en ligne (OpenAlex) face à la date imprimée (Crossref). Aucun ORCID
-contradictoire, et 151 ORCID ajoutés. Quelques noms canoniques OpenAlex corrigent des
-fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
-
-1. **On n'écrase jamais rien** : chaque source garde sa réponse brute.
-2. **Crossref et DataCite font référence** pour la fiche : titre, date, auteurs tels que
-   publiés, références (données de l'éditeur).
-3. **OpenAlex complète** seulement : institutions, ORCID manquants, date en ligne.
-4. Les auteurs sont rapprochés par leur **position et leur nom publié**
-   (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article.
-5. Un **vrai conflit** (par exemple un ORCID différent de celui déjà connu) : l'existant est
-   gardé et le conflit est signalé sur la page « Conflits » (`MetadataConflict`,
-   `services/conflicts.py`). Un conflit n'est signalé qu'une fois (objet, champ, valeur
-   proposée) : une décision n'est jamais rouverte par un ré-import. Un conflit devenu
-   obsolète (les sources concordent de nouveau) disparaît. Un conflit **informatif**,
-   comme des auteurs différents selon les sources où rien n'est à « prendre », se marque
-   seulement « Vu ».
-6. Les **corrections manuelles** l'emportent toujours.
-7. Deux valeurs toutes deux justes (dates, nombres de citations) sont affichées avec leur
-   source.
-
-## ORCID
-
-L'API publique ORCID répond sans clé, en JSON quand on le demande (en-tête `Accept`).
-
-**Profil, à la demande.** L'enregistrement d'une personne
-(`https://pub.orcid.org/v3.0/<orcid>/record`) donne en une requête le profil et le résumé
-des travaux. Il n'est **jamais demandé à l'import** : un article peut avoir plus de 1 000
-auteurs. Le bouton « Compléter depuis ORCID » de la fiche d'un auteur qui a un ORCID le
-demande, et la réponse est stockée (`OrcidRecord`). En cas d'échec, l'enregistrement déjà
-stocké est gardé.
-
-La fiche montre, à titre d'information, sans rien modifier dans la base (#59) :
-- le nom officiel, le nom d'usage et les autres noms déclarés (« J. Carberry ») ;
-- le nombre de travaux déclarés et combien sont dans la base, retrouvés par leur DOI ;
-- les travaux de la base où l'auteur ne figure pas parmi les signataires : un nom publié
-  rattaché à un autre auteur, ou un ORCID manquant.
-
-**Noms, à l'import** (`services/orcid_names.py`, #220). La recherche étendue
-(`/expanded-search/?q=orcid:(A OR B …)`) donne les noms de 50 personnes en une requête
-(mesuré : une URL de 1 200 caractères, une demi-seconde). À l'import d'une publication,
-les auteurs dont l'ORCID n'a jamais été demandé le sont en une requête groupée ; ceux des
-publications citées sont laissés à la commande `complete_orcid_names`, qui traite aussi
-les auteurs déjà en base (`--refresh` redemande tout). ORCID donne le nom que la personne
-déclare, souvent plus complet que le nom publié, mais rien n'est écrasé :
-- un prénom qui **prolonge** le prénom connu le complète, mot par mot : « T. » devient
-  « Thomas », « A. K. » devient « Angie K. » ; un prénom moins complet ne change rien ;
-- le **nom de famille** de la base est gardé, sa casse étant plus fiable (« SIMON »,
-  « vallcorba » sur ORCID) ; un prénom tout en minuscules ou en majuscules est remis en
-  forme ;
-- un nom qui **diffère** vraiment est signalé comme conflit (« Nom différent selon
-  ORCID ») : un ORCID peut être mal attribué, notamment par la complétion OpenAlex. La
-  page « Conflits » montre les deux noms dans un petit tableau, prénom puis nom, et
-  signale des mots identiques mais répartis autrement entre prénom et nom, comme
-  « E. Fernandez | Mora » et « Elena | Fernandez Mora » (#244) ;
-- un nom **corrigé à la main** (`name_edited`) n'est jamais modifié, et un nom non public
-  ne change rien.
-
-Le bouton de la fiche applique les mêmes règles au nom de l'enregistrement complet. Tant
-que celui-ci n'a pas été demandé, la fiche montre les noms de la recherche groupée et
-propose « Charger les travaux depuis ORCID ». Sur la
-base réelle : 59 ORCID en 2 requêtes, 42 prénoms complétés, 2 conflits légitimes (un nom
-mal découpé par Crossref, « E. Fernandez Mora » ; un vrai désaccord).
-
-Les autres noms déclarés permettraient plus tard de rapprocher automatiquement des
-auteurs, et les travaux de relier un auteur à ses articles. On attend de voir ce que
-donnent les données avant de l'automatiser.
-
-## Livres et ISBN
-
-Un livre souvent cité sans DOI peut être identifié par son ISBN. On cherche d'abord dans
-**Crossref** (`/works?filter=isbn:…`), qui connaît les livres académiques ayant un DOI.
-On se replie ensuite sur **Open Library** (`/search.json?isbn=…`, gratuit et sans clé) :
-un seul appel donne le titre, l'année et les noms des auteurs. Ces noms passent par la
-même résolution que ceux de Crossref, mais sans ORCID. Les données stockées ne sont
-jamais redemandées. Les deux clients partagent `services/http.py`, et donc les mêmes
-règles de nouvelles tentatives.
-
-Limite connue : Open Library mélange parfois auteurs et contributeurs (directeur de
-collection…). On corrige alors par fusion ou par correction d'auteur.
-
-## Graphes
-
-**Décision : le serveur fournit les données, le navigateur dessine.**
-
-- Trois graphes : celui d'une **publication** montre ses références identifiées et les
-  publications de la base qui la citent (#186) ; celui du **corpus** montre les
-  publications du corpus et ce qu'elles citent ; celui de **la base** (#131, `/graph/`,
-  public comme la liste des publications) montre toutes les publications, y compris
-  celles sans citation identifiée, et toutes les citations identifiées. Les publications
-  du corpus de la personne connectée y sont en bleu (`source`), les autres en vert d'eau
-  (`other`). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
-  la position rendait distinctes deux citations d'une même publication.
-- `services/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre, la date,
-  la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
-  base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
-  publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
-  citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
-- La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
-  Les modules ES de `references/static/references/graph/` les affichent sur une frise
-  chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
-- **Disposition** (#138, `layout.js`) : x suit la date ; la position verticale rapproche
-  les publications qui se citent, sans dépendance. D'abord un **ordre** par la méthode du
-  barycentre (chaque publication va vers la rangée moyenne de ses voisines, en
-  20 passes), puis une petite **simulation verticale** : les publications liées
-  s'attirent, une publication s'écarte des liens qui passent sur elle (aucun lien caché
-  derrière un nœud), et deux publications proches en date ne se chevauchent pas
-  (écart selon leur taille). Les rangées de départ sont espacées de 36 px quelle que soit
-  la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est ramené à la hauteur du cadre, étiré ou comprimé : les nœuds gardent leur taille à l'écran, un dézoom ne les séparerait pas et perdrait de la largeur ; zoomer sépare ceux que la compression rapproche (#185). Sur le graphe du
-  corpus de la base réelle : 51 croisements de liens au lieu de 147 avec une rangée par
-  publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
-  publications sans date.
-- **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
-  les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
-  `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
-  seulement). Sa **taille** suit
-  son nombre de citations dans la base (aire proportionnelle). Tailles des nœuds, épaisseurs
-  des liens et libellés sont **fixes à l'écran** (#185) : divisées par le zoom, réévaluées
-  au plus une fois par image (`requestAnimationFrame`) quand le zoom change. Zoomer écarte
-  donc les nœuds sans les grossir, ce qui sépare les publications proches en date. Les couleurs sont définies
-  une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
-  `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
-  variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
-  droits, gris, sans flèche : une
-  publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
-  ses liens.
-- **Vue** (#141, `viewport.js`) : la vue d'ensemble (tout le graphe dans le cadre, avec
-  une petite marge) est le zoom minimal, recalculé quand le cadre change de taille, et
-  la vue ne sort jamais de cette emprise : le déplacement est ramené dans les bornes à
-  chaque événement `viewport`. L'axe n'affiche donc jamais d'années vides.
-  Un bouton en haut à droite du cadre y revient (#196), par le même cadrage que le
-  chargement et le redimensionnement. Il est désactivé (grisé), plutôt que masqué, quand
-  la vue d'ensemble est déjà affichée : il reste visible et à sa place.
-- **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
-  redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
-  la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
-- **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
-  vert d'eau) et les articles qui le citent (nœuds orange), chaque lien dans une nuance
-  plus claire de son nœud, et estompe le reste. La carte d'informations HTML
-  (`#citation-graph-card`, en bas à gauche du cadre) est compacte (#187) : le titre est
-  le lien vers la fiche, puis la revue (lue dans la réponse stockée de Crossref ou de
-  DataCite, dans la même requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la fiche ; Échap ou
-  un clic dans le vide désélectionne.
-- **Recentrage à la sélection** (#142, `focus.js`) : la vue zoome sur l'article et ses
-  voisins (animation de 300 ms, aucune avec « réduire les animations »), dans la zone que
-  la carte laisse libre, à sa droite ou au-dessus, celle où ils paraissent le plus
-  grands ; au plus 4 fois le zoom de la vue d'ensemble, pour un voisin tout proche. La
-  désélection ramène la vue d'avant la sélection (la vue d'ensemble dans le cas courant,
-  un zoom fait à la main sinon). Le temps de la sélection, les bornes de #141 s'élargissent
-  à la vue voulue : dans la vue d'ensemble, un voisin caché sous la carte ne pourrait pas
-  être montré autrement.
-- **Export en image** (#175, `export.js`) : un bouton à côté de celui de la vue
-  d'ensemble télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
-  multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
-  années (au-dessus) et la légende (en dessous, renvoyée à la ligne comme sur la page) sont
-  redessinés depuis leur HTML. Le nom du fichier dit ce que montre l'image :
-  `graphe-corpus`, `graphe-publication-<id>`, suivi de `-selection-<id>` si une
-  publication est sélectionnée, ou de `-zoom` si la vue n'est pas la vue d'ensemble. Pas
-  de SVG : il demanderait une extension à embarquer.
-- **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
-  chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
-  `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
-  (recentrage à la sélection), `export.js` (export PNG),
-  `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
-  et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
-  JavaScript pour l'instant : vérification dans Chrome headless.
-- **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
-  intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
-  service tiers.
-- Plotly rendu côté serveur (4,8 Mo de JavaScript par page) et `networkx` sont abandonnés.
-
-## Interface
-
-Les conventions détaillées (couche `base` de Tailwind, composants, liens externes, icônes)
-sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
-
-- **Tailwind**, compilé par django-tailwind-cli depuis `assets/css/source.css`, sans Node.
-  Les styles par défaut des éléments sont définis une fois dans la couche `base`.
-- **Composants** en template tags (`references/templatetags/ui.py`) : `button`, `badge`,
-  `alert`, `card`, `icon`, `external_link`, `pagination`, `column_header`, `filter_summary`. **Navigation** décrite dans
-  `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
-  (#152, `services/pending.py`) : références à identifier dans son corpus, conflits
-  ouverts. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
-  après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
-  compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
-  toasts (`static/js/toasts.js`).
-- **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
-  des publications, « Mes références », « Cité par » et la page d'un auteur.
-  `services/publication_table.for_publication_table` calcule dans la même requête ce
-  qu'il affiche à côté du titre : le premier auteur (« et al. » s'il y en a d'autres,
-  sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
-  manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
-  que les jointures ne multiplient pas les décomptes.
-- **Listes paginées** (#154, `views/pagination.py`) : les publications, « Mes
-  références » et les auteurs par pages de 50. Les annotations du tableau ne sont
-  calculées que pour la page, et le nombre de requêtes ne dépend pas de la taille de la
-  base. Le tri finit sur l'identifiant, pour que des lignes de même date ou de même nom
-  ne passent pas d'une page à l'autre. Une page invalide ou au-delà de la dernière mène
-  à la première ou à la dernière plutôt qu'à une erreur 404 : après le retrait de la
-  dernière ligne d'une page, le retour sur cette page fonctionne encore. Le composant
-  `{% pagination %}` garde les autres paramètres de l'URL (tri, filtres) ; sous `sm`, il
-  ne montre que les lignes affichées et les liens Précédente et Suivante.
-- **Tri par colonne** (#115, `services/sorting.py`) : `?sort=year`, `?sort=-year`,
-  côté serveur et avant la pagination, donc sur toute la liste. Publications par titre,
-  premier auteur (nom de famille) ou année ; auteurs par nom ou prénom. Les noms et les
-  titres sont comparés sans casse ni accents (`normalized()`), les publications sans
-  date ou sans auteur restent à la fin dans les deux sens, et les égalités sont toujours
-  départagées dans le même ordre, jusqu'à l'identifiant. `{% column_header %}` fait de
-  l'en-tête un lien (`aria-sort`, flèche) : un clic sur la colonne triée inverse l'ordre,
-  un clic sur une autre colonne commence par son sens naturel (années récentes d'abord,
-  noms de A à Z), et revient à la première page en gardant la recherche. Sans `sorting`
-  dans le contexte (page d'un auteur, « Cité par »), les en-têtes restent simples.
-- **Filtres par colonne** (#115, `services/filters.py`), comme dans un tableur : un
-  entonnoir dans l'en-tête ouvre un panneau avec le champ de la colonne. Publications :
-  titre et auteurs (texte contenu, sans casse ni accents), identifiant (avec DOI, avec
-  ISBN, sans identifiant), années (de, à). Auteurs : nom, prénom (texte), ORCID (avec,
-  sans). Chaque filtre a ses paramètres d'URL (`?title=…&year_from=2018`) : le tri, la
-  pagination et les autres filtres le gardent, et le formulaire d'une colonne reprend
-  les autres en champs cachés. Le panneau est un `popover` HTML : affiché au-dessus de
-  la page, la carte qui fait défiler le tableau ne le coupe pas ; sans JavaScript, il se
-  ferme par Échap ou un clic à l'extérieur. Il est placé sous son bouton par le
-  positionnement par ancre CSS (ancre implicite du bouton qui l'ouvre, retourné près du
-  bord droit), au milieu de l'écran dans un navigateur qui ne le connaît pas. L'entonnoir
-  d'un filtre actif est bleu ; `{% filter_summary %}` liste les filtres actifs au-dessus
-  du tableau, chacun retiré d'un clic, et les erreurs (année mal écrite). Un tableau
-  filtré sans résultat reste affiché, pour changer les filtres. La recherche (`/search/`)
-  et la page d'un auteur n'ont pas de filtres.
-- **Recherche** (#153, `services/search.py`, `/search/?q=…`) : une seule barre, du
-  texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
-  année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
-  auteurs et les identifiants ; les mots d'un `auteur:` doivent appartenir à la même
-  personne ; un `titre:` entre guillemets est une expression. Un opérateur inconnu reste
-  du texte (« Re:thinking ») ; une année mal écrite est signalée sans bloquer le reste.
-  Résultats : les publications par pages, et les 20 premiers auteurs (sauf si la
-  question porte sur des titres, des années ou des identifiants). Les comparaisons
-  ignorent la casse et les accents grâce à `normalized()`, une fonction SQL enregistrée
-  sur chaque connexion SQLite (`connection_created`) : le `LIKE` de SQLite ne replie que
-  l'ASCII, et il n'a pas d'`unaccent`. La barre est dans l'en-tête de toutes les pages
-  (une icône vers `/search/` sous `md`) ; l'accueil et la page de recherche ont la leur,
-  plus grande, avec l'aide de la syntaxe. Ctrl+K (⌘K sur Mac) y place le curseur, ou
-  ouvre la page de recherche quand aucune barre n'est affichée (`static/js/search.js`).
-- **Accueil** (#151, `services/dashboard.py`) : connecté, un tableau de bord (mon corpus
-  et ses dernières publications ajoutées, « À faire » avec les références à identifier,
-  les conflits ouverts et les doublons probables, base commune) ; visiteur, une
-  présentation et les chiffres de la base. Nombre de requêtes constant.
-- **Mise en page fluide** (#150), la même sur tous les écrans : aucune page ne déborde
-  horizontalement de 390 à 1400 px. Sur petit écran, chaque groupe de la navigation
-  devient un menu (#207 : `<details name>` natifs, ouverts au toucher ou au clic, un seul
-  à la fois, fermés par un clic à l'extérieur ou Échap via `static/js/navigation.js`), les
-  boutons de l'en-tête n'affichent que leur icône (`compact`), les tableaux
-  défilent dans leur carte et la colonne Identifiant est masquée sous `xl`.
-- HTML5 sémantique, validé au W3C en fin de jalon.
-
-## Journal des décisions
-
-| Date | Décision | Raison |
-|---|---|---|
-| 2026-10-21 | Corrections communes à tous les utilisateurs | Base de connaissances partagée, plus simple. Le corpus reste individuel. |
-| 2026-10-21 | Import synchrone, références récupérées par lots | Divise les appels Crossref par environ 30, sans worker à exploiter. |
-| 2026-10-21 | Graphes en JSON avec Cytoscape.js | Pages légères, interactivité côté client, cohérent avec la refonte Tailwind (M9). |
-| 2026-10-21 | Cytoscape.js embarqué plutôt que chargé depuis un CDN | Fonctionne hors ligne, sans dépendance externe à l'exécution. Fichier léger (435 Ko). |
-| 2026-10-21 | Adresse Crossref dans une variable d'environnement | Le dépôt est public. |
-| 2026-10-21 | Pas de rapprochement automatique des références au texte identique | Sans DOI ni ISBN, rien ne prouve qu'il s'agit du même ouvrage : on identifie à la main, ou on fusionne des publications (#67). |
-| 2026-10-21 | ISBN : Crossref d'abord, puis Open Library (titre, année, auteurs) | Gratuit, sans clé, un appel par livre. |
-| 2026-10-21 | Réponses des sources dans une table dédiée (`ExternalRecord`) | Une nouvelle source (DataCite, ORCID…) ne demande ni nouveaux champs ni nouvelle logique de cache. |
-| 2026-10-21 | DataCite en second recours pour les DOI, par lots | Les actes JACoW sont chez DataCite ; Crossref d'abord, puisqu'il couvre la majorité des DOI et fournit les bibliographies. |
-| 2026-10-21 | OpenAlex en complément, pour tous les DOI importés | Institutions avec ROR et ORCID manquants ; une requête unitaire et un lot de plus par import. |
-| 2026-10-21 | Politique face aux contradictions : Crossref et DataCite font référence, OpenAlex complète, conflits signalés | Comparaison sur 50 articles réels : les écarts sont surtout des dates de nature différente et des corrections de noms. |
-| 2026-10-21 | Modèle utilisateur personnalisé et migrations repartant de zéro | La base était vide : seul moment où c'est gratuit. |
-| 2026-10-21 | Settings sensibles dans l'environnement, mode debug désactivé par défaut | Le dépôt est public ; un oubli de configuration doit échouer plutôt que tourner en debug avec une clé connue. |
-| 2026-10-21 | Suppression des publications uniquement depuis l'administration Django | Les publications sont communes à tous ; l'admin liste déjà ce qui part en cascade, sans code à maintenir (#77). |
-| 2026-10-21 | Références importées dès qu'une publication est dans au moins un corpus, conservées quand elle en sort | Elles font partie de la base commune et la réajouter ne coûte aucun appel (#23). |
-| 2026-10-21 | Export du corpus en JSON (identifiants, réimportable) et en BibTeX (export seul) | Le corpus d'un utilisateur se résume à ses DOI et ISBN ; les corrections appartiennent à la base commune. BibTeX pour Zotero et LaTeX, sans parseur à maintenir (#29). |
-| 2026-10-21 | LaTeX des titres conservé tel quel ; entités HTML et balisage JATS retirés | Aucune perte, utile à l'export BibTeX ; le rendu à l'écran relève de M9 (#107). |
-| 2026-10-21 | Tailwind via django-tailwind-cli, CSS compilé non versionné | CLI standalone en version fixée, sans Node, mêmes commandes sous Windows et Linux ; diffs propres (#32). |
-| 2026-10-21 | Composants d'interface en template tags Django | Aucune dépendance, API `{% button %}` / `{% card %}…{% endcard %}` ; django-cotton écarté (dépendance, outillage) (#96). |
-| 2026-10-21 | Icônes Material Symbols en SVG inline (`{% icon %}`, commande `add_icon`) | Fonctionne hors ligne, pas de nom affiché pendant le chargement d'une police, stylable avec Tailwind (#33). |
-| 2026-10-21 | URL au pluriel pour toutes les collections (`publications/`, `publications/42/`) | Un seul préfixe par ressource, convention de l'admin Django et des API REST (#110). |
-| 2026-10-21 | Import à la demande des références d'une publication hors corpus | Sa bibliographie est déjà dans la réponse Crossref stockée ; l'importer ne coûte que des lots pour les publications citées, et enrichit la base commune sans toucher aux corpus (#126). |
-| 2026-10-22 | Un seul tableau de publications, premier auteur « et al. », identifiant préfixé (DOI ou ISBN) | Mêmes informations et mêmes actions partout ; annotations en sous-requêtes pour des décomptes justes (#128). |
-| 2026-10-22 | Référence citée déclarable « non identifiable » | Rapports internes et présentations ne correspondent à aucune publication importable ; la déclaration est tracée et survit au ré-import comme une identification (#129). |
-| 2026-10-22 | Axe des années en HTML hors du canevas | Toujours visible, graduations recalculées selon le zoom (#62). |
-| 2026-10-22 | Une seule mise en page fluide, pas de version mobile distincte | Le site sert surtout sur grand écran ; les petits écrans doivent fonctionner sans seconde mise en page à maintenir (#150). |
-| 2026-10-23 | Attente des sources limitée pendant le chargement d'une page, longue pour les commandes | Une page ne doit pas rester bloquée une minute ou plus ; une commande n'a personne qui attend (#172). |
-| 2026-10-23 | Python 3.14 seulement (développement, CI, `requires-python`) | Une seule version à suivre, celle du développement ; la matrice 3.12/3.14 de #170 n'apportait rien sans autre machine ni déploiement. À revoir si un serveur impose une autre version (#169). |
-| 2026-10-23 | Titre et date corrigés à la main marqués par deux booléens, jamais réécrits par les sources | Seuls ces champs viennent des sources ; des booléens suffisent et se lisent dans l'admin. Un conflit aurait été trop lourd pour une correction volontaire (#146). |
-| 2026-10-23 | Script du graphe en modules ES natifs, sans Node | Le code va presque doubler avec M11 ; les modules du navigateur suffisent, sans outil de construction ni dépendance (#174). |
-| 2026-10-23 | Disposition : ordre par barycentre puis simulation verticale, x restant la date | Croisements de liens divisés par près de trois sur la base réelle, sans dépendance ; fcose écarté (trois fichiers à embarquer, résultat moins prévisible) (#138). |
-| 2026-10-23 | Couleur = rôle du nœud, taille = citations, liens droits gris sans flèche | Palette validée pour le daltonisme ; une seule définition des couleurs pour Cytoscape et la légende ; la flèche surchargeait sans rien apprendre sur une frise (#139, #140). |
-| 2026-10-23 | À la sélection, les voisins prennent la couleur de leur relation, liens plus clairs que leurs nœuds ; nœuds cités en vert d'eau | Une même teinte pour un nœud et son lien ; cohérent aussi dans le graphe du corpus, où les citants sont souvent des publications du corpus (#187). |
-| 2026-10-23 | Nœuds, liens et libellés de taille fixe à l'écran ; hauteur de la disposition ramenée au cadre, même comprimée | Sur une frise, zoomer doit écarter les publications tassées, pas les grossir ; à taille fixe, un dézoom ne séparait plus rien et perdait de la largeur (#185). |
-| 2026-10-23 | À la sélection, zoom sur l'article et ses voisins à côté de la carte ; à la désélection, retour à la vue d'avant | Retrouver un zoom fait à la main plutôt que la vue d'ensemble ; les bornes de #141 s'élargissent le temps de la sélection, sans quoi un voisin caché sous la carte ne pourrait pas être montré (#142). |
-| 2026-10-23 | Graphe de toute la base public, publications isolées comprises, sans optimisation préalable | Même code que les autres graphes ; la base compte 53 publications. Un banc d'essai sur de grands graphes synthétiques dira où optimiser la disposition (#202), avec le graphe sans frise (#195) (#131). |
-| 2026-10-23 | Compteurs dans la navigation pour les conflits et les références à identifier, sans cache | Toujours justes après une action ; deux requêtes peu coûteuses. Les doublons probables (35 ms, 55 groupes) seraient un badge permanent (#152). |
-| 2026-10-23 | Sur petit écran, un menu par groupe de navigation, ouvert au toucher ou au clic | Le survol n'existe pas sur écran tactile ; `<details>` natifs, accessibles sans JavaScript ; la navigation est rendue deux fois (menus, barre latérale) pour garder la barre latérale indépendante du script (#207). |
-| 2026-10-23 | Date de publication : un `DateField` et sa précision (année, mois, jour), plutôt que trois champs | Tris, filtres et position sur le graphe inchangés ; seul l'affichage dépend de la précision. Une date saisie à la main reste complète (`<input type="date">`), même si l'utilisateur ne connaît que l'année (#147). |
-| 2026-10-23 | Auteurs de même ORCID fusionnés automatiquement, sauf s'ils ont été déclarés distincts (conflit signalé) ; fusions tracées en base | Un ORCID désigne une seule personne ; une distinction déclarée par un humain signale une erreur de données à regarder plutôt qu'à écraser (#158). |
-| 2026-10-25 | Fiche publication : affiliations numérotées, les plus précises de chaque signature | Lisible comme un article, chaque organisation une seule fois ; l'ancêtre déclaré à côté de sa sous-entité n'apprend rien, la fiche auteur garde le regroupement par tutelle (#155). |
-| 2026-10-25 | ORCID interrogé à la demande depuis la fiche auteur, réponse stockée par ORCID, affichage seulement | Jamais à l'import (plus de 1 000 auteurs possibles) ; rattachée à l'ORCID, la réponse survit aux fusions ; les rapprochements automatiques attendront de voir les données (#59). |
-| 2026-10-25 | Noms des auteurs complétés depuis ORCID à l'import, en recherche groupée ; nom différent signalé, nom corrigé à la main protégé | Le nom déclaré par la personne est plus complet que le nom publié ; une requête pour 50 personnes reste compatible avec un import ; un ORCID mal attribué ne doit pas propager un faux nom (#220). |
-| 2026-10-25 | Listes par pages de 50, côté serveur ; page hors limites ramenée à la plus proche | Les annotations du tableau ne coûtent que pour la page affichée ; le tri et les filtres de #115 resteront dans l'URL ; une page vidée par un retrait ne doit pas finir en erreur 404 (#154). |
-| 2026-10-25 | Recherche : une seule barre à opérateurs ; casse et accents ignorés par une fonction SQL enregistrée sur la connexion | Un seul analyseur, réutilisé par les filtres des tableaux (#115), plutôt qu'un formulaire à plusieurs champs ; sans migration ni champ dénormalisé à tenir à jour lors des corrections et des fusions. Parcours complet de la table, négligeable à cette taille ; FTS5 si la base grossit vraiment (#153). |
-| 2026-10-25 | Tri par colonne côté serveur, dans l'URL ; légendes des tableaux triables sans ordre annoncé | Un tri en JavaScript ne trierait que la page affichée ; `aria-sort` dit l'ordre courant, qu'une légende fixe contredirait (#115). |
-| 2026-10-25 | Filtres dans les en-têtes de colonne (popover), sans barre au-dessus du tableau | Souhait de l'utilisateur, à la manière d'un tableur ; la recherche globale garde le texte libre et les opérateurs. Le popover échappe au défilement de la carte sans JavaScript (#115). |
-| 2026-10-25 | Prépublication arXiv remplacée par la version publiée déclarée par ses auteurs ; DOI arXiv gardé dans `preprint_doi` | La version publiée est celle qu'on cite, et Crossref en donne la bibliographie ; plus de la moitié des prépublications en ont une. Un champ plutôt qu'une table d'identifiants : une prépublication n'a qu'un DOI arXiv (#227). |
-| 2026-10-25 | Bibliographie d'une prépublication sans version publiée tirée de ses sources LaTeX ; liens seulement sur les identifiants écrits par les auteurs | Le seul texte officiel de sa bibliographie ; OpenAlex et Semantic Scholar rapprochent automatiquement et se trompent (#227). Téléchargé une fois, pour les seules prépublications d'un corpus, comme arXiv le demande. |
-| 2026-10-25 | Import de fichiers BibTeX et RIS sans dépendance, par une lecture tolérante des seuls identifiants | Le DOI, l'identifiant arXiv (champ `eprint`, ou écrit dans le journal comme chez Google Scholar) et l'ISBN suffisent ; le reste vient des sources. Une entrée illisible ou sans identifiant est listée dans le rapport, jamais devinée (#165). |
-| 2026-10-25 | Statut de lecture : un champ de choix sur `UserPublication`, vide par défaut ; filtre et tri par une sous-requête | Un statut sert à filtrer, trier et compter, ce qu'un tag libre ne permet pas ; « à lire » par défaut serait faux pour les publications déjà lues. Filtrer à nouveau sur `userpublication__` joindrait les entrées de tous les utilisateurs. Export JSON en version 2, la version 1 s'importe toujours ; un statut importé ne remplace jamais celui qu'on a choisi (#164). |
-| 2026-10-25 | Publication « à lire » ajoutée au corpus sans sa bibliographie, importée quand le statut change | Une liste de lecture ne doit pas remplir la base commune ni le compteur « à identifier » (un article de physique : 100 références, 88 publications créées) ; l'ajout sans statut reste complet, c'est le flux principal. Revenir à « à lire » ne supprime rien : les références appartiennent à la base commune (#234). |
-| 2026-10-25 | Tags hiérarchiques propres à chaque utilisateur, chemins séparés par « / », parents implicites ; filtre par les badges et la carte « Tags », sans colonne | Un article peut servir plusieurs projets et un groupe différent dans chacun ; « : » sert déjà aux opérateurs de recherche. Un jugement par projet (« Projet B/Écarté ») reste une convention : un vrai modèle de projet seulement si le besoin apparaît. Une colonne de plus faisait déborder le tableau (#130). |
-| 2026-10-25 | Un tag n'accompagne jamais l'un de ses sous-tags sur une publication ; renommer un tag renomme ses sous-tags et fusionne avec un nom existant | Le filtre inclut les sous-tags : « Projet » à côté de « Projet/Groupe » n'apporte rien. Le plus précis remplace le moins précis, le moins précis n'est pas ajouté ; même règle à l'import et après une fusion. Renommer par chemin permet aussi de déplacer un tag dans l'arbre (#130). |
-| 2026-10-25 | Publications candidates par Crossref (texte complet) et DataCite (titre seul), vérifiées ici, gardées sur la référence | Mesuré sur la base : Crossref seul trouve 9 références sur 32 et aucune en physique, les actes JACoW et les prépublications arXiv étant chez DataCite ; ensemble, 22 sur 32. Le score de Crossref n'admet pas de seuil (une copie de 2020 passe devant l'original) : titre, année et auteur sont vérifiés de notre côté. Semantic Scholar n'apporterait presque rien : les manques restants n'ont pas de DOI (#160). |
-| 2026-10-25 | Code JACoW écrit dans une référence relié à l'import, après confirmation de DataCite | C'est un identifiant écrit par les auteurs, comme un identifiant arXiv ; la publication n'est créée que si DataCite connaît le DOI et que le titre concorde, pour ne pas remplir la base de publications vides (#160). |
-| 2026-10-25 | Un DOI saisi pour identifier une référence ou ajouter au corpus (à la main ou par fichier) est refusé si doi.org ne le connaît pas | L'ACM affiche des `10.5555/…` qui ne sont pas des DOI ; les relier laissait une publication vide (publication 244 de la base). doi.org (`/ra/`) répond pour toutes les agences, en une requête légère et définitive. Pas de vérification sur « C'est celle-ci » : les candidats viennent de Crossref ou de DataCite (#240). |
-| 2026-10-25 | Version publiée trouvée par OpenAlex proposée comme conflit, jamais appliquée d'office | Le regroupement des versions par OpenAlex est automatique et parfois faux (copies `10.65215/…` d'« Attention »). La page « Conflits » trace la décision, la partage et ne la redemande pas ; Crossref vérifie le type, le titre, le premier auteur et l'année avant toute proposition (#227, étape 3). |
