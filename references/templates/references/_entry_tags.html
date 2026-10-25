@@ -1,44 +1,49 @@
 {% comment %}
-The tags of a publication in the user's corpus (#130): each one filters my references
-and can be removed; a field adds one, suggesting the tags already known. Context:
-publication, entry_tags, known_tags.
+The tags of a publication in the user's corpus (#130): a field adds one, suggesting the
+tags already known, and stays in place above the tags; each tag filters my references
+and can be removed. Context: publication, entry_tags, known_tags.
 {% endcomment %}
 {% load ui %}
-<section aria-labelledby="tags-title"
-         class="flex flex-wrap items-center gap-2 text-sm">
-    <h2 id="tags-title" class="text-sm font-medium text-gray-800">Mes tags</h2>
-    {% for tag in entry_tags %}
+<section aria-labelledby="tags-title" class="space-y-2 text-sm">
+    <div class="flex flex-wrap items-center gap-2">
+        <h2 id="tags-title" class="text-sm font-medium text-gray-800">Mes tags</h2>
         <form method="post"
-              action="{% url 'corpus_untag' publication.pk tag.pk %}"
-              class="inline-flex items-center gap-0.5 rounded-full bg-gray-100 py-0.5 pr-1 pl-2.5">
+              action="{% url 'corpus_tag' publication.pk %}"
+              class="flex items-center gap-1">
             {% csrf_token %}
-            <a href="{% url 'corpus' %}?tag={{ tag.name|urlencode }}"
-               class="text-gray-800 no-underline hover:underline">{{ tag.label }}</a>
-            <button type="submit"
-                    class="inline-flex rounded-full p-0.5 text-gray-600 hover:bg-gray-200 hover:text-gray-900">
-                {% icon "close" class="size-4" %}
-                <span class="sr-only">Retirer le tag « {{ tag.label }} »</span>
-            </button>
+            <label for="new-tag" class="sr-only">Nouveau tag (« / » sépare les niveaux)</label>
+            <input type="text"
+                   id="new-tag"
+                   name="name"
+                   list="known-tags"
+                   maxlength="200"
+                   placeholder="Projet/Groupe"
+                   class="w-56 py-1"
+                   required>
+            <datalist id="known-tags">
+                {% for path in known_tags %}<option value="{{ path }}"></option>{% endfor %}
+            </datalist>
+            {% button "Ajouter le tag" variant="secondary" icon="add" icon_only=True %}
         </form>
-    {% empty %}
-        <span class="text-gray-500">aucun</span>
-    {% endfor %}
-    <form method="post"
-          action="{% url 'corpus_tag' publication.pk %}"
-          class="flex items-center gap-1">
-        {% csrf_token %}
-        <label for="new-tag" class="sr-only">Nouveau tag (« / » sépare les niveaux)</label>
-        <input type="text"
-               id="new-tag"
-               name="name"
-               list="known-tags"
-               maxlength="200"
-               placeholder="Projet A/Groupe A"
-               class="w-56 py-1"
-               required>
-        <datalist id="known-tags">
-            {% for path in known_tags %}<option value="{{ path }}"></option>{% endfor %}
-        </datalist>
-        {% button "Ajouter le tag" variant="secondary" icon="add" icon_only=True %}
-    </form>
+    </div>
+    {% if entry_tags %}
+        <ul class="flex flex-wrap items-center gap-2" aria-label="Tags de cette publication">
+            {% for tag in entry_tags %}
+                <li>
+                    <form method="post"
+                          action="{% url 'corpus_untag' publication.pk tag.pk %}"
+                          class="inline-flex items-center gap-0.5 rounded-full bg-gray-100 py-0.5 pr-1 pl-2.5">
+                        {% csrf_token %}
+                        <a href="{% url 'corpus' %}?tag={{ tag.name|urlencode }}"
+                           class="text-gray-800 no-underline hover:underline">{{ tag.label }}</a>
+                        <button type="submit"
+                                class="inline-flex rounded-full p-0.5 text-gray-600 hover:bg-gray-200 hover:text-gray-900">
+                            {% icon "close" class="size-4" %}
+                            <span class="sr-only">Retirer le tag « {{ tag.label }} »</span>
+                        </button>
+                    </form>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </section>

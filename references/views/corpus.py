@@ -170,7 +170,7 @@ def tag_publication(request, pk):
         messages.error(request, str(error))
     else:
         if tag is None:
-            messages.error(request, "Écrivez le nom du tag, par exemple « Projet A/Groupe A ».")
+            messages.error(request, "Écrivez le nom du tag, par exemple « Projet/Groupe ».")
         else:
             messages.success(request, f"Tag « {tag.label} » ajouté à « {entry.publication} ».")
     return redirect_back(request, pk)
