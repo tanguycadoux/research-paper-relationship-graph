@@ -45,7 +45,8 @@ references/          application principale
     Import et analyse
     importer.py      orchestration : récupération puis analyse
     corpus.py        ajout au corpus par DOI ou ISBN (import avec les références)
-    tags.py          tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre et filtre
+    tags.py          tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
+                     renommage et suppression
     parser.py        réponse de la source vers les modèles
     titles.py        nettoyage des titres (entités HTML, balisage JATS)
     latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
@@ -687,3 +688,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Statut de lecture : un champ de choix sur `UserPublication`, vide par défaut ; filtre et tri par une sous-requête | Un statut sert à filtrer, trier et compter, ce qu'un tag libre ne permet pas ; « à lire » par défaut serait faux pour les publications déjà lues. Filtrer à nouveau sur `userpublication__` joindrait les entrées de tous les utilisateurs. Export JSON en version 2, la version 1 s'importe toujours ; un statut importé ne remplace jamais celui qu'on a choisi (#164). |
 | 2026-10-25 | Publication « à lire » ajoutée au corpus sans sa bibliographie, importée quand le statut change | Une liste de lecture ne doit pas remplir la base commune ni le compteur « à identifier » (un article de physique : 100 références, 88 publications créées) ; l'ajout sans statut reste complet, c'est le flux principal. Revenir à « à lire » ne supprime rien : les références appartiennent à la base commune (#234). |
 | 2026-10-25 | Tags hiérarchiques propres à chaque utilisateur, chemins séparés par « / », parents implicites ; filtre par les badges et la carte « Tags », sans colonne | Un article peut servir plusieurs projets et un groupe différent dans chacun ; « : » sert déjà aux opérateurs de recherche. Un jugement par projet (« Projet B/Écarté ») reste une convention : un vrai modèle de projet seulement si le besoin apparaît. Une colonne de plus faisait déborder le tableau (#130). |
+| 2026-10-25 | Un tag n'accompagne jamais l'un de ses sous-tags sur une publication ; renommer un tag renomme ses sous-tags et fusionne avec un nom existant | Le filtre inclut les sous-tags : « Projet » à côté de « Projet/Groupe » n'apporte rien. Le plus précis remplace le moins précis, le moins précis n'est pas ajouté ; même règle à l'import et après une fusion. Renommer par chemin permet aussi de déplacer un tag dans l'arbre (#130). |

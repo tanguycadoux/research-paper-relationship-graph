@@ -165,15 +165,29 @@ def my_references(request):
 def tag_publication(request, pk):
     entry = get_object_or_404(UserPublication, user=request.user, publication_id=pk)
     try:
-        tag = tags.tag_entry(entry, request.POST.get("name", ""))
+        tagging = tags.tag_entry(entry, request.POST.get("name", ""))
     except tags.InvalidTag as error:
         messages.error(request, str(error))
     else:
-        if tag is None:
-            messages.error(request, "Écrivez le nom du tag, par exemple « Projet/Groupe/… ».")
-        else:
-            messages.success(request, f"Tag « {tag.label} » ajouté à « {entry.publication} ».")
+        report_tagging(request, entry, tagging)
     return redirect_back(request, pk)
+
+
+def report_tagging(request, entry, tagging):
+    if tagging.covered_by:
+        messages.info(
+            request,
+            f"« {entry.publication} » a déjà le tag « {tagging.covered_by.label} », plus précis : "
+            "rien n'est ajouté.",
+        )
+    elif tagging.tag is None:
+        messages.error(request, "Écrivez le nom du tag, par exemple « Projet/Groupe/… ».")
+    else:
+        report = f"Tag « {tagging.tag.label} » ajouté à « {entry.publication} »."
+        if tagging.replaced:
+            replaced = ", ".join(f"« {tag.label} »" for tag in tagging.replaced)
+            report += f" Il remplace {replaced}, moins précis."
+        messages.success(request, report)
 
 
 @login_required
@@ -184,3 +198,40 @@ def untag_publication(request, pk, tag_pk):
     tags.untag_entry(entry, tag)
     messages.success(request, f"Tag « {tag.label} » retiré de « {entry.publication} ».")
     return redirect_back(request, pk)
+
+
+@login_required
+def manage_tags(request):
+    return render(request, "references/tags.html", {"tag_tree": tags.tag_tree(request.user)})
+
+
+@login_required
+@require_POST
+def rename_tag(request):
+    path = request.POST.get("path", "")
+    try:
+        count = tags.rename_path(request.user, path, request.POST.get("name", ""))
+    except tags.InvalidTag as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(
+            request, f"Tag « {tags.label(path)} » renommé : {count} publication(s) concernée(s)."
+        )
+    return redirect("tag_list")
+
+
+@login_required
+@require_POST
+def delete_tag(request):
+    path = request.POST.get("path", "")
+    try:
+        count = tags.delete_path(request.user, path)
+    except tags.InvalidTag as error:
+        messages.error(request, str(error))
+    else:
+        messages.success(
+            request,
+            f"Tag « {tags.label(path)} » supprimé : retiré de {count} publication(s), "
+            "qui restent dans votre corpus.",
+        )
+    return redirect("tag_list")

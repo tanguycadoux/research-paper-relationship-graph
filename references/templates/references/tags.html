@@ -1,0 +1,74 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Mes tags · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1>Mes tags</h1>
+            <p class="mt-2 max-w-3xl text-gray-600">
+                Renommer un tag renomme aussi ses sous-tags ; vers un nom que vous avez déjà, les
+                deux tags fusionnent. « / » déplace un tag dans l'arbre : « Projet B » renommé
+                « ASTERICS/Projet B » passe sous « ASTERICS ». Supprimer un tag retire seulement le
+                classement : les publications restent dans votre corpus.
+            </p>
+        </div>
+        {% url 'corpus' as corpus_url %}
+        {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
+    </header>
+
+    {% if tag_tree %}
+        {% card flush=True %}
+            <ul class="divide-y divide-gray-200" aria-label="Tags">
+                {% for item in tag_tree %}
+                    <li class="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
+                        <p class="pt-1 {% if item.depth == 1 %}pl-4{% elif item.depth == 2 %}pl-8{% elif item.depth > 2 %}pl-12{% endif %}">
+                            <a href="{% url 'corpus' %}?tag={{ item.path|urlencode }}">{{ item.name }}</a>
+                            <span class="text-sm text-gray-500">
+                                {{ item.count }} publication{{ item.count|pluralize }}
+                            </span>
+                        </p>
+                        <div class="flex flex-wrap items-start gap-2">
+                            <form method="post" action="{% url 'tag_rename' %}" class="flex items-center gap-1">
+                                {% csrf_token %}
+                                <input type="hidden" name="path" value="{{ item.path }}">
+                                <label for="rename-{{ forloop.counter }}" class="sr-only">Nouveau nom de « {{ item.path }} »</label>
+                                <input type="text"
+                                       id="rename-{{ forloop.counter }}"
+                                       name="name"
+                                       value="{{ item.path }}"
+                                       maxlength="200"
+                                       class="w-56 py-1"
+                                       required>
+                                {% button "Renommer" variant="secondary" icon="edit" icon_only=True %}
+                            </form>
+                            {# The deletion is confirmed in a popover: over the page, closed by a click outside. #}
+                            {% with counter=forloop.counter|stringformat:"d" %}
+                                {% with panel_id="delete-tag-"|add:counter %}
+                                {% button "Supprimer…" type="button" variant="danger-light" popovertarget=panel_id %}
+                                <form method="post"
+                                      action="{% url 'tag_delete' %}"
+                                      popover
+                                      id="{{ panel_id }}"
+                                      class="{% popover_panel_classes %} space-y-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="path" value="{{ item.path }}">
+                                    <p>
+                                        Retirer « {{ item.path }} »{% if item.has_children %} et ses sous-tags{% endif %} de {{ item.count }} publication{{ item.count|pluralize }} ?
+                                    </p>
+                                    {% button "Supprimer le tag" variant="danger" icon="delete" %}
+                                </form>
+                                {% endwith %}
+                            {% endwith %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endcard %}
+    {% else %}
+        <p class="text-gray-600">
+            Aucun tag : ajoutez-en depuis la fiche d'une publication de votre corpus.
+        </p>
+    {% endif %}
+{% endblock content %}

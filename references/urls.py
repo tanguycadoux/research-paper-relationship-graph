@@ -100,6 +100,9 @@ urlpatterns = [
         name="corpus_add_by_identifier",
     ),
     path("corpus/<int:pk>/status/", corpus.set_reading_status, name="corpus_reading_status"),
+    path("corpus/tags/", corpus.manage_tags, name="tag_list"),
+    path("corpus/tags/rename/", corpus.rename_tag, name="tag_rename"),
+    path("corpus/tags/delete/", corpus.delete_tag, name="tag_delete"),
     path("corpus/<int:pk>/tags/", corpus.tag_publication, name="corpus_tag"),
     path(
         "corpus/<int:pk>/tags/<int:tag_pk>/remove/",
