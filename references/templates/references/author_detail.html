@@ -21,6 +21,81 @@
     </header>
 
     <div class="space-y-8">
+        {% if author.orcid %}
+            {# Asked on demand only, never at import (#59) #}
+            <section aria-labelledby="author-orcid-title">
+                <h2 id="author-orcid-title" class="mb-3">Profil ORCID</h2>
+                {% card %}
+                    {% if orcid_profile %}
+                        <dl class="space-y-3 text-sm">
+                            <div>
+                                <dt class="text-gray-500">Nom</dt>
+                                <dd>
+                                    {{ orcid_profile.name|default:"(non public)" }}
+                                </dd>
+                            </div>
+                            {% if orcid_profile.credit_name %}
+                                <div>
+                                    <dt class="text-gray-500">Nom d'usage</dt>
+                                    <dd>
+                                        {{ orcid_profile.credit_name }}
+                                    </dd>
+                                </div>
+                            {% endif %}
+                            {% if orcid_profile.other_names %}
+                                <div>
+                                    <dt class="text-gray-500">Autres noms</dt>
+                                    <dd>
+                                        {{ orcid_profile.other_names|join:", " }}
+                                    </dd>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <dt class="text-gray-500">Travaux déclarés</dt>
+                                <dd>
+                                    {{ orcid_profile.work_count }}, dont {{ orcid_profile.in_base_count }} dans la base
+                                </dd>
+                            </div>
+                        </dl>
+                        {% if orcid_profile.without_author %}
+                            <h3 class="mt-4 mb-1 text-sm font-medium text-gray-500">Dans la base, sans cet auteur</h3>
+                            <p class="mb-2 text-sm text-gray-500">
+                                Travaux déclarés sur ORCID où cet auteur ne figure pas parmi les signataires : un nom
+                                publié rattaché à un autre auteur, ou un ORCID manquant.
+                            </p>
+                            <ul class="space-y-1 text-sm">
+                                {% for publication in orcid_profile.without_author %}
+                                    <li>
+                                        <a href="{% url 'publication_detail' publication.pk %}">{{ publication }}</a>
+                                        {% if publication.publication_date %}
+                                            <span class="text-gray-500">· {{ publication.publication_date|date:"Y" }}</span>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        <p class="mt-4 text-xs text-gray-500">
+                            Récupéré le <time datetime="{{ orcid_profile.fetched_at|date:'Y-m-d\TH:i:sO' }}">{{ orcid_profile.fetched_at|date:"j F Y" }}</time>.
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gray-600">Pas encore demandé à ORCID.</p>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                        <form method="post"
+                              action="{% url 'author_orcid_refresh' author.pk %}"
+                              class="mt-3">
+                            {% csrf_token %}
+                            {% if orcid_profile %}
+                                {% button "Actualiser depuis ORCID" variant="secondary" icon="refresh" %}
+                            {% else %}
+                                {% button "Compléter depuis ORCID" variant="secondary" icon="download" %}
+                            {% endif %}
+                        </form>
+                    {% endif %}
+                {% endcard %}
+            </section>
+        {% endif %}
+
         {% if organization_groups %}
             <section aria-labelledby="author-organizations-title">
                 <h2 id="author-organizations-title">Organisations</h2>
