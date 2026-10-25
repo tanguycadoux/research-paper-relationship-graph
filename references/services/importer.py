@@ -1,25 +1,28 @@
 from django.db import transaction
 
-from ..models import Publication
+from ..models import Author, Publication
 from .crossref_api import fetch_crossref_json, fetch_crossref_works
 from .datacite_api import fetch_datacite_json, fetch_datacite_works
 from .enrichment import complete_cited_with_openalex, complete_with_openalex
 from .external_records import Source, has_metadata, store_record
+from .orcid_names import complete_names
 from .parser import parse_publication
 
 
 def import_publication(pub, *, with_references=False, force_fetch=False):
     """
     Make sure the publication has its metadata, then parse it, and complete it
-    with OpenAlex. With references, the cited publications are imported too,
-    without their own references. Return False if the metadata could not be
-    retrieved.
+    with OpenAlex, and the names of its authors with ORCID. With references, the
+    cited publications are imported too, without their own references (the names
+    of their authors are left to the complete_orcid_names command). Return False
+    if the metadata could not be retrieved.
     """
     if not ensure_metadata(pub, force_fetch=force_fetch):
         return False
     complete_with_openalex(pub, force_fetch=force_fetch)
     with transaction.atomic():
         parse_publication(pub, parse_references=with_references)
+    complete_names(Author.objects.filter(publications=pub).distinct())
     if with_references:
         import_cited_publications(pub)
         complete_cited_with_openalex(pub)

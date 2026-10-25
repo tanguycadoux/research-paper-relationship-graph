@@ -51,6 +51,11 @@
                                 Un ORCID désigne une seule personne, mais ces auteurs ont été déclarés distincts : ils ne sont pas fusionnés.
                                 Corrigez l'ORCID de l'un d'eux, ou fusionnez-les à la main.
                             </p>
+                        {% elif conflict.kind == "orcid_name" %}
+                            <p class="mt-3 text-sm text-gray-500">
+                                Le nom déclaré sur ORCID ne prolonge pas le nom connu. Un ORCID mal attribué peut en être la cause :
+                                vérifiez-le avant de prendre la valeur proposée.
+                            </p>
                         {% elif conflict.is_informative %}
                             <p class="mt-3 text-sm text-gray-500">
                                 Les affiliations de cette publication ne sont pas rattachées tant que les listes d'auteurs diffèrent.

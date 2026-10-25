@@ -53,6 +53,10 @@ def apply_proposed_value(conflict):
     if conflict.kind == Kind.ORCID:
         conflict.author.orcid = conflict.proposed_value
         conflict.author.save(update_fields=["orcid"])
+    elif conflict.kind == Kind.ORCID_NAME:
+        family, _, given = conflict.proposed_value.partition(", ")
+        conflict.author.first_name, conflict.author.last_name = given, family
+        conflict.author.save(update_fields=["first_name", "last_name"])
 
 
 def names_summary(names):

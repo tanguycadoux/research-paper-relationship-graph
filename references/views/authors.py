@@ -59,6 +59,8 @@ class AuthorUpdateView(LoginRequiredMixin, UpdateView):
     form_class = AuthorForm
 
     def form_valid(self, form):
+        if {"first_name", "last_name"} & set(form.changed_data):
+            form.instance.name_edited = True  # ORCID no longer changes it (#220)
         response = super().form_valid(form)
         kept = merge_same_orcid(self.object, user=self.request.user)
         if kept != self.object:

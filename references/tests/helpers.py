@@ -38,6 +38,14 @@ def without_datacite(target):
     )(target)
 
 
+def without_orcid(target):
+    """Mock the grouped ORCID search as knowing no ORCID."""
+    return patch(
+        "references.services.orcid_names.fetch_orcid_names",
+        new=lambda orcids: dict.fromkeys(orcids),
+    )(target)
+
+
 def without_other_sources(target):
-    """Mock every source other than Crossref (DataCite, OpenAlex) as knowing nothing."""
-    return without_openalex(without_datacite(target))
+    """Mock every source other than Crossref (DataCite, OpenAlex, ORCID) as knowing nothing."""
+    return without_orcid(without_openalex(without_datacite(target)))
