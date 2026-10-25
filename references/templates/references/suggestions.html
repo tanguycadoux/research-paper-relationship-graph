@@ -1,0 +1,154 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Suggestions · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1>Suggestions</h1>
+            <p class="mt-2 max-w-3xl text-gray-600">
+                Les publications citées par au moins {{ min_citing }} articles
+                {% if active_tag %}
+                    du tag « {{ active_tag_label }} » (sous-tags compris)
+                {% else %}
+                    de votre corpus
+                {% endif %}
+                : si plusieurs de vos articles citent le même, il est sans doute central pour votre sujet.
+            </p>
+        </div>
+        {% url 'corpus' as corpus_url %}
+        {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
+    </header>
+
+    {# The context comes first below xl: it decides what the list shows. #}
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <aside aria-labelledby="context-title" class="xl:order-last">
+            {% card %}
+                <h2 id="context-title" class="mb-3">Calculées à partir de</h2>
+                <ul class="space-y-1 text-sm">
+                    <li class="flex items-baseline justify-between gap-3">
+                        <a href="{% url 'corpus_suggestions' %}"
+                           {% if not active_tag %}aria-current="true" class="font-semibold"{% endif %}>Tout le corpus</a>
+                    </li>
+                    {% for item in tag_tree %}
+                        <li class="flex items-baseline justify-between gap-3 {% if item.depth == 0 %}pl-4{% elif item.depth == 1 %}pl-8{% elif item.depth == 2 %}pl-12{% else %}pl-16{% endif %}">
+                            <a href="?tag={{ item.path|urlencode }}"
+                               {% if item.path == active_tag %}aria-current="true" class="font-semibold"{% endif %}>{{ item.name }}</a>
+                            <span class="text-gray-500">{{ item.count }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% if not tag_tree %}
+                    <p class="mt-3 text-sm text-gray-600">
+                        Avec des tags (« Projet/Groupe/… »), vous aurez aussi des suggestions par sujet.
+                    </p>
+                {% endif %}
+            {% endcard %}
+        </aside>
+
+        <section aria-labelledby="suggestions-title" class="xl:col-span-2">
+            <h2 id="suggestions-title" class="mb-1">
+                {% if active_tag %}
+                    Pour « {{ active_tag_label }} »
+                {% else %}
+                    Pour tout le corpus
+                {% endif %}
+                <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
+            </h2>
+            <p class="mb-3 text-sm text-gray-600">
+                À partir de {{ context_count }} publication{{ context_count|pluralize }}.
+                {% if to_identify %}
+                    {{ to_identify }} de leurs références {{ to_identify|pluralize:"est,sont" }} encore à identifier :
+                    elle{{ to_identify|pluralize }} ne compte{{ to_identify|pluralize:"nt" }} pas.
+                {% endif %}
+            </p>
+            {% if publications %}
+                {% card flush=True %}
+                    <table>
+                        <caption class="sr-only">Publications citées par plusieurs articles du contexte</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Titre</th>
+                                <th scope="col">Auteurs</th>
+                                <th scope="col">Année</th>
+                                <th scope="col" class="whitespace-nowrap text-right">Citée par</th>
+                                <th scope="col">
+                                    <span class="sr-only">Mon corpus</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pub in publications %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                                        {% if pub.in_corpus %}
+                                            {% badge "déjà dans mon corpus" icon="bookmarks" %}
+                                            {% for tag in pub.my_tags %}
+                                                <a href="{% url 'corpus' %}?tag={{ tag.name|urlencode }}"
+                                                   class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 no-underline hover:bg-gray-200">{{ tag.label }}</a>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-gray-600">
+                                        {% if pub.first_author %}
+                                            {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
+                                    <td class="text-right">
+                                        {# The citing articles in a panel: listed in the row, they made it very high. #}
+                                        {% with counter=forloop.counter|stringformat:"d" %}
+                                            {% with panel_id="citing-"|add:counter %}
+                                            {% button pub.citing_count|stringformat:"d"|add:" articles" type="button" variant="secondary" popovertarget=panel_id %}
+                                            <div popover id="{{ panel_id }}" class="{% popover_panel_classes %}">
+                                                <p class="mb-2 font-medium">Citée par</p>
+                                                <ul class="space-y-2">
+                                                    {% for source in pub.citing %}
+                                                        <li>
+                                                            <a href="{% url 'publication_detail' source.pk %}">{{ source }}</a>
+                                                            <span class="text-gray-500">{{ source.publication_date|date:"Y" }}</span>
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                            {% endwith %}
+                                        {% endwith %}
+                                    </td>
+                                    <td class="text-right">
+                                        {% if pub.in_corpus %}
+                                            {# Already there under another tag: one click gives it this one. #}
+                                            <form method="post" action="{% url 'corpus_tag' pub.pk %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="name" value="{{ active_tag }}">
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                {% button "Ajouter le tag « "|add:active_tag_label|add:" »" variant="secondary" icon="new_label" icon_only=True %}
+                                            </form>
+                                        {% else %}
+                                            <form method="post"
+                                                  action="{% url 'corpus_add' pub.pk %}"
+                                                  class="flex justify-end gap-1">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                                {# « + » last, as in the other tables. #}
+                                                {% button "Ajouter à mes références, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                                                {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endcard %}
+                {% pagination page_obj %}
+            {% else %}
+                <p class="text-gray-600">
+                    Aucune publication n'est citée par {{ min_citing }} de ces articles ou plus.
+                    Identifier leurs références en fera peut-être apparaître.
+                </p>
+            {% endif %}
+        </section>
+    </div>
+{% endblock content %}

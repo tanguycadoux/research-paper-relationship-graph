@@ -28,6 +28,7 @@ le statut de lecture et les tags sont propres à chaque utilisateur.
 | [sources.md](sources.md) | Sources de métadonnées : ce que chacune apporte, **schéma du parcours d'un import**, requêtes HTTP, DataCite, prépublications arXiv, JACoW, OpenAlex et affiliations, ORCID, livres, contradictions entre sources |
 | [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
 | [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export |
+| [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag |
 | [interface.md](interface.md) | Navigation, tableaux, pagination, tri, filtres, recherche, accueil, mise en page |
 | [decisions.md](decisions.md) | Journal des décisions, avec leurs raisons et leurs tickets |
 
@@ -46,7 +47,8 @@ references/          application principale
     cited_references.py (identification d'une référence, en série),
     publication_merge.py (« Cette publication est en fait… »),
     corpus_transfer.py (export et import du corpus),
-    search.py (recherche), pagination.py (listes par pages)
+    search.py (recherche), pagination.py (listes par pages),
+    suggestions.py (suggestions de lecture)
   services/          logique métier, sans dépendance aux vues
     Sources externes
     http.py          requêtes communes (session, nouvelles tentatives, cache de développement)
@@ -92,6 +94,8 @@ references/          application principale
     author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
     author_distinctions.py  auteurs déclarés différents
     conflicts.py     signalement et décision des conflits entre sources
+    Découverte
+    suggestions.py   publications citées par plusieurs articles du corpus ou d'un tag
     Affichage et échanges
     search.py        analyse de la barre de recherche, comparaison sans casse ni accents
     sorting.py       colonnes triables des tableaux (publications, auteurs)
