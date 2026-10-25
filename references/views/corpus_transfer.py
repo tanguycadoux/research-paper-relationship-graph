@@ -7,7 +7,14 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ..services.corpus_transfer import InvalidExport, corpus_bibtex, export_corpus, import_corpus
+from ..services.bibliography_files import file_entries
+from ..services.corpus_transfer import (
+    InvalidExport,
+    corpus_bibtex,
+    export_corpus,
+    import_corpus,
+    import_entries,
+)
 
 MAX_IMPORT_SIZE = 1024 * 1024
 
@@ -36,23 +43,47 @@ def export_bibtex(request):
 
 @login_required
 @require_POST
-def import_json(request):
+def import_file(request):
+    """Import an export of this application (JSON), or a BibTeX or RIS file (#165)."""
     upload = request.FILES.get("file")
     if upload is None:
-        messages.error(request, "Choisissez un fichier d'export (.json).")
+        messages.error(request, "Choisissez un fichier (.json, .bib ou .ris).")
         return redirect("corpus")
     if upload.size > MAX_IMPORT_SIZE:
-        messages.error(request, "Le fichier dépasse 1 Mo : ce n'est pas un export de corpus.")
+        messages.error(
+            request, "Le fichier dépasse 1 Mo : importez votre corpus en plusieurs fois."
+        )
         return redirect("corpus")
-    try:
-        report = import_corpus(request.user, json.loads(upload.read().decode("utf-8")))
-    except UnicodeDecodeError, json.JSONDecodeError:
-        messages.error(request, "Le fichier n'est pas un JSON valide.")
-    except InvalidExport as error:
-        messages.error(request, str(error))
+    text = decoded(upload.read())
+    if text.lstrip().startswith(("{", "[")):
+        try:
+            report = import_corpus(request.user, json.loads(text))
+        except json.JSONDecodeError:
+            messages.error(request, "Le fichier n'est pas un JSON valide.")
+            return redirect("corpus")
+        except InvalidExport as error:
+            messages.error(request, str(error))
+            return redirect("corpus")
     else:
-        report_import(request, report)
+        entries = file_entries(text)
+        if not entries:
+            messages.error(
+                request,
+                "Aucune entrée trouvée : le fichier n'est ni un export JSON de cette "
+                "application, ni un fichier BibTeX ou RIS.",
+            )
+            return redirect("corpus")
+        report = import_entries(request.user, entries)
+    report_import(request, report)
     return redirect("corpus")
+
+
+def decoded(content):
+    """UTF-8 (with or without BOM), else Latin-1, which older BibTeX files use."""
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return content.decode("latin-1")
 
 
 def report_import(request, report):
@@ -67,4 +98,16 @@ def report_import(request, report):
             request, f"Ajoutées sans métadonnées (source inconnue ou injoignable) : {names}."
         )
     if report.ignored:
-        messages.warning(request, f"{report.ignored} entrée(s) ignorée(s) : ni DOI ni ISBN valide.")
+        messages.warning(
+            request,
+            f"{len(report.ignored)} entrée(s) ignorée(s), sans DOI, identifiant arXiv ni "
+            f"ISBN valide : {listed(report.ignored)}.",
+        )
+
+
+def listed(titles, limit=10):
+    names = ", ".join(
+        f"« {title} »" if title else "une entrée sans titre" for title in titles[:limit]
+    )
+    rest = len(titles) - limit
+    return f"{names} et {rest} autre(s)" if rest > 0 else names

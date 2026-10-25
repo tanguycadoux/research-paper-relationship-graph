@@ -93,7 +93,7 @@ urlpatterns = [
     path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
     path("corpus/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
     path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
-    path("corpus/import/", corpus_transfer.import_json, name="corpus_import"),
+    path("corpus/import/", corpus_transfer.import_file, name="corpus_import"),
     path(
         "corpus/add/",
         corpus.add_publication_to_user_refs_by_identifier,

@@ -92,7 +92,7 @@ class ImportTests(TestCase):
 
     def test_entries_without_valid_identifier_are_ignored(self, fetch, fetch_works):
         report = import_corpus(self.user, export_of({"doi": "pas un DOI"}, {"title": "X"}, "texte"))
-        self.assertEqual(report.ignored, 2)
+        self.assertEqual(report.ignored, ["", "X"])
         self.assertFalse(UserPublication.objects.exists())
 
     def test_book_without_metadata_is_never_sent_to_the_doi_sources(self, fetch, fetch_works):
@@ -132,7 +132,8 @@ class ImportViewTests(TestCase):
         self.assertContains(response, "1 publication(s) ajoutée(s), 0 déjà dans votre corpus")
 
     def test_invalid_file_is_reported(self, fetch, fetch_works):
-        self.assertContains(self.post(b"\x00 pas du json"), "pas un JSON valide")
+        self.assertContains(self.post(b"{ pas du json"), "pas un JSON valide")
+        self.assertContains(self.post(b"\x00 ni JSON ni BibTeX"), "Aucune entrée trouvée")
         self.assertContains(self.post(b"{}"), "pas un export de corpus")
 
     def test_get_is_refused(self, fetch, fetch_works):

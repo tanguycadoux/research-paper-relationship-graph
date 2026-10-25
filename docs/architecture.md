@@ -76,7 +76,8 @@ references/          application principale
     publication_table.py  annotations du tableau commun (premier auteur, badges)
     publication_details.py  informations de la fiche (revue, financeurs, licences, citations, résumé)
     graph.py         construction des données des graphes
-    corpus_transfer.py  export JSON et BibTeX du corpus, import JSON
+    corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
+    bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
     icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
@@ -674,3 +675,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Filtres dans les en-têtes de colonne (popover), sans barre au-dessus du tableau | Souhait de l'utilisateur, à la manière d'un tableur ; la recherche globale garde le texte libre et les opérateurs. Le popover échappe au défilement de la carte sans JavaScript (#115). |
 | 2026-10-25 | Prépublication arXiv remplacée par la version publiée déclarée par ses auteurs ; DOI arXiv gardé dans `preprint_doi` | La version publiée est celle qu'on cite, et Crossref en donne la bibliographie ; plus de la moitié des prépublications en ont une. Un champ plutôt qu'une table d'identifiants : une prépublication n'a qu'un DOI arXiv (#227). |
 | 2026-10-25 | Bibliographie d'une prépublication sans version publiée tirée de ses sources LaTeX ; liens seulement sur les identifiants écrits par les auteurs | Le seul texte officiel de sa bibliographie ; OpenAlex et Semantic Scholar rapprochent automatiquement et se trompent (#227). Téléchargé une fois, pour les seules prépublications d'un corpus, comme arXiv le demande. |
+| 2026-10-25 | Import de fichiers BibTeX et RIS sans dépendance, par une lecture tolérante des seuls identifiants | Le DOI, l'identifiant arXiv (champ `eprint`, ou écrit dans le journal comme chez Google Scholar) et l'ISBN suffisent ; le reste vient des sources. Une entrée illisible ou sans identifiant est listée dans le rapport, jamais devinée (#165). |
