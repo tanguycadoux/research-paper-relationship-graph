@@ -42,7 +42,8 @@ class PublicationTablesTests(TestCase):
         # The author slots do not multiply the other counts.
         self.assertEqual(pub.to_identify, 2)
         response = self.client.get(reverse("publication_list"))
-        self.assertContains(response, '<th scope="col">Auteurs</th>', html=True)
+        # A sortable column (#115).
+        self.assertContains(response, 'href="?sort=author"')
         self.assertContains(response, "Ada Lovelace&nbsp;et&nbsp;al.")
 
     def test_single_author_without_et_al(self):

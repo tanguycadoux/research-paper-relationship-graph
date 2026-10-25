@@ -2,7 +2,8 @@
 Table of publications. Context: publications (annotated by
 for_publication_table, for the first author and the badges), caption; with
 corpus_actions, a last column to add each publication to the user's corpus or
-take it away (user_pub_ids); with hide_authors, no author column (author page).
+take it away (user_pub_ids); with hide_authors, no author column (author page); with
+sorting and sort (services/sorting.py), headers that sort the list.
 The identifier is hidden below xl, where the content is too narrow for it (#150): it stays on the
 page of each publication.
 {% endcomment %}
@@ -12,12 +13,12 @@ page of each publication.
         <caption class="sr-only">{{ caption }}</caption>
         <thead>
             <tr>
-                <th scope="col">Titre</th>
+                {% column_header "Titre" "title" %}
                 {% if not hide_authors %}
-                    <th scope="col">Auteurs</th>
+                    {% column_header "Auteurs" "author" %}
                 {% endif %}
                 <th scope="col" class="hidden xl:table-cell">Identifiant</th>
-                <th scope="col">Année</th>
+                {% column_header "Année" "year" %}
                 {% if corpus_actions %}
                     <th scope="col">
                         <span class="sr-only">Mon corpus</span>

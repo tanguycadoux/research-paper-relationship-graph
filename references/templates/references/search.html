@@ -43,7 +43,7 @@
                 Publications <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
             </h2>
             {% if publications %}
-                {% include "references/_publication_table.html" with caption="Publications trouvées, des plus récentes aux plus anciennes" corpus_actions=user.is_authenticated %}
+                {% include "references/_publication_table.html" with caption="Publications trouvées" corpus_actions=user.is_authenticated %}
                 {% pagination page_obj %}
             {% else %}
                 <p class="text-gray-600">Aucune publication ne correspond à cette recherche.</p>

@@ -11,11 +11,11 @@
     {% if authors %}
         {% card flush=True %}
             <table>
-                <caption class="sr-only">Auteurs de la base commune, par nom</caption>
+                <caption class="sr-only">Auteurs de la base commune</caption>
                 <thead>
                     <tr>
-                        <th scope="col">Nom</th>
-                        <th scope="col">Prénom</th>
+                        {% column_header "Nom" "last_name" %}
+                        {% column_header "Prénom" "first_name" %}
                         <th scope="col">ORCID</th>
                     </tr>
                 </thead>
