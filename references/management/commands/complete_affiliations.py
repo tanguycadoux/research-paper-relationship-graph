@@ -17,11 +17,20 @@ class Command(BaseCommand):
             help="Interroger d'abord OpenAlex (par lots de 50) pour les publications avec DOI "
             "qui n'ont pas encore de réponse OpenAlex.",
         )
+        parser.add_argument(
+            "--refresh-ancestors",
+            action="store_true",
+            help="Redemander à OpenAlex (par lots de 50) les organisations ancêtres déjà "
+            "connues, pour réparer leurs propres ancêtres.",
+        )
 
     def handle(self, *args, **options):
         # A command can wait as long as OpenAlex asks: nobody is waiting for a page.
         with patient_requests():
-            summary = complete_existing_publications(fetch_missing=options["fetch_missing"])
+            summary = complete_existing_publications(
+                fetch_missing=options["fetch_missing"],
+                refresh_ancestors=options["refresh_ancestors"],
+            )
         if options["fetch_missing"]:
             self.stdout.write(f"Publications demandées à OpenAlex : {summary['fetched']}")
         self.stdout.write(f"Publications avec une réponse OpenAlex : {summary['with_openalex']}")
