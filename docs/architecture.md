@@ -91,6 +91,7 @@ references/          application principale
     complete_affiliations.py  affiliations des publications déjà en base
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
     replace_preprints.py  prépublications arXiv déjà en base remplacées par leur version publiée
+    reset_data.py    développement : efface toutes les données sauf les comptes (DEBUG seulement)
     complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
