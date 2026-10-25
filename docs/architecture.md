@@ -266,6 +266,12 @@ auteur, les organisations sont **regroupées par tutelle** (organisation sans an
 avec le détail des entités déclarées. Une unité mixte (CEA Paris-Saclay : CEA et
 Université Paris-Saclay) apparaît sous chacune de ses tutelles.
 
+Sur la fiche d'une publication, les affiliations sont présentées **comme dans un
+article** : chaque auteur porte en exposant le numéro de ses affiliations, listées une
+seule fois sous les auteurs, dans l'ordre d'apparition. Une signature n'affiche que ses
+organisations **les plus précises** : celles qui sont l'ancêtre d'une autre organisation
+de la même signature sont retirées (IRFU plutôt que IRFU et CEA).
+
 La commande `complete_affiliations` complète les publications déjà en base à partir des
 données OpenAlex stockées, sans les redemander. L'option `--fetch-missing` interroge
 d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse.
@@ -484,3 +490,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Compteurs dans la navigation pour les conflits et les références à identifier, sans cache | Toujours justes après une action ; deux requêtes peu coûteuses. Les doublons probables (35 ms, 55 groupes) seraient un badge permanent (#152). |
 | 2026-10-23 | Sur petit écran, un menu par groupe de navigation, ouvert au toucher ou au clic | Le survol n'existe pas sur écran tactile ; `<details>` natifs, accessibles sans JavaScript ; la navigation est rendue deux fois (menus, barre latérale) pour garder la barre latérale indépendante du script (#207). |
 | 2026-10-23 | Date de publication : un `DateField` et sa précision (année, mois, jour), plutôt que trois champs | Tris, filtres et position sur le graphe inchangés ; seul l'affichage dépend de la précision. Une date saisie à la main reste complète (`<input type="date">`), même si l'utilisateur ne connaît que l'année (#147). |
+| 2026-10-25 | Fiche publication : affiliations numérotées, les plus précises de chaque signature | Lisible comme un article, chaque organisation une seule fois ; l'ancêtre déclaré à côté de sa sous-entité n'apprend rien, la fiche auteur garde le regroupement par tutelle (#155). |

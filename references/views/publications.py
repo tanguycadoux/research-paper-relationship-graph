@@ -12,6 +12,7 @@ from ..models import CitedReference, Publication
 from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
 from ..services.importer import import_publication
+from ..services.organizations import numbered_affiliations
 from ..services.publication_details import crossref_details, publication_abstract
 from ..services.publication_edits import (
     identifier_changed,
@@ -66,9 +67,9 @@ class PublicationDetailView(DetailView):
         )
         context["details"] = crossref_details(pub)
         context["abstract"] = publication_abstract(pub)
-        context["author_slots"] = (
+        context["authors"] = numbered_affiliations(
             pub.authorpublication_set.select_related("author")
-            .prefetch_related("organizations")
+            .prefetch_related("organizations__ancestors")
             .order_by("order")
         )
         return context

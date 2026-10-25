@@ -94,6 +94,30 @@ def top_levels(organization):
     return roots or [organization]
 
 
+def numbered_affiliations(slots):
+    """
+    The authors of a publication with the numbers of their affiliations, and the
+    affiliations numbered once, in order of appearance, as in an article (#155).
+    """
+    numbers = {}  # organization: number, in order of appearance
+    authors = []
+    for slot in slots:
+        organizations = most_precise(slot.organizations.all())
+        authors.append(
+            {
+                "slot": slot,
+                "numbers": [numbers.setdefault(o, len(numbers) + 1) for o in organizations],
+            }
+        )
+    return {"authors": authors, "affiliations": list(numbers)}
+
+
+def most_precise(organizations):
+    """Without those that are an ancestor of another one: IRFU rather than IRFU and CEA."""
+    ancestors = {a.pk for organization in organizations for a in organization.ancestors.all()}
+    return [organization for organization in organizations if organization.pk not in ancestors]
+
+
 def organization_groups(author):
     """
     Organizations of an author grouped by top-level organization (the CEA, with

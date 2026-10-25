@@ -74,19 +74,37 @@
         {# Left column (two thirds), then right column #}
         <div class="space-y-6 lg:col-span-2">
             {% card title="Auteurs" %}
-                <ol class="space-y-1 text-sm">
-                    {% for slot in author_slots %}
-                        <li>
-                            <a href="{% url 'author_detail' slot.author.pk %}"
-                              >{{ slot.author }}</a>
-                            {% if slot.organizations.all %}
-                                <span class="text-gray-500">· {{ slot.organizations.all|join:", " }}</span>
-                            {% endif %}
-                        </li>
-                    {% empty %}
-                        <li class="text-gray-500">Aucun auteur connu.</li>
-                    {% endfor %}
-                </ol>
+                {# As in an article: numbered affiliations, listed once below (#155) #}
+                {% if authors.authors %}
+                    <ol class="text-sm leading-relaxed">
+                        {% for author in authors.authors %}
+                            <li class="inline whitespace-nowrap">
+                                {% spaceless %}
+                                    <a href="{% url 'author_detail' author.slot.author.pk %}">{{ author.slot.author }}</a>
+                                    {% if author.numbers %}
+                                        <sup>{% for number in author.numbers %}<a href="#affiliation-{{ number }}" aria-label="affiliation {{ number }}">{{ number }}</a>{% if not forloop.last %},{% endif %}{% endfor %}</sup>
+                                    {% endif %}
+                                {% endspaceless %}{% if not forloop.last %},{% endif %}
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% else %}
+                    <p class="text-sm text-gray-500">Aucun auteur connu.</p>
+                {% endif %}
+                {% if authors.affiliations %}
+                    <h3 class="mt-4 mb-1 text-sm font-medium text-gray-500">Affiliations</h3>
+                    <ol class="list-decimal space-y-0.5 pl-5 text-sm text-gray-600">
+                        {% for organization in authors.affiliations %}
+                            <li id="affiliation-{{ forloop.counter }}">
+                                {% if organization.ror %}
+                                    {% external_link "https://ror.org/"|add:organization.ror organization %}
+                                {% else %}
+                                    {{ organization }}
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ol>
+                {% endif %}
             {% endcard %}
 
             {% if abstract %}
