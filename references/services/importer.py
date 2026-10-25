@@ -6,6 +6,7 @@ from .crossref_api import fetch_crossref_json, fetch_crossref_works
 from .datacite_api import fetch_datacite_json, fetch_datacite_works
 from .enrichment import complete_cited_with_openalex, complete_with_openalex
 from .external_records import Source, has_metadata, has_record, store_record
+from .jacow import link_jacow_references
 from .orcid_names import complete_names
 from .parser import parse_publication
 from .preprints import arxiv_id, is_arxiv, published_version, replace_cited_preprints
@@ -16,7 +17,8 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     Make sure the publication has its metadata, then parse it, and complete it
     with OpenAlex, and the names of its authors with ORCID. With references, the
     cited publications are imported too, without their own references (the names
-    of their authors are left to the complete_orcid_names command). An arXiv
+    of their authors are left to the complete_orcid_names command), and references
+    that only give a JACoW code are linked once DataCite confirms it. An arXiv
     preprint that declares its published version is replaced by it (#227).
 
     Return the publication imported: pub, or the published version already in the
@@ -33,6 +35,7 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     complete_names(Author.objects.filter(publications=pub).distinct())
     if with_references:
         import_cited_publications(pub)
+        link_jacow_references(pub)
         complete_cited_with_openalex(pub)
     return pub
 

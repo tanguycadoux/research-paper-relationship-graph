@@ -34,8 +34,8 @@ references/          application principale
   services/          logique métier, sans dépendance aux vues
     Sources externes
     http.py          requêtes JSON communes (session, nouvelles tentatives, journalisation)
-    crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN)
-    datacite_api.py  client DataCite (DOI par DOI ou par lots)
+    crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
+    datacite_api.py  client DataCite (DOI par DOI ou par lots, recherche par titre)
     openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions)
     openlibrary_api.py  client Open Library (recherche par ISBN)
     arxiv_api.py     client arXiv (sources LaTeX d'une prépublication, une à la fois)
@@ -50,6 +50,7 @@ references/          application principale
     parser.py        réponse de la source vers les modèles
     titles.py        nettoyage des titres (entités HTML, balisage JATS)
     latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
+    jacow.py         références reliées par le code JACoW écrit par leurs auteurs
     author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
     enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
     affiliations.py  rattachement des organisations aux signatures
@@ -65,6 +66,7 @@ references/          application principale
     names.py         normalisation des noms de personnes
     Corrections
     identification.py  identification manuelle des références, « non identifiable »
+    candidates.py    publications candidates d'une référence (Crossref, DataCite, base)
     publication_merge.py  fusion d'une publication sans identifiant dans une autre
     publication_edits.py  corrections de « Modifier » : titre et date protégés, nouvel identifiant
     author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
@@ -138,7 +140,7 @@ erDiagram
 |---|---|
 | `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. `preprint_doi` garde le DOI arXiv d'une prépublication remplacée par sa version publiée (#227) : unique, il retrouve la publication quand on importe ou cite ce DOI (`Publication.objects.with_doi`). Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. La date est un `DateField` : un mois ou un jour absent de la source est stocké à 1, et `publication_date_precision` (année, mois, jour) dit ce que la source donne vraiment ; la fiche affiche « 2023 », « août 2023 » ou « 1 août 2023 » (#147). Une date saisie à la main est précise au jour. |
 | `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
-| `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
+| `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. Les candidats trouvés pour la page d'identification sont gardés en cache (`candidates`, `candidates_fetched_at`). |
 | `Author` | Une personne (entité résolue). Un nom corrigé à la main est marqué (`name_edited`) : ORCID ne le modifie plus. |
 | `AuthorMerge` | La trace d'une fusion d'auteurs : auteur conservé, auteurs absorbés tels qu'ils étaient (noms, ORCID), motif (manuelle ou même ORCID), qui (vide pour une fusion automatique) et quand. Les traces d'un auteur absorbé passent à l'auteur conservé. |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
@@ -202,7 +204,21 @@ tentatives, et jusqu'à 60 s d'attente si la source le demande.
 
 - **Identifier une référence** (`identification.py`) : par DOI, par ISBN, ou en créant une
   publication sans identifiant, ou la déclarer non identifiable. La correction est tracée et
-  survit aux ré-imports.
+  survit aux ré-imports. La page propose d'abord des **publications candidates**
+  (`candidates.py`, #160), jamais reliées sans un clic sur « C'est celle-ci » :
+  - Crossref sur le texte complet de la référence (`query.bibliographic`), DataCite sur
+    son titre seul (actes JACoW, prépublications arXiv ; sur le texte complet, DataCite
+    exige tous les mots et ne trouve rien), le DOI d'un code JACoW écrit dans la
+    référence, et les publications de la base au titre proche. Le titre est le champ
+    structuré, ou la phrase qui suit les auteurs dans le texte brut.
+  - Le score de Crossref ne se compare pas d'une recherche à l'autre : chaque candidat est
+    vérifié ici. Titres proches dans les deux sens (le plus long au plus deux fois plus
+    long), année à ±1 près, premier auteur exigé si le titre n'est que proche ; copies
+    ResearchGate écartées. Sur les 32 références à identifier de la base, le bon candidat
+    sort en tête pour les 22 qui ont un DOI.
+  - Les réponses des sources sont gardées sur la référence (deux requêtes au premier
+    affichage, puis aucune) ; « Relancer la recherche » les oublie. Une source qui ne
+    répond pas n'est pas mise en cache.
 - **Modifier une publication** (`publication_edits.py`, #146) : un titre ou une date
   corrigés sont marqués et ne sont plus réécrits par les analyses suivantes ; la fiche le
   signale, et « Revenir aux valeurs des sources » relit la réponse stockée, sans requête.
@@ -274,6 +290,16 @@ en déclare une). Les autres restent « à identifier ». Sur « Attention Is Al
 40 références, 22 reliées, 18 à identifier. La fiche dit d'où vient la bibliographie, ou
 pourquoi elle manque : prépublication déposée en PDF seul (environ 30 % en physique des
 accélérateurs), ou sources sans bibliographie.
+
+### Code JACoW écrit dans une référence
+
+Les actes des conférences d'accélérateurs (JACoW) ont leurs DOI chez DataCite, sous une
+forme fixe : `10.18429/JACoW-<CONFÉRENCE><ANNÉE>-<CODE>` (vérifié sur 5 000 de leurs 26 000
+DOI ; les autres formes sont des volumes entiers). Un code `JACoW-IPAC2019-WEPRB007` écrit
+dans une référence est donc un identifiant des auteurs : à l'import d'une bibliographie,
+`jacow.link_jacow_references` le relie, mais seulement si DataCite connaît le DOI **et**
+que son titre se retrouve dans la référence. Sinon rien n'est créé : un code faux ou trop
+ancien ne laisse pas de publication vide dans la base.
 
 ## Fusion d'auteurs
 
@@ -689,3 +715,5 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Publication « à lire » ajoutée au corpus sans sa bibliographie, importée quand le statut change | Une liste de lecture ne doit pas remplir la base commune ni le compteur « à identifier » (un article de physique : 100 références, 88 publications créées) ; l'ajout sans statut reste complet, c'est le flux principal. Revenir à « à lire » ne supprime rien : les références appartiennent à la base commune (#234). |
 | 2026-10-25 | Tags hiérarchiques propres à chaque utilisateur, chemins séparés par « / », parents implicites ; filtre par les badges et la carte « Tags », sans colonne | Un article peut servir plusieurs projets et un groupe différent dans chacun ; « : » sert déjà aux opérateurs de recherche. Un jugement par projet (« Projet B/Écarté ») reste une convention : un vrai modèle de projet seulement si le besoin apparaît. Une colonne de plus faisait déborder le tableau (#130). |
 | 2026-10-25 | Un tag n'accompagne jamais l'un de ses sous-tags sur une publication ; renommer un tag renomme ses sous-tags et fusionne avec un nom existant | Le filtre inclut les sous-tags : « Projet » à côté de « Projet/Groupe » n'apporte rien. Le plus précis remplace le moins précis, le moins précis n'est pas ajouté ; même règle à l'import et après une fusion. Renommer par chemin permet aussi de déplacer un tag dans l'arbre (#130). |
+| 2026-10-25 | Publications candidates par Crossref (texte complet) et DataCite (titre seul), vérifiées ici, gardées sur la référence | Mesuré sur la base : Crossref seul trouve 9 références sur 32 et aucune en physique, les actes JACoW et les prépublications arXiv étant chez DataCite ; ensemble, 22 sur 32. Le score de Crossref n'admet pas de seuil (une copie de 2020 passe devant l'original) : titre, année et auteur sont vérifiés de notre côté. Semantic Scholar n'apporterait presque rien : les manques restants n'ont pas de DOI (#160). |
+| 2026-10-25 | Code JACoW écrit dans une référence relié à l'import, après confirmation de DataCite | C'est un identifiant écrit par les auteurs, comme un identifiant arXiv ; la publication n'est créée que si DataCite connaît le DOI et que le titre concorde, pour ne pas remplir la base de publications vides (#160). |

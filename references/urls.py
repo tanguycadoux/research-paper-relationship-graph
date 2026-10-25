@@ -64,6 +64,16 @@ urlpatterns = [
         name="reference_identify",
     ),
     path(
+        "publications/<int:pk>/references/<int:position>/candidate/",
+        cited_references.choose_candidate,
+        name="reference_candidate",
+    ),
+    path(
+        "publications/<int:pk>/references/<int:position>/search-again/",
+        cited_references.search_candidates_again,
+        name="reference_search_again",
+    ),
+    path(
         "publications/<int:pk>/references/<int:position>/unidentifiable/",
         cited_references.toggle_unidentifiable,
         name="reference_unidentifiable",

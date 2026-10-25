@@ -316,6 +316,10 @@ class CitedReference(models.Model):
         related_name="+",
     )
     resolved_at = models.DateTimeField(null=True, blank=True)
+    # Publications found by Crossref and DataCite for the identification page (#160),
+    # kept so that the page does not search again at each display. None: not searched.
+    candidates = models.JSONField(null=True, blank=True)
+    candidates_fetched_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["position"]

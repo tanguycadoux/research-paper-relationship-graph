@@ -3,6 +3,7 @@ Client of the DataCite REST API: DOIs registered with DataCite (conference
 proceedings such as JACoW, Zenodo deposits, datasets…), unknown to Crossref.
 """
 
+import re
 from urllib.parse import quote
 
 from . import http
@@ -10,6 +11,8 @@ from .doi import normalize_doi
 
 DATACITE_DOIS_URL = "https://api.datacite.org/dois"
 BATCH_SIZE = 50
+SEARCH_SIZE = 10
+SEARCH_FIELDS = "doi,titles,creators,publicationYear,types,container"
 
 
 def fetch_datacite_json(doi):
@@ -44,3 +47,25 @@ def _fetch_batch(dois):
         return {}
     found = {normalize_doi(item["id"]): {"data": item} for item in data.get("data", [])}
     return {doi: found.get(doi) for doi in dois}
+
+
+def search_datacite_title(title):
+    """
+    DataCite works whose title holds this phrase, as {"data": item} like a single DOI;
+    None if the request failed. The whole text of a reference finds nothing: every
+    word is required, authors and venue included.
+    """
+    words = " ".join(re.findall(r"\w+", title))
+    if not words:
+        return []
+    data = http.get_json(
+        DATACITE_DOIS_URL,
+        params={
+            "query": f'titles.title:"{words}"',
+            "page[size]": SEARCH_SIZE,
+            "fields[dois]": SEARCH_FIELDS,
+        },
+        service="DataCite",
+        subject="title search",
+    )
+    return None if data is None else [{"data": item} for item in data.get("data", [])]

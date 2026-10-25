@@ -8,7 +8,11 @@ from references.forms import IdentifyReferenceForm
 from references.models import CitedReference, Publication, UserPublication
 from references.services import identification
 from references.services.parser import parse_publication
-from references.tests.helpers import with_crossref, without_other_sources
+from references.tests.helpers import (
+    with_crossref,
+    without_candidate_search,
+    without_other_sources,
+)
 
 BOOK = {"key": "ref1", "unstructured": "Goodfellow I. Deep Learning. MIT Press, 2016."}
 NO_KEY = {"unstructured": "Private communication."}
@@ -106,6 +110,7 @@ class IdentifyReferenceFormTests(TestCase):
         self.assertIn("title", form.errors)
 
 
+@without_candidate_search
 @without_other_sources
 @patch("references.services.importer.fetch_crossref_json", return_value=None)
 class IdentifyReferenceViewTests(IdentificationTestCase):

@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 CROSSREF_WORKS_URL = "https://api.crossref.org/works"
 BATCH_SIZE = 50
+SEARCH_ROWS = 5
+SEARCH_FIELDS = "DOI,title,author,issued,type,container-title"
 
 
 def fetch_crossref_json(doi):
@@ -40,6 +42,16 @@ def fetch_crossref_by_isbn(isbn):
     data = _get_json("", {"filter": f"isbn:{isbn}", "rows": 1}, f"ISBN {isbn}")
     items = data["message"]["items"] if data else []
     return _as_single_work(items[0]) if items else None
+
+
+def search_crossref(text):
+    """
+    The works closest to the text of a cited reference (query.bibliographic), best
+    first; None if the request failed. Only the fields shown as candidates are asked.
+    """
+    params = {"query.bibliographic": text, "rows": SEARCH_ROWS, "select": SEARCH_FIELDS}
+    data = _get_json("", params, "bibliographic search")
+    return data["message"]["items"] if data else None
 
 
 def _fetch_batch(dois):
