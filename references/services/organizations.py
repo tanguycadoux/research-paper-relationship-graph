@@ -51,10 +51,12 @@ def link_ancestors(organizations, institutions_by_id):
     )
 
 
-def missing_ancestor_ids(institutions):
-    """Ancestors named in the lineages but neither given nor already known."""
+def missing_ancestor_ids(institutions, include_known=False):
+    """Ancestors named in the lineages but neither given nor (by default) already known."""
     given = {openalex_id(i) for i in institutions}
     wanted = {a for i in institutions for a in lineage_ids(i)} - given
+    if include_known:
+        return sorted(wanted)
     known = set(
         Organization.objects.filter(openalex_id__in=wanted).values_list("openalex_id", flat=True)
     )

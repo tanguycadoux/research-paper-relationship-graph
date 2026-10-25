@@ -192,6 +192,21 @@ class OrganizationHierarchyTests(TestCase):
             [CEA["display_name"]],
         )
 
+    def test_fetched_ancestor_linked_to_an_institution_named_in_the_work(self):
+        # The DRF is only an ancestor of IRFU; the CEA above it is named in the work
+        # and not created yet: it was a top-level organization on the author page.
+        work = {"authorships": [authorship("Thomas Thuillier", IRFU, CEA)]}
+        with patch(
+            "references.services.enrichment.fetch_openalex_institutions",
+            return_value={"I4210113668": DRF},
+        ) as fetch:
+            complete_ancestors([work])
+        fetch.assert_called_once_with(["I4210113668"])
+        self.assertEqual(
+            names(Organization.objects.get(openalex_id="I4210113668").ancestors.all()),
+            [CEA["display_name"]],
+        )
+
     def test_known_ancestors_are_not_fetched_again(self):
         publication("A", [THUILLIER], [authorship("Thomas Thuillier", CEA, DRF)])
         with patch("references.services.enrichment.fetch_openalex_institutions") as fetch:

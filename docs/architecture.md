@@ -287,7 +287,11 @@ de la même signature sont retirées (IRFU plutôt que IRFU et CEA).
 
 La commande `complete_affiliations` complète les publications déjà en base à partir des
 données OpenAlex stockées, sans les redemander. L'option `--fetch-missing` interroge
-d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse.
+d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse. L'option
+`--refresh-ancestors` redemande les ancêtres déjà connus, pour réparer leurs propres
+ancêtres. Avant la correction de cette étape, un ancêtre récupéré n'était relié qu'aux
+organisations déjà en base : la DRF, simple ancêtre d'IRFU, perdait son lien vers le CEA
+nommé dans le même article, et passait pour une tutelle sur la fiche auteur.
 
 ### ORCID complétés depuis OpenAlex
 

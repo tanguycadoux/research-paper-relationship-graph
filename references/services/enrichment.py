@@ -49,11 +49,12 @@ def cited_without_openalex(pub):
     )
 
 
-def complete_ancestors(works):
+def complete_ancestors(works, refresh=False):
     """
     Create the ancestor organizations named in the lineages of the institutions
     but unknown yet (one request per batch), so that the parser can link them
-    without any network access.
+    without any network access. With refresh, the known ancestors are requested
+    again too, to repair their own ancestors.
     """
     institutions = [
         institution
@@ -61,22 +62,26 @@ def complete_ancestors(works):
         for authorship in work.get("authorships", [])
         for institution in authorship.get("institutions", [])
     ]
-    missing = missing_ancestor_ids(institutions)
+    missing = missing_ancestor_ids(institutions, include_known=refresh)
     if missing:
-        organizations_for(list(fetch_openalex_institutions(missing).values()))
+        # The institutions of the works too: an ancestor is linked only to known
+        # organizations, and the CEA above the DRF may be named in the work only.
+        fetched = fetch_openalex_institutions(missing).values()
+        organizations_for(institutions + list(fetched))
 
 
-def complete_existing_publications(fetch_missing=False):
+def complete_existing_publications(fetch_missing=False, refresh_ancestors=False):
     """
     Complete the publications already in the database: attach their affiliations
     (with the hierarchy of their organizations) from the stored OpenAlex works.
     With fetch_missing, the publications with a DOI but no OpenAlex answer yet are
-    first requested, one request per batch. Return a summary of what was done.
+    first requested, one request per batch. With refresh_ancestors, the known
+    ancestors are requested again. Return a summary of what was done.
     """
     fetched = fetch_missing_openalex() if fetch_missing else 0
     records = ExternalRecord.objects.filter(source=Source.OPENALEX, data__isnull=False)
     records = list(records.select_related("publication"))
-    complete_ancestors([record.data for record in records])
+    complete_ancestors([record.data for record in records], refresh=refresh_ancestors)
     attached = sum(attach_affiliations(record.publication) for record in records)
     return {"fetched": fetched, "with_openalex": len(records), "attached": attached}
 
