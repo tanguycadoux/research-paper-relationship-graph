@@ -14,8 +14,10 @@ from ..services.orcid_merge import merge_same_orcid
 from ..services.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.organizations import organization_groups
 from ..services.publication_table import corpus_ids, for_publication_table
+from ..services.search import filter_authors
 from ..services.sorting import AUTHORS
 from .pagination import PageMixin
+from .search import list_filter
 
 
 class AuthorListView(PageMixin, ListView):
@@ -25,10 +27,18 @@ class AuthorListView(PageMixin, ListView):
 
     def get_queryset(self):
         self.sort = AUTHORS.read(self.request.GET.get("sort"))
-        return AUTHORS.apply(Author.objects.all(), self.sort)
+        self.filter = list_filter(self.request, self.sort, AUTHORS)
+        query = self.filter["query"]
+        if query.about_publications_only:
+            query.errors.append("titre:, année:, doi: et isbn: ne filtrent que des publications.")
+        return AUTHORS.apply(filter_authors(Author.objects.all(), query), self.sort)
 
     def get_context_data(self, **kwargs):
-        return super().get_context_data(**kwargs) | {"sorting": AUTHORS, "sort": self.sort}
+        return super().get_context_data(**kwargs) | {
+            "sorting": AUTHORS,
+            "sort": self.sort,
+            "filter": self.filter,
+        }
 
 
 class AuthorDetailView(DetailView):

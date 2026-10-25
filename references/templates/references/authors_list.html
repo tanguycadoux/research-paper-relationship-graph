@@ -8,6 +8,9 @@
         <h1>Auteurs</h1>
     </header>
 
+    {% if authors or filter.q %}
+        {% include "references/_list_filter.html" with label="Filtrer les auteurs" placeholder="Filtrer : nom, prénom ou ORCID…" %}
+    {% endif %}
     {% if authors %}
         {% card flush=True %}
             <table>
@@ -33,6 +36,8 @@
             </table>
         {% endcard %}
         {% pagination page_obj %}
+    {% elif filter.q %}
+        <p class="text-gray-600">Aucun auteur ne correspond à ce filtre.</p>
     {% else %}
         <p class="text-gray-600">Aucun auteur dans la base.</p>
     {% endif %}

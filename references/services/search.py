@@ -157,10 +157,15 @@ def filter_publications(publications, query):
 
 
 def search_authors(query):
-    """Authors whose name holds every free word and every author: word, or their ORCID."""
+    """The authors answering the query, none if it is about publications only."""
     if query.about_publications_only:
         return Author.objects.none()
-    authors = Author.objects.alias(_name=full_name())
+    return filter_authors(Author.objects.all(), query)
+
+
+def filter_authors(authors, query):
+    """Authors whose name holds every free word and every author: word, or their ORCID."""
+    authors = authors.alias(_name=full_name())
     for word in [*query.terms, *(w for name in query.authors for w in name.split())]:
         authors = authors.filter(contains("_name", word) | Q(orcid=word))
     return authors

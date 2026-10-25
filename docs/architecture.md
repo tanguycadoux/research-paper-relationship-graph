@@ -528,6 +528,12 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
   un clic sur une autre colonne commence par son sens naturel (années récentes d'abord,
   noms de A à Z), et revient à la première page en gardant la recherche. Sans `sorting`
   dans le contexte (page d'un auteur, « Cité par »), les en-têtes restent simples.
+- **Filtres des listes** (#115, `views/search.list_filter`) : publications, « Mes
+  références » et auteurs ont une barre `?q=` qui reprend la syntaxe de la recherche,
+  lue par le même analyseur. Le filtre garde le tri, le tri et la pagination gardent le
+  filtre ; « Effacer » ne retire que le filtre. Sur la liste des auteurs, seuls le texte
+  libre et `auteur:` s'appliquent (nom, prénom, ORCID) ; les autres opérateurs sont
+  signalés. La barre n'apparaît pas sur une liste vide.
 - **Recherche** (#153, `services/search.py`, `/search/?q=…`) : une seule barre, du
   texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
   année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des

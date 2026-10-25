@@ -25,8 +25,10 @@ from ..services.publication_table import (
     for_publication_table,
     references_available,
 )
+from ..services.search import filter_publications
 from ..services.sorting import PUBLICATIONS
 from .pagination import PageMixin
+from .search import list_filter
 
 
 class PublicationListView(PageMixin, ListView):
@@ -36,7 +38,9 @@ class PublicationListView(PageMixin, ListView):
 
     def get_queryset(self):
         self.sort = PUBLICATIONS.read(self.request.GET.get("sort"))
-        return PUBLICATIONS.apply(for_publication_table(Publication.objects.all()), self.sort)
+        self.filter = list_filter(self.request, self.sort, PUBLICATIONS)
+        publications = filter_publications(Publication.objects.all(), self.filter["query"])
+        return PUBLICATIONS.apply(for_publication_table(publications), self.sort)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -44,6 +48,7 @@ class PublicationListView(PageMixin, ListView):
             "user_pub_ids": corpus_ids(self.request.user),
             "sorting": PUBLICATIONS,
             "sort": self.sort,
+            "filter": self.filter,
         }
         return context
 

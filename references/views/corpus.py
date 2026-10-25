@@ -8,8 +8,10 @@ from ..models import Publication, UserPublication
 from ..services.corpus import add_to_corpus
 from ..services.doi import is_valid_doi, normalize_doi
 from ..services.publication_table import for_publication_table
+from ..services.search import filter_publications
 from ..services.sorting import PUBLICATIONS
 from .pagination import page_of
+from .search import list_filter
 
 
 def report_addition(request, pub, imported):
@@ -64,14 +66,18 @@ def remove_from_user_refs(request, pk):
 
 @login_required
 def my_references(request):
-    pubs = for_publication_table(Publication.objects.filter(userpublication__user=request.user))
+    pubs = Publication.objects.filter(userpublication__user=request.user)
     sort = PUBLICATIONS.read(request.GET.get("sort"))
-    page = page_of(request, PUBLICATIONS.apply(pubs, sort))
+    current_filter = list_filter(request, sort, PUBLICATIONS)
+    shown = for_publication_table(filter_publications(pubs, current_filter["query"]))
+    page = page_of(request, PUBLICATIONS.apply(shown, sort))
     context = {
         "publications": page.object_list,
         "page_obj": page,
         "sorting": PUBLICATIONS,
         "sort": sort,
+        "filter": current_filter,
+        "corpus_count": pubs.count(),
         "not_exportable": pubs.filter(doi="", isbn="").count(),
     }
     return render(request, "references/user_references.html", context)

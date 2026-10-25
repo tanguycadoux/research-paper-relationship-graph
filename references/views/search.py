@@ -1,3 +1,4 @@
+from django.http import QueryDict
 from django.shortcuts import render
 
 from ..models import Publication
@@ -8,6 +9,23 @@ from .pagination import page_of
 
 # Beyond, the query is too vague for a list of names: the page says how many match.
 AUTHORS_SHOWN = 20
+
+
+def list_filter(request, sort, sorting):
+    """
+    The filter of a list (#115): the search bar, read by the same parser. The form keeps
+    the sort of the list; « Effacer » drops the filter only.
+    """
+    text = request.GET.get("q", "").strip()
+    kept = QueryDict(mutable=True)
+    if sort != sorting.default:
+        kept["sort"] = sort.param
+    return {
+        "q": text,
+        "query": parse(text),
+        "sort_param": kept.get("sort", ""),
+        "clear_url": f"?{kept.urlencode()}" if kept else request.path,
+    }
 
 
 def search(request):
