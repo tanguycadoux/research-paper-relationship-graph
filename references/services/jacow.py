@@ -20,6 +20,15 @@ from .parser import parse_publication
 from .preprints import similar_titles
 
 JACOW_CODE = re.compile(r"\bJACoW-([A-Za-z]+(?:19|20)\d\d)-([A-Za-z0-9]+)\b", re.IGNORECASE)
+JACOW_DOI_PREFIX = "10.18429/jacow-"
+
+
+def is_jacow(doi):
+    """
+    A paper of JACoW proceedings. The order of its authors at DataCite may differ from
+    the article's, where the primary author comes first (#250): the page says so.
+    """
+    return doi.lower().startswith(JACOW_DOI_PREFIX)
 
 
 def written_jacow_doi(text):
