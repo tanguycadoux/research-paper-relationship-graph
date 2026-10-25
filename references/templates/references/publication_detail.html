@@ -118,7 +118,7 @@
                     {% if publication.publication_date %}
                         <div>
                             <dt class="text-gray-500">Date de publication</dt>
-                            <dd>{{ publication.publication_date }}</dd>
+                            <dd>{{ publication.formatted_publication_date }}</dd>
                         </div>
                     {% endif %}
                     {% if details.citation_count is not None %}
