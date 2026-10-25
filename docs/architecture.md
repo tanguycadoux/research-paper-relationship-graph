@@ -476,7 +476,10 @@ déclare, souvent plus complet que le nom publié, mais rien n'est écrasé :
   « vallcorba » sur ORCID) ; un prénom tout en minuscules ou en majuscules est remis en
   forme ;
 - un nom qui **diffère** vraiment est signalé comme conflit (« Nom différent selon
-  ORCID ») : un ORCID peut être mal attribué, notamment par la complétion OpenAlex ;
+  ORCID ») : un ORCID peut être mal attribué, notamment par la complétion OpenAlex. La
+  page « Conflits » montre les deux noms dans un petit tableau, prénom puis nom, et
+  signale des mots identiques mais répartis autrement entre prénom et nom, comme
+  « E. Fernandez | Mora » et « Elena | Fernandez Mora » (#244) ;
 - un nom **corrigé à la main** (`name_edited`) n'est jamais modifié, et un nom non public
   ne change rien.
 

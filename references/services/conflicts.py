@@ -3,9 +3,12 @@ Contradictions between sources (MetadataConflict): the known value is kept and
 the conflict is reported, to be decided on the « Conflits » page.
 """
 
+from dataclasses import dataclass
+
 from django.utils import timezone
 
 from ..models import MetadataConflict
+from .names import name_parts, same_words_up_to_initials
 
 Kind = MetadataConflict.Kind
 Status = MetadataConflict.Status
@@ -54,9 +57,43 @@ def apply_proposed_value(conflict):
         conflict.author.orcid = conflict.proposed_value
         conflict.author.save(update_fields=["orcid"])
     elif conflict.kind == Kind.ORCID_NAME:
-        family, _, given = conflict.proposed_value.partition(", ")
-        conflict.author.first_name, conflict.author.last_name = given, family
+        name = split_name(conflict.proposed_value)
+        conflict.author.first_name, conflict.author.last_name = name.given, name.family
         conflict.author.save(update_fields=["first_name", "last_name"])
+
+
+@dataclass(frozen=True)
+class PersonName:
+    given: str
+    family: str
+
+    def __str__(self):
+        return f"{self.given} {self.family}".strip()
+
+
+def split_name(value):
+    """A name stored « Family, Given » in an ORCID_NAME conflict."""
+    family, _, given = value.partition(", ")
+    return PersonName(given, family)
+
+
+@dataclass(frozen=True)
+class NameComparison:
+    current: PersonName
+    proposed: PersonName
+    # Same words, split differently between given and family name (#244).
+    split_differently: bool
+
+
+def compare_names(conflict):
+    """The two names of an ORCID_NAME conflict, given name first."""
+    current, proposed = split_name(conflict.current_value), split_name(conflict.proposed_value)
+    return NameComparison(
+        current,
+        proposed,
+        split_differently=same_words_up_to_initials(str(current), str(proposed))
+        and name_parts(current.family) != name_parts(proposed.family),
+    )
 
 
 def names_summary(names):
