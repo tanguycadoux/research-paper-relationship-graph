@@ -8,6 +8,7 @@ given up when the source asks to wait longer than a few seconds. Management
 commands wrap their work in patient_requests() to wait as long as the source asks.
 """
 
+import datetime
 import logging
 import time
 from contextlib import contextmanager
@@ -16,6 +17,7 @@ from dataclasses import dataclass
 from functools import cache
 
 import requests
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ PROJECT_URL = "https://github.com/tanguycadoux/research-paper-relationship-graph
 USER_AGENT = "references-manager/0.1"
 REQUEST_TIMEOUT = 10
 RETRY_STATUSES = {429, 500, 502, 503, 504}
+HTTP_CACHE_EXPIRATION = datetime.timedelta(days=7)
 
 
 @dataclass(frozen=True)
@@ -103,14 +106,37 @@ def user_agent(contact=""):
 
 @cache
 def _get_session():
-    return requests.Session()
+    """
+    The shared session. In development (settings.HTTP_CACHE_PATH), the responses are
+    kept in a file of their own, so that importing again after reset_data does not
+    wait for the sources.
+    """
+    path = settings.HTTP_CACHE_PATH
+    if path is None:
+        return requests.Session()
+    try:
+        from requests_cache import CachedSession  # development dependency
+    except ImportError:
+        logger.warning("requests-cache is not installed: HTTP responses are not cached")
+        return requests.Session()
+    return CachedSession(
+        str(path), backend="sqlite", expire_after=HTTP_CACHE_EXPIRATION, allowable_codes=(200,)
+    )
+
+
+def clear_cache():
+    """Empty the development cache of the responses. Return False without cache."""
+    session = _get_session()
+    if not hasattr(session, "cache"):
+        return False
+    session.cache.clear()
+    return True
 
 
 def _request(url, params, headers, service, subject, contact, stream=False):
     """Send one request. Return None on network error."""
-    logger.info("%s request for %s", service, subject)
     try:
-        return _get_session().get(
+        response = _get_session().get(
             url,
             params=params or None,
             headers={"User-Agent": user_agent(contact)} | (headers or {}),
@@ -120,6 +146,9 @@ def _request(url, params, headers, service, subject, contact, stream=False):
     except requests.RequestException as error:
         logger.warning("%s network error for %s: %s", service, subject, error)
         return None
+    cached = " (cache)" if getattr(response, "from_cache", False) is True else ""
+    logger.info("%s request for %s%s", service, subject, cached)
+    return response
 
 
 def _parse_json(response, service, subject):

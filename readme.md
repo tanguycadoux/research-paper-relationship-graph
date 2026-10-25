@@ -115,6 +115,11 @@ serveur : `python manage.py tailwind build`. Ses sources sont dans `assets/css/s
 La base `db.sqlite3` est locale et n'est pas versionnée.
 Pour récupérer ses données sur une autre machine, il faut la copier à la main.
 
+En développement (`DJANGO_DEBUG=1`), les réponses des sources externes sont gardées
+7 jours dans `.http_cache.sqlite`, à part de la base, si `requests-cache` est installé
+(`pip install -r requirements-dev.txt`). Réimporter les mêmes publications ne les
+redemande donc pas.
+
 ## Commandes utiles
 
 ```bash
@@ -125,6 +130,11 @@ python manage.py complete_affiliations
 # Idem, en demandant d'abord à OpenAlex les publications qui n'ont pas encore de réponse
 # (une requête par lot de 50 publications)
 python manage.py complete_affiliations --fetch-missing
+
+# Développement : vider la base en gardant les comptes et le cache des sources
+python manage.py reset_data
+# … en vidant aussi le cache, pour tout redemander aux sources
+python manage.py reset_data --clear-http-cache
 ```
 
 ## Tests et vérifications
