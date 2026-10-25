@@ -119,6 +119,21 @@ class Author(models.Model):
             other.delete()
 
 
+class OrcidRecord(models.Model):
+    """
+    Public ORCID record of a person (names, works), stored as is, asked on demand
+    from the author page (#59). Keyed by the ORCID, not by the author: it survives
+    the merges.
+    """
+
+    orcid = models.CharField(max_length=50, unique=True)
+    data = models.JSONField()
+    fetched_at = models.DateTimeField()
+
+    def __str__(self):
+        return self.orcid
+
+
 class Organization(models.Model):
     """A research organization (laboratory, university, company), from OpenAlex."""
 

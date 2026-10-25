@@ -37,6 +37,7 @@ references/          application principale
     datacite_api.py  client DataCite (DOI par DOI ou par lots)
     openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions)
     openlibrary_api.py  client Open Library (recherche par ISBN)
+    orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne)
     external_records.py  stockage des réponses des sources (ExternalRecord), statut des métadonnées
     metadata_formats.py  conversion de chaque source vers le format lu par le parser
     Import et analyse
@@ -50,6 +51,7 @@ references/          application principale
     organizations.py organisations OpenAlex, hiérarchie et regroupement par tutelle
     orcid_completion.py  ORCID manquants complétés depuis OpenAlex
     orcid_merge.py   fusion automatique des auteurs qui ont le même ORCID
+    orcid_profile.py profil ORCID d'un auteur, demandé depuis sa fiche
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
     Identifiants et noms
     doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
@@ -121,6 +123,7 @@ erDiagram
 | `Author` | Une personne (entité résolue). |
 | `AuthorMerge` | La trace d'une fusion d'auteurs : auteur conservé, auteurs absorbés tels qu'ils étaient (noms, ORCID), motif (manuelle ou même ORCID), qui (vide pour une fusion automatique) et quand. Les traces d'un auteur absorbé passent à l'auteur conservé. |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
+| `OrcidRecord` | L'enregistrement public ORCID d'une personne (noms, résumé des travaux), stocké tel quel avec sa date de récupération. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
 | `UserPublication` | Le corpus d'un utilisateur. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |
@@ -327,6 +330,25 @@ fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
 7. Deux valeurs toutes deux justes (dates, nombres de citations) sont affichées avec leur
    source.
 
+## ORCID, à la demande
+
+L'API publique ORCID (`https://pub.orcid.org/v3.0/<orcid>/record`) répond sans clé,
+en JSON quand on le demande (en-tête `Accept`). Une seule requête donne le profil et le
+résumé des travaux. Elle n'est **jamais faite à l'import** : un article peut avoir plus de
+1 000 auteurs. Le bouton « Compléter depuis ORCID » de la fiche d'un auteur qui a un
+ORCID la fait à la demande, et la réponse est stockée (`OrcidRecord`). En cas d'échec,
+l'enregistrement déjà stocké est gardé.
+
+La fiche montre, à titre d'information, sans rien modifier dans la base (#59) :
+- le nom officiel, le nom d'usage et les autres noms déclarés (« J. Carberry ») ;
+- le nombre de travaux déclarés et combien sont dans la base, retrouvés par leur DOI ;
+- les travaux de la base où l'auteur ne figure pas parmi les signataires : un nom publié
+  rattaché à un autre auteur, ou un ORCID manquant.
+
+Les autres noms permettraient plus tard de rapprocher automatiquement les initiales, et
+les travaux de relier un auteur à ses articles. On attend de voir ce que donnent les
+données avant de rien automatiser.
+
 ## Livres et ISBN
 
 Un livre souvent cité sans DOI peut être identifié par son ISBN. On cherche d'abord dans
@@ -509,3 +531,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Date de publication : un `DateField` et sa précision (année, mois, jour), plutôt que trois champs | Tris, filtres et position sur le graphe inchangés ; seul l'affichage dépend de la précision. Une date saisie à la main reste complète (`<input type="date">`), même si l'utilisateur ne connaît que l'année (#147). |
 | 2026-10-23 | Auteurs de même ORCID fusionnés automatiquement, sauf s'ils ont été déclarés distincts (conflit signalé) ; fusions tracées en base | Un ORCID désigne une seule personne ; une distinction déclarée par un humain signale une erreur de données à regarder plutôt qu'à écraser (#158). |
 | 2026-10-25 | Fiche publication : affiliations numérotées, les plus précises de chaque signature | Lisible comme un article, chaque organisation une seule fois ; l'ancêtre déclaré à côté de sa sous-entité n'apprend rien, la fiche auteur garde le regroupement par tutelle (#155). |
+| 2026-10-25 | ORCID interrogé à la demande depuis la fiche auteur, réponse stockée par ORCID, affichage seulement | Jamais à l'import (plus de 1 000 auteurs possibles) ; rattachée à l'ORCID, la réponse survit aux fusions ; les rapprochements automatiques attendront de voir les données (#59). |

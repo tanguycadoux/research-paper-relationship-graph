@@ -7,6 +7,7 @@ from .models import (
     CitedReference,
     ExternalRecord,
     MetadataConflict,
+    OrcidRecord,
     Organization,
     Publication,
     UserPublication,
@@ -89,3 +90,9 @@ class MetadataConflictAdmin(admin.ModelAdmin):
     list_display = ("pk", "kind", "publication", "author", "status", "detected_at")
     list_filter = ("kind", "status")
     list_select_related = ("publication", "author")
+
+
+@admin.register(OrcidRecord)
+class OrcidRecordAdmin(admin.ModelAdmin):
+    list_display = ("orcid", "fetched_at")
+    search_fields = ("orcid",)

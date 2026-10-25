@@ -70,6 +70,7 @@ urlpatterns = [
     path("authors/", authors.AuthorListView.as_view(), name="author_list"),
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
     path("authors/<int:pk>/edit/", authors.AuthorUpdateView.as_view(), name="author_edit"),
+    path("authors/<int:pk>/orcid/", authors.author_orcid_refresh_view, name="author_orcid_refresh"),
     path("authors/merge/", authors.author_merge_select_view, name="author_merge_select"),
     path("authors/duplicates/", authors.author_duplicates_view, name="author_duplicates"),
     path(

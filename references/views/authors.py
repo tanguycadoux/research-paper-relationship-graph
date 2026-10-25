@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
@@ -11,6 +11,7 @@ from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author, Publication
 from ..services import author_distinctions, author_duplicates, author_merge
 from ..services.orcid_merge import merge_same_orcid
+from ..services.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.organizations import organization_groups
 from ..services.publication_table import corpus_ids, for_publication_table
 
@@ -35,7 +36,22 @@ class AuthorDetailView(DetailView):
         context["user_pub_ids"] = corpus_ids(self.request.user)
         context["organization_groups"] = organization_groups(self.object)
         context["merges"] = self.object.merges.select_related("merged_by")
+        context["orcid_profile"] = orcid_profile(self.object)
         return context
+
+
+@login_required
+@require_POST
+def author_orcid_refresh_view(request, pk):
+    """Ask ORCID for the public record of the author (on demand only, #59)."""
+    author = get_object_or_404(Author, pk=pk)
+    if not author.orcid:
+        messages.error(request, "Cet auteur n'a pas d'ORCID.")
+    elif refresh_orcid_record(author):
+        messages.success(request, "Profil ORCID mis à jour.")
+    else:
+        messages.error(request, "ORCID n'a pas répondu ou ne connaît pas cet identifiant.")
+    return redirect("author_detail", pk=author.pk)
 
 
 class AuthorUpdateView(LoginRequiredMixin, UpdateView):

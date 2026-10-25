@@ -45,14 +45,14 @@ def patient_requests():
         _limits.reset(token)
 
 
-def get_json(url, *, params=None, service, subject, contact=""):
+def get_json(url, *, params=None, headers=None, service, subject, contact=""):
     """
     Return the decoded JSON of a GET request, or None if it cannot be retrieved.
     A 404 (unknown resource) or a 403 (access refused) is not retried.
     """
     limits = _limits.get()
     for attempt in range(1, limits.attempts + 1):
-        response = _request(url, params, service, subject, contact)
+        response = _request(url, params, headers, service, subject, contact)
         if response is not None and response.status_code == 200:
             return _parse_json(response, service, subject)
         if not _should_retry(response) or attempt == limits.attempts:
@@ -77,14 +77,14 @@ def _get_session():
     return requests.Session()
 
 
-def _request(url, params, service, subject, contact):
+def _request(url, params, headers, service, subject, contact):
     """Send one request. Return None on network error."""
     logger.info("%s request for %s", service, subject)
     try:
         return _get_session().get(
             url,
             params=params or None,
-            headers={"User-Agent": user_agent(contact)},
+            headers={"User-Agent": user_agent(contact)} | (headers or {}),
             timeout=REQUEST_TIMEOUT,
         )
     except requests.RequestException as error:
