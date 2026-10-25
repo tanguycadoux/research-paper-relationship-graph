@@ -173,7 +173,12 @@ def cited_publications(dois, refs):
         doi: clean_title(ref.get("article-title", "")) for doi, ref in zip(dois, refs, strict=True)
     }
     valid = {doi for doi in dois if is_valid_doi(doi)}
-    existing = {pub.doi: pub for pub in Publication.objects.filter(doi__in=valid)}
+    existing = {}
+    for pub in Publication.objects.with_dois(valid):
+        existing[pub.doi] = pub
+        # A cited preprint replaced by its published version (#227).
+        if pub.preprint_doi:
+            existing[pub.preprint_doi] = pub
     missing = [Publication(doi=doi, title=titles[doi]) for doi in valid - existing.keys()]
     Publication.objects.bulk_create(missing)
     return existing | {pub.doi: pub for pub in missing}

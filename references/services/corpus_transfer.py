@@ -73,7 +73,11 @@ def import_corpus(user, data):
         else:
             in_corpus.add(pub.pk)
             imported = add_book(user, pub) if not pub.doi else add_to_corpus(user, pub)
-            (report.added if imported else report.without_metadata).append(pub)
+            # The publication imported may be the published version of a preprint (#227).
+            if imported:
+                report.added.append(imported)
+            else:
+                report.without_metadata.append(pub)
     return report
 
 
@@ -92,7 +96,7 @@ def find_or_create(entry):
     """The publication of an entry, by DOI first, then by ISBN; None without a valid one."""
     doi = normalize_doi(str(entry.get("doi") or ""))
     if is_valid_doi(doi):
-        return Publication.objects.get_or_create(doi=doi)[0]
+        return Publication.objects.get_or_create_doi(doi)
     isbn = normalize_isbn(str(entry.get("isbn") or ""))
     if is_valid_isbn(isbn):
         return Publication.objects.filter(isbn=isbn).first() or find_or_import_book(isbn)[0]

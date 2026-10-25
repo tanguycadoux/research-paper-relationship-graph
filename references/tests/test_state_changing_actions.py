@@ -7,8 +7,9 @@ from django.urls import NoReverseMatch, reverse
 from references.models import Publication, UserPublication
 
 
-@patch("references.views.publications.import_publication", return_value=True)
-@patch("references.views.corpus.add_to_corpus", return_value=True)
+# Both return the publication imported.
+@patch("references.views.publications.import_publication", side_effect=lambda pub, **_: pub)
+@patch("references.views.corpus.add_to_corpus", side_effect=lambda user, pub: pub)
 class StateChangingActionsTests(TestCase):
     """Actions that change the database answer only to POST (#19)."""
 

@@ -39,10 +39,11 @@ def identify_by_doi(ref, doi, user):
     Link the reference to the publication of a DOI, creating and importing it if
     needed. Return (publication, metadata_available).
     """
-    pub, _ = Publication.objects.get_or_create(doi=doi)
+    pub = Publication.objects.get_or_create_doi(doi)
     imported = import_publication(pub)
+    pub = imported or pub
     resolve(ref, pub, user)
-    return pub, imported
+    return pub, bool(imported)
 
 
 def identify_by_isbn(ref, isbn, user):

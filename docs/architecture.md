@@ -54,6 +54,7 @@ references/          application principale
     orcid_merge.py   fusion automatique des auteurs qui ont le même ORCID
     orcid_profile.py profil ORCID d'un auteur, demandé depuis sa fiche
     orcid_names.py   noms des auteurs complétés depuis ORCID
+    preprints.py     prépublications arXiv remplacées par leur version publiée
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
     Identifiants et noms
     doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
@@ -82,6 +83,7 @@ references/          application principale
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
+    replace_preprints.py  prépublications arXiv déjà en base remplacées par leur version publiée
     complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
@@ -126,7 +128,7 @@ erDiagram
 
 | Modèle | Rôle |
 |---|---|
-| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. La date est un `DateField` : un mois ou un jour absent de la source est stocké à 1, et `publication_date_precision` (année, mois, jour) dit ce que la source donne vraiment ; la fiche affiche « 2023 », « août 2023 » ou « 1 août 2023 » (#147). Une date saisie à la main est précise au jour. |
+| `Publication` | Un article ou un livre. DOI et ISBN (normalisé en ISBN-13) uniques quand ils sont renseignés. `preprint_doi` garde le DOI arXiv d'une prépublication remplacée par sa version publiée (#227) : unique, il retrouve la publication quand on importe ou cite ce DOI (`Publication.objects.with_doi`). Le titre et la date viennent des sources ; corrigés à la main, ils sont marqués (`title_edited`, `date_edited`) et les sources ne les réécrivent plus. La date est un `DateField` : un mois ou un jour absent de la source est stocké à 1, et `publication_date_precision` (année, mois, jour) dit ce que la source donne vraiment ; la fiche affiche « 2023 », « août 2023 » ou « 1 août 2023 » (#147). Une date saisie à la main est précise au jour. |
 | `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
 | `Author` | Une personne (entité résolue). Un nom corrigé à la main est marqué (`name_edited`) : ORCID ne le modifie plus. |
@@ -213,6 +215,29 @@ les dépôts Zenodo et les jeux de données. Crossref répond « inconnu » pour
 - Une fiche DataCite (titres, créateurs avec ORCID, date) est convertie au format lu par le
   parser. Elle ne contient en général pas de bibliographie : seuls les liens déclarés
   `References` ou `Cites` vers des DOI deviennent des références.
+
+### Prépublications arXiv et version publiée
+
+Les DOI arXiv (`10.48550/arXiv.…`) sont chez DataCite, sans bibliographie (#227). Quand
+les auteurs déclarent sur arXiv le DOI de la version publiée, DataCite le donne en
+`IsVersionOf` : la publication est alors **remplacée** par cette version
+(`services/preprints.py`), dont Crossref fournit métadonnées et bibliographie. Elle garde
+ses entrées de corpus, ses citations et ses corrections ; le DOI arXiv passe dans
+`preprint_doi`. Si la version publiée est déjà en base, la prépublication fusionne avec
+elle (corpus et citations déplacés). Les références citées importées par lots le sont
+aussi, avec un lot Crossref pour les versions déclarées.
+
+Garde-fous, puisqu'on ne remplace que sur une information fiable :
+- seul le préfixe arXiv compte (chez Zenodo, `IsVersionOf` relie une version à son concept) ;
+- Crossref doit connaître le DOI comme publication (article de revue ou de conférence,
+  chapitre, livre), jamais `posted-content` : des copies d'articles arXiv sont déposées
+  ailleurs sous de nouveaux DOI (`10.65215/…` pour « Attention Is All You Need ») ;
+- les titres doivent se ressembler (60 % des mots du plus court dans l'autre) : une faute
+  de frappe dans le DOI déclaré désignerait un autre article.
+
+Toutes les recherches par DOI passent par `Publication.objects.with_doi` /
+`get_or_create_doi`, qui regardent aussi `preprint_doi`. La commande `replace_preprints`
+applique le remplacement aux publications déjà en base, sans nouvel appel à DataCite.
 
 ## Fusion d'auteurs
 
@@ -621,3 +646,4 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-25 | Recherche : une seule barre à opérateurs ; casse et accents ignorés par une fonction SQL enregistrée sur la connexion | Un seul analyseur, réutilisé par les filtres des tableaux (#115), plutôt qu'un formulaire à plusieurs champs ; sans migration ni champ dénormalisé à tenir à jour lors des corrections et des fusions. Parcours complet de la table, négligeable à cette taille ; FTS5 si la base grossit vraiment (#153). |
 | 2026-10-25 | Tri par colonne côté serveur, dans l'URL ; légendes des tableaux triables sans ordre annoncé | Un tri en JavaScript ne trierait que la page affichée ; `aria-sort` dit l'ordre courant, qu'une légende fixe contredirait (#115). |
 | 2026-10-25 | Filtres dans les en-têtes de colonne (popover), sans barre au-dessus du tableau | Souhait de l'utilisateur, à la manière d'un tableur ; la recherche globale garde le texte libre et les opérateurs. Le popover échappe au défilement de la carte sans JavaScript (#115). |
+| 2026-10-25 | Prépublication arXiv remplacée par la version publiée déclarée par ses auteurs ; DOI arXiv gardé dans `preprint_doi` | La version publiée est celle qu'on cite, et Crossref en donne la bibliographie ; plus de la moitié des prépublications en ont une. Un champ plutôt qu'une table d'identifiants : une prépublication n'a qu'un DOI arXiv (#227). |

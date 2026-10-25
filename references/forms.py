@@ -53,7 +53,12 @@ class PublicationForm(forms.ModelForm):
         """Refuse an identifier held by another publication, with a link to it."""
         if not value:
             return
-        existing = Publication.objects.filter(**{field: value}).exclude(pk=self.instance.pk)
+        # A DOI is also taken as the DOI of a replaced preprint (#227).
+        if field == "doi":
+            existing = Publication.objects.with_doi(value)
+        else:
+            existing = Publication.objects.filter(**{field: value})
+        existing = existing.exclude(pk=self.instance.pk)
         if other := existing.first():
             url = reverse("publication_detail", args=[other.pk])
             raise forms.ValidationError(

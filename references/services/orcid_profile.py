@@ -39,7 +39,7 @@ def orcid_profile(author):
         return search_profile(record)
     person = record.data.get("person") or {}
     groups = (record.data.get("activities-summary") or {}).get("works", {}).get("group") or []
-    in_base = Publication.objects.filter(doi__in={doi for g in groups for doi in group_dois(g)})
+    in_base = Publication.objects.with_dois({doi for g in groups for doi in group_dois(g)})
     return {
         "name": official_name(person),
         "credit_name": value(person.get("name"), "credit-name"),
