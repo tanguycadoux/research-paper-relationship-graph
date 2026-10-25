@@ -10,8 +10,9 @@
         {% button "Mon graphe" url=graph_url variant="secondary" icon="hub" %}
     </header>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <section aria-labelledby="corpus-title" class="lg:col-span-2">
+    {# The cards go under the table below xl: beside it, the reading status column does not fit. #}
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <section aria-labelledby="corpus-title" class="xl:col-span-2">
             <h2 id="corpus-title" class="mb-3">
                 Publications
                 <span class="font-normal text-gray-500">
@@ -24,7 +25,7 @@
             </h2>
             {% if publications or active_filters %}
                 {% filter_summary %}
-                {% include "references/_publication_table.html" with caption="Publications de mon corpus" %}
+                {% include "references/_publication_table.html" with caption="Publications de mon corpus" reading_column=True %}
                 {% pagination page_obj %}
             {% else %}
                 <p class="text-gray-600">Aucune publication dans votre corpus.</p>

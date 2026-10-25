@@ -26,6 +26,17 @@
                     <h2 id="corpus-title" class="mb-2 text-base font-semibold">
                         Mon corpus <span class="font-normal text-gray-500">({{ corpus.count }})</span>
                     </h2>
+                    {% if corpus.count %}
+                        <h3 class="sr-only">Lecture</h3>
+                        <ul class="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                            {% for status in corpus.reading %}
+                                <li>
+                                    <a href="{% url 'corpus' %}?status={{ status.filter }}">{{ status.label }}</a>
+                                    <span class="text-gray-500">({{ status.count }})</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
                     {% if corpus.latest %}
                         <p class="text-sm text-gray-600">Dernières publications ajoutées :</p>
                         <ul class="mt-1 mb-4 space-y-1 text-sm">
@@ -40,7 +51,7 @@
                         </ul>
                     {% else %}
                         <p class="mb-4 text-sm text-gray-600">
-                            Votre corpus est vide : ajoutez une publication par son DOI depuis « Mes références », ou depuis la liste des publications.
+                            Votre corpus est vide : ajoutez une publication par son DOI ou son ISBN depuis « Mes références », ou depuis la liste des publications.
                         </p>
                     {% endif %}
                     <div class="flex flex-wrap gap-2">

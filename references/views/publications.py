@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
-from ..models import CitedReference, Publication
+from ..models import CitedReference, Publication, UserPublication
 from ..services import filters
 from ..services.external_records import metadata_status
 from ..services.identification import is_to_identify
@@ -63,6 +63,13 @@ class PublicationDetailView(DetailView):
 
         context["user_pub_ids"] = corpus_ids(self.request.user)
         context["belongs_to_user"] = pub.pk in context["user_pub_ids"]
+        if context["belongs_to_user"]:
+            context["reading_status"] = (
+                UserPublication.objects.filter(user=self.request.user, publication=pub)
+                .values_list("reading_status", flat=True)
+                .first()
+            )
+            context["reading_statuses"] = UserPublication.ReadingStatus.choices
 
         context["cited_references"] = pub.cited_references.select_related("target")
         # Only publications whose bibliography was imported (those of a corpus) can cite it.

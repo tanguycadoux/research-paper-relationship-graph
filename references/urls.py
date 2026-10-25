@@ -99,6 +99,7 @@ urlpatterns = [
         corpus.add_publication_to_user_refs_by_identifier,
         name="corpus_add_by_identifier",
     ),
+    path("corpus/<int:pk>/status/", corpus.set_reading_status, name="corpus_reading_status"),
     path(
         "corpus/<int:pk>/add/",
         corpus.add_to_user_refs,

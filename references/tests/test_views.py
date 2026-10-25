@@ -47,6 +47,7 @@ class AccessTests(TestCase):
             ("corpus_add", [self.pub.pk], {}),
             ("corpus_remove", [self.pub.pk], {}),
             ("corpus_add_by_identifier", [], {"identifier": "10.1000/new"}),
+            ("corpus_reading_status", [self.pub.pk], {"status": "read"}),
             ("publication_refresh", [self.pub.pk], {}),
             ("conflict_resolve", [1], {}),
             ("author_duplicates_dismiss", [], {}),

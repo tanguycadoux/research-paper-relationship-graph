@@ -27,6 +27,7 @@ class StateChangingActionsTests(TestCase):
             for name in (
                 "corpus_add",
                 "corpus_remove",
+                "corpus_reading_status",
                 "publication_refresh",
             )
         ]

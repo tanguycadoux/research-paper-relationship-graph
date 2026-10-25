@@ -1,3 +1,5 @@
+from django.db.models import OuterRef, Subquery
+
 from ..models import Publication, UserPublication
 from .books import find_or_import_book
 from .doi import is_valid_doi, normalize_doi
@@ -41,3 +43,13 @@ def find_or_create(doi="", isbn=""):
     if is_valid_isbn(isbn):
         return Publication.objects.filter(isbn=isbn).first() or find_or_import_book(isbn)[0]
     return None
+
+
+def with_reading_status(publications, user):
+    """
+    Annotate publications with reading_status, the one the user chose ("" without),
+    from a subquery: filtering on userpublication__ again would join the entries of
+    every user.
+    """
+    entries = UserPublication.objects.filter(user=user, publication=OuterRef("pk"))
+    return publications.annotate(reading_status=Subquery(entries.values("reading_status")[:1]))

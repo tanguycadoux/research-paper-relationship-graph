@@ -1,0 +1,34 @@
+{% comment %}
+Sets the reading status of a publication of the user's corpus (#164), then comes back
+to the page; sent as soon as the status changes (static/js/autosubmit.js), with a
+button without JavaScript. Context: pub, status (its current one, "" without),
+reading_statuses; with label_hidden, the label is only read by screen readers (rows
+of a table).
+{% endcomment %}
+{% load ui %}
+<form method="post"
+      action="{% url 'corpus_reading_status' pub.pk %}"
+      class="flex items-center gap-1"
+      data-autosubmit>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label for="reading-status-{{ pub.pk }}"
+           class="{% if label_hidden %}sr-only{% else %}mb-0 mr-1{% endif %}">
+        {% if label_hidden %}
+            Statut de lecture de « {{ pub }} »
+        {% else %}
+            Lecture
+        {% endif %}
+    </label>
+    <select id="reading-status-{{ pub.pk }}"
+            name="status"
+            class="w-auto py-1 pr-7 pl-2">
+        <option value="">Aucun</option>
+        {% for value, choice_label in reading_statuses %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ choice_label }}</option>
+        {% endfor %}
+    </select>
+    <span data-autosubmit-button>
+        {% button "Enregistrer le statut de lecture" variant="secondary" icon="check_circle" icon_only=True %}
+    </span>
+</form>

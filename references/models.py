@@ -346,9 +346,18 @@ class CitedReference(models.Model):
 class UserPublication(models.Model):
     """A publication in the corpus of a user."""
 
+    class ReadingStatus(models.TextChoices):
+        TO_READ = "to_read", "À lire"
+        READING = "reading", "En cours"
+        READ = "read", "Lu"
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     publication = models.ForeignKey(Publication, on_delete=models.CASCADE)
     added_at = models.DateTimeField(auto_now_add=True)
+    # Empty until the user chooses one (#164): « à lire » by default would be false.
+    reading_status = models.CharField(
+        "statut de lecture", max_length=10, choices=ReadingStatus.choices, blank=True
+    )
 
     class Meta:
         constraints = [

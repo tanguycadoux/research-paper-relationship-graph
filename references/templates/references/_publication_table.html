@@ -5,9 +5,10 @@ corpus_actions, a last column to add each publication to the user's corpus or
 take it away (user_pub_ids); with hide_authors, no author column (author page); with
 sorting and sort (services/sorting.py), headers that sort the list; with filters and
 active_filters (services/filters.py), headers that filter it, and a row that says when
-nothing matches.
-The identifier is hidden below xl, where the content is too narrow for it (#150): it stays on the
-page of each publication.
+nothing matches; with reading_column (my references, publications annotated by
+corpus.with_reading_status), a column to set the reading status (reading_statuses).
+The identifier is hidden below xl, where the content is too narrow for it (#150), and
+always beside the reading status: it stays on the page of each publication.
 {% endcomment %}
 {% load ui %}
 {% card flush=True %}
@@ -19,8 +20,13 @@ page of each publication.
                 {% if not hide_authors %}
                     {% column_header "Auteurs" "author" %}
                 {% endif %}
-                {% column_header "Identifiant" "identifier" classes="hidden xl:table-cell" %}
+                {% if not reading_column %}
+                    {% column_header "Identifiant" "identifier" classes="hidden xl:table-cell" %}
+                {% endif %}
                 {% column_header "Année" "year" %}
+                {% if reading_column %}
+                    {% column_header "Lecture" "status" %}
+                {% endif %}
                 {% if corpus_actions %}
                     <th scope="col">
                         <span class="sr-only">Mon corpus</span>
@@ -56,14 +62,21 @@ page of each publication.
                             {% endif %}
                         </td>
                     {% endif %}
-                    <td class="hidden text-gray-600 xl:table-cell">
-                        {% if pub.doi %}
-                            DOI&nbsp;{{ pub.doi }}
-                        {% elif pub.isbn %}
-                            ISBN&nbsp;{{ pub.isbn }}
-                        {% endif %}
-                    </td>
+                    {% if not reading_column %}
+                        <td class="hidden text-gray-600 xl:table-cell">
+                            {% if pub.doi %}
+                                DOI&nbsp;{{ pub.doi }}
+                            {% elif pub.isbn %}
+                                ISBN&nbsp;{{ pub.isbn }}
+                            {% endif %}
+                        </td>
+                    {% endif %}
                     <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
+                    {% if reading_column %}
+                        <td>
+                            {% include "references/_reading_status_form.html" with status=pub.reading_status label_hidden=True %}
+                        </td>
+                    {% endif %}
                     {% if corpus_actions %}
                         <td class="text-right">
                             {% if pub.id in user_pub_ids %}
@@ -84,7 +97,7 @@ page of each publication.
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="{% if hide_authors %}{% if corpus_actions %}4{% else %}3{% endif %}{% elif corpus_actions %}5{% else %}4{% endif %}"
+                    <td colspan="{% if reading_column %}4{% elif hide_authors %}{% if corpus_actions %}4{% else %}3{% endif %}{% elif corpus_actions %}5{% else %}4{% endif %}"
                         class="text-gray-600">Aucune publication ne correspond aux filtres.</td>
                 </tr>
             {% endfor %}

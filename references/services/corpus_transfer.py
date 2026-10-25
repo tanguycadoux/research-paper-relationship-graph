@@ -11,11 +11,13 @@ from dataclasses import dataclass, field
 from django.utils import timezone
 
 from ..models import Publication, UserPublication
-from .corpus import add_identified, find_or_create
+from .corpus import add_identified, find_or_create, with_reading_status
 from .external_records import Source, records_by_source
 
 EXPORT_FORMAT = "research-paper-relationship-graph/corpus"
-EXPORT_VERSION = 1
+# Version 2 adds the reading status (#164) as an optional key: version 1 still imports.
+EXPORT_VERSION = 2
+IMPORTED_VERSIONS = (1, 2)
 
 
 def corpus_publications(user):
@@ -36,8 +38,8 @@ def export_corpus(user):
         "version": EXPORT_VERSION,
         "exported_at": timezone.now().isoformat(),
         "publications": [
-            {"doi": pub.doi, "isbn": pub.isbn, "title": pub.title}
-            for pub in exportable(corpus_publications(user))
+            {"doi": pub.doi, "isbn": pub.isbn, "title": pub.title, "status": pub.reading_status}
+            for pub in exportable(with_reading_status(corpus_publications(user), user))
         ],
     }
 
@@ -62,8 +64,9 @@ def import_corpus(user, data):
 
 def import_entries(user, entries):
     """
-    Add the publications of entries ({doi, isbn, title}) to the corpus of user. Only
-    publications without stored metadata are fetched from the external sources.
+    Add the publications of entries ({doi, isbn, title}, and status from an export)
+    to the corpus of user. Only publications without stored metadata are fetched from
+    the external sources. The status of an entry never replaces one the user chose.
     """
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
@@ -71,7 +74,8 @@ def import_entries(user, entries):
         pub = find_or_create(entry.get("doi"), entry.get("isbn"))
         if pub is None:
             report.ignored.append(str(entry.get("title") or ""))
-        elif pub.pk in in_corpus:
+            continue
+        if pub.pk in in_corpus:
             report.already_there.append(pub)
         else:
             in_corpus.add(pub.pk)
@@ -79,15 +83,24 @@ def import_entries(user, entries):
             # The publication imported may be the published version of a preprint (#227).
             if imported:
                 report.added.append(imported)
+                pub = imported
             else:
                 report.without_metadata.append(pub)
+        keep_status(user, pub, entry.get("status"))
     return report
+
+
+def keep_status(user, pub, status):
+    if status in UserPublication.ReadingStatus.values:
+        UserPublication.objects.filter(user=user, publication=pub, reading_status="").update(
+            reading_status=status
+        )
 
 
 def export_entries(data):
     if not isinstance(data, dict) or data.get("format") != EXPORT_FORMAT:
         raise InvalidExport("Ce fichier n'est pas un export de corpus de cette application.")
-    if data.get("version") != EXPORT_VERSION:
+    if data.get("version") not in IMPORTED_VERSIONS:
         raise InvalidExport(f"Version d'export non prise en charge : {data.get('version')}.")
     entries = data.get("publications")
     if not isinstance(entries, list):
