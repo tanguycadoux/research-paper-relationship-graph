@@ -10,6 +10,7 @@ from django.views.generic import DetailView, ListView, UpdateView
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author, Publication
 from ..services import author_distinctions, author_duplicates, author_merge
+from ..services.orcid_merge import merge_same_orcid
 from ..services.organizations import organization_groups
 from ..services.publication_table import corpus_ids, for_publication_table
 
@@ -33,6 +34,7 @@ class AuthorDetailView(DetailView):
         ).order_by("-publication_date", "title")
         context["user_pub_ids"] = corpus_ids(self.request.user)
         context["organization_groups"] = organization_groups(self.object)
+        context["merges"] = self.object.merges.select_related("merged_by")
         return context
 
 
@@ -40,9 +42,28 @@ class AuthorUpdateView(LoginRequiredMixin, UpdateView):
     model = Author
     form_class = AuthorForm
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        kept = merge_same_orcid(self.object, user=self.request.user)
+        if kept != self.object:
+            messages.success(self.request, f"Même ORCID : fusionné dans « {kept} ».")
+            return redirect("author_detail", pk=kept.pk)
+        report_shared_orcid(self.request, self.object)
+        return response
+
     def get_success_url(self):
         messages.success(self.request, f"« {self.object} » a été modifié.")
         return reverse("author_detail", args=[self.object.pk])
+
+
+def report_shared_orcid(request, author):
+    """An ORCID kept by several authors: they were declared different people."""
+    if author.orcid and Author.objects.filter(orcid=author.orcid).exclude(pk=author.pk).exists():
+        messages.warning(
+            request,
+            "Cet ORCID est aussi porté par des auteurs déclarés distincts : "
+            "ils ne sont pas fusionnés, le cas est signalé dans « Conflits ».",
+        )
 
 
 @login_required
@@ -85,8 +106,9 @@ def author_merge_confirm_view(request, ids):
         orcid_conflict=author_merge.has_orcid_conflict(candidates),
     )
     if request.method == "POST" and form.is_valid():
-        author_merge.merge_authors(kept, authors[1:], form.cleaned_data)
+        author_merge.merge_authors(kept, authors[1:], form.cleaned_data, user=request.user)
         messages.success(request, f"{len(authors)} auteurs fusionnés en « {kept} ».")
+        kept = merge_same_orcid(kept, user=request.user)
         return redirect("author_detail", pk=kept.pk)
 
     return render(

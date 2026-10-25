@@ -173,6 +173,38 @@ class AuthorDistinction(models.Model):
         return f"{self.first} ≠ {self.second}"
 
 
+class AuthorMerge(models.Model):
+    """
+    Trace of a merge: the authors absorbed into kept, as they were. merged_by is
+    empty for an automatic merge (same ORCID, #158).
+    """
+
+    class Reason(models.TextChoices):
+        MANUAL = "manual", "fusion manuelle"
+        ORCID = "orcid", "même ORCID"
+
+    kept = models.ForeignKey(Author, on_delete=models.CASCADE, related_name="merges")
+    # [{"first_name", "last_name", "orcid"}] of the absorbed authors.
+    absorbed = models.JSONField(default=list)
+    reason = models.CharField(max_length=10, choices=Reason.choices)
+    merged_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    merged_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-merged_at"]
+
+    def __str__(self):
+        return f"{self.kept} ← {self.absorbed_names}"
+
+    @property
+    def absorbed_names(self):
+        return ", ".join(
+            f"{author['first_name']} {author['last_name']}".strip() for author in self.absorbed
+        )
+
+
 class AuthorPublication(models.Model):
     """
     An author slot of a publication: the name as published by Crossref (never
@@ -289,6 +321,7 @@ class MetadataConflict(models.Model):
     class Kind(models.TextChoices):
         AUTHORS_MISMATCH = "authors_mismatch", "Auteurs différents selon les sources"
         ORCID = "orcid", "ORCID différent"
+        SHARED_ORCID = "shared_orcid", "ORCID porté par des auteurs déclarés distincts"
 
     class Status(models.TextChoices):
         OPEN = "open", "Ouvert"
@@ -306,7 +339,8 @@ class MetadataConflict(models.Model):
     field = models.CharField(max_length=50)
     current_value = models.TextField(blank=True)
     proposed_value = models.TextField(blank=True)
-    source = models.CharField(max_length=20, choices=ExternalRecord.Source.choices)
+    # Empty when the value does not come from a source (shared ORCID typed by hand).
+    source = models.CharField(max_length=20, choices=ExternalRecord.Source.choices, blank=True)
     detected_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
     resolved_by = models.ForeignKey(
@@ -323,4 +357,4 @@ class MetadataConflict(models.Model):
     @property
     def is_informative(self):
         """Nothing to accept: the conflict can only be acknowledged."""
-        return self.kind == self.Kind.AUTHORS_MISMATCH
+        return self.kind in (self.Kind.AUTHORS_MISMATCH, self.Kind.SHARED_ORCID)

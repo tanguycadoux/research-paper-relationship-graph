@@ -49,6 +49,7 @@ references/          application principale
     affiliations.py  rattachement des organisations aux signatures
     organizations.py organisations OpenAlex, hiérarchie et regroupement par tutelle
     orcid_completion.py  ORCID manquants complétés depuis OpenAlex
+    orcid_merge.py   fusion automatique des auteurs qui ont le même ORCID
     books.py         livres identifiés par ISBN (Crossref, puis Open Library)
     Identifiants et noms
     doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
@@ -72,6 +73,7 @@ references/          application principale
     navigation.py    navigation principale (groupes, lien courant)
   management/commands/
     complete_affiliations.py  affiliations des publications déjà en base
+    merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
@@ -117,6 +119,7 @@ erDiagram
 | `ExternalRecord` | La réponse brute d'une source externe (Crossref, Open Library…) sur une publication, avec sa date de récupération. Un seul enregistrement par source et par publication. Un JSON vide signifie que la source ne connaît pas la publication. Le parser lit le message de la source prioritaire, converti au format Crossref (`metadata_formats.py`). |
 | `CitedReference` | Une entrée de la bibliographie d'un article, telle que Crossref la donne : clé, position, texte brut, DOI éventuel, entrée JSON complète. Son lien vers la `Publication` citée est **facultatif** : une référence sans DOI ne crée pas de publication vide. Une identification manuelle (par DOI ou en créant une publication sans identifiant) remplit ce lien et trace qui l'a faite et quand (`resolved_manually`, `resolved_by`, `resolved_at`). Une référence qui ne correspond à aucune publication importable (rapport interne, présentation…) peut être déclarée non identifiable (`unidentifiable`, avec la même trace) : elle ne compte plus parmi celles à identifier. Ces décisions sont conservées au ré-import : la référence est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction l'emporte sur Crossref. |
 | `Author` | Une personne (entité résolue). |
+| `AuthorMerge` | La trace d'une fusion d'auteurs : auteur conservé, auteurs absorbés tels qu'ils étaient (noms, ORCID), motif (manuelle ou même ORCID), qui (vide pour une fusion automatique) et quand. Les traces d'un auteur absorbé passent à l'auteur conservé. |
 | `AuthorPublication` | Le lien entre un auteur et un article, dans l'ordre de signature. Il conserve le nom publié (prénom, nom, ORCID), ce qui permet de retrouver l'auteur canonique au ré-import, même après une fusion. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
 | `UserPublication` | Le corpus d'un utilisateur. |
@@ -223,6 +226,16 @@ On peut aussi déclarer les auteurs cochés comme **personnes différentes**
 (`AuthorDistinction`, paire stockée une fois, avec qui l'a déclarée et quand) : la paire
 n'est plus jamais proposée, comme deux ORCID différents. Lors d'une fusion, les
 distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
+
+**Même ORCID** (`services/orcid_merge.py`, #158). Un ORCID désigne une seule personne :
+quand un auteur reçoit un ORCID déjà porté par un autre (complétion depuis OpenAlex,
+« Modifier », fusion manuelle, conflit d'ORCID accepté), ils sont fusionnés
+automatiquement dans le plus ancien, avec la forme de nom la plus complète. Le cas venait
+surtout de la complétion OpenAlex : « S. Prestemon », publié sans ORCID, devenait un
+second auteur qui recevait ensuite l'ORCID de « Soren Prestemon ». Des auteurs **déclarés
+distincts** ne sont jamais fusionnés : l'ORCID partagé est signalé comme conflit
+informatif. La commande `merge_same_orcid` traite les auteurs déjà en base. Chaque fusion,
+manuelle ou automatique, est tracée (`AuthorMerge`) et listée sur la fiche de l'auteur.
 
 ## OpenAlex, source complémentaire
 
@@ -490,4 +503,5 @@ sont dans [CONTRIBUTING.md](../CONTRIBUTING.md#interface). En résumé :
 | 2026-10-23 | Compteurs dans la navigation pour les conflits et les références à identifier, sans cache | Toujours justes après une action ; deux requêtes peu coûteuses. Les doublons probables (35 ms, 55 groupes) seraient un badge permanent (#152). |
 | 2026-10-23 | Sur petit écran, un menu par groupe de navigation, ouvert au toucher ou au clic | Le survol n'existe pas sur écran tactile ; `<details>` natifs, accessibles sans JavaScript ; la navigation est rendue deux fois (menus, barre latérale) pour garder la barre latérale indépendante du script (#207). |
 | 2026-10-23 | Date de publication : un `DateField` et sa précision (année, mois, jour), plutôt que trois champs | Tris, filtres et position sur le graphe inchangés ; seul l'affichage dépend de la précision. Une date saisie à la main reste complète (`<input type="date">`), même si l'utilisateur ne connaît que l'année (#147). |
+| 2026-10-23 | Auteurs de même ORCID fusionnés automatiquement, sauf s'ils ont été déclarés distincts (conflit signalé) ; fusions tracées en base | Un ORCID désigne une seule personne ; une distinction déclarée par un humain signale une erreur de données à regarder plutôt qu'à écraser (#158). |
 | 2026-10-25 | Fiche publication : affiliations numérotées, les plus précises de chaque signature | Lisible comme un article, chaque organisation une seule fois ; l'ancêtre déclaré à côté de sa sous-entité n'apprend rien, la fiche auteur garde le regroupement par tutelle (#155). |
