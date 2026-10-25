@@ -3,6 +3,7 @@ from django.contrib import admin
 from .models import (
     Author,
     AuthorDistinction,
+    AuthorMerge,
     CitedReference,
     ExternalRecord,
     MetadataConflict,
@@ -62,6 +63,13 @@ class ExternalRecordAdmin(admin.ModelAdmin):
     list_display = ("pk", "publication", "source", "fetched_at")
     list_filter = ("source",)
     list_select_related = ("publication",)
+
+
+@admin.register(AuthorMerge)
+class AuthorMergeAdmin(admin.ModelAdmin):
+    list_display = ("kept", "absorbed_names", "reason", "merged_by", "merged_at")
+    list_filter = ("reason",)
+    raw_id_fields = ("kept",)
 
 
 @admin.register(AuthorDistinction)

@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import MetadataConflict
 from ..services import conflicts
+from ..services.orcid_merge import merge_same_orcid
 
 RECENT_DECISIONS = 20
 
@@ -33,4 +34,7 @@ def resolve_conflict_view(request, pk):
         messages.error(request, "Cette décision n'est pas possible pour ce conflit.")
     else:
         messages.success(request, f"Conflit tranché : {conflict.get_status_display().lower()}.")
+        if conflict.kind == conflicts.Kind.ORCID and conflict.status == conflicts.Status.ACCEPTED:
+            # The accepted ORCID may already be held by another author (#158).
+            merge_same_orcid(conflict.author, user=request.user, source=conflict.source)
     return redirect("conflict_list")

@@ -7,6 +7,7 @@ import re
 
 from django.db import transaction
 
+from ..models import AuthorMerge
 from .author_distinctions import transfer_distinctions
 
 MERGE_FIELDS = ("first_name", "last_name", "orcid")
@@ -48,8 +49,18 @@ def has_orcid_conflict(candidates):
 
 
 @transaction.atomic
-def merge_authors(kept, others, values):
-    """Give kept the chosen values and move the publications of the others to it."""
+def merge_authors(kept, others, values, *, reason=AuthorMerge.Reason.MANUAL, user=None):
+    """
+    Give kept the chosen values and move the publications of the others to it. The
+    merge is traced, and the merges of the others now belong to kept.
+    """
+    AuthorMerge.objects.create(
+        kept=kept,
+        absorbed=[{field: getattr(other, field) for field in MERGE_FIELDS} for other in others],
+        reason=reason,
+        merged_by=user,
+    )
+    AuthorMerge.objects.filter(kept__in=others).update(kept=kept)
     for field in MERGE_FIELDS:
         setattr(kept, field, values[field])
     kept.save()
