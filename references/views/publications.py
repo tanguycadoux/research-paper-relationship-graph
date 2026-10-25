@@ -89,9 +89,10 @@ class PublicationDetailView(DetailView):
                 or context["arxiv_bibliography"] == BIBLIOGRAPHY_NOT_FETCHED
             )
         )
-        context["references_to_identify"] = sum(
-            1 for ref in context["cited_references"] if is_to_identify(ref)
-        )
+        to_identify = [ref for ref in context["cited_references"] if is_to_identify(ref)]
+        context["references_to_identify"] = len(to_identify)
+        # Start of « Identifier en série » (#242).
+        context["first_to_identify"] = min(to_identify, key=lambda ref: ref.position, default=None)
         context["references_unidentifiable"] = sum(
             1 for ref in context["cited_references"] if ref.unidentifiable
         )

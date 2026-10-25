@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import pluralize
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from ..forms import IdentifyReferenceForm
@@ -18,7 +20,7 @@ def identify_reference(request, pk, position):
     form = IdentifyReferenceForm(request.POST or None, initial=initial_values(ref))
     if request.method == "POST" and form.is_valid() and not refuse_unregistered_doi(form):
         apply_identification(request, ref, form.cleaned_data)
-        return redirect("publication_detail", pk=pk)
+        return after_decision(request, ref)
     found, search_failed = candidates.candidates_for(ref)
     context = {
         "ref": ref,
@@ -27,6 +29,8 @@ def identify_reference(request, pk, position):
         "candidates": found,
         "search_failed": search_failed,
     }
+    if in_series(request):
+        context["series"] = series_progress(ref)
     return render(request, "references/identify_reference.html", context)
 
 
@@ -43,10 +47,10 @@ def choose_candidate(request, pk, position):
         doi = normalize_doi(request.POST.get("doi", ""))
         if not is_valid_doi(doi):
             messages.error(request, "Candidat invalide.")
-            return redirect("reference_identify", pk=pk, position=position)
+            return redirect(identify_url(ref, in_series(request)))
         pub, imported = identification.identify_by_doi(ref, doi, request.user)
     report_identification(request, ref, pub, imported)
-    return redirect("publication_detail", pk=pk)
+    return after_decision(request, ref)
 
 
 @login_required
@@ -54,7 +58,7 @@ def choose_candidate(request, pk, position):
 def search_candidates_again(request, pk, position):
     ref = get_object_or_404(CitedReference, source_id=pk, position=position)
     candidates.forget_candidates(ref)
-    return redirect("reference_identify", pk=pk, position=position)
+    return redirect(identify_url(ref, in_series(request)))
 
 
 @login_required
@@ -68,7 +72,59 @@ def toggle_unidentifiable(request, pk, position):
     else:
         identification.declare_unidentifiable(ref, request.user)
         messages.success(request, f"Référence n° {position + 1} déclarée non identifiable.")
-    return redirect("publication_detail", pk=pk)
+    return after_decision(request, ref)
+
+
+@login_required
+def skip_reference(request, pk, position):
+    """« Passer » in a series: on to the next reference, this one stays to identify."""
+    ref = get_object_or_404(CitedReference, source_id=pk, position=position)
+    return next_in_series(request, ref)
+
+
+# Series (#242): the references of a publication left to identify, one after the
+# other, without going back to the publication. The URL carries ?serie=1, and the
+# forms of the page a hidden field « serie ».
+
+SERIES_PARAMETER = "serie"
+
+
+def in_series(request):
+    return "1" in (request.GET.get(SERIES_PARAMETER), request.POST.get(SERIES_PARAMETER))
+
+
+def identify_url(ref, series=False):
+    url = reverse("reference_identify", args=[ref.source_id, ref.position])
+    return f"{url}?{SERIES_PARAMETER}=1" if series else url
+
+
+def after_decision(request, ref):
+    """Back to the publication, or on to the next reference to identify in a series."""
+    if in_series(request):
+        return next_in_series(request, ref)
+    return redirect("publication_detail", pk=ref.source_id)
+
+
+def next_in_series(request, ref):
+    following = identification.next_to_identify(ref)
+    if following is not None:
+        return redirect(identify_url(following, series=True))
+    left = identification.to_identify_in(ref.source).count()
+    if left:
+        messages.info(
+            request,
+            f"Fin de la série : {left} référence{pluralize(left)} "
+            f"reste{pluralize(left, 'nt')} à identifier.",
+        )
+    else:
+        messages.info(request, "Fin de la série : toutes les références sont traitées.")
+    return redirect("publication_detail", pk=ref.source_id)
+
+
+def series_progress(ref):
+    """How many references are left to identify in the publication, and after ref."""
+    left = identification.to_identify_in(ref.source)
+    return {"left": left.count(), "after": left.filter(position__gt=ref.position).count()}
 
 
 SOURCE_NAMES = {Source.ARXIV: "les sources LaTeX d'arXiv"}

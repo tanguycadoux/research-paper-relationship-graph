@@ -34,6 +34,21 @@ def is_to_identify(ref):
     return ref.target_id is None and not ref.unidentifiable
 
 
+def to_identify_in(publication):
+    """The cited references of a publication left to identify, in bibliography order."""
+    return publication.cited_references.filter(target__isnull=True, unidentifiable=False).order_by(
+        "position"
+    )
+
+
+def next_to_identify(ref):
+    """
+    In a series (#242), the reference to identify after ref in the same bibliography,
+    or None: a reference passed is not offered again in the same series.
+    """
+    return to_identify_in(ref.source).filter(position__gt=ref.position).first()
+
+
 def identify_by_doi(ref, doi, user):
     """
     Link the reference to the publication of a DOI, creating and importing it if
