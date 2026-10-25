@@ -6,7 +6,8 @@ take it away (user_pub_ids); with hide_authors, no author column (author page); 
 sorting and sort (services/sorting.py), headers that sort the list; with filters and
 active_filters (services/filters.py), headers that filter it, and a row that says when
 nothing matches; with reading_column (my references, publications annotated by
-corpus.with_reading_status), a column to set the reading status (reading_statuses).
+corpus.with_reading_status, and with my_tags), a column to set the reading status
+(reading_statuses) and the tags under each title.
 The identifier is hidden below xl, where the content is too narrow for it (#150), and
 always beside the reading status: it stays on the page of each publication.
 {% endcomment %}
@@ -53,6 +54,13 @@ always beside the reading status: it stays on the page of each publication.
                         {% endif %}
                         {% if pub.to_identify %}
                             {% badge pub.to_identify|stringformat:"d"|add:" à identifier" variant="warning" %}
+                        {% endif %}
+                        {% if reading_column %}
+                            {# My tags (#130), each a filter of the table #}
+                            {% for tag in pub.my_tags %}
+                                <a href="?tag={{ tag.name|urlencode }}"
+                                   class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 no-underline hover:bg-gray-200">{{ tag.label }}</a>
+                            {% endfor %}
                         {% endif %}
                     </td>
                     {% if not hide_authors %}

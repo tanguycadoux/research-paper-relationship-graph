@@ -4,8 +4,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-from ..models import Publication, UserPublication
-from ..services import filters
+from ..models import Publication, Tag, UserPublication
+from ..services import filters, tags
 from ..services.corpus import (
     add_identified,
     change_reading_status,
@@ -101,6 +101,7 @@ def add_publication_to_user_refs_by_identifier(request):
 def remove_from_user_refs(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
     UserPublication.objects.filter(user=request.user, publication=pub).delete()
+    tags.forget_unused_tags(request.user)
     messages.success(request, f"« {pub} » a été retiré de votre corpus.")
     return redirect_back(request, pk)
 
@@ -134,19 +135,52 @@ def set_reading_status(request, pk):
 def my_references(request):
     pubs = Publication.objects.filter(userpublication__user=request.user)
     sort = CORPUS.read(request.GET.get("sort"))
-    active_filters = filters.CORPUS.read(request.GET)
+    corpus_filters = filters.corpus_filters(request.user)
+    active_filters = corpus_filters.read(request.GET)
     listed = with_reading_status(pubs, request.user)
-    shown = for_publication_table(filters.CORPUS.apply(listed, active_filters))
+    shown = for_publication_table(corpus_filters.apply(listed, active_filters))
     page = page_of(request, CORPUS.apply(shown, sort))
+    publications = list(page.object_list)
+    tags_by_publication = tags.tags_by_publication(request.user, publications)
+    for pub in publications:
+        pub.my_tags = tags_by_publication[pub.pk]
     context = {
-        "publications": page.object_list,
+        "publications": publications,
         "page_obj": page,
         "sorting": CORPUS,
         "sort": sort,
-        "filters": filters.CORPUS,
+        "filters": corpus_filters,
         "active_filters": active_filters,
+        "tag_tree": tags.tag_tree(request.user),
+        "active_tag": active_filters.values.get("tag"),
         "reading_statuses": UserPublication.ReadingStatus.choices,
         "corpus_count": pubs.count(),
         "not_exportable": pubs.filter(doi="", isbn="").count(),
     }
     return render(request, "references/user_references.html", context)
+
+
+@login_required
+@require_POST
+def tag_publication(request, pk):
+    entry = get_object_or_404(UserPublication, user=request.user, publication_id=pk)
+    try:
+        tag = tags.tag_entry(entry, request.POST.get("name", ""))
+    except tags.InvalidTag as error:
+        messages.error(request, str(error))
+    else:
+        if tag is None:
+            messages.error(request, "Écrivez le nom du tag, par exemple « Projet/Groupe/… ».")
+        else:
+            messages.success(request, f"Tag « {tag.label} » ajouté à « {entry.publication} ».")
+    return redirect_back(request, pk)
+
+
+@login_required
+@require_POST
+def untag_publication(request, pk, tag_pk):
+    entry = get_object_or_404(UserPublication, user=request.user, publication_id=pk)
+    tag = get_object_or_404(Tag, pk=tag_pk, user=request.user)
+    tags.untag_entry(entry, tag)
+    messages.success(request, f"Tag « {tag.label} » retiré de « {entry.publication} ».")
+    return redirect_back(request, pk)

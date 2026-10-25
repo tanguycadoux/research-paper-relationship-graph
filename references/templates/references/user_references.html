@@ -48,6 +48,25 @@
                 </form>
             {% endcard %}
 
+            {% card title="Tags" %}
+                {% if tag_tree %}
+                    <ul class="space-y-1 text-sm" aria-label="Filtrer par tag">
+                        {% for item in tag_tree %}
+                            <li class="flex items-baseline justify-between gap-3 {% if item.depth == 1 %}pl-4{% elif item.depth == 2 %}pl-8{% elif item.depth > 2 %}pl-12{% endif %}">
+                                <a href="?tag={{ item.path|urlencode }}"
+                                   {% if item.path == active_tag %}aria-current="true" class="font-semibold"{% endif %}>{{ item.name }}</a>
+                                <span class="text-gray-500">{{ item.count }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-sm text-gray-600">
+                        Aucun tag : ajoutez-en depuis la fiche d'une publication de votre corpus.
+                        « / » sépare les niveaux : « Projet/Groupe/… ».
+                    </p>
+                {% endif %}
+            {% endcard %}
+
             {% card title="Exporter et importer" %}
                 <div class="space-y-4 text-sm">
                     <div class="flex flex-wrap gap-2">
