@@ -10,6 +10,7 @@ be read gives no identifier rather than an error.
 
 import re
 
+from ..identifiers.arxiv import bare_arxiv_doi
 from ..identifiers.doi import is_valid_doi, normalize_doi
 from ..identifiers.isbn import is_valid_isbn, normalize_isbn
 from ..imports.latex_bibliography import clean_latex, written_identifier
@@ -19,9 +20,6 @@ FIELD_NAME = re.compile(r"[\s,]*([\w\-:.]+)\s*=\s*")
 BARE_VALUE = re.compile(r"[^,#}\s]+")
 SEPARATOR = re.compile(r"\s*#\s*")
 SKIPPED_TYPES = {"comment", "string", "preamble"}
-BARE_ARXIV_ID = re.compile(
-    r"(?:arXiv\s*:\s*)?(\d{4}\.\d{4,5}|[a-z\-]+(?:\.[A-Z]{2})?/\d{7})(?:v\d+)?", re.IGNORECASE
-)
 # Fields where an identifier may be written in passing (an arXiv reference in the
 # journal field, a DOI in the URL or the note).
 BIBTEX_OTHER_FIELDS = ("url", "journal", "note", "number", "howpublished")
@@ -55,11 +53,7 @@ def first_doi(values):
 
 
 def arxiv_doi(values):
-    for value in values:
-        match = BARE_ARXIV_ID.fullmatch(value.strip())
-        if match:
-            return normalize_doi(f"10.48550/arXiv.{match.group(1)}")
-    return ""
+    return next((doi for value in values if (doi := bare_arxiv_doi(value))), "")
 
 
 def first_isbn(values):

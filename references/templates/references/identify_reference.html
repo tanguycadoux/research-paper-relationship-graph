@@ -152,6 +152,9 @@
                     <label for="{{ form.doi.id_for_label }}">{{ form.doi.label }}</label>
                     {{ form.doi }}
                     {{ form.doi.errors }}
+                    <p class="text-xs text-gray-500">
+                        10.xxxx/…, ou un identifiant ou un lien arXiv (1706.03762, arxiv.org/abs/…).
+                    </p>
                 </div>
                 <div class="hidden space-y-1 group-has-[input[value=isbn]:checked]:block">
                     <label for="{{ form.isbn.id_for_label }}">{{ form.isbn.label }}</label>

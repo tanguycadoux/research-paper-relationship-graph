@@ -15,7 +15,7 @@ from ..services.corpus.entries import (
 from ..services.display import filters
 from ..services.display.publication_table import for_publication_table
 from ..services.display.sorting import CORPUS
-from ..services.identifiers.doi import is_valid_doi, normalize_doi
+from ..services.identifiers.arxiv import typed_doi
 from ..services.sources.doi_registration import is_unregistered_doi, unregistered_message
 from .pagination import page_of
 
@@ -87,16 +87,17 @@ def add_to_user_refs(request, pk):
 def add_publication_to_user_refs_by_identifier(request):
     """From the corpus page, or from a work citing a publication (#163), with next."""
     identifier = request.POST.get("identifier", "")
-    doi = normalize_doi(identifier)
-    if is_valid_doi(doi) and is_unregistered_doi(doi):
+    doi = typed_doi(identifier)  # a DOI, or an arXiv identifier or link (#267)
+    if doi and is_unregistered_doi(doi):
         messages.error(request, f"{unregistered_message(doi)} Rien n'a été ajouté.")
         return back_or_corpus(request)
-    pub = find_or_create(doi=identifier, isbn=identifier)
+    pub = find_or_create(doi=doi, isbn=identifier)
     if pub is None:
         messages.error(
             request,
-            "Veuillez entrer un DOI (de la forme 10.xxxx/…) ou un ISBN valide "
-            "(10 ou 13 chiffres, avec ou sans tirets).",
+            "Veuillez entrer un DOI (de la forme 10.xxxx/…), un identifiant ou un lien "
+            "arXiv (1706.03762, arxiv.org/abs/…) ou un ISBN valide (10 ou 13 chiffres, "
+            "avec ou sans tirets).",
         )
         return back_or_corpus(request)
 

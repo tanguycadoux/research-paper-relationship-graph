@@ -44,11 +44,11 @@
         </section>
 
         <div class="space-y-6">
-            {% card title="Ajouter par DOI ou ISBN" %}
+            {% card title="Ajouter par DOI, ISBN ou arXiv" %}
                 <form method="post" action="{% url 'corpus_add_by_identifier' %}" class="space-y-3">
                     {% csrf_token %}
-                    <label for="identifier" class="sr-only">DOI ou ISBN</label>
-                    <input type="text" id="identifier" name="identifier" placeholder="10.xxxx/… ou 978-…" required>
+                    <label for="identifier" class="sr-only">DOI, ISBN ou identifiant arXiv</label>
+                    <input type="text" id="identifier" name="identifier" placeholder="10.xxxx/…, 978-… ou arXiv:…" required>
                     <div class="flex flex-wrap gap-2">
                         {% button "Ajouter" icon="add" %}
                         {% button "Ajouter à lire" variant="secondary" icon="bookmark_add" name="status" value="to_read" %}

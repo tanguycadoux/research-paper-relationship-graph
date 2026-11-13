@@ -15,15 +15,12 @@ import re
 import tarfile
 import unicodedata
 
+from ..identifiers.arxiv import written_arxiv_doi
 from ..identifiers.doi import is_valid_doi, normalize_doi
 
 BS = "\\"
 # A source file larger than this is not LaTeX written by hand: skipped.
 MAX_FILE_BYTES = 5 * 1024 * 1024
-ARXIV_ID = re.compile(
-    r"(?:arXiv\s*:\s*|arxiv\.org/abs/|abs/)(\d{4}\.\d{4,5}|[a-z\-]+(?:\.[A-Z]{2})?/\d{7})",
-    re.IGNORECASE,
-)
 DOI = re.compile(r"10\.\d{4,9}/[^\s{}\\,;]+")
 ACCENTS = {
     '"': "\u0308",
@@ -149,8 +146,7 @@ def written_identifier(text):
         doi = normalize_doi(match.group(0).rstrip(".)]"))
         if is_valid_doi(doi):
             return doi
-    match = ARXIV_ID.search(flat)
-    return normalize_doi(f"10.48550/arXiv.{match.group(1)}") if match else ""
+    return written_arxiv_doi(flat)
 
 
 def clean_latex(text):
