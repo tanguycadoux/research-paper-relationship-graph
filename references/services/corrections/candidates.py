@@ -186,13 +186,13 @@ def local_candidates(ref):
     )
     for word in words:
         publications = publications.filter(contains("_title", word))
-    publications = publications.prefetch_related("authorpublication_set__author")[:20]
+    publications = publications.with_author_slots()[:20]
     return [local_candidate(pub) for pub in publications]
 
 
 def local_candidate(pub):
     date = pub.publication_date
-    slots = sorted(pub.authorpublication_set.all(), key=lambda slot: slot.order)[:3]
+    slots = pub.authorpublication_set.all()[:3]
     return Candidate(
         title=pub.title,
         doi=pub.doi,

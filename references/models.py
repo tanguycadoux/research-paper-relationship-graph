@@ -19,6 +19,19 @@ class PublicationQuerySet(models.QuerySet):
         """The publication of a DOI, or of the preprint it replaced, else a new one."""
         return self.with_doi(doi).first() or self.create(doi=doi)
 
+    def with_author_slots(self):
+        """
+        Prefetch the author slots in signature order, with their authors (joined). A
+        prefetch of `authorpublication_set__author` filters the authors with one OR term
+        each on SQLite, which refuses it beyond 1 000 authors (#268).
+        """
+        return self.prefetch_related(
+            models.Prefetch(
+                "authorpublication_set",
+                queryset=AuthorPublication.objects.select_related("author").order_by("order"),
+            )
+        )
+
 
 class Publication(models.Model):
     class DatePrecision(models.TextChoices):

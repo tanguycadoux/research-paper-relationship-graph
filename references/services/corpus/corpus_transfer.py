@@ -164,9 +164,7 @@ SPECIAL_CHARACTERS = re.compile(r"([&%#_])")
 
 def corpus_bibtex(user):
     keys = set()
-    publications = exportable(
-        corpus_publications(user).prefetch_related("authorpublication_set__author")
-    )
+    publications = exportable(corpus_publications(user).with_author_slots())
     tags = tags_by_publication(user, publications)
     return "\n".join(bibtex_entry(pub, keys, tags[pub.pk]) for pub in publications)
 
@@ -192,8 +190,8 @@ def bibtex_entry(pub, keys, tags=()):
 
 
 def ordered_authors(pub):
-    slots = sorted(pub.authorpublication_set.all(), key=lambda slot: slot.order)
-    return list(dict.fromkeys(slot.author for slot in slots))
+    """The authors of pub in signature order, once each (slots prefetched in order)."""
+    return list(dict.fromkeys(slot.author for slot in pub.authorpublication_set.all()))
 
 
 def bibtex_name(author):
