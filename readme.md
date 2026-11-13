@@ -133,7 +133,9 @@ redemande donc pas.
 
 ```bash
 # Rattacher les affiliations des publications déjà en base, à partir des données OpenAlex
-# stockées (les organisations parentes manquantes sont demandées en une requête groupée)
+# stockées (les organisations parentes manquantes sont demandées en une requête groupée).
+# Une publication sans auteur prend ceux d'OpenAlex, et les conflits « Auteurs différents »
+# qui ne tiennent plus sont fermés
 python manage.py complete_affiliations
 
 # Idem, en demandant d'abord à OpenAlex les publications qui n'ont pas encore de réponse

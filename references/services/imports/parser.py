@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 from references.models import AuthorPublication, CitedReference, Publication
@@ -120,7 +121,7 @@ def parse_references_list(pub, message):
     to a Publication when the cited DOI is known. Manual identifications made on a
     previous import are kept, and take precedence over Crossref.
     """
-    refs = message.get("reference", [])
+    refs = in_numbered_order(message.get("reference", []))
     dois = [normalize_doi(ref.get("DOI", "")) for ref in refs]
     targets = cited_publications(dois, refs)
     manual = manual_resolutions(pub)
@@ -141,6 +142,26 @@ def parse_references_list(pub, message):
         )
         for position, (ref, doi) in enumerate(zip(refs, dois, strict=True))
     )
+
+
+# Key of a numbered reference, as IEEE writes them: "ref12" is reference [12] (#258).
+NUMBERED_KEY = re.compile(r"ref(\d+)")
+
+
+def in_numbered_order(refs):
+    """
+    The references in the order of the article. IEEE deposits its bibliographies out
+    of order at Crossref, but each key keeps the number of the reference (#258): when
+    every key is "ref<n>", with distinct numbers, they are sorted by n. Otherwise the
+    order received is kept, without guessing.
+    """
+    numbers = [NUMBERED_KEY.fullmatch(ref.get("key") or "") for ref in refs]
+    if not all(numbers):
+        return refs
+    numbers = [int(match.group(1)) for match in numbers]
+    if len(set(numbers)) < len(numbers):
+        return refs
+    return [ref for _, ref in sorted(zip(numbers, refs, strict=True), key=lambda pair: pair[0])]
 
 
 def reference_identity(ref):

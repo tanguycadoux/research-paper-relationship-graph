@@ -155,6 +155,10 @@ Règles :
 - Les tests ne font **aucun appel réseau** : toutes les sources sont simulées
   (`references/tests/helpers.py`), et le test runner (`config/test_runner.py`) fait
   échouer toute connexion réseau et désactive le cache de développement.
+- Les auteurs d'une liste de publications se préchargent avec
+  `Publication.objects.….with_author_slots()` (signatures dans l'ordre, auteurs joints),
+  jamais avec `prefetch_related("authorpublication_set__author")` : sur SQLite, Django
+  filtre alors les auteurs par un `OR` par auteur, refusé au-delà de 1 000 (#268).
 
 ## Modèle de données
 

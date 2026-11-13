@@ -21,6 +21,14 @@ première qui la connaît, dans l'ordre **Crossref, DataCite, Open Library**, co
 format Crossref (`metadata_formats.py`). La bibliographie tirée d'arXiv ne sert que si
 cette réponse n'en a pas.
 
+Les références sont numérotées dans l'ordre de la réponse, sauf quand toutes leurs clés
+sont de la forme `ref<n>`, sans numéro répété : elles sont alors triées par `n`
+(`parser.in_numbered_order`, #258). IEEE dépose ses bibliographies dans le désordre chez
+Crossref (`ref4, ref3, ref10…` pour `10.1109/tasc.2014.2377730`), mais la clé garde le
+numéro de l'article. Toute autre forme de clé garde l'ordre reçu, sans deviner. La
+migration `0030_sort_ieee_references` a renuméroté les bibliographies déjà importées ;
+les décisions manuelles, portées par la référence et retrouvées par sa clé, suivent.
+
 ## Parcours d'un import
 
 `importer.import_publication` enchaîne les étapes ci-dessous. Chaque réponse est stockée
@@ -113,6 +121,12 @@ Hors de ce parcours :
    Les fiches de ces requêtes de liste contiennent les mêmes auteurs et références qu'une
    requête unitaire. Il leur manque seulement des champs secondaires (`original-title`,
    `short-title`, `subject`, `subtitle`).
+5. Les **titres** passent par `titles.clean_title` : les entités HTML sont décodées, puis le
+   balisage JATS ou MathML (`<i>`, `<sub>`, `<mml:math>`) est retiré, et le LaTeX est gardé
+   tel quel. Certains éditeurs (IEEE) déposent un balisage échappé deux fois
+   (`&lt;sub&gt;` dans la réponse JSON) : les entités sont décodées tant qu'il en reste,
+   au plus trois fois, avant de retirer les balises (#263). La migration `0029` a nettoyé
+   de la même façon les titres déjà en base, sauf ceux corrigés à la main.
 
 Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
 Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une
@@ -297,7 +311,23 @@ sont pas stockées : un changement de laboratoire apparaît naturellement.
 Les institutions viennent d'OpenAlex. Elles sont rattachées aux signatures par **position
 et nom publié** : les mots du nom sont comparés quel que soit leur ordre, si bien que
 « Thuillier, Thomas » (DataCite) correspond à « Thomas Thuillier ». Si le nombre d'auteurs
-ou un nom diffère, rien n'est rattaché pour l'article. Une organisation est reconnue par
+ou un nom diffère, rien n'est rattaché pour l'article. Deux cas ne sont pas des
+désaccords (#265) :
+
+- **Liste tronquée par OpenAlex.** OpenAlex ne donne jamais plus de 100 auteurs par
+  œuvre (`OPENALEX_MAX_AUTHORS`), et ses réponses stockées n'ont pas toujours le champ
+  `is_authors_truncated`. Quand OpenAlex en donne exactement 100 et la fiche davantage
+  (945 chez Crossref pour `10.1007/lrr-2016-1`), on compare les 100 premiers, et seuls
+  ceux-là reçoivent leurs affiliations.
+- **Liste vide d'un côté.** Une liste vide ne contredit rien. Si OpenAlex n'a pas
+  d'auteurs, il n'y a simplement rien à rattacher. Si la source prioritaire n'en donne
+  aucun (« Private Classical Communication », `10.1017/9781316809976.027`, sans auteur
+  chez Crossref), la fiche prend ceux de la réponse OpenAlex du même DOI
+  (`metadata_formats.openalex_authors` : nom publié `raw_author_name`, ORCID). Une
+  publication citée, analysée avant l'arrivée de sa réponse OpenAlex, est analysée de
+  nouveau à ce moment-là.
+
+Une organisation est reconnue par
 son identifiant OpenAlex ou par son ROR. Les liens sont recréés à chaque analyse, puisque
 les signatures le sont aussi.
 
@@ -403,7 +433,9 @@ fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
 3. **OpenAlex et ORCID complètent** seulement : institutions, ORCID manquants, date en
    ligne, prénoms.
 4. Les auteurs sont rapprochés par leur **position et leur nom publié**
-   (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article.
+   (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article. Une
+   liste tronquée par OpenAlex (100 auteurs) ou vide d'un côté n'est pas un désaccord ;
+   sans auteur chez Crossref ou DataCite, la fiche prend ceux d'OpenAlex (#265).
 5. Un **vrai conflit** (un ORCID différent de celui déjà connu, un nom différent selon
    ORCID, une version publiée proposée) : l'existant est gardé et le conflit est signalé
    sur la page « Conflits » ([corrections.md](corrections.md#conflits)).

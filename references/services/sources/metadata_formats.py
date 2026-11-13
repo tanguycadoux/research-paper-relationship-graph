@@ -13,7 +13,8 @@ PRIORITY = [Source.CROSSREF, Source.DATACITE, Source.OPENLIBRARY]
 def metadata_message(pub):
     """
     Message of the preferred source that knows the publication, or None. Without a
-    bibliography there, an arXiv preprint takes the one of its LaTeX sources (#227).
+    bibliography there, an arXiv preprint takes the one of its LaTeX sources (#227);
+    without authors, the publication takes those of its OpenAlex work (#265).
     """
     records = records_by_source(pub)
     source = preferred_source(records)
@@ -22,6 +23,8 @@ def metadata_message(pub):
     message = CONVERTERS[source](records[source])
     if takes_latex_references(message, records):
         message["reference"] = latex_references(records[Source.ARXIV])
+    if not message.get("author") and Source.OPENALEX in records:
+        message["author"] = openalex_authors(records[Source.OPENALEX])
     return message
 
 
@@ -124,6 +127,32 @@ def split_full_name(name):
     """'Ian Goodfellow' -> given 'Ian', family 'Goodfellow' (no ORCID in Open Library)."""
     given, _, family = name.strip().rpartition(" ")
     return {"given": given, "family": family}
+
+
+def openalex_authors(work):
+    """
+    The authors of an OpenAlex work, in the Crossref format, under the name published
+    in the article (raw_author_name, else the name known to OpenAlex), with the ORCID.
+    """
+    authors = []
+    for authorship in work.get("authorships", []):
+        person = authorship.get("author") or {}
+        name = (authorship.get("raw_author_name") or person.get("display_name") or "").strip()
+        if not name:
+            continue
+        author = split_published_name(name)
+        if person.get("orcid"):
+            author["ORCID"] = person["orcid"]
+        authors.append(author)
+    return authors
+
+
+def split_published_name(name):
+    """'Thuillier, Thomas' or 'Thomas Thuillier' -> given 'Thomas', family 'Thuillier'."""
+    if name.count(",") == 1:
+        family, _, given = name.partition(",")
+        return {"given": given.strip(), "family": family.strip()}
+    return split_full_name(name)
 
 
 CONVERTERS = {
