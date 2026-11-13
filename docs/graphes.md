@@ -58,18 +58,28 @@ Les graphes de citations : données produites par le serveur, dessin et interact
 - **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
   vert d'eau) et les articles qui le citent (nœuds orange), chaque lien dans une nuance
   plus claire de son nœud, et estompe le reste. La carte d'informations HTML
-  (`#citation-graph-card`, en bas à gauche du cadre) est compacte (#187) : le titre est
-  le lien vers la fiche, puis la revue (lue dans la réponse stockée de Crossref ou de
-  DataCite, dans la même requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la fiche ; Échap ou
-  un clic dans le vide désélectionne.
+  (`#citation-graph-card`) est compacte (#187) : le titre est le lien vers la fiche, puis
+  la revue (lue dans la réponse stockée de Crossref ou de DataCite, dans la même
+  requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la
+  fiche ; Échap, un clic dans le vide ou le bouton de la carte désélectionne.
+- **Place de la carte** (#291) : **hors du cadre**, pour ne cacher aucune publication.
+  À partir de `xl`, dans une colonne de 20rem à droite du cadre ; en dessous, sous le
+  cadre. Elle garde sa place sans sélection, avec une indication (« Cliquez sur un
+  article… ») : la page ne saute pas à la première sélection. Sous `xl`, le cadre a sa
+  propre hauteur (70vh, 24rem au moins) plutôt que l'espace restant : une carte qui
+  grandit ne le redimensionne jamais, ce qui ramènerait la vue d'ensemble.
 - **Recentrage à la sélection** (#142, `focus.js`) : la vue zoome sur l'article et ses
-  voisins (animation de 300 ms, aucune avec « réduire les animations »), dans la zone que
-  la carte laisse libre, à sa droite ou au-dessus, celle où ils paraissent le plus
-  grands ; au plus 4 fois le zoom de la vue d'ensemble, pour un voisin tout proche. La
-  désélection ramène la vue d'avant la sélection (la vue d'ensemble dans le cas courant,
-  un zoom fait à la main sinon). Le temps de la sélection, les bornes de #141 s'élargissent
-  à la vue voulue : dans la vue d'ensemble, un voisin caché sous la carte ne pourrait pas
-  être montré autrement.
+  voisins (animation de 300 ms, aucune avec « réduire les animations »), centrés dans
+  tout le cadre ; au plus 4 fois le zoom de la vue d'ensemble, pour un voisin tout
+  proche. La désélection ramène la vue d'avant la sélection (la vue d'ensemble dans le
+  cas courant, un zoom fait à la main sinon). La vue visée reste dans les bornes de #141
+  (`viewport.within`) : jamais en deçà du zoom de la vue d'ensemble, et décalée du
+  minimum pour ne pas en sortir. Les voisins restent visibles, puisqu'ils sont dans le
+  graphe. Avant #291, les bornes s'élargissaient le temps de la sélection, pour montrer
+  un voisin caché sous la carte ; la carte hors du cadre rend cet élargissement inutile.
+  Une animation entre deux vues dans les bornes y reste : chaque bord de la vue va de
+  l'une à l'autre sans revenir en arrière, et le maintien dans les bornes n'interfère
+  pas.
 - **Export en image** (#175, `export.js`) : un bouton à côté de celui de la vue
   d'ensemble télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des

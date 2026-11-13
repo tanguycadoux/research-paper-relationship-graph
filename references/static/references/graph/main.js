@@ -27,7 +27,7 @@ function render() {
     const showAllButton = document.querySelector("[data-graph-show-all] button");
     const viewport = bindViewport(cy, container, showAllButton);
     const card = document.getElementById("citation-graph-card");
-    bindInteractions(cy, card, bindFocus(cy, card, viewport));
+    bindInteractions(cy, card, bindFocus(cy, viewport));
     const axis = document.getElementById("citation-graph-axis");
     const hasUndated = graph.nodes.some((n) => !n.data.date);
     const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);

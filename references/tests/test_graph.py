@@ -113,8 +113,10 @@ class CitationGraphTests(TestCase):
         self.assertContains(response, "vendor/cytoscape/cytoscape.min.js")
         # The year axis is drawn outside the canvas, to stay in view (#62).
         self.assertContains(response, 'id="citation-graph-axis"')
-        # The information card of a selected publication, filled by the script (#61).
+        # The information card of a selected publication, filled by the script (#61). It is
+        # beside the graph, not over it (#291), and keeps its place with a hint.
         self.assertContains(response, 'id="citation-graph-card"')
+        self.assertContains(response, "Cliquez sur un article du graphe pour le décrire ici.")
 
     def test_publication_graph_contains_the_citing_publications(self):
         graph = publication_graph(self.cited)
