@@ -12,6 +12,13 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   du corpus de la personne connectée y sont en bleu (`source`), les autres en vert d'eau
   (`other`). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
   la position rendait distinctes deux citations d'une même publication.
+- **Graphe d'un tag** (#290) : « Mon graphe » peut se limiter à un tag et ses sous-tags
+  (`?tag=Projet`), choisi dans une liste en haut de la page (envoyée dès qu'elle change,
+  `static/js/autosubmit.js`, avec un bouton sans JavaScript). Le contexte est celui des
+  suggestions : `tags.context_publications`, et un tag qui n'existe plus ramène à tout le
+  corpus avec un message (`views/tag_context.requested_tag`, partagé avec les
+  suggestions). « Mes références » filtrée par un tag renvoie au graphe de ce tag, et le
+  nom de l'image exportée le dit (`graphe-corpus-tag-projet`).
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la

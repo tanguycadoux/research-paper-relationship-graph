@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
 
-from ...models import Tag, UserPublication
+from ...models import Publication, Tag, UserPublication
 
 SEPARATOR = Tag.SEPARATOR
 MAX_LENGTH = Tag._meta.get_field("name").max_length
@@ -224,3 +224,13 @@ def tagged(user, path):
         Q(tags__name=path) | Q(tags__name__startswith=path + SEPARATOR)
     )
     return Q(Exists(entries))
+
+
+def context_publications(user, path=""):
+    """
+    The publications of the user's corpus, or only those with the tag path or one of its
+    descendants: the context of the suggestions (#162) and of the graph of a tag (#290).
+    """
+    if path:
+        return Publication.objects.filter(tagged(user, path))
+    return Publication.objects.filter(userpublication__user=user)
