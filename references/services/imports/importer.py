@@ -6,11 +6,11 @@ from ..sources.crossref_api import fetch_crossref_json, fetch_crossref_works
 from ..sources.datacite_api import fetch_datacite_json, fetch_datacite_works
 from ..sources.external_records import Source, has_metadata, has_record, store_record
 from .enrichment import complete_cited_with_openalex, complete_with_openalex
-from .jacow import link_jacow_references
 from .orcid_names import complete_names
 from .parser import parse_publication
 from .preprints import arxiv_id, is_arxiv, published_version, replace_cited_preprints
 from .published_versions import suggest_published_versions
+from .written_identifiers import link_written_identifiers
 
 
 def import_publication(pub, *, with_references=False, force_fetch=False):
@@ -19,8 +19,9 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     with OpenAlex, and the names of its authors with ORCID. With references, the
     cited publications are imported too, without their own references (the names
     of their authors are left to the complete_orcid_names command), and references
-    that only give a JACoW code are linked once DataCite confirms it. An arXiv
-    preprint that declares its published version is replaced by it (#227).
+    that only write a JACoW code or an arXiv identifier are linked once DataCite
+    confirms it (#160, #266). An arXiv preprint that declares its published version
+    is replaced by it (#227), whether cited by DOI or by a written identifier.
 
     Return the publication imported: pub, or the published version already in the
     base that the preprint merged into. None if the metadata could not be retrieved.
@@ -36,7 +37,7 @@ def import_publication(pub, *, with_references=False, force_fetch=False):
     complete_names(Author.objects.filter(publications=pub).distinct())
     if with_references:
         import_cited_publications(pub)
-        link_jacow_references(pub)
+        link_written_identifiers(pub)
         complete_cited_with_openalex(pub)
     suggest_published_versions(checked_for_versions(pub, with_references))
     return pub

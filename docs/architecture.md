@@ -73,6 +73,8 @@ references/          application principale
       titles.py      nettoyage des titres (entités HTML, balisage JATS)
       latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
       jacow.py       actes JACoW : codes écrits dans les références, ordre des auteurs incertain
+      written_identifiers.py  références reliées par l'identifiant que leurs auteurs
+                     écrivent (code JACoW, identifiant arXiv), après confirmation de DataCite
       author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
       enrichment.py  sources complémentaires (OpenAlex), interrogées en plus des autres
       affiliations.py  rattachement des organisations aux signatures
@@ -124,6 +126,8 @@ references/          application principale
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
     replace_preprints.py  prépublications arXiv déjà en base remplacées par leur version publiée
                      déclarée, ou version trouvée par OpenAlex proposée dans « Conflits »
+    link_written_identifiers.py  références des bibliographies déjà importées reliées
+                     par le code JACoW ou l'identifiant arXiv qu'elles écrivent
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
