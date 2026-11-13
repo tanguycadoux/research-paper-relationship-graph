@@ -36,7 +36,10 @@ def find_valid_target(form, duplicate):
         return None
     target = publication_merge.find_merge_target(form.cleaned_data["target"])
     if target is None:
-        form.add_error("target", "Aucune publication trouvée pour ce DOI, cet ISBN ou ce lien.")
+        form.add_error(
+            "target",
+            "Aucune publication trouvée pour ce DOI, cet identifiant arXiv, cet ISBN ou ce lien.",
+        )
     elif target == duplicate:
         form.add_error("target", "Une publication ne peut pas être fusionnée avec elle-même.")
     else:

@@ -65,6 +65,7 @@ references/          application principale
       metadata_formats.py  conversion de chaque source vers le format lu par le parser, priorité
     identifiers/     identifiants et noms
       doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
+      arxiv.py       identifiants et liens arXiv vers leur DOI (10.48550/arXiv.…)
       names.py       normalisation et comparaison des noms de personnes
     imports/         import et analyse
       importer.py    orchestration : récupération puis analyse
@@ -94,7 +95,7 @@ references/          application principale
       author_distinctions.py  auteurs déclarés différents
       conflicts.py   signalement et décision des conflits entre sources
     corpus/          corpus personnel
-      entries.py     ajout au corpus par DOI ou ISBN, statut de lecture
+      entries.py     ajout au corpus par DOI (ou arXiv) ou ISBN, statut de lecture
       tags.py        tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
                      renommage et suppression
       corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)

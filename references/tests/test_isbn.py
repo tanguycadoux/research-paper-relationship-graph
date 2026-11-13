@@ -171,5 +171,5 @@ class AddByIsbnViewTests(TestCase):
 
     def test_invalid_identifier_names_both_formats(self, _crossref, _openlibrary, _fetch_doi):
         response = self.add("9780262035614")
-        self.assertContains(response, "Veuillez entrer un DOI (de la forme 10.xxxx/…) ou un ISBN")
+        self.assertContains(response, "un identifiant ou un lien arXiv")
         self.assertFalse(Publication.objects.exists())

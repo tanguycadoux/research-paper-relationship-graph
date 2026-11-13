@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import Author, Publication
+from .services.identifiers.arxiv import typed_doi
 from .services.identifiers.doi import is_valid_doi, normalize_doi
 from .services.identifiers.isbn import is_valid_isbn, normalize_isbn
 from .services.identifiers.orcid import normalize_orcid
@@ -143,11 +144,15 @@ class IdentifyReferenceForm(forms.Form):
 
     method = forms.ChoiceField(
         label="Identifier par",
-        choices=[(METHOD_DOI, "DOI"), (METHOD_ISBN, "ISBN"), (METHOD_NONE, "Sans identifiant")],
+        choices=[
+            (METHOD_DOI, "DOI ou arXiv"),
+            (METHOD_ISBN, "ISBN"),
+            (METHOD_NONE, "Sans identifiant"),
+        ],
         widget=forms.RadioSelect,
         initial=METHOD_DOI,
     )
-    doi = forms.CharField(label="DOI", required=False)
+    doi = forms.CharField(label="DOI ou arXiv", required=False)
     isbn = forms.CharField(label="ISBN", required=False)
     title = forms.CharField(label="Titre", required=False)
     year = forms.IntegerField(label="Année", required=False, min_value=1000, max_value=2100)
@@ -164,9 +169,13 @@ class IdentifyReferenceForm(forms.Form):
         return cleaned
 
     def clean_identifier_doi(self, cleaned):
-        doi = normalize_doi(cleaned.get("doi", ""))
-        if not is_valid_doi(doi):
-            self.add_error("doi", "Veuillez entrer un DOI valide (de la forme 10.xxxx/…).")
+        doi = typed_doi(cleaned.get("doi", ""))
+        if not doi:
+            self.add_error(
+                "doi",
+                "Veuillez entrer un DOI valide (de la forme 10.xxxx/…), ou un identifiant "
+                "ou un lien arXiv.",
+            )
         cleaned["doi"] = doi
 
     def clean_identifier_isbn(self, cleaned):
@@ -178,6 +187,6 @@ class IdentifyReferenceForm(forms.Form):
 
 class MergePublicationForm(forms.Form):
     target = forms.CharField(
-        label="DOI, ISBN ou lien d'une publication de l'application", max_length=500
+        label="DOI, ISBN, arXiv ou lien d'une publication de l'application", max_length=500
     )
     confirm = forms.BooleanField(required=False, widget=forms.HiddenInput)

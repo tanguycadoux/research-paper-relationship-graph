@@ -164,6 +164,22 @@ les dépôts Zenodo, les prépublications arXiv et les jeux de données. Crossre
 
 ## Prépublications arXiv
 
+### Identifiants arXiv
+
+Un chercheur copie plus souvent l'identifiant ou le lien arXiv que le DOI
+`10.48550/arXiv.…` (#267). `services/identifiers/arxiv.py` réunit leur lecture :
+
+- `arxiv_doi` : une saisie entière, `arXiv:1706.03762`, `1706.03762v5`,
+  `arxiv.org/abs/…` ou `arxiv.org/pdf/…(.pdf)`, et les anciens identifiants
+  (`hep-th/9901001`). La version est ignorée : le DOI désigne l'article.
+- `typed_doi` : ce qu'un utilisateur saisit comme DOI, écrit comme un DOI ou comme un
+  identifiant arXiv. L'ajout au corpus, « Cette publication est en fait… » et la méthode
+  « DOI ou arXiv » de l'identification d'une référence l'utilisent ; le DOI obtenu suit
+  ensuite le chemin d'un DOI saisi, vérification par doi.org comprise.
+- `bare_arxiv_doi` : le champ `eprint` d'un fichier BibTeX (#165).
+- `written_arxiv_doi` : un identifiant écrit dans un texte (bibliographie des sources
+  LaTeX).
+
 ### Version publiée déclarée
 
 Les DOI arXiv (`10.48550/arXiv.…`) sont chez DataCite, sans bibliographie (#227). Quand

@@ -9,7 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from ...models import CitedReference, Publication, UserPublication
-from ..identifiers.doi import is_valid_doi, normalize_doi
+from ..identifiers.arxiv import typed_doi
 from ..identifiers.isbn import is_valid_isbn, normalize_isbn
 from ..imports.books import find_or_import_book
 from ..imports.importer import import_publication
@@ -25,13 +25,14 @@ def can_be_merged(pub):
 
 def find_merge_target(text):
     """
-    Return the publication designated by a DOI, an ISBN or the URL of a publication
+    Return the publication designated by a DOI, an arXiv identifier or link, an ISBN
+    or the URL of a publication
     page; None if nothing matches. A DOI or an ISBN absent from the database is
     imported; an existing publication is used as is, without any request.
     """
     text = text.strip()
-    doi = normalize_doi(text)
-    if is_valid_doi(doi):
+    doi = typed_doi(text)  # a DOI, or an arXiv identifier or link (#267)
+    if doi:
         return Publication.objects.with_doi(doi).first() or import_new_doi(doi)
     isbn = normalize_isbn(text)
     if is_valid_isbn(isbn):
