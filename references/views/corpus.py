@@ -5,17 +5,18 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from ..models import Publication, Tag, UserPublication
-from ..services import filters, tags
-from ..services.corpus import (
+from ..services.corpus import tags
+from ..services.corpus.entries import (
     add_identified,
     change_reading_status,
     find_or_create,
     with_reading_status,
 )
-from ..services.doi import is_valid_doi, normalize_doi
-from ..services.doi_registration import is_unregistered_doi, unregistered_message
-from ..services.publication_table import for_publication_table
-from ..services.sorting import CORPUS
+from ..services.display import filters
+from ..services.display.publication_table import for_publication_table
+from ..services.display.sorting import CORPUS
+from ..services.identifiers.doi import is_valid_doi, normalize_doi
+from ..services.sources.doi_registration import is_unregistered_doi, unregistered_message
 from .pagination import page_of
 
 

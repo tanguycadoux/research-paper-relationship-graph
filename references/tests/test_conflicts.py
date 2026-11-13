@@ -3,9 +3,9 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import MetadataConflict, Publication
-from references.services import conflicts
-from references.services.external_records import Source, store_record
-from references.services.parser import parse_publication
+from references.services.corrections import conflicts
+from references.services.imports.parser import parse_publication
+from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
 
 THUILLIER = {"given": "Thomas", "family": "Thuillier"}

@@ -6,7 +6,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, Publication, UserPublication
-from references.services import filters
+from references.services.display import filters
 from references.views.pagination import PAGE_SIZE
 
 

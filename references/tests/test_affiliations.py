@@ -5,16 +5,16 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Organization, Publication
-from references.services.affiliations import attach_affiliations
-from references.services.enrichment import (
+from references.services.identifiers.names import same_person_name
+from references.services.imports.affiliations import attach_affiliations
+from references.services.imports.enrichment import (
     complete_ancestors,
     complete_cited_with_openalex,
     complete_with_openalex,
 )
-from references.services.external_records import Source, store_record
-from references.services.names import same_person_name
-from references.services.organizations import organization_groups
-from references.services.parser import parse_publication
+from references.services.imports.organizations import organization_groups
+from references.services.imports.parser import parse_publication
+from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
 
 LPSC = {
@@ -121,7 +121,7 @@ class AttachAffiliationsTests(TestCase):
         CitedReference.objects.create(source=source, target=cited, position=0)
         work = {"authorships": [authorship("Thomas Thuillier", LPSC)]}
         with patch(
-            "references.services.enrichment.fetch_openalex_works",
+            "references.services.imports.enrichment.fetch_openalex_works",
             return_value={"10.1000/cited": work},
         ):
             complete_cited_with_openalex(source)
@@ -173,9 +173,9 @@ class OrganizationHierarchyTests(TestCase):
         pub = Publication.objects.create(doi="10.1000/a", title="A")
         work = {"authorships": [authorship("Thomas Thuillier", IRFU, CEA_SACLAY)]}
         with (
-            patch("references.services.enrichment.fetch_openalex_work", return_value=work),
+            patch("references.services.imports.enrichment.fetch_openalex_work", return_value=work),
             patch(
-                "references.services.enrichment.fetch_openalex_institutions",
+                "references.services.imports.enrichment.fetch_openalex_institutions",
                 return_value={"I2738703131": CEA, "I4210113668": DRF, "I277688954": UPSACLAY},
             ) as fetch_institutions,
         ):
@@ -197,7 +197,7 @@ class OrganizationHierarchyTests(TestCase):
         # and not created yet: it was a top-level organization on the author page.
         work = {"authorships": [authorship("Thomas Thuillier", IRFU, CEA)]}
         with patch(
-            "references.services.enrichment.fetch_openalex_institutions",
+            "references.services.imports.enrichment.fetch_openalex_institutions",
             return_value={"I4210113668": DRF},
         ) as fetch:
             complete_ancestors([work])
@@ -209,7 +209,7 @@ class OrganizationHierarchyTests(TestCase):
 
     def test_known_ancestors_are_not_fetched_again(self):
         publication("A", [THUILLIER], [authorship("Thomas Thuillier", CEA, DRF)])
-        with patch("references.services.enrichment.fetch_openalex_institutions") as fetch:
+        with patch("references.services.imports.enrichment.fetch_openalex_institutions") as fetch:
             complete_ancestors([{"authorships": [authorship("x", IRFU)]}])
         fetch.assert_not_called()
 

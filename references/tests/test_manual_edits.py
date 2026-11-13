@@ -6,9 +6,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, CitedReference, Publication
-from references.services.books import import_book_metadata
-from references.services.parser import parse_publication
-from references.services.publication_edits import restore_source_values
+from references.services.corrections.publication_edits import restore_source_values
+from references.services.imports.books import import_book_metadata
+from references.services.imports.parser import parse_publication
 from references.tests.helpers import crossref_record, with_crossref, without_other_sources
 
 
@@ -94,7 +94,7 @@ class KeptCorrectionsTests(ManualEditsTestCase):
         self.pub.refresh_from_db()
         self.assertEqual((self.pub.title, self.pub.title_edited), ("Source", False))
 
-    @patch("references.services.importer.fetch_crossref_json")
+    @patch("references.services.imports.importer.fetch_crossref_json")
     def test_editing_without_changing_the_identifier_fetches_nothing(self, fetch):
         response = self.edit(title="Titre corrigé")
         self.assertRedirects(response, reverse("publication_detail", args=[self.pub.pk]))
@@ -102,7 +102,7 @@ class KeptCorrectionsTests(ManualEditsTestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json")
+@patch("references.services.imports.importer.fetch_crossref_json")
 class IdentifierChangeTests(ManualEditsTestCase):
     """A new DOI or ISBN replaces what was fetched for the old one."""
 
@@ -135,8 +135,8 @@ class IdentifierChangeTests(ManualEditsTestCase):
         self.assertIn("n'ont pas pu être récupérées", messages[0])
 
 
-@patch("references.services.books.fetch_openlibrary_book")
-@patch("references.services.books.fetch_crossref_by_isbn", return_value=None)
+@patch("references.services.imports.books.fetch_openlibrary_book")
+@patch("references.services.imports.books.fetch_crossref_by_isbn", return_value=None)
 class BookIdentifierChangeTests(TestCase):
     def test_new_isbn_is_looked_up_in_open_library(self, _crossref, openlibrary):
         self.client.force_login(get_user_model().objects.create_user("alice"))
@@ -151,7 +151,7 @@ class BookIdentifierChangeTests(TestCase):
         self.assertEqual(book.publication_date, date(2001, 1, 1))
 
 
-@patch("references.services.books.fetch_crossref_by_isbn")
+@patch("references.services.imports.books.fetch_crossref_by_isbn")
 class BookFoundInCrossrefTests(TestCase):
     def setUp(self):
         self.book = Publication.objects.create(isbn="9782070368228")

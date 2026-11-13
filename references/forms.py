@@ -3,9 +3,9 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import Author, Publication
-from .services.doi import is_valid_doi, normalize_doi
-from .services.isbn import is_valid_isbn, normalize_isbn
-from .services.orcid import normalize_orcid
+from .services.identifiers.doi import is_valid_doi, normalize_doi
+from .services.identifiers.isbn import is_valid_isbn, normalize_isbn
+from .services.identifiers.orcid import normalize_orcid
 
 
 class PublicationForm(forms.ModelForm):

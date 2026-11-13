@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import IncomingCitations, Publication, UserPublication
-from references.services import incoming_citations
-from references.services.external_records import Source, store_record
+from references.services.discovery import incoming_citations
+from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import without_doi_org, without_other_sources
 
 
@@ -41,7 +41,9 @@ def openalex(answers):
         calls.append((work_id, sort, count))
         return answers.get(sort)
 
-    return patch("references.services.incoming_citations.fetch_citing_works", new=fetch), calls
+    return patch(
+        "references.services.discovery.incoming_citations.fetch_citing_works", new=fetch
+    ), calls
 
 
 class IncomingCitationsTests(TestCase):
@@ -116,7 +118,10 @@ class IncomingCitationsTests(TestCase):
 
     def test_publication_unknown_to_openalex(self):
         pub = Publication.objects.create(doi="10.1000/inconnu")
-        with patch("references.services.incoming_citations.fetch_openalex_work", return_value=None):
+        with patch(
+            "references.services.discovery.incoming_citations.fetch_openalex_work",
+            return_value=None,
+        ):
             response = self.client.post(
                 reverse("publication_incoming_citations", args=[pub.pk]), follow=True
             )
@@ -125,7 +130,7 @@ class IncomingCitationsTests(TestCase):
     def test_work_id_asked_by_doi_without_record(self):
         pub = Publication.objects.create(doi="10.1000/sans-fiche")
         with patch(
-            "references.services.incoming_citations.fetch_openalex_work",
+            "references.services.discovery.incoming_citations.fetch_openalex_work",
             return_value={"id": "https://openalex.org/W7"},
         ) as lookup:
             self.assertEqual(incoming_citations.openalex_id(pub), "W7")

@@ -3,7 +3,10 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
-from references.services.publication_table import for_publication_table, references_available
+from references.services.display.publication_table import (
+    for_publication_table,
+    references_available,
+)
 from references.tests.helpers import with_crossref, without_other_sources
 from references.tests.test_importer import CROSSREF, SOURCE_DOI, with_mocked_crossref
 

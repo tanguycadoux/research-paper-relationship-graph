@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from ..services import dashboard
+from ..services.display import dashboard
 
 
 def index(request):

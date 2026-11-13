@@ -6,8 +6,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from references.models import Author, AuthorPublication, OrcidRecord, Publication
-from references.services.orcid_api import fetch_orcid_record
-from references.services.orcid_profile import orcid_profile
+from references.services.imports.orcid_profile import orcid_profile
+from references.services.sources.orcid_api import fetch_orcid_record
 
 ORCID = "0000-0002-1825-0097"
 
@@ -59,7 +59,7 @@ def response(payload, status_code=200):
     return Mock(status_code=status_code, headers={}, json=Mock(return_value=payload))
 
 
-@patch("references.services.http._get_session")
+@patch("references.services.sources.http._get_session")
 class OrcidApiTests(SimpleTestCase):
     def test_record_asked_in_json(self, get_session):
         get_session.return_value.get.return_value = response(RECORD)
@@ -147,7 +147,7 @@ class OrcidProfileTests(TestCase):
         self.assertContains(response, reverse("publication_detail", args=[self.unsigned.pk]))
         self.assertNotContains(response, "Compléter depuis ORCID")  # anonymous
 
-    @patch("references.services.orcid_profile.fetch_orcid_record", return_value=RECORD)
+    @patch("references.services.imports.orcid_profile.fetch_orcid_record", return_value=RECORD)
     def test_refresh_stores_the_record(self, fetch):
         self.client.force_login(get_user_model().objects.create_user("alice"))
         self.assertContains(self.client.get(self.url), "Compléter depuis ORCID")
@@ -157,7 +157,7 @@ class OrcidProfileTests(TestCase):
         self.assertContains(response, "Profil ORCID mis à jour.")
         self.assertContains(response, "Actualiser depuis ORCID")
 
-    @patch("references.services.orcid_profile.fetch_orcid_record", return_value=None)
+    @patch("references.services.imports.orcid_profile.fetch_orcid_record", return_value=None)
     def test_failure_keeps_the_stored_record(self, _fetch):
         self.store()
         self.client.force_login(get_user_model().objects.create_user("alice"))
@@ -165,7 +165,7 @@ class OrcidProfileTests(TestCase):
         self.assertContains(response, "ORCID n&#x27;a pas répondu")
         self.assertEqual(OrcidRecord.objects.get(orcid=ORCID).data, RECORD)
 
-    @patch("references.services.orcid_profile.fetch_orcid_record")
+    @patch("references.services.imports.orcid_profile.fetch_orcid_record")
     def test_refresh_requires_login_and_post(self, fetch):
         self.assertEqual(self.client.post(self.refresh_url).status_code, 302)
         self.client.force_login(get_user_model().objects.create_user("alice"))

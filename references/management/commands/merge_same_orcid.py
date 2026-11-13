@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from references.services.orcid_merge import merge_all_same_orcid
+from references.services.imports.orcid_merge import merge_all_same_orcid
 
 
 class Command(BaseCommand):

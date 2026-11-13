@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 from django.test import SimpleTestCase, TestCase
 
 from references.models import Publication
-from references.services.datacite_api import fetch_datacite_json, fetch_datacite_works
-from references.services.external_records import Source
-from references.services.importer import import_publication
-from references.services.metadata_formats import datacite_message
+from references.services.imports.importer import import_publication
+from references.services.sources.datacite_api import fetch_datacite_json, fetch_datacite_works
+from references.services.sources.external_records import Source
+from references.services.sources.metadata_formats import datacite_message
 from references.tests.helpers import crossref_record, without_openalex
 
 FIXTURE = Path(__file__).parent / "fixtures" / "datacite_jacow_ecris2016_tuao05.json"
@@ -20,7 +20,7 @@ def response(payload, status_code=200):
     return Mock(status_code=status_code, headers={}, json=Mock(return_value=payload))
 
 
-@patch("references.services.http._get_session")
+@patch("references.services.sources.http._get_session")
 class DataciteApiTests(SimpleTestCase):
     def call(self, get_session, responses, function, *args):
         get_session.return_value.get.side_effect = responses
@@ -123,8 +123,8 @@ class DataciteMessageTests(SimpleTestCase):
 
 
 @without_openalex
-@patch("references.services.importer.fetch_datacite_json", return_value=JACOW)
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.imports.importer.fetch_datacite_json", return_value=JACOW)
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
 class SingleDoiTests(TestCase):
     def test_doi_unknown_to_crossref_is_found_in_datacite(self, crossref, datacite):
         pub = Publication.objects.create(doi=JACOW_DOI)
@@ -152,11 +152,17 @@ class CitedDoisTests(TestCase):
         dois = ["10.1000/in-crossref", JACOW_DOI, "10.1000/ghost"]
         with (
             patch(
-                "references.services.importer.fetch_crossref_json",
+                "references.services.imports.importer.fetch_crossref_json",
                 return_value=source_with_references(dois),
             ),
-            patch("references.services.importer.fetch_crossref_works", side_effect=crossref_works),
-            patch("references.services.importer.fetch_datacite_works", side_effect=datacite_works),
+            patch(
+                "references.services.imports.importer.fetch_crossref_works",
+                side_effect=crossref_works,
+            ),
+            patch(
+                "references.services.imports.importer.fetch_datacite_works",
+                side_effect=datacite_works,
+            ),
         ):
             import_publication(source, with_references=True)
 

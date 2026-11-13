@@ -9,7 +9,7 @@ import requests
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 
-from references.services import http
+from references.services.sources import http
 
 # A development dependency: the CI tests run without it, like production.
 HAS_REQUESTS_CACHE = importlib.util.find_spec("requests_cache") is not None

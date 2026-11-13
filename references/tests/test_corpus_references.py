@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from references.models import CitedReference, Publication, UserPublication
-from references.services.corpus import add_to_corpus
+from references.services.corpus.entries import add_to_corpus
 from references.tests.helpers import without_other_sources
 from references.tests.test_importer import SOURCE_DOI, with_mocked_crossref
 

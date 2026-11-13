@@ -5,7 +5,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication, Tag, UserPublication
-from references.services import suggestions, tags
+from references.services.corpus import tags
+from references.services.discovery import suggestions
 
 
 class SuggestionTests(TestCase):

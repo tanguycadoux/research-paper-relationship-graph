@@ -3,7 +3,10 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Author
-from references.services.author_duplicates import compatible_given_names, duplicate_groups
+from references.services.corrections.author_duplicates import (
+    compatible_given_names,
+    duplicate_groups,
+)
 
 
 class CompatibleGivenNamesTests(SimpleTestCase):

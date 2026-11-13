@@ -7,11 +7,11 @@ from django.views.decorators.http import require_POST
 
 from ..forms import IdentifyReferenceForm
 from ..models import CitedReference, Publication
-from ..services import candidates, identification
-from ..services.doi import is_valid_doi, normalize_doi
-from ..services.doi_registration import is_unregistered_doi, unregistered_message
-from ..services.external_records import Source
-from ..services.metadata_formats import bibliography_source
+from ..services.corrections import candidates, identification
+from ..services.identifiers.doi import is_valid_doi, normalize_doi
+from ..services.sources.doi_registration import is_unregistered_doi, unregistered_message
+from ..services.sources.external_records import Source
+from ..services.sources.metadata_formats import bibliography_source
 
 
 @login_required

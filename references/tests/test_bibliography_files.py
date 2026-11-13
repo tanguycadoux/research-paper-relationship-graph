@@ -4,7 +4,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Publication, UserPublication
-from references.services.bibliography_files import file_entries
+from references.services.corpus.bibliography_files import file_entries
 from references.tests.helpers import with_crossref, without_other_sources
 from references.tests.test_importer import with_mocked_crossref
 

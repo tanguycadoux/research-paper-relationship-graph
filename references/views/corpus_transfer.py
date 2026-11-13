@@ -8,8 +8,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..models import UserPublication
-from ..services.bibliography_files import file_entries
-from ..services.corpus_transfer import (
+from ..services.corpus.bibliography_files import file_entries
+from ..services.corpus.corpus_transfer import (
     InvalidExport,
     corpus_bibtex,
     export_corpus,

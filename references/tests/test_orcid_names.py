@@ -7,10 +7,10 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Author, MetadataConflict, OrcidRecord, Publication
-from references.services import conflicts
-from references.services.importer import import_publication
-from references.services.orcid_api import fetch_orcid_names
-from references.services.orcid_names import complete_names, completed_given_name
+from references.services.corrections import conflicts
+from references.services.imports.importer import import_publication
+from references.services.imports.orcid_names import complete_names, completed_given_name
+from references.services.sources.orcid_api import fetch_orcid_names
 from references.tests.helpers import without_datacite, without_openalex
 from references.tests.test_orcid_profile import RECORD, response
 
@@ -25,7 +25,7 @@ def search(*entries):
     """Mock the grouped ORCID search as knowing these entries only."""
     found = {e["orcid-id"]: e for e in entries}
     return patch(
-        "references.services.orcid_names.fetch_orcid_names",
+        "references.services.imports.orcid_names.fetch_orcid_names",
         side_effect=lambda orcids: {orcid: found.get(orcid) for orcid in orcids},
     )
 
@@ -52,7 +52,7 @@ class CompletedGivenNameTests(SimpleTestCase):
         self.assertIsNone(completed_given_name("Thierry", "Thomas"))
 
 
-@patch("references.services.http._get_session")
+@patch("references.services.sources.http._get_session")
 class OrcidSearchApiTests(SimpleTestCase):
     def test_one_request_per_batch(self, get_session):
         orcids = [f"0000-0000-0000-{n:04}" for n in range(60)]
@@ -142,7 +142,9 @@ class CompleteNamesTests(TestCase):
         name = {"given-names": {"value": "Thomas"}, "family-name": {"value": "Thuillier"}}
         record = RECORD | {"person": {"name": name}}
         self.client.force_login(get_user_model().objects.create_user("alice"))
-        with patch("references.services.orcid_profile.fetch_orcid_record", return_value=record):
+        with patch(
+            "references.services.imports.orcid_profile.fetch_orcid_record", return_value=record
+        ):
             self.client.post(reverse("author_orcid_refresh", args=[self.author.pk]))
         self.author.refresh_from_db()
         self.assertEqual(str(self.author), "Thomas Thuillier")
@@ -174,7 +176,9 @@ class ImportCompletesNamesTests(TestCase):
             }
         }
         with (
-            patch("references.services.importer.fetch_crossref_json", return_value=crossref),
+            patch(
+                "references.services.imports.importer.fetch_crossref_json", return_value=crossref
+            ),
             search(entry(ORCID, "Thomas", "Thuillier")) as fetch,
         ):
             import_publication(pub)

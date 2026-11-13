@@ -4,7 +4,7 @@ from pathlib import Path
 from django.test import TestCase
 
 from references.models import CitedReference, Publication
-from references.services.parser import parse_publication
+from references.services.imports.parser import parse_publication
 from references.tests.helpers import with_crossref
 
 FIXTURE = Path(__file__).parent / "fixtures" / "crossref_nature14539.json"

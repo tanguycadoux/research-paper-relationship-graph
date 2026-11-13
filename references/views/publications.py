@@ -9,27 +9,29 @@ from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
 from ..models import CitedReference, Publication, UserPublication
-from ..services import filters, incoming_citations, tags
-from ..services.external_records import metadata_status
-from ..services.identification import is_to_identify
-from ..services.importer import import_publication
-from ..services.jacow import is_jacow
-from ..services.organizations import numbered_affiliations
-from ..services.preprints import BIBLIOGRAPHY_NOT_FETCHED, arxiv_bibliography
-from ..services.publication_details import crossref_details, publication_abstract
-from ..services.publication_edits import (
+from ..services.corpus import tags
+from ..services.corrections.identification import is_to_identify
+from ..services.corrections.publication_edits import (
     identifier_changed,
     record_manual_edits,
     refetch_after_identifier_change,
     restore_source_values,
 )
-from ..services.publication_table import (
+from ..services.discovery import incoming_citations
+from ..services.display import filters
+from ..services.display.publication_details import crossref_details, publication_abstract
+from ..services.display.publication_table import (
     corpus_ids,
     for_publication_table,
     references_available,
 )
-from ..services.published_versions import proposal_message
-from ..services.sorting import PUBLICATIONS
+from ..services.display.sorting import PUBLICATIONS
+from ..services.imports.importer import import_publication
+from ..services.imports.jacow import is_jacow
+from ..services.imports.organizations import numbered_affiliations
+from ..services.imports.preprints import BIBLIOGRAPHY_NOT_FETCHED, arxiv_bibliography
+from ..services.imports.published_versions import proposal_message
+from ..services.sources.external_records import metadata_status
 from .pagination import PageMixin
 
 

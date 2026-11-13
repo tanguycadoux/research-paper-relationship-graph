@@ -1,8 +1,8 @@
 from django.urls import reverse
 
 from references.models import Publication
-from references.services import identification
-from references.services.identification import with_references_to_identify
+from references.services.corrections import identification
+from references.services.corrections.identification import with_references_to_identify
 from references.tests.helpers import without_candidate_search
 from references.tests.test_identification import (
     BOOK,

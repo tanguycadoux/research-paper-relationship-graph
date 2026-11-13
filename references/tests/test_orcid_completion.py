@@ -1,10 +1,10 @@
 from django.test import TestCase
 
 from references.models import Author, AuthorPublication, MetadataConflict, Publication
-from references.services import conflicts
-from references.services.affiliations import attach_affiliations
-from references.services.external_records import Source, store_record
-from references.services.parser import parse_publication
+from references.services.corrections import conflicts
+from references.services.imports.affiliations import attach_affiliations
+from references.services.imports.parser import parse_publication
+from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
 
 LECUN = {"given": "Yann", "family": "LeCun"}

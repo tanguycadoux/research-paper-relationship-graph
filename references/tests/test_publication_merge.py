@@ -5,13 +5,13 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
-from references.services import identification
-from references.services.parser import parse_publication
-from references.services.publication_merge import (
+from references.services.corrections import identification
+from references.services.corrections.publication_merge import (
     find_merge_target,
     merge_publication,
     merge_summary,
 )
+from references.services.imports.parser import parse_publication
 from references.tests.helpers import with_crossref, without_other_sources
 
 BOOK_REF = {"key": "ref1", "unstructured": "Goodfellow et al. Deep Learning. 2016."}
@@ -70,7 +70,7 @@ class MergeServiceTests(MergeTestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
 class FindMergeTargetTests(MergeTestCase):
     def test_by_existing_doi_without_calling_crossref(self, fetch):
         article = with_crossref(Publication.objects.create(doi="10.1000/x"), {"message": {}})
@@ -124,7 +124,7 @@ class MergeViewTests(MergeTestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json")
+@patch("references.services.imports.importer.fetch_crossref_json")
 class FindMergeTargetImportTests(TestCase):
     def test_unknown_doi_is_imported(self, fetch):
         fetch.return_value = {"message": {"title": ["Nouvel article"]}}

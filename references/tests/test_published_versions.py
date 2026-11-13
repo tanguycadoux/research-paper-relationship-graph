@@ -6,9 +6,9 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, MetadataConflict, Publication
-from references.services.external_records import Source, store_record
-from references.services.openalex_api import fetch_openalex_works, work_dois
-from references.services.published_versions import suggest_published_versions
+from references.services.imports.published_versions import suggest_published_versions
+from references.services.sources.external_records import Source, store_record
+from references.services.sources.openalex_api import fetch_openalex_works, work_dois
 from references.tests.helpers import without_other_sources
 
 ARXIV = "10.48550/arxiv.2403.03225"
@@ -44,7 +44,7 @@ class WorkDoisTests(SimpleTestCase):
     def test_every_doi_of_the_work_main_one_first(self):
         self.assertEqual(work_dois(openalex_work(JOURNAL, ARXIV)), [JOURNAL, ARXIV])
 
-    @patch("references.services.openalex_api.http.get_json")
+    @patch("references.services.sources.openalex_api.http.get_json")
     def test_batch_finds_a_preprint_known_by_its_journal_doi(self, get_json):
         work = openalex_work(JOURNAL, ARXIV)
         get_json.return_value = {"results": [work]}
@@ -64,7 +64,8 @@ class PreprintTestCase(TestCase):
 
     def suggest(self, works):
         with patch(
-            "references.services.published_versions.fetch_crossref_works", return_value=works
+            "references.services.imports.published_versions.fetch_crossref_works",
+            return_value=works,
         ) as fetch:
             reported = suggest_published_versions([self.preprint])
         return reported, fetch
@@ -131,7 +132,7 @@ class DecisionTests(PreprintTestCase):
 
     def decide(self, decision, answer=None):
         with patch(
-            "references.services.published_versions.fetch_crossref_json",
+            "references.services.imports.published_versions.fetch_crossref_json",
             return_value=crossref() if answer is None else answer,
         ):
             return self.client.post(

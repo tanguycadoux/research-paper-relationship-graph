@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
-from references.services.identification import with_references_to_identify
+from references.services.corrections.identification import with_references_to_identify
 
 
 class ReferencesToIdentifyTests(TestCase):

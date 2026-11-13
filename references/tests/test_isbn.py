@@ -7,10 +7,10 @@ from django.urls import reverse
 
 from references.forms import IdentifyReferenceForm, PublicationForm
 from references.models import CitedReference, Publication, UserPublication
-from references.services.books import find_or_import_book
-from references.services.isbn import is_valid_isbn, normalize_isbn
-from references.services.metadata_formats import openlibrary_message
-from references.services.openlibrary_api import fetch_openlibrary_book
+from references.services.identifiers.isbn import is_valid_isbn, normalize_isbn
+from references.services.imports.books import find_or_import_book
+from references.services.sources.metadata_formats import openlibrary_message
+from references.services.sources.openlibrary_api import fetch_openlibrary_book
 from references.tests.helpers import with_openlibrary, without_other_sources
 
 DEEP_LEARNING = "9780262035613"
@@ -38,7 +38,7 @@ class IsbnNormalizationTests(SimpleTestCase):
 
 
 class OpenLibraryTests(SimpleTestCase):
-    @patch("references.services.http._get_session")
+    @patch("references.services.sources.http._get_session")
     def test_search_by_isbn_in_one_request(self, get_session):
         get_session.return_value.get.return_value = Mock(
             status_code=200, json=Mock(return_value={"docs": [OPENLIBRARY_DOC]})
@@ -57,8 +57,8 @@ class OpenLibraryTests(SimpleTestCase):
         self.assertEqual(message["author"][0], {"given": "Ian", "family": "Goodfellow"})
 
 
-@patch("references.services.books.fetch_openlibrary_book")
-@patch("references.services.books.fetch_crossref_by_isbn")
+@patch("references.services.imports.books.fetch_openlibrary_book")
+@patch("references.services.imports.books.fetch_crossref_by_isbn")
 class FindOrImportBookTests(TestCase):
     def test_crossref_first(self, crossref, openlibrary):
         crossref.return_value = {"message": {"DOI": "10.7551/DL", "title": ["Deep Learning"]}}
@@ -126,8 +126,8 @@ class IsbnModelAndFormTests(TestCase):
         self.assertIn("isbn", IdentifyReferenceForm({"method": "isbn", "isbn": "123"}).errors)
 
 
-@patch("references.services.books.fetch_openlibrary_book", return_value=OPENLIBRARY_DOC)
-@patch("references.services.books.fetch_crossref_by_isbn", return_value=None)
+@patch("references.services.imports.books.fetch_openlibrary_book", return_value=OPENLIBRARY_DOC)
+@patch("references.services.imports.books.fetch_crossref_by_isbn", return_value=None)
 class IdentifyByIsbnViewTests(TestCase):
     def test_reference_is_linked_to_the_book(self, _crossref, _openlibrary):
         source = Publication.objects.create(title="Source")
@@ -143,9 +143,9 @@ class IdentifyByIsbnViewTests(TestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json")
-@patch("references.services.books.fetch_openlibrary_book", return_value=OPENLIBRARY_DOC)
-@patch("references.services.books.fetch_crossref_by_isbn", return_value=None)
+@patch("references.services.imports.importer.fetch_crossref_json")
+@patch("references.services.imports.books.fetch_openlibrary_book", return_value=OPENLIBRARY_DOC)
+@patch("references.services.imports.books.fetch_crossref_by_isbn", return_value=None)
 class AddByIsbnViewTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("alice")

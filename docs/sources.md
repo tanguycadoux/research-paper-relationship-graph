@@ -127,7 +127,7 @@ dans #246 : file d'attente, regroupement entre utilisateurs, progression).
 
 ## Requêtes HTTP
 
-Tous les clients passent par `services/http.py` : une session partagée, les mêmes règles
+Tous les clients passent par `services/sources/http.py` : une session partagée, les mêmes règles
 de nouvelles tentatives et la même journalisation. Le client Crossref s'identifie avec
 `CROSSREF_MAILTO` pour accéder au *polite pool* (OpenAlex reçoit la même adresse). Les
 clients respectent `Retry-After` sur les erreurs 429, retentent les 5xx et les erreurs
@@ -169,7 +169,7 @@ les dépôts Zenodo, les prépublications arXiv et les jeux de données. Crossre
 Les DOI arXiv (`10.48550/arXiv.…`) sont chez DataCite, sans bibliographie (#227). Quand
 les auteurs déclarent sur arXiv le DOI de la version publiée, DataCite le donne en
 `IsVersionOf` : la publication est alors **remplacée** par cette version
-(`services/preprints.py`), dont Crossref fournit métadonnées et bibliographie. Elle garde
+(`services/imports/preprints.py`), dont Crossref fournit métadonnées et bibliographie. Elle garde
 ses entrées de corpus, ses citations et ses corrections ; le DOI arXiv passe dans
 `preprint_doi`. Si la version publiée est déjà en base, la prépublication fusionne avec
 elle (corpus et citations déplacés). Les références citées importées par lots le sont
@@ -194,7 +194,7 @@ version publiée sous une même œuvre : ses `locations` donnent les DOI de tout
 versions (`openalex_api.work_dois`). Ce regroupement est automatique et parfois faux (il
 range les copies `10.65215/…` avec « Attention Is All You Need ») : la version n'est donc
 jamais appliquée d'office, mais **proposée** comme conflit « Version publiée selon
-OpenAlex » (`services/published_versions.py`).
+OpenAlex » (`services/imports/published_versions.py`).
 
 - À la fin d'un import, pour la publication et, avec ses références, celles qu'elle cite :
   les DOI non arXiv de leur œuvre OpenAlex sont vérifiés chez Crossref en une requête par
@@ -335,7 +335,7 @@ La fiche montre, à titre d'information, sans rien modifier dans la base (#59) :
 - les travaux de la base où l'auteur ne figure pas parmi les signataires : un nom publié
   rattaché à un autre auteur, ou un ORCID manquant.
 
-**Noms, à l'import** (`services/orcid_names.py`, #220). La recherche étendue
+**Noms, à l'import** (`services/imports/orcid_names.py`, #220). La recherche étendue
 (`/expanded-search/?q=orcid:(A OR B …)`) donne les noms de 50 personnes en une requête
 (mesuré : une URL de 1 200 caractères, une demi-seconde). À l'import d'une publication,
 les auteurs dont l'ORCID n'a jamais été demandé le sont en une requête groupée ; ceux des
