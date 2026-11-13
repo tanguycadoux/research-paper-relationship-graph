@@ -295,7 +295,23 @@ sont pas stockées : un changement de laboratoire apparaît naturellement.
 Les institutions viennent d'OpenAlex. Elles sont rattachées aux signatures par **position
 et nom publié** : les mots du nom sont comparés quel que soit leur ordre, si bien que
 « Thuillier, Thomas » (DataCite) correspond à « Thomas Thuillier ». Si le nombre d'auteurs
-ou un nom diffère, rien n'est rattaché pour l'article. Une organisation est reconnue par
+ou un nom diffère, rien n'est rattaché pour l'article. Deux cas ne sont pas des
+désaccords (#265) :
+
+- **Liste tronquée par OpenAlex.** OpenAlex ne donne jamais plus de 100 auteurs par
+  œuvre (`OPENALEX_MAX_AUTHORS`), et ses réponses stockées n'ont pas toujours le champ
+  `is_authors_truncated`. Quand OpenAlex en donne exactement 100 et la fiche davantage
+  (945 chez Crossref pour `10.1007/lrr-2016-1`), on compare les 100 premiers, et seuls
+  ceux-là reçoivent leurs affiliations.
+- **Liste vide d'un côté.** Une liste vide ne contredit rien. Si OpenAlex n'a pas
+  d'auteurs, il n'y a simplement rien à rattacher. Si la source prioritaire n'en donne
+  aucun (« Private Classical Communication », `10.1017/9781316809976.027`, sans auteur
+  chez Crossref), la fiche prend ceux de la réponse OpenAlex du même DOI
+  (`metadata_formats.openalex_authors` : nom publié `raw_author_name`, ORCID). Une
+  publication citée, analysée avant l'arrivée de sa réponse OpenAlex, est analysée de
+  nouveau à ce moment-là.
+
+Une organisation est reconnue par
 son identifiant OpenAlex ou par son ROR. Les liens sont recréés à chaque analyse, puisque
 les signatures le sont aussi.
 
@@ -401,7 +417,9 @@ fautes de la fiche (« Rodrinuez » devient « Rodriguez »).
 3. **OpenAlex et ORCID complètent** seulement : institutions, ORCID manquants, date en
    ligne, prénoms.
 4. Les auteurs sont rapprochés par leur **position et leur nom publié**
-   (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article.
+   (`raw_author_name`). En cas de désaccord, rien n'est rattaché pour l'article. Une
+   liste tronquée par OpenAlex (100 auteurs) ou vide d'un côté n'est pas un désaccord ;
+   sans auteur chez Crossref ou DataCite, la fiche prend ceux d'OpenAlex (#265).
 5. Un **vrai conflit** (un ORCID différent de celui déjà connu, un nom différent selon
    ORCID, une version publiée proposée) : l'existant est gardé et le conflit est signalé
    sur la page « Conflits » ([corrections.md](corrections.md#conflits)).
