@@ -24,6 +24,8 @@ const NODE_SPACING = 12;
 // steep edge needs a larger vertical gap, up to MAX_EDGE_GAP.
 const EDGE_SPACING = 6;
 const MAX_EDGE_GAP = 64;
+// Between the lowest dated publication and the band of the undated ones (#288).
+export const BAND_GAP = 56;
 
 function linkPairs(nodes, edges) {
     const index = new Map(nodes.map((n, i) => [n.data.id, i]));
@@ -139,24 +141,104 @@ export function verticalPositions(xs, startYs, sizes, links, top, bottom) {
     return ys.map((y) => offset + (y - min) * ratio);
 }
 
-export function placeNodes(nodes, edges, scale) {
+// The publications in the order of their date, placed: x is the date, y the result of
+// the barycentre order and of the vertical simulation. Sizes are those of all the nodes
+// of the graph, so that a node keeps its size whatever the variant.
+function placeOnTimeline(nodes, edges, scale, sizeOf, top, bottom) {
     const yearOf = (n) => (n.data.date ? fractionalYear(n.data.date) : scale.undatedYear);
     // From the order by date, as before, so that the result is reproducible.
     const byDate = [...nodes].sort((a, b) => yearOf(a) - yearOf(b));
     const links = linkPairs(byDate, edges);
     const rows = barycentreOrder(byDate.length, links);
     const xs = byDate.map((n) => scale.x(yearOf(n)));
-    const sizes = nodeSizes(byDate);
+    const sizes = byDate.map(sizeOf);
     const ys = verticalPositions(
         xs,
         rows.map((row) => row * ROW_SPACING),
         sizes,
         links,
-        scale.y(0),
-        scale.y(byDate.length - 1),
+        top,
+        bottom,
     );
     return byDate.map((n, i) => ({
         data: { ...n.data, size: sizes[i] },
         position: { x: xs[i], y: ys[i] },
     }));
+}
+
+// Positions along the band, left to right, so that neighbours keep NODE_SPACING between
+// their edges: pushed right from the left end, then back left from the right end if they
+// overflow it, then right again if they are too many for the width (the band then
+// extends beyond the timeline, on the right).
+export function spreadAlong(wanted, sizes, left, right) {
+    const order = wanted.map((_, i) => i).sort((a, b) => wanted[a] - wanted[b] || a - b);
+    const xs = [...wanted];
+    const gap = (a, b) => (sizes[a] + sizes[b]) / 2 + NODE_SPACING;
+    const pushRight = () => {
+        order.forEach((node, k) => {
+            const floor = k === 0 ? left : xs[order[k - 1]] + gap(order[k - 1], node);
+            xs[node] = Math.max(xs[node], floor);
+        });
+    };
+    pushRight();
+    for (let k = order.length - 1; k >= 0; k--) {
+        const node = order[k];
+        const ceiling = k === order.length - 1 ? right : xs[order[k + 1]] - gap(node, order[k + 1]);
+        xs[node] = Math.min(xs[node], ceiling);
+    }
+    pushRight();
+    return xs;
+}
+
+// The publications without a date on a band under the timeline (#288): each near the
+// dated publications it cites or that cite it (the average of their x), the others
+// spread over the width, in their order. Returns their elements.
+function placeOnBand(undated, placed, edges, sizeOf, left, right, bandY) {
+    const xOf = new Map(placed.map((element) => [element.data.id, element.position.x]));
+    const around = new Map(undated.map((n) => [n.data.id, []]));
+    for (const { data } of edges) {
+        for (const [own, other] of [[data.source, data.target], [data.target, data.source]]) {
+            if (around.has(own) && xOf.has(other)) {
+                around.get(own).push(xOf.get(other));
+            }
+        }
+    }
+    const alone = undated.filter((n) => around.get(n.data.id).length === 0);
+    const step = (right - left) / (alone.length + 1);
+    const wanted = undated.map((n) => {
+        const xs = around.get(n.data.id);
+        return xs.length
+            ? xs.reduce((sum, x) => sum + x, 0) / xs.length
+            : left + step * (alone.indexOf(n) + 1);
+    });
+    const sizes = undated.map(sizeOf);
+    const xs = spreadAlong(wanted, sizes, left, right);
+    return undated.map((n, i) => ({
+        data: { ...n.data, size: sizes[i] },
+        position: { x: xs[i], y: bandY },
+    }));
+}
+
+// The elements of the nodes, placed, and the height of the band of the publications
+// without a date (null without a band). undatedBand: the variant of #288; without it, or
+// without any undated publication, the undated ones are in the column of the timeline.
+export function placeNodes(nodes, edges, scale, undatedBand = false) {
+    const all = nodeSizes(nodes);
+    const sizes = new Map(nodes.map((n, i) => [n.data.id, all[i]]));
+    const sizeOf = (n) => sizes.get(n.data.id);
+    const undated = undatedBand ? nodes.filter((n) => !n.data.date) : [];
+    if (undated.length === 0) {
+        const top = scale.y(0);
+        const bottom = scale.y(nodes.length - 1);
+        return { elements: placeOnTimeline(nodes, edges, scale, sizeOf, top, bottom), bandY: null };
+    }
+    const dated = nodes.filter((n) => n.data.date);
+    const top = scale.y(0);
+    const bottom = dated.length > 1 ? scale.y(nodes.length - 1) : top;
+    const placed = placeOnTimeline(dated, edges, scale, sizeOf, top, bottom);
+    const bandY = bottom + BAND_GAP;
+    const left = scale.x(scale.undatedYear);
+    const right = Math.max(...placed.map((element) => element.position.x), left);
+    const band = placeOnBand(undated, placed, edges, sizeOf, left, right, bandY);
+    return { elements: [...placed, ...band], bandY };
 }

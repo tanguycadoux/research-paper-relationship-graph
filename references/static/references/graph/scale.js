@@ -19,13 +19,19 @@ export function yearRange(nodes) {
     return { min: Math.min(...years), max: Math.max(...years) };
 }
 
-// Maps years to x and rows to y, each axis scaled to the container independently.
-export function makeScale(years, rowCount, container) {
+// Maps years to x and rows to y, each axis scaled to the container independently. With
+// undatedColumn, the publications without a date get a column left of the oldest year;
+// otherwise (band under the timeline, #288) the timeline starts at the oldest year.
+export function makeScale(years, rowCount, container, undatedColumn = true) {
     const span = Math.max(years.max - years.min, 1);
-    const undatedYear = years.min - Math.max(span * UNDATED_OFFSET_RATIO, 1);
+    // The left end of the timeline: the column of the publications without a date, or
+    // the oldest year. Undated publications are placed there in the column variant only.
+    const undatedYear = undatedColumn
+        ? years.min - Math.max(span * UNDATED_OFFSET_RATIO, 1)
+        : years.min;
     const width = container.clientWidth - 2 * MARGIN;
     const height = container.clientHeight - 2 * MARGIN;
-    const yearSpan = years.max - undatedYear;
+    const yearSpan = Math.max(years.max - undatedYear, 1);
     return {
         undatedYear,
         x: (year) => MARGIN + ((year - undatedYear) / yearSpan) * width,

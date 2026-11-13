@@ -18,6 +18,33 @@ function onScreen(pixels) {
     return (element) => pixels / element.cy().zoom();
 }
 
+// Width (and length) of an arrowhead on the screen, in pixels (#288).
+const ARROW_SIZE = 8;
+// Cytoscape sizes an arrowhead from max((13.37 × width)^0.9, 29) × arrow-scale, in graph
+// units, and draws its triangle 0.3 times that size wide and long.
+const TRIANGLE_RATIO = 0.3;
+
+// The arrow-scale that gives ARROW_SIZE pixels on the screen for an edge of the given
+// width on the screen, whatever the zoom (#185).
+function arrowScale(edgeWidth) {
+    return (element) => {
+        const zoom = element.cy().zoom();
+        const base = Math.max(((13.37 * edgeWidth) / zoom) ** 0.9, 29);
+        return ARROW_SIZE / (TRIANGLE_RATIO * base * zoom);
+    };
+}
+
+// An edge of the given width and colour on the screen, with an arrowhead of its colour
+// on the cited publication: the edge goes from the citing one to the cited one.
+function edgeLook(edgeWidth, lineColor) {
+    return {
+        width: onScreen(edgeWidth),
+        "line-color": lineColor,
+        "target-arrow-color": lineColor,
+        "arrow-scale": arrowScale(edgeWidth),
+    };
+}
+
 function nodeSize(node) {
     return node.data("size") / node.cy().zoom();
 }
@@ -56,19 +83,20 @@ export function graphStyle() {
                 "z-index": 10,
             },
         },
-        // Straight edges, without arrows: a publication cites older ones, on its left.
+        // Straight edges, with a small arrowhead on the cited publication (#288): the time
+        // axis gives the direction, except for the publications without a date.
         {
             selector: "edge",
             style: {
-                width: onScreen(1.25),
-                "line-color": color("edge"),
+                ...edgeLook(1.25, color("edge")),
                 opacity: 0.85,
                 "curve-style": "straight",
+                "target-arrow-shape": "triangle",
             },
         },
         {
             selector: "edge.hovered",
-            style: { width: onScreen(2), "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
+            style: { ...edgeLook(2, color("edge-strong")), opacity: 1, "z-index": 5 },
         },
         // Selection (#61): the publication, its references and the publications citing it,
         // each with the colour of its relation; edges in a lighter shade of their nodes.
@@ -78,11 +106,11 @@ export function graphStyle() {
         { selector: "node.citing-node", style: { "background-color": color("citing") } },
         {
             selector: "edge.reference",
-            style: { width: onScreen(3), "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
+            style: { ...edgeLook(3, color("cited-light")), opacity: 1, "z-index": 5 },
         },
         {
             selector: "edge.citing",
-            style: { width: onScreen(3), "line-color": color("citing-light"), opacity: 1, "z-index": 5 },
+            style: { ...edgeLook(3, color("citing-light")), opacity: 1, "z-index": 5 },
         },
     ];
 }

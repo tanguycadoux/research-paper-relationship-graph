@@ -117,6 +117,7 @@ references/          application principale
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
+      graph_variants.py  variantes de disposition des graphes, choisies dans l'URL (non datés)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
@@ -133,7 +134,7 @@ references/          application principale
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, selection, style)
+  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, export, axis, band, selection, style)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/

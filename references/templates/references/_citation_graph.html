@@ -6,10 +6,32 @@
              aria-hidden="true"></div>
         <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des citations"></div>
         {% comment %}
-            Top right under the axis (2.5rem: axis and margin): back to the view on load (#196),
-            and the displayed graph as a PNG image, under the given file name (#175).
+            The publications without a date, under the timeline (#288): a dashed line and its
+            label, placed by graph/band.js at the height of the band, only in that variant.
         {% endcomment %}
-        <div class="absolute top-10 right-3 flex gap-2">
+        <div id="citation-graph-band"
+             class="pointer-events-none absolute inset-x-0 border-t border-dashed border-gray-300 text-xs text-gray-500 select-none"
+             aria-hidden="true"
+             hidden>
+            <span class="ml-3 inline-block bg-white/90 px-1">Non daté</span>
+        </div>
+        {% comment %}
+            Top right under the axis (2.5rem: axis and margin): the variants of the layout
+            chosen in the URL (#288, services/display/graph_variants.py), back to the view on
+            load (#196), and the displayed graph as a PNG image, under the given file name (#175).
+        {% endcomment %}
+        <div class="absolute top-10 right-3 flex flex-wrap justify-end gap-2">
+            {% for variant in graph_variants %}
+                <nav aria-label="Disposition du graphe : {{ variant.label|lower }}"
+                     class="flex h-8 items-center overflow-hidden rounded-md border border-gray-300 bg-white text-sm select-none">
+                    <span class="px-2 text-gray-500">{{ variant.label }}</span>
+                    {% for option in variant.options %}
+                        <a href="?{{ option.query }}"
+                           class="flex h-full items-center border-l border-gray-300 px-2 text-gray-900 no-underline hover:bg-gray-50{% if option.current %} bg-gray-100 font-semibold{% endif %}"
+                           {% if option.current %}aria-current="true"{% endif %}>{{ option.label }}</a>
+                    {% endfor %}
+                </nav>
+            {% endfor %}
             <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% endif %}">
                 {% button "Exporter l'image (PNG)" variant="secondary" icon="download" icon_only=True type="button" %}
             </div>
@@ -114,11 +136,13 @@
         </li>
     </ul>
     <p class="mt-1 text-sm text-gray-500">
-        Axe horizontal : date de publication. Survolez un article pour voir son titre ; cliquez
+        Axe horizontal : date de publication ; une flèche va de l'article qui cite vers l'article
+        cité. Survolez un article pour voir son titre ; cliquez
         pour le sélectionner, double-cliquez pour ouvrir sa fiche. Échap ou un clic dans le vide
         désélectionne.
     </p>
     {{ graph|json_script:"citation-graph-data" }}
+    {{ graph_layout|json_script:"citation-graph-layout" }}
     <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
     <script type="module" src="{% static 'references/graph/main.js' %}"></script>
 {% else %}
