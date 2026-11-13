@@ -113,6 +113,12 @@ Hors de ce parcours :
    Les fiches de ces requêtes de liste contiennent les mêmes auteurs et références qu'une
    requête unitaire. Il leur manque seulement des champs secondaires (`original-title`,
    `short-title`, `subject`, `subtitle`).
+5. Les **titres** passent par `titles.clean_title` : les entités HTML sont décodées, puis le
+   balisage JATS ou MathML (`<i>`, `<sub>`, `<mml:math>`) est retiré, et le LaTeX est gardé
+   tel quel. Certains éditeurs (IEEE) déposent un balisage échappé deux fois
+   (`&lt;sub&gt;` dans la réponse JSON) : les entités sont décodées tant qu'il en reste,
+   au plus trois fois, avant de retirer les balises (#263). La migration `0029` a nettoyé
+   de la même façon les titres déjà en base, sauf ceux corrigés à la main.
 
 Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
 Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une
