@@ -70,7 +70,7 @@ flowchart TD
         direction TB
         batch["Jamais récupérées : Crossref par lots de 50,<br>puis DataCite par lots pour les inconnues"]
         versions["Versions publiées déclarées :<br>Crossref par lot"]
-        jacow["Codes JACoW écrits dans les références :<br>DataCite par lot"]
+        jacow["Codes JACoW et identifiants arXiv écrits dans les références :<br>DataCite par lot, puis versions publiées déclarées"]
         citedoa["OpenAlex des citées, lots de 50"]
         batch --> versions --> jacow --> citedoa
     end
@@ -93,19 +93,20 @@ Hors de ce parcours :
 - **Page d'identification** d'une référence : Crossref (texte complet) et DataCite (titre)
   cherchent des candidats ([corrections.md](corrections.md#identifier-une-référence)).
 - **Fiche d'un auteur** : l'enregistrement ORCID complet, à la demande.
-- **Commandes** : `complete_affiliations`, `complete_orcid_names`, `replace_preprints`
-  traitent les publications déjà en base.
+- **Commandes** : `complete_affiliations`, `complete_orcid_names`, `replace_preprints`,
+  `link_written_identifiers` traitent les publications déjà en base.
 
 ## Import d'une publication
 
-1. Les vues appellent **explicitement** les services : `services/corpus/entries.add_identified`
-   pour un ajout au corpus, quel que soit le chemin (formulaire, bouton, import de fichier),
-   et `services/imports/importer.import_publication` dans les autres cas. `add_identified` envoie
+1. Les vues appellent **explicitement** les services : `add_identified`
+   (`services/corpus/entries.py`) pour un ajout au corpus, quel que soit le chemin
+   (formulaire, bouton, import de fichier), et `import_publication`
+   (`services/imports/importer.py`) dans les autres cas. `add_identified` envoie
    une publication avec DOI à `add_to_corpus` ; un livre sans DOI, trouvé par son ISBN
    (Crossref puis Open Library, `books.find_or_import_book`), n'est jamais envoyé aux sources
-   de DOI. `corpus.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée.
+   de DOI. `entries.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée.
    Une publication ajoutée « à lire » n'importe que ses propres métadonnées : sa
-   bibliographie attend que son statut change (`corpus.change_reading_status`), et
+   bibliographie attend que son statut change (`entries.change_reading_status`), et
    `Publication.parse_references` ne compte que les entrées d'un autre statut (#234).
    Créer une `Publication` n'appelle jamais une source : il n'y a pas de signal.
 2. Les métadonnées d'un article ne sont récupérées que si aucune source ne l'a encore décrit.
@@ -202,7 +203,19 @@ Un chercheur copie plus souvent l'identifiant ou le lien arXiv que le DOI
   ensuite le chemin d'un DOI saisi, vérification par doi.org comprise.
 - `bare_arxiv_doi` : le champ `eprint` d'un fichier BibTeX (#165).
 - `written_arxiv_doi` : un identifiant écrit dans un texte (bibliographie des sources
-  LaTeX).
+  LaTeX, référence citée sans DOI : voir plus bas).
+
+### Identifiant arXiv écrit dans une référence
+
+Une référence sans DOI écrit souvent son identifiant arXiv : 16 références de « Deep
+learning » (`10.1038/nature14539`) donnent `Preprint at http://arxiv.org/abs/1409.4842`,
+d'autres `arXiv preprint arXiv:1512.03385` ou `arXiv:hep-th/9711200` (#266). C'est un
+identifiant écrit par les auteurs, comme un code JACoW : il est relié à l'import par le
+même mécanisme (`services/imports/written_identifiers.py`, voir [Actes
+JACoW](#code-jacow-écrit-dans-une-référence)). Une prépublication reliée ainsi est ensuite
+remplacée par sa version publiée déclarée, comme une prépublication citée par son DOI.
+La commande `link_written_identifiers` relie les références des bibliographies déjà
+importées.
 
 ### Version publiée déclarée
 
@@ -278,9 +291,12 @@ Les actes des conférences d'accélérateurs (JACoW) ont leurs DOI chez DataCite
 forme fixe : `10.18429/JACoW-<CONFÉRENCE><ANNÉE>-<CODE>` (vérifié sur 5 000 de leurs 26 000
 DOI ; les autres formes sont des volumes entiers). Un code `JACoW-IPAC2019-WEPRB007` écrit
 dans une référence est donc un identifiant des auteurs : à l'import d'une bibliographie,
-`jacow.link_jacow_references` le relie, mais seulement si DataCite connaît le DOI **et**
-que son titre se retrouve dans la référence. Sinon rien n'est créé : un code faux ou trop
-ancien ne laisse pas de publication vide dans la base.
+`written_identifiers.link_written_identifiers` le relie, mais seulement si DataCite
+connaît le DOI **et** que son titre se retrouve dans la référence. Sinon rien n'est créé :
+un code faux ou trop ancien ne laisse pas de publication vide dans la base. Les
+identifiants arXiv écrits dans une référence suivent le même chemin (#266) : un seul
+appel à DataCite, par lots, pour les DOI des deux sortes que la base ne connaît pas
+encore.
 
 ### Ordre des auteurs incertain
 

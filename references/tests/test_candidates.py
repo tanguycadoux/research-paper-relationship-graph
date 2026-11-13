@@ -6,8 +6,9 @@ from django.urls import reverse
 
 from references.models import CitedReference, Publication
 from references.services.corrections import candidates
-from references.services.imports.jacow import link_jacow_references, written_jacow_doi
+from references.services.imports.jacow import written_jacow_doi
 from references.services.imports.parser import parse_publication
+from references.services.imports.written_identifiers import link_written_identifiers
 from references.services.sources.external_records import Source, has_record
 from references.tests.helpers import with_crossref, without_other_sources
 
@@ -186,11 +187,11 @@ class SourcesTests(CandidateTestCase):
         self.assertEqual([c.publication for c in found], [pub])
 
 
-@patch("references.services.imports.jacow.fetch_datacite_works")
+@patch("references.services.imports.written_identifiers.fetch_datacite_works")
 class JacowLinkTests(CandidateTestCase):
     def test_linked_once_datacite_confirms(self, works):
         works.return_value = {JACOW_DOI: JACOW_RECORD}
-        self.assertEqual(link_jacow_references(self.source), 1)
+        self.assertEqual(link_written_identifiers(self.source).linked, 1)
         target = self.ref(1).target
         self.assertEqual(target.doi, JACOW_DOI)
         self.assertTrue(target.title.startswith("RF Commissioning"))
@@ -200,20 +201,20 @@ class JacowLinkTests(CandidateTestCase):
     def test_unknown_doi_creates_nothing(self, works):
         works.return_value = {JACOW_DOI: None}
         count = Publication.objects.count()
-        self.assertEqual(link_jacow_references(self.source), 0)
+        self.assertEqual(link_written_identifiers(self.source).linked, 0)
         self.assertEqual(Publication.objects.count(), count)
 
     def test_other_title_creates_nothing(self, works):
         works.return_value = {JACOW_DOI: datacite_record(JACOW_DOI, "Another paper", "X", 2019)}
         count = Publication.objects.count()
-        self.assertEqual(link_jacow_references(self.source), 0)
+        self.assertEqual(link_written_identifiers(self.source).linked, 0)
         self.assertEqual(Publication.objects.count(), count)
 
     def test_publication_of_the_base_linked_without_request(self, works):
         Publication.objects.create(
             doi=JACOW_DOI, title=JACOW_RECORD["data"]["attributes"]["titles"][0]["title"]
         )
-        self.assertEqual(link_jacow_references(self.source), 1)
+        self.assertEqual(link_written_identifiers(self.source).linked, 1)
         works.assert_not_called()
 
 
