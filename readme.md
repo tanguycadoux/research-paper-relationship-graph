@@ -26,9 +26,10 @@ Fonctionnalités :
 Documentation :
 - [Architecture](docs/architecture.md) : principe, organisation du code, modèle de
   données, et liens vers les documents détaillés ([sources de métadonnées](docs/sources.md),
-  avec le schéma d'un import ; [corrections](docs/corrections.md) ;
-  [graphes](docs/graphes.md) ; [interface](docs/interface.md) ;
-  [journal des décisions](docs/decisions.md)) ;
+  avec le schéma d'un import ; [prépublications arXiv et actes JACoW](docs/arxiv-jacow.md) ;
+  [auteurs, affiliations et ORCID](docs/auteurs.md) ; [corrections](docs/corrections.md) ;
+  [graphes](docs/graphes.md) ; [découverte d'articles](docs/decouverte.md) ;
+  [interface](docs/interface.md) ; [journal des décisions](docs/decisions.md)) ;
 - [Contribuer](CONTRIBUTING.md) : règles du projet, branches, messages de commit, tests.
 
 ## Installation
