@@ -1,8 +1,27 @@
+from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 
 from references.models import Publication
+from references.services.display.search import filter_publications, parse
 from references.services.imports.parser import cited_publications, parse_title
-from references.services.imports.titles import clean_title
+from references.services.imports.titles import clean_title, readable_title
+
+# Titles of the base written in LaTeX by their publisher (#264).
+LATEX_TITLES = {
+    r"An R&D Program Towards ${\rm Nb}_{3}{\rm Sn}$ Accelerator Magnets": (
+        "An R&D Program Towards Nb₃Sn Accelerator Magnets"
+    ),
+    r"Mechanical Behavior of HQ01, a ${\hbox{Nb}}_{3}\hbox{Sn}$ Accelerator-Quality "
+    r"Quadrupole": "Mechanical Behavior of HQ01, a Nb₃Sn Accelerator-Quality Quadrupole",
+    r"Mechanical Performance of the LARP Nb$_{3}$Sn Quadrupole Magnet LQS01": (
+        "Mechanical Performance of the LARP Nb₃Sn Quadrupole Magnet LQS01"
+    ),
+    # 10.1109/tasc.2015.2510508, once its markup escaped twice is removed (#263).
+    r"Development of MQXF: The Nb3Sn Low- $\beta$ Quadrupole for the HiLumi LHC": (
+        "Development of MQXF: The Nb3Sn Low- β Quadrupole for the HiLumi LHC"
+    ),
+}
 
 
 class CleanTitleTests(SimpleTestCase):
@@ -82,3 +101,87 @@ class StoredTitlesMigrationTests(TestCase):
         self.run_migration()
         pub.refresh_from_db()
         self.assertEqual(pub.title, "My <sub>own</sub> title")
+
+
+class ReadableTitleTests(SimpleTestCase):
+    def test_titles_of_the_base(self):
+        for title, readable in LATEX_TITLES.items():
+            with self.subTest(title=title):
+                self.assertEqual(readable_title(title), readable)
+
+    def test_title_without_latex_is_unchanged(self):
+        for title in ("Deep learning", "Cost of $100 magnets", ""):
+            with self.subTest(title=title):
+                self.assertEqual(readable_title(title), title)
+
+    def test_scripts_symbols_and_text_commands(self):
+        self.assertEqual(readable_title(r"MgB$_2$ wires at $10^{-3}$ Pa"), "MgB₂ wires at 10⁻³ Pa")
+        self.assertEqual(readable_title(r"A $90^\circ$ bend, $\pm 5\%$"), "A 90° bend, ± 5%")
+        self.assertEqual(readable_title(r"The \textit{in situ} method"), "The in situ method")
+        self.assertEqual(readable_title(r"$\Delta T \sim 2$ K"), "Δ T ∼ 2 K")
+
+    def test_formula_that_cannot_be_rendered_whole_is_kept(self):
+        for title in (
+            r"A $\sqrt{x}$ formula",  # unknown command
+            r"T$_c$ of a superconductor",  # no subscript c in Unicode
+            r"B$^*$ mesons",  # no superscript star
+            r"\'Etude des aimants",  # accent outside the known commands
+        ):
+            with self.subTest(title=title):
+                self.assertEqual(readable_title(title), title)
+
+
+class ReadableTitleFieldTests(TestCase):
+    TITLE = r"Mechanical Performance of the LARP Nb$_{3}$Sn Quadrupole Magnet LQS01"
+    READABLE = "Mechanical Performance of the LARP Nb₃Sn Quadrupole Magnet LQS01"
+
+    def test_filled_on_save_and_shown(self):
+        pub = Publication.objects.create(title=self.TITLE)
+        self.assertEqual(pub.readable_title, self.READABLE)
+        self.assertEqual(str(pub), self.READABLE)
+        pub.title = "Plain"
+        pub.save(update_fields=["title"])
+        pub.refresh_from_db()
+        self.assertEqual(pub.readable_title, "Plain")
+
+    def test_filled_by_bulk_writes(self):
+        cited = cited_publications(["10.1000/x"], [{"article-title": self.TITLE}])["10.1000/x"]
+        cited.refresh_from_db()
+        self.assertEqual(cited.readable_title, self.READABLE)
+        cited.title = r"MgB$_2$"
+        Publication.objects.bulk_update([cited], ["title"])
+        cited.refresh_from_db()
+        self.assertEqual(cited.readable_title, "MgB₂")
+
+    def test_source_title_kept_for_editing(self):
+        pub = Publication.objects.create(title=self.TITLE)
+        user = get_user_model().objects.create_user("u", password="p")
+        self.client.force_login(user)
+        page = self.client.get(reverse("publication_detail", args=[pub.pk])).content.decode()
+        self.assertIn(self.READABLE, page)
+        self.assertNotIn("$_{3}$", page)
+        edit = self.client.get(reverse("publication_edit", args=[pub.pk])).content.decode()
+        self.assertIn("Nb$_{3}$Sn", edit)
+
+    def test_search_finds_every_form_of_nb3sn(self):
+        expected = {Publication.objects.create(title=title) for title in LATEX_TITLES}
+        Publication.objects.create(title="Deep learning")
+        found = set(filter_publications(Publication.objects.all(), parse("Nb3Sn")))
+        self.assertEqual(found, expected)
+
+
+class ReadableTitlesMigrationTests(TestCase):
+    """Migration 0031 (#264): the readable title of the publications already in base."""
+
+    def test_readable_titles_are_filled(self):
+        from importlib import import_module
+
+        from django.apps import apps
+
+        pub = Publication.objects.create(title=r"${\rm Nb}_{3}{\rm Sn}$ magnets")
+        Publication.objects.filter(pk=pub.pk).update(readable_title="")
+        import_module("references.migrations.0031_publication_readable_title").fill_readable_titles(
+            apps, None
+        )
+        pub.refresh_from_db()
+        self.assertEqual(pub.readable_title, "Nb₃Sn magnets")

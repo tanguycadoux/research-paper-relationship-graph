@@ -40,7 +40,7 @@ def co_cited(user, tag=""):
         .filter(citing_count__gte=MIN_CITING)
     )
     return with_first_author(suggestions).order_by(
-        "-citing_count", "-publication_date", "title", "pk"
+        "-citing_count", "-publication_date", "readable_title", "pk"
     )
 
 
@@ -55,7 +55,7 @@ def describe(user, publications, tag=""):
             target__in=publications, source__in=context_publications(user, tag)
         )
         .select_related("source")
-        .order_by("-source__publication_date", "source__title", "source_id")
+        .order_by("-source__publication_date", "source__readable_title", "source_id")
     )
     for ref in refs:
         if ref.source not in citing[ref.target_id]:

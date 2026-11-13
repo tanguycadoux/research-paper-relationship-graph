@@ -132,7 +132,9 @@ def author_named(words):
 
 def filter_publications(publications, query):
     """The publications matching every part of the query."""
-    publications = publications.alias(_title=Normalized(F("title")), _doi=Normalized(F("doi")))
+    publications = publications.alias(
+        _title=Normalized(F("readable_title")), _doi=Normalized(F("doi"))
+    )
     for term in query.terms:
         publications = publications.filter(
             contains("_title", term)

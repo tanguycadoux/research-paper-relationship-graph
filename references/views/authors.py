@@ -49,7 +49,7 @@ class AuthorDetailView(DetailView):
         # which a join would count twice (rows and badges).
         context["publications"] = for_publication_table(
             Publication.objects.filter(pk__in=self.object.publications.values("pk"))
-        ).order_by("-publication_date", "title")
+        ).order_by("-publication_date", "readable_title")
         context["user_pub_ids"] = corpus_ids(self.request.user)
         context["organization_groups"] = organization_groups(self.object)
         context["merges"] = self.object.merges.select_related("merged_by")
