@@ -5,9 +5,26 @@ from django.utils.formats import date_format
 
 from .services.identifiers.doi import normalize_doi
 from .services.identifiers.isbn import normalize_isbn
+from .services.imports.titles import readable_title
 
 
 class PublicationQuerySet(models.QuerySet):
+    def bulk_create(self, objs, *args, **kwargs):
+        """Like save(), fill the readable title of each publication (#264)."""
+        objs = list(objs)
+        for pub in objs:
+            pub.readable_title = readable_title(pub.title)
+        return super().bulk_create(objs, *args, **kwargs)
+
+    def bulk_update(self, objs, fields, *args, **kwargs):
+        """A title updated in bulk updates its readable form too (#264)."""
+        objs = list(objs)
+        if "title" in fields:
+            for pub in objs:
+                pub.readable_title = readable_title(pub.title)
+            fields = [*fields, "readable_title"]
+        return super().bulk_update(objs, fields, *args, **kwargs)
+
     def with_doi(self, doi):
         """By its DOI, or by the DOI of the preprint it replaced (#227)."""
         return self.filter(models.Q(doi=doi) | models.Q(preprint_doi=doi))
@@ -49,6 +66,9 @@ class Publication(models.Model):
     preprint_doi = models.CharField("DOI de la prépublication", max_length=255, blank=True)
     isbn = models.CharField("ISBN", max_length=13, blank=True)
     title = models.TextField(blank=True)
+    # The title without its LaTeX, shown and searched (#264): « Nb₃Sn » for
+    # « ${\rm Nb}_{3}{\rm Sn}$ ». Derived from the title on every save.
+    readable_title = models.TextField("titre lisible", blank=True, editable=False)
     publication_date = models.DateField(null=True, blank=True)
     publication_date_precision = models.CharField(
         max_length=5, choices=DatePrecision.choices, default=DatePrecision.DAY
@@ -80,12 +100,16 @@ class Publication(models.Model):
         ]
 
     def __str__(self):
-        return self.title or self.doi or self.isbn or f"PK : {self.pk}"
+        return self.readable_title or self.title or self.doi or self.isbn or f"PK : {self.pk}"
 
     def save(self, *args, **kwargs):
         self.doi = normalize_doi(self.doi)
         self.preprint_doi = normalize_doi(self.preprint_doi)
         self.isbn = normalize_isbn(self.isbn)
+        self.readable_title = readable_title(self.title)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None and "title" in update_fields:
+            kwargs["update_fields"] = {*update_fields, "readable_title"}
         super().save(*args, **kwargs)
 
     @property

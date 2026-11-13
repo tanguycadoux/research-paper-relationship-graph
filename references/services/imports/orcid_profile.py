@@ -47,7 +47,7 @@ def orcid_profile(author):
         "work_count": len(groups),
         "in_base_count": in_base.count(),
         "without_author": in_base.exclude(pk__in=author.publications.values("pk")).order_by(
-            "-publication_date", "title"
+            "-publication_date", "readable_title"
         ),
         "fetched_at": record.fetched_at,
         "has_works": True,

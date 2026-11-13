@@ -12,7 +12,7 @@ from django.utils import timezone
 from ...models import IncomingCitations, Publication
 from ..display.publication_table import corpus_ids
 from ..identifiers.doi import normalize_doi
-from ..imports.titles import clean_title
+from ..imports.titles import clean_title, readable_title
 from ..sources.external_records import Source, records_by_source
 from ..sources.openalex_api import fetch_citing_works, fetch_openalex_work
 
@@ -78,7 +78,7 @@ def summarize(work):
     return {
         "openalex": (work.get("id") or "").rsplit("/", 1)[-1],
         "doi": normalize_doi(work.get("doi") or ""),
-        "title": clean_title(work.get("display_name")) or "Sans titre",
+        "title": readable_title(clean_title(work.get("display_name"))) or "Sans titre",
         "year": work.get("publication_year"),
         "date": work.get("publication_date") or "",
         "first_author": (first.get("author") or {}).get("display_name") or "",

@@ -181,7 +181,7 @@ def local_candidates(ref):
     words = sorted(title_words(cited_title(ref)), key=len, reverse=True)[:2]
     if not words:
         return []
-    publications = Publication.objects.alias(_title=Normalized(F("title"))).exclude(
+    publications = Publication.objects.alias(_title=Normalized(F("readable_title"))).exclude(
         pk=ref.source_id
     )
     for word in words:
@@ -194,7 +194,7 @@ def local_candidate(pub):
     date = pub.publication_date
     slots = pub.authorpublication_set.all()[:3]
     return Candidate(
-        title=pub.title,
+        title=pub.readable_title,
         doi=pub.doi,
         authors=tuple(slot.author.last_name for slot in slots),
         year=date.year if date else None,

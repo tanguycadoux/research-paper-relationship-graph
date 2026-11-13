@@ -80,7 +80,7 @@ class PublicationDetailView(DetailView):
             Publication.objects.filter(
                 pk__in=CitedReference.objects.filter(target=pub).values("source")
             )
-        ).order_by("-publication_date", "title")
+        ).order_by("-publication_date", "readable_title")
         context |= incoming_citations_context(self.request, pub)
         context["metadata_status"] = metadata_status(pub)
         context["references_available"] = references_available(pub)

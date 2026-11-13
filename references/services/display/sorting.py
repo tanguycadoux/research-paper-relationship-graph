@@ -70,11 +70,11 @@ def first_author_name():
 
 PUBLICATIONS = Sorting(
     columns={
-        "title": Column(Normalized(F("title"))),
+        "title": Column(Normalized(F("readable_title"))),
         "author": Column(first_author_name()),
         "year": Column(F("publication_date"), descending_first=True),
     },
-    ties=[Normalized(F("title"))],
+    ties=[Normalized(F("readable_title"))],
     default=Sort("year", descending=True),
 )
 

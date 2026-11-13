@@ -98,9 +98,9 @@ Hors de ce parcours :
 
 ## Import d'une publication
 
-1. Les vues appellent **explicitement** les services : `services/corpus.add_identified`
+1. Les vues appellent **explicitement** les services : `services/corpus/entries.add_identified`
    pour un ajout au corpus, quel que soit le chemin (formulaire, bouton, import de fichier),
-   et `services/importer.import_publication` dans les autres cas. `add_identified` envoie
+   et `services/imports/importer.import_publication` dans les autres cas. `add_identified` envoie
    une publication avec DOI à `add_to_corpus` ; un livre sans DOI, trouvé par son ISBN
    (Crossref puis Open Library, `books.find_or_import_book`), n'est jamais envoyé aux sources
    de DOI. `corpus.find_or_create` reconnaît le DOI ou l'ISBN d'une saisie ou d'une entrée.
@@ -127,6 +127,16 @@ Hors de ce parcours :
    (`&lt;sub&gt;` dans la réponse JSON) : les entités sont décodées tant qu'il en reste,
    au plus trois fois, avant de retirer les balises (#263). La migration `0029` a nettoyé
    de la même façon les titres déjà en base, sauf ceux corrigés à la main.
+6. Le **titre lisible** (`Publication.readable_title`, #264) est tiré du titre à chaque
+   enregistrement par `titles.readable_title`. Le titre de la source reste tel quel : il
+   fait foi, et l'export BibTeX garde son LaTeX. Les titres de physique déposés par IEEE
+   écrivent du LaTeX (`${\rm Nb}_{3}{\rm Sn}$`, `$\beta$`) ; la forme lisible le
+   convertit : commandes de police (`\rm`, `\hbox`, `\mathrm`, `\textit`…) et accolades
+   retirées, indices et exposants simples en caractères Unicode (`Nb₃Sn`, `10⁻³`),
+   lettres grecques et quelques symboles (`β`, `±`, `°`). Une formule qui ne se rend pas
+   entièrement (`\sqrt`, `T$_c$`, sans indice « c » en Unicode) laisse le titre inchangé :
+   pas de rendu approché. `save()`, `bulk_create` et `bulk_update` de `Publication` le
+   tiennent à jour ; la migration `0031` l'a rempli pour les titres déjà en base.
 
 Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
 Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une

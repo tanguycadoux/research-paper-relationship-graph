@@ -26,7 +26,7 @@ class PublicationAdmin(admin.ModelAdmin):
         "date_updated",
         "display_authors",
     )
-    search_fields = ("doi", "preprint_doi", "title")
+    search_fields = ("doi", "preprint_doi", "title", "readable_title")
     list_filter = ("publication_date",)
     ordering = ("title",)
 

@@ -145,7 +145,9 @@ class Filters:
 
 
 def title_contains(publications, text):
-    return publications.alias(_title=Normalized(F("title"))).filter(contains("_title", text))
+    return publications.alias(_title=Normalized(F("readable_title"))).filter(
+        contains("_title", text)
+    )
 
 
 def author_contains(publications, text):

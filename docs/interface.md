@@ -19,7 +19,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   toasts (`static/js/toasts.js`).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mes références », « Cité par » et la page d'un auteur.
-  `services/publication_table.for_publication_table` calcule dans la même requête ce
+  `services/display/publication_table.for_publication_table` calcule dans la même requête ce
   qu'il affiche à côté du titre : le premier auteur (« et al. » s'il y en a d'autres,
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
@@ -68,7 +68,9 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   question porte sur des titres, des années ou des identifiants). Les comparaisons
   ignorent la casse et les accents grâce à `normalized()`, une fonction SQL enregistrée
   sur chaque connexion SQLite (`connection_created`) : le `LIKE` de SQLite ne replie que
-  l'ASCII, et il n'a pas d'`unaccent`. La barre est dans l'en-tête de toutes les pages
+  l'ASCII, et il n'a pas d'`unaccent`. Les titres sont cherchés, filtrés et triés sur leur
+  forme lisible (`readable_title`, #264) : sa décomposition NFKD ramène les indices à des
+  chiffres, si bien que « Nb3Sn » trouve « Nb₃Sn », écrit `Nb$_{3}$Sn` par la source. La barre est dans l'en-tête de toutes les pages
   (une icône vers `/search/` sous `md`) ; l'accueil et la page de recherche ont la leur,
   plus grande, avec l'aide de la syntaxe. Ctrl+K (⌘K sur Mac) y place le curseur, ou
   ouvre la page de recherche quand aucune barre n'est affichée (`static/js/search.js`).
