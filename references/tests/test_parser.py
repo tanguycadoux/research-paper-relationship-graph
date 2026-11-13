@@ -1,5 +1,7 @@
+import importlib
 from unittest.mock import patch
 
+from django.apps import apps
 from django.db import IntegrityError, connection
 from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
@@ -136,3 +138,86 @@ class ParserQueryCountTests(TestCase):
         # 200 authors and 200 references: per-row queries would mean more than 600.
         # bulk_create only splits large inserts to respect SQLite's parameter limit.
         self.assertLess(self.count_queries(200), 30)
+
+
+def numbered(numbers, prefix="ref"):
+    return [{"key": f"{prefix}{n}", "unstructured": f"Reference {n}"} for n in numbers]
+
+
+# Order of the bibliography of 10.1109/tasc.2014.2377730 at Crossref (#258).
+IEEE_ORDER = [4, 3, 10, 6, 11, 5, 8, 12, 7, 2, 9, 1]
+
+
+@without_other_sources
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+class ReferenceOrderTests(TestCase):
+    """#258: IEEE deposits its bibliographies out of order, the keys keep the numbers."""
+
+    def make_publication(self, refs):
+        pub = Publication.objects.create(title="")
+        with_crossref(pub, crossref_message(references=refs))
+        parse_publication(pub)
+        return pub
+
+    def keys(self, pub):
+        return list(CitedReference.objects.filter(source=pub).values_list("key", flat=True))
+
+    def test_numbered_keys_are_sorted(self, _fetch):
+        pub = self.make_publication(numbered(IEEE_ORDER))
+        self.assertEqual(self.keys(pub), [f"ref{n}" for n in range(1, 13)])
+        first = CitedReference.objects.get(source=pub, position=0)
+        self.assertEqual(first.unstructured, "Reference 1")
+
+    def test_other_keys_keep_the_order_received(self, _fetch):
+        cases = {
+            "mixed keys": [*numbered([2, 1]), {"key": "bib3"}],
+            "duplicate number": numbered([2, 1, 2]),
+            "other prefix": numbered([2, 1], prefix="CR"),
+            "missing key": [*numbered([2]), {"unstructured": "Sans clé"}],
+        }
+        for name, refs in cases.items():
+            with self.subTest(name):
+                pub = self.make_publication(refs)
+                self.assertEqual(self.keys(pub), [ref.get("key", "") for ref in refs])
+
+    def test_manual_decision_follows_its_reference(self, _fetch):
+        pub = self.make_publication(numbered(IEEE_ORDER))
+        CitedReference.objects.filter(source=pub, key="ref3").update(
+            unidentifiable=True, resolved_manually=True
+        )
+        parse_publication(pub)
+        ref = CitedReference.objects.get(source=pub, unidentifiable=True)
+        self.assertEqual((ref.key, ref.position), ("ref3", 2))
+
+
+class SortIeeeReferencesMigrationTests(TestCase):
+    """#258: the bibliographies already imported are renumbered, decisions kept."""
+
+    def migrate(self):
+        migration = importlib.import_module("references.migrations.0030_sort_ieee_references")
+        migration.sort_ieee_references(apps, None)
+
+    def store(self, pub, keys):
+        CitedReference.objects.bulk_create(
+            CitedReference(source=pub, position=position, key=key, unstructured=key)
+            for position, key in enumerate(keys)
+        )
+
+    def test_numbered_bibliography_is_renumbered(self):
+        ieee = Publication.objects.create(title="IEEE")
+        self.store(ieee, [f"ref{n}" for n in IEEE_ORDER])
+        CitedReference.objects.filter(source=ieee, key="ref3").update(
+            unidentifiable=True, resolved_manually=True
+        )
+        self.migrate()
+        keys = CitedReference.objects.filter(source=ieee).values_list("key", flat=True)
+        self.assertEqual(list(keys), [f"ref{n}" for n in range(1, 13)])
+        decided = CitedReference.objects.get(source=ieee, unidentifiable=True)
+        self.assertEqual((decided.key, decided.position), ("ref3", 2))
+
+    def test_other_bibliographies_are_left_alone(self):
+        other = Publication.objects.create(title="Autre")
+        self.store(other, ["ref2", "ref1", "bib3"])
+        self.migrate()
+        keys = CitedReference.objects.filter(source=other).values_list("key", flat=True)
+        self.assertEqual(list(keys), ["ref2", "ref1", "bib3"])
