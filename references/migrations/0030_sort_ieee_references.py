@@ -47,7 +47,7 @@ def sort_ieee_references(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("references", "0028_incoming_citations"),
+        ("references", "0029_clean_double_escaped_titles"),
     ]
 
     operations = [

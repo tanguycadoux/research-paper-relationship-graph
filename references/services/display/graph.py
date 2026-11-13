@@ -1,9 +1,9 @@
-from django.db.models import CharField, Count, OuterRef, Prefetch, Q, Subquery
+from django.db.models import CharField, Count, OuterRef, Q, Subquery
 from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 
-from ...models import AuthorPublication, CitedReference, ExternalRecord, Publication
+from ...models import CitedReference, ExternalRecord, Publication
 from ..sources.external_records import Source
 from .publication_details import clean_text
 
@@ -75,12 +75,7 @@ def elements(publications, edges, role_of):
     """The nodes of the publications, with the role role_of gives each, and the edges."""
     publications = publications.annotate(
         cited_by=Count("citations"), venue=venue()
-    ).prefetch_related(
-        Prefetch(
-            "authorpublication_set",
-            queryset=AuthorPublication.objects.select_related("author").order_by("order"),
-        )
-    )
+    ).with_author_slots()
     return {
         "nodes": [node_data(pub, role_of(pub.pk)) for pub in publications],
         "edges": [edge_data(source_id, target_id) for source_id, target_id in edges],

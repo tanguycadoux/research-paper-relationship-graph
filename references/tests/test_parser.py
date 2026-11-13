@@ -194,7 +194,7 @@ class SortIeeeReferencesMigrationTests(TestCase):
     """#258: the bibliographies already imported are renumbered, decisions kept."""
 
     def migrate(self):
-        migration = importlib.import_module("references.migrations.0029_sort_ieee_references")
+        migration = importlib.import_module("references.migrations.0030_sort_ieee_references")
         migration.sort_ieee_references(apps, None)
 
     def store(self, pub, keys):
