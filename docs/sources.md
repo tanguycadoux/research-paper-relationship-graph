@@ -21,6 +21,14 @@ première qui la connaît, dans l'ordre **Crossref, DataCite, Open Library**, co
 format Crossref (`metadata_formats.py`). La bibliographie tirée d'arXiv ne sert que si
 cette réponse n'en a pas.
 
+Les références sont numérotées dans l'ordre de la réponse, sauf quand toutes leurs clés
+sont de la forme `ref<n>`, sans numéro répété : elles sont alors triées par `n`
+(`parser.in_numbered_order`, #258). IEEE dépose ses bibliographies dans le désordre chez
+Crossref (`ref4, ref3, ref10…` pour `10.1109/tasc.2014.2377730`), mais la clé garde le
+numéro de l'article. Toute autre forme de clé garde l'ordre reçu, sans deviner. La
+migration `0030_sort_ieee_references` a renuméroté les bibliographies déjà importées ;
+les décisions manuelles, portées par la référence et retrouvées par sa clé, suivent.
+
 ## Parcours d'un import
 
 `importer.import_publication` enchaîne les étapes ci-dessous. Chaque réponse est stockée
@@ -113,6 +121,12 @@ Hors de ce parcours :
    Les fiches de ces requêtes de liste contiennent les mêmes auteurs et références qu'une
    requête unitaire. Il leur manque seulement des champs secondaires (`original-title`,
    `short-title`, `subject`, `subtitle`).
+5. Les **titres** passent par `titles.clean_title` : les entités HTML sont décodées, puis le
+   balisage JATS ou MathML (`<i>`, `<sub>`, `<mml:math>`) est retiré, et le LaTeX est gardé
+   tel quel. Certains éditeurs (IEEE) déposent un balisage échappé deux fois
+   (`&lt;sub&gt;` dans la réponse JSON) : les entités sont décodées tant qu'il en reste,
+   au plus trois fois, avant de retirer les balises (#263). La migration `0029` a nettoyé
+   de la même façon les titres déjà en base, sauf ceux corrigés à la main.
 
 Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
 Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une
