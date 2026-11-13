@@ -152,6 +152,10 @@ python manage.py merge_same_orcid
 # dans « Conflits » celle que trouve OpenAlex
 python manage.py replace_preprints
 
+# Relier les références déjà importées qui écrivent un code JACoW ou un identifiant arXiv
+# (une requête DataCite par lot de DOI inconnus de la base)
+python manage.py link_written_identifiers
+
 # Développement : vider la base en gardant les comptes et le cache des sources
 python manage.py reset_data
 # … en vidant aussi le cache, pour tout redemander aux sources

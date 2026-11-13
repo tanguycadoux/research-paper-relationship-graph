@@ -19,7 +19,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   toasts (`static/js/toasts.js`).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mes références », « Cité par » et la page d'un auteur.
-  `services/publication_table.for_publication_table` calcule dans la même requête ce
+  `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce
   qu'il affiche à côté du titre : le premier auteur (« et al. » s'il y en a d'autres,
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
