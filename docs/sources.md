@@ -21,14 +21,6 @@ première qui la connaît, dans l'ordre **Crossref, DataCite, Open Library**, co
 format Crossref (`metadata_formats.py`). La bibliographie tirée d'arXiv ne sert que si
 cette réponse n'en a pas.
 
-Les références sont numérotées dans l'ordre de la réponse, sauf quand toutes leurs clés
-sont de la forme `ref<n>`, sans numéro répété : elles sont alors triées par `n`
-(`parser.in_numbered_order`, #258). IEEE dépose ses bibliographies dans le désordre chez
-Crossref (`ref4, ref3, ref10…` pour `10.1109/tasc.2014.2377730`), mais la clé garde le
-numéro de l'article. Toute autre forme de clé garde l'ordre reçu, sans deviner. La
-migration `0030_sort_ieee_references` a renuméroté les bibliographies déjà importées ;
-les décisions manuelles, portées par la référence et retrouvées par sa clé, suivent.
-
 ## Parcours d'un import
 
 `importer.import_publication` enchaîne les étapes ci-dessous. Chaque réponse est stockée
@@ -122,22 +114,6 @@ Hors de ce parcours :
    Les fiches de ces requêtes de liste contiennent les mêmes auteurs et références qu'une
    requête unitaire. Il leur manque seulement des champs secondaires (`original-title`,
    `short-title`, `subject`, `subtitle`).
-5. Les **titres** passent par `titles.clean_title` : les entités HTML sont décodées, puis le
-   balisage JATS ou MathML (`<i>`, `<sub>`, `<mml:math>`) est retiré, et le LaTeX est gardé
-   tel quel. Certains éditeurs (IEEE) déposent un balisage échappé deux fois
-   (`&lt;sub&gt;` dans la réponse JSON) : les entités sont décodées tant qu'il en reste,
-   au plus trois fois, avant de retirer les balises (#263). La migration `0029` a nettoyé
-   de la même façon les titres déjà en base, sauf ceux corrigés à la main.
-6. Le **titre lisible** (`Publication.readable_title`, #264) est tiré du titre à chaque
-   enregistrement par `titles.readable_title`. Le titre de la source reste tel quel : il
-   fait foi, et l'export BibTeX garde son LaTeX. Les titres de physique déposés par IEEE
-   écrivent du LaTeX (`${\rm Nb}_{3}{\rm Sn}$`, `$\beta$`) ; la forme lisible le
-   convertit : commandes de police (`\rm`, `\hbox`, `\mathrm`, `\textit`…) et accolades
-   retirées, indices et exposants simples en caractères Unicode (`Nb₃Sn`, `10⁻³`),
-   lettres grecques et quelques symboles (`β`, `±`, `°`). Une formule qui ne se rend pas
-   entièrement (`\sqrt`, `T$_c$`, sans indice « c » en Unicode) laisse le titre inchangé :
-   pas de rendu approché. `save()`, `bulk_create` et `bulk_update` de `Publication` le
-   tiennent à jour ; la migration `0031` l'a rempli pour les titres déjà en base.
 
 Mesuré sur un article de 1 012 auteurs et 100 références (88 avec DOI) : **3 requêtes
 Crossref et environ 2 s**, réseau compris. Pour y arriver, l'analyse se fait dans une
@@ -149,6 +125,47 @@ requêtes SQL ne croît pas avec le nombre d'auteurs ou de références.
 et ne demande aucune infrastructure supplémentaire. Le service est isolé des vues, si
 bien qu'il pourra passer en tâche de fond plus tard sans toucher au reste (piste notée
 dans #246 : file d'attente, regroupement entre utilisateurs, progression).
+
+## Titres
+
+Deux formes du titre sont gardées (`services/imports/titles.py`) :
+
+- **Le titre de la source** (`Publication.title`) passe par `clean_title` : les entités
+  HTML sont décodées, puis le balisage JATS ou MathML (`<i>`, `<sub>`, `<mml:math>`) est
+  retiré ; le LaTeX est gardé tel quel. Certains éditeurs (IEEE) déposent un balisage
+  échappé deux fois (`&lt;sub&gt;` dans la réponse JSON) : les entités sont décodées tant
+  qu'il en reste, au plus trois fois, avant de retirer les balises (#263). La migration
+  `0029` a nettoyé de la même façon les titres déjà en base, sauf ceux corrigés à la main.
+  Ce titre fait foi : « Modifier » le montre, et l'export BibTeX garde son LaTeX.
+- **Le titre lisible** (`Publication.readable_title`, #264) est tiré du premier par
+  `readable_title` à chaque enregistrement : c'est lui qui est affiché, cherché et trié.
+  Les titres de physique déposés par IEEE écrivent du LaTeX (`${\rm Nb}_{3}{\rm Sn}$`,
+  `$\beta$`) ; la forme lisible le convertit : commandes de police (`\rm`, `\hbox`,
+  `\mathrm`, `\textit`…) et accolades retirées, indices et exposants simples en
+  caractères Unicode (`Nb₃Sn`, `10⁻³`), lettres grecques et quelques symboles (`β`, `±`,
+  `°`). Une formule qui ne se rend pas entièrement (`\sqrt`, `T$_c$`, sans indice « c » en
+  Unicode) laisse tout le titre inchangé : pas de rendu approché. `save()`, `bulk_create`
+  et `bulk_update` de `Publication` le tiennent à jour ; la migration `0031` l'a rempli
+  pour les titres déjà en base.
+
+## Bibliographies
+
+Une bibliographie est stockée comme la source la donne (`CitedReference` : clé, position,
+texte brut, DOI éventuel), et une référence avec un DOI valide est reliée à sa publication,
+créée au besoin sans ses propres références.
+
+- **Ordre** : les références sont numérotées dans l'ordre de la réponse, sauf quand toutes
+  leurs clés sont de la forme `ref<n>`, sans numéro répété : elles sont alors triées par
+  `n` (`parser.in_numbered_order`, #258). IEEE dépose ses bibliographies dans le désordre
+  chez Crossref (`ref4, ref3, ref10…` pour `10.1109/tasc.2014.2377730`), mais la clé garde
+  le numéro de l'article. Toute autre forme de clé garde l'ordre reçu, sans deviner. La
+  migration `0030_sort_ieee_references` a renuméroté les bibliographies déjà importées ;
+  les décisions manuelles, portées par la référence et retrouvées par sa clé, suivent.
+- **Sans DOI** : une référence qui écrit un code JACoW ou un identifiant arXiv est reliée
+  après confirmation de DataCite ([arxiv-jacow.md](arxiv-jacow.md#identifiants-écrits-dans-une-référence)) ;
+  les autres restent « à identifier » ([corrections.md](corrections.md#identifier-une-référence)).
+- **Prépublication arXiv** sans version publiée : sa bibliographie est lue dans ses sources
+  LaTeX ([arxiv-jacow.md](arxiv-jacow.md#bibliographie-tirée-des-sources-arxiv)).
 
 ## Requêtes HTTP
 
@@ -187,125 +204,9 @@ les dépôts Zenodo, les prépublications arXiv et les jeux de données. Crossre
   parser. Elle ne contient en général pas de bibliographie : seuls les liens déclarés
   `References` ou `Cites` vers des DOI deviennent des références.
 
-## Prépublications arXiv
-
-### Identifiants arXiv
-
-Un chercheur copie plus souvent l'identifiant ou le lien arXiv que le DOI
-`10.48550/arXiv.…` (#267). `services/identifiers/arxiv.py` réunit leur lecture :
-
-- `arxiv_doi` : une saisie entière, `arXiv:1706.03762`, `1706.03762v5`,
-  `arxiv.org/abs/…` ou `arxiv.org/pdf/…(.pdf)`, et les anciens identifiants
-  (`hep-th/9901001`). La version est ignorée : le DOI désigne l'article.
-- `typed_doi` : ce qu'un utilisateur saisit comme DOI, écrit comme un DOI ou comme un
-  identifiant arXiv. L'ajout au corpus, « Cette publication est en fait… » et la méthode
-  « DOI ou arXiv » de l'identification d'une référence l'utilisent ; le DOI obtenu suit
-  ensuite le chemin d'un DOI saisi, vérification par doi.org comprise.
-- `bare_arxiv_doi` : le champ `eprint` d'un fichier BibTeX (#165).
-- `written_arxiv_doi` : un identifiant écrit dans un texte (bibliographie des sources
-  LaTeX, référence citée sans DOI : voir plus bas).
-
-### Identifiant arXiv écrit dans une référence
-
-Une référence sans DOI écrit souvent son identifiant arXiv : 16 références de « Deep
-learning » (`10.1038/nature14539`) donnent `Preprint at http://arxiv.org/abs/1409.4842`,
-d'autres `arXiv preprint arXiv:1512.03385` ou `arXiv:hep-th/9711200` (#266). C'est un
-identifiant écrit par les auteurs, comme un code JACoW : il est relié à l'import par le
-même mécanisme (`services/imports/written_identifiers.py`, voir [Actes
-JACoW](#code-jacow-écrit-dans-une-référence)). Une prépublication reliée ainsi est ensuite
-remplacée par sa version publiée déclarée, comme une prépublication citée par son DOI.
-La commande `link_written_identifiers` relie les références des bibliographies déjà
-importées.
-
-### Version publiée déclarée
-
-Les DOI arXiv (`10.48550/arXiv.…`) sont chez DataCite, sans bibliographie (#227). Quand
-les auteurs déclarent sur arXiv le DOI de la version publiée, DataCite le donne en
-`IsVersionOf` : la publication est alors **remplacée** par cette version
-(`services/imports/preprints.py`), dont Crossref fournit métadonnées et bibliographie. Elle garde
-ses entrées de corpus, ses citations et ses corrections ; le DOI arXiv passe dans
-`preprint_doi`. Si la version publiée est déjà en base, la prépublication fusionne avec
-elle (corpus et citations déplacés). Les références citées importées par lots le sont
-aussi, avec un lot Crossref pour les versions déclarées.
-
-Garde-fous, puisqu'on ne remplace que sur une information fiable :
-- seul le préfixe arXiv compte (chez Zenodo, `IsVersionOf` relie une version à son concept) ;
-- Crossref doit connaître le DOI comme publication (article de revue ou de conférence,
-  chapitre, livre), jamais `posted-content` : des copies d'articles arXiv sont déposées
-  ailleurs sous de nouveaux DOI (`10.65215/…` pour « Attention Is All You Need ») ;
-- les titres doivent se ressembler (60 % des mots du plus court dans l'autre) : une faute
-  de frappe dans le DOI déclaré désignerait un autre article.
-
-Toutes les recherches par DOI passent par `Publication.objects.with_doi` /
-`get_or_create_doi`, qui regardent aussi `preprint_doi`. La commande `replace_preprints`
-applique le remplacement aux publications déjà en base, sans nouvel appel à DataCite.
-
-### Version publiée trouvée par OpenAlex
-
-Quand les auteurs ne déclarent rien, OpenAlex regroupe souvent la prépublication et sa
-version publiée sous une même œuvre : ses `locations` donnent les DOI de toutes les
-versions (`openalex_api.work_dois`). Ce regroupement est automatique et parfois faux (il
-range les copies `10.65215/…` avec « Attention Is All You Need ») : la version n'est donc
-jamais appliquée d'office, mais **proposée** comme conflit « Version publiée selon
-OpenAlex » (`services/imports/published_versions.py`).
-
-- À la fin d'un import, pour la publication et, avec ses références, celles qu'elle cite :
-  les DOI non arXiv de leur œuvre OpenAlex sont vérifiés chez Crossref en une requête par
-  lot. Le premier qui passe les garde-fous ci-dessus et deux de plus (même premier auteur,
-  année au moins égale à celle de la prépublication) est proposé ; une prépublication
-  n'est examinée qu'une fois.
-- « Prendre la valeur proposée » redemande la version à Crossref, la remplace comme une
-  version déclarée (`replace_preprint`, ou fusion si elle est déjà en base, le conflit
-  suivant la version publiée), puis la réimporte. Sans réponse de Crossref, rien n'est
-  décidé.
-- La fiche de la prépublication signale la proposition tant qu'elle est ouverte.
-- `replace_preprints` propose aussi les versions des prépublications déjà en base, en
-  redemandant leur œuvre OpenAlex quand elle manque.
-
-### Bibliographie tirée des sources arXiv
-
-Une prépublication sans version publiée déclarée n'a de bibliographie nulle part
-ailleurs que dans le texte de ses auteurs. arXiv ne lance pas BibTeX : les auteurs
-déposent le `.bbl`, ou écrivent `thebibliography` dans le `.tex`. Quand une telle
-prépublication entre dans un corpus (ou par « Importer ses références »), son e-print
-est téléchargé **une fois** (`arxiv_api.py`, 30 Mo au plus, lu en mémoire sans rien
-extraire sur le disque) ; les entrées `\bibitem` sont stockées brutes dans un
-`ExternalRecord` de source `arxiv` (`latex_bibliography.read_eprint`). À la lecture, elles
-deviennent des références au format Crossref, au texte nettoyé du LaTeX (accents,
-`\newblock`, `{\em …}`, `\bibinfo`…) : `metadata_message` les prend quand la source
-prioritaire (DataCite) n'a pas de bibliographie. Un nettoyage amélioré s'applique donc
-sans nouveau téléchargement.
-
-Seuls les identifiants **écrits par les auteurs** relient une référence : un DOI, ou un
-identifiant arXiv (DOI `10.48550/arXiv.…`, lui-même remplacé par sa version publiée s'il
-en déclare une). Les autres restent « à identifier ». Sur « Attention Is All You Need » :
-40 références, 22 reliées, 18 à identifier. La fiche dit d'où vient la bibliographie, ou
-pourquoi elle manque : prépublication déposée en PDF seul (environ 30 % en physique des
-accélérateurs), ou sources sans bibliographie.
-
-## Actes JACoW
-
-### Code JACoW écrit dans une référence
-
-Les actes des conférences d'accélérateurs (JACoW) ont leurs DOI chez DataCite, sous une
-forme fixe : `10.18429/JACoW-<CONFÉRENCE><ANNÉE>-<CODE>` (vérifié sur 5 000 de leurs 26 000
-DOI ; les autres formes sont des volumes entiers). Un code `JACoW-IPAC2019-WEPRB007` écrit
-dans une référence est donc un identifiant des auteurs : à l'import d'une bibliographie,
-`written_identifiers.link_written_identifiers` le relie, mais seulement si DataCite
-connaît le DOI **et** que son titre se retrouve dans la référence. Sinon rien n'est créé :
-un code faux ou trop ancien ne laisse pas de publication vide dans la base. Les
-identifiants arXiv écrits dans une référence suivent le même chemin (#266) : un seul
-appel à DataCite, par lots, pour les DOI des deux sortes que la base ne connaît pas
-encore.
-
-### Ordre des auteurs incertain
-
-L'ordre des auteurs que JACoW dépose chez DataCite ne correspond pas toujours à celui de
-l'article, où l'auteur principal vient en premier, suivi des coauteurs regroupés par
-laboratoire (#250). Sur `JACoW-IPAC2023-TUPA193`, DataCite met O. Piquet en tête, l'article
-M. Moscatello ; OpenAlex recopie DataCite. La page JACoW n'offre aucun export structuré :
-plutôt que de lire son HTML, la fiche d'une publication JACoW le signale et renvoie à sa
-page, qui fait foi.
+Les prépublications arXiv (version publiée, bibliographie LaTeX) et les actes JACoW
+(identifiants écrits, ordre des auteurs) ont leur document :
+[arxiv-jacow.md](arxiv-jacow.md).
 
 ## OpenAlex, source complémentaire
 
@@ -327,112 +228,8 @@ article : seuls ceux déjà importés (corpus et articles cités) sont complét�
   est illimitée. Les requêtes par lots consomment un budget quotidien d'environ 1 000 lots
   sans clé.
 
-### Affiliations
-
-Une affiliation est une propriété de la **signature** (`AuthorPublication.organizations`),
-pas de la personne : « sur cet article, X a déclaré le laboratoire Y ». Les périodes d'un
-auteur dans une organisation (première et dernière publication) **se calculent** et ne
-sont pas stockées : un changement de laboratoire apparaît naturellement.
-
-Les institutions viennent d'OpenAlex. Elles sont rattachées aux signatures par **position
-et nom publié** : les mots du nom sont comparés quel que soit leur ordre, si bien que
-« Thuillier, Thomas » (DataCite) correspond à « Thomas Thuillier ». Si le nombre d'auteurs
-ou un nom diffère, rien n'est rattaché pour l'article. Deux cas ne sont pas des
-désaccords (#265) :
-
-- **Liste tronquée par OpenAlex.** OpenAlex ne donne jamais plus de 100 auteurs par
-  œuvre (`OPENALEX_MAX_AUTHORS`), et ses réponses stockées n'ont pas toujours le champ
-  `is_authors_truncated`. Quand OpenAlex en donne exactement 100 et la fiche davantage
-  (945 chez Crossref pour `10.1007/lrr-2016-1`), on compare les 100 premiers, et seuls
-  ceux-là reçoivent leurs affiliations.
-- **Liste vide d'un côté.** Une liste vide ne contredit rien. Si OpenAlex n'a pas
-  d'auteurs, il n'y a simplement rien à rattacher. Si la source prioritaire n'en donne
-  aucun (« Private Classical Communication », `10.1017/9781316809976.027`, sans auteur
-  chez Crossref), la fiche prend ceux de la réponse OpenAlex du même DOI
-  (`metadata_formats.openalex_authors` : nom publié `raw_author_name`, ORCID). Une
-  publication citée, analysée avant l'arrivée de sa réponse OpenAlex, est analysée de
-  nouveau à ce moment-là.
-
-Une organisation est reconnue par
-son identifiant OpenAlex ou par son ROR. Les liens sont recréés à chaque analyse, puisque
-les signatures le sont aussi.
-
-**Hiérarchie.** Les auteurs déclarent souvent plusieurs niveaux à la fois (« IRFU, CEA
-Paris-Saclay »). OpenAlex donne la **lignée** de chaque institution, c'est-à-dire tous ses
-ancêtres : IRFU appartient à la Direction de la Recherche Fondamentale, qui appartient au
-CEA. Chaque organisation connaît ses ancêtres. Ceux qui ne figurent dans aucune signature
-sont récupérés pendant l'étape OpenAlex, en une requête groupée (`/institutions?filter=
-openalex:…`), pour que le parser n'ait jamais à appeler le réseau. Sur la fiche d'un
-auteur, les organisations sont **regroupées par tutelle** (organisation sans ancêtre),
-avec le détail des entités déclarées. Une unité mixte (CEA Paris-Saclay : CEA et
-Université Paris-Saclay) apparaît sous chacune de ses tutelles.
-
-Sur la fiche d'une publication, les affiliations sont présentées **comme dans un
-article** : chaque auteur porte en exposant le numéro de ses affiliations, listées une
-seule fois sous les auteurs, dans l'ordre d'apparition. Une signature n'affiche que ses
-organisations **les plus précises** : celles qui sont l'ancêtre d'une autre organisation
-de la même signature sont retirées (IRFU plutôt que IRFU et CEA).
-
-La commande `complete_affiliations` complète les publications déjà en base à partir des
-données OpenAlex stockées, sans les redemander. L'option `--fetch-missing` interroge
-d'abord OpenAlex, par lots, pour celles qui n'ont pas encore de réponse. L'option
-`--refresh-ancestors` redemande les ancêtres déjà connus, pour réparer leurs propres
-ancêtres.
-
-### ORCID complétés depuis OpenAlex
-
-Pour les auteurs rapprochés (même position, même nom publié), l'ORCID donné par OpenAlex
-est attribué à l'**auteur** s'il n'en a pas. S'il en a un autre, rien ne change et un
-conflit est signalé : « Prendre la valeur proposée » remplace alors l'ORCID. L'ORCID
-publié de la signature (`published_orcid`, donnée Crossref) n'est jamais modifié : il fait
-partie de la clé qui retrouve un auteur au ré-import. Mesuré sur la base réelle : les
-auteurs avec ORCID passent de 35 à 74 sur 135, sans conflit. 11 ORCID se retrouvent
-alors chacun sur plusieurs auteurs : ce sont des doublons certains, fusionnés
-automatiquement ([corrections.md](corrections.md#même-orcid)).
-
-## ORCID
-
-L'API publique ORCID répond sans clé, en JSON quand on le demande (en-tête `Accept`).
-
-**Profil, à la demande.** L'enregistrement d'une personne
-(`https://pub.orcid.org/v3.0/<orcid>/record`) donne en une requête le profil et le résumé
-des travaux. Il n'est **jamais demandé à l'import** : un article peut avoir plus de 1 000
-auteurs. Le bouton « Compléter depuis ORCID » de la fiche d'un auteur qui a un ORCID le
-demande, et la réponse est stockée (`OrcidRecord`). En cas d'échec, l'enregistrement déjà
-stocké est gardé.
-
-La fiche montre, à titre d'information, sans rien modifier dans la base (#59) :
-- le nom officiel, le nom d'usage et les autres noms déclarés (« J. Carberry ») ;
-- le nombre de travaux déclarés et combien sont dans la base, retrouvés par leur DOI ;
-- les travaux de la base où l'auteur ne figure pas parmi les signataires : un nom publié
-  rattaché à un autre auteur, ou un ORCID manquant.
-
-**Noms, à l'import** (`services/imports/orcid_names.py`, #220). La recherche étendue
-(`/expanded-search/?q=orcid:(A OR B …)`) donne les noms de 50 personnes en une requête
-(mesuré : une URL de 1 200 caractères, une demi-seconde). À l'import d'une publication,
-les auteurs dont l'ORCID n'a jamais été demandé le sont en une requête groupée ; ceux des
-publications citées sont laissés à la commande `complete_orcid_names`, qui traite aussi
-les auteurs déjà en base (`--refresh` redemande tout). ORCID donne le nom que la personne
-déclare, souvent plus complet que le nom publié, mais rien n'est écrasé :
-- un prénom qui **prolonge** le prénom connu le complète, mot par mot : « T. » devient
-  « Thomas », « A. K. » devient « Angie K. » ; un prénom moins complet ne change rien ;
-- le **nom de famille** de la base est gardé, sa casse étant plus fiable (« SIMON »,
-  « vallcorba » sur ORCID) ; un prénom tout en minuscules ou en majuscules est remis en
-  forme ;
-- un nom qui **diffère** vraiment est signalé comme conflit (« Nom différent selon
-  ORCID ») : un ORCID peut être mal attribué, notamment par la complétion OpenAlex ;
-- un nom **corrigé à la main** (`name_edited`) n'est jamais modifié, et un nom non public
-  ne change rien.
-
-Le bouton de la fiche applique les mêmes règles au nom de l'enregistrement complet. Tant
-que celui-ci n'a pas été demandé, la fiche montre les noms de la recherche groupée et
-propose « Charger les travaux depuis ORCID ». Sur la base réelle : 59 ORCID en 2
-requêtes, 42 prénoms complétés, 2 conflits légitimes (un nom mal découpé par Crossref,
-« E. Fernandez Mora » ; un vrai désaccord).
-
-Les autres noms déclarés permettraient plus tard de rapprocher automatiquement des
-auteurs, et les travaux de relier un auteur à ses articles. On attend de voir ce que
-donnent les données avant de l'automatiser.
+Ce qu'OpenAlex apporte sur les auteurs (affiliations et leur hiérarchie, ORCID manquants)
+et les noms et profils ORCID sont décrits dans [auteurs.md](auteurs.md).
 
 ## Livres et ISBN
 

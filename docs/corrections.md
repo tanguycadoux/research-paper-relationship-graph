@@ -9,12 +9,17 @@ tous les utilisateurs**, tracées, et survivent aux ré-imports. Vue d'ensemble 
 
 ### Identifier une référence
 
-`identification.py` : une référence citée est reliée à une publication par DOI, par ISBN,
-ou en créant une publication sans identifiant ; ou elle est déclarée non identifiable
+`identification.py` : une référence citée est reliée à une publication par DOI (ou
+identifiant arXiv, #267), par ISBN, ou en créant une publication sans identifiant ; ou elle est déclarée non identifiable
 (rapport interne, présentation, communication privée…), et ne compte plus parmi celles à
 identifier. La décision est tracée (qui, quand) et survit aux ré-imports : la référence
 est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction
 l'emporte sur la source.
+
+L'import a déjà relié les références qui écrivent un code JACoW ou un identifiant arXiv,
+quand DataCite le confirme ([arxiv-jacow.md](arxiv-jacow.md#identifiants-écrits-dans-une-référence)) :
+restent à identifier celles qui n'ont aucun identifiant, ou dont l'identifiant n'a pas
+pu être confirmé.
 
 La page propose d'abord des **publications candidates** (`candidates.py`, #160), jamais
 reliées sans un clic sur « C'est celle-ci » :

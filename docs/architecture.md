@@ -25,7 +25,9 @@ le statut de lecture et les tags sont propres à chaque utilisateur.
 
 | Document | Contenu |
 |---|---|
-| [sources.md](sources.md) | Sources de métadonnées : ce que chacune apporte, **schéma du parcours d'un import**, requêtes HTTP, DataCite, prépublications arXiv, JACoW, OpenAlex et affiliations, ORCID, livres, contradictions entre sources |
+| [sources.md](sources.md) | Sources de métadonnées : ce que chacune apporte, **schéma du parcours d'un import**, titres (source et forme lisible), bibliographies, requêtes HTTP, DataCite, OpenAlex, livres, contradictions entre sources |
+| [arxiv-jacow.md](arxiv-jacow.md) | Prépublications arXiv et actes JACoW : identifiants arXiv saisis, identifiants écrits dans les références, version publiée (déclarée ou selon OpenAlex), bibliographie tirée des sources LaTeX, ordre des auteurs JACoW |
+| [auteurs.md](auteurs.md) | Auteurs : affiliations (OpenAlex, hiérarchie des organisations), ORCID complétés depuis OpenAlex, noms et profil ORCID |
 | [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
 | [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export |
 | [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag ; citations entrantes selon OpenAlex |
@@ -70,7 +72,7 @@ references/          application principale
     imports/         import et analyse
       importer.py    orchestration : récupération puis analyse
       parser.py      réponse de la source vers les modèles
-      titles.py      nettoyage des titres (entités HTML, balisage JATS)
+      titles.py      titres : nettoyage (entités HTML, balisage JATS), forme lisible du LaTeX
       latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
       jacow.py       actes JACoW : codes écrits dans les références, ordre des auteurs incertain
       written_identifiers.py  références reliées par l'identifiant que leurs auteurs
