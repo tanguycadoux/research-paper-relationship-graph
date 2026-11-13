@@ -5,7 +5,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from references.models import Author, CitedReference, MetadataConflict, Publication, UserPublication
-from references.services import dashboard
+from references.services.display import dashboard
 from references.templatetags.ui import BADGE_VARIANTS
 
 

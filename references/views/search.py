@@ -1,9 +1,9 @@
 from django.shortcuts import render
 
 from ..models import Publication
-from ..services.publication_table import corpus_ids, for_publication_table
-from ..services.search import filter_publications, parse, search_authors
-from ..services.sorting import PUBLICATIONS
+from ..services.display.publication_table import corpus_ids, for_publication_table
+from ..services.display.search import filter_publications, parse, search_authors
+from ..services.display.sorting import PUBLICATIONS
 from .pagination import page_of
 
 # Beyond, the query is too vague for a list of names: the page says how many match.

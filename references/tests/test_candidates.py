@@ -5,10 +5,10 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication
-from references.services import candidates
-from references.services.external_records import Source, has_record
-from references.services.jacow import link_jacow_references, written_jacow_doi
-from references.services.parser import parse_publication
+from references.services.corrections import candidates
+from references.services.imports.jacow import link_jacow_references, written_jacow_doi
+from references.services.imports.parser import parse_publication
+from references.services.sources.external_records import Source, has_record
 from references.tests.helpers import with_crossref, without_other_sources
 
 DYER = {
@@ -143,9 +143,11 @@ class SelectionTests(CandidateTestCase):
         self.assertEqual(self.select(0, candidates.Candidate(title=pub.title, doi="10.1/a")), [])
 
 
-@patch("references.services.candidates.fetch_datacite_works", return_value={})
-@patch("references.services.candidates.search_datacite_title", return_value=[RNNG_ARXIV])
-@patch("references.services.candidates.search_crossref", return_value=[RNNG])
+@patch("references.services.corrections.candidates.fetch_datacite_works", return_value={})
+@patch(
+    "references.services.corrections.candidates.search_datacite_title", return_value=[RNNG_ARXIV]
+)
+@patch("references.services.corrections.candidates.search_crossref", return_value=[RNNG])
 class SourcesTests(CandidateTestCase):
     def test_both_sources_cached(self, crossref, datacite, _works):
         found, failed = candidates.candidates_for(self.ref(0))
@@ -184,7 +186,7 @@ class SourcesTests(CandidateTestCase):
         self.assertEqual([c.publication for c in found], [pub])
 
 
-@patch("references.services.jacow.fetch_datacite_works")
+@patch("references.services.imports.jacow.fetch_datacite_works")
 class JacowLinkTests(CandidateTestCase):
     def test_linked_once_datacite_confirms(self, works):
         works.return_value = {JACOW_DOI: JACOW_RECORD}
@@ -216,10 +218,10 @@ class JacowLinkTests(CandidateTestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
-@patch("references.services.candidates.fetch_datacite_works", return_value={})
-@patch("references.services.candidates.search_datacite_title", return_value=[])
-@patch("references.services.candidates.search_crossref", return_value=[RNNG])
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.corrections.candidates.fetch_datacite_works", return_value={})
+@patch("references.services.corrections.candidates.search_datacite_title", return_value=[])
+@patch("references.services.corrections.candidates.search_crossref", return_value=[RNNG])
 class CandidateViewTests(CandidateTestCase):
     def url(self, name, position=0):
         return reverse(name, args=[self.source.pk, position])

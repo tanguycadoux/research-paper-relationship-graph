@@ -1,10 +1,10 @@
 from django.core.management.base import BaseCommand
 
 from references.models import Publication
-from references.services.http import patient_requests
-from references.services.importer import import_publication
-from references.services.preprints import ARXIV_PREFIX, datacite_data, declared_version
-from references.services.published_versions import suggest_for_preprints_in_base
+from references.services.imports.importer import import_publication
+from references.services.imports.preprints import ARXIV_PREFIX, datacite_data, declared_version
+from references.services.imports.published_versions import suggest_for_preprints_in_base
+from references.services.sources.http import patient_requests
 
 
 class Command(BaseCommand):

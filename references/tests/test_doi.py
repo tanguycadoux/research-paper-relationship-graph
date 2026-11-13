@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Publication, UserPublication
-from references.services.doi import is_valid_doi, normalize_doi
+from references.services.identifiers.doi import is_valid_doi, normalize_doi
 from references.tests.helpers import without_other_sources
 
 
@@ -41,7 +41,7 @@ class IsValidDoiTests(SimpleTestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
 class DoiPersistenceTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("alice")

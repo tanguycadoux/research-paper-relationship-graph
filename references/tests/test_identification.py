@@ -6,8 +6,8 @@ from django.urls import reverse
 
 from references.forms import IdentifyReferenceForm
 from references.models import CitedReference, Publication, UserPublication
-from references.services import identification
-from references.services.parser import parse_publication
+from references.services.corrections import identification
+from references.services.imports.parser import parse_publication
 from references.tests.helpers import (
     doi_org_answers,
     with_crossref,
@@ -73,7 +73,7 @@ class ManualResolutionSurvivesReimportTests(IdentificationTestCase):
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json")
+@patch("references.services.imports.importer.fetch_crossref_json")
 class IdentifyByDoiTests(IdentificationTestCase):
     def test_existing_publication_is_reused_without_calling_crossref(self, fetch):
         existing = with_crossref(Publication.objects.create(doi="10.1000/book"), {"message": {}})
@@ -113,7 +113,7 @@ class IdentifyReferenceFormTests(TestCase):
 
 @without_candidate_search
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
 class IdentifyReferenceViewTests(IdentificationTestCase):
     def url(self, position):
         return reverse("reference_identify", args=[self.source.pk, position])
@@ -144,7 +144,7 @@ class IdentifyReferenceViewTests(IdentificationTestCase):
 
 @without_candidate_search
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
 class UnregisteredDoiTests(IdentificationTestCase):
     """A DOI that doi.org does not know is refused, not linked to an empty publication (#240)."""
 

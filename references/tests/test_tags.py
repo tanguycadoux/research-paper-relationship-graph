@@ -3,8 +3,8 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Publication, Tag, UserPublication
-from references.services import tags
-from references.services.corpus_transfer import (
+from references.services.corpus import tags
+from references.services.corpus.corpus_transfer import (
     EXPORT_FORMAT,
     corpus_bibtex,
     export_corpus,

@@ -49,67 +49,70 @@ references/          application principale
     corpus_transfer.py (export et import du corpus),
     search.py (recherche), pagination.py (listes par pages),
     suggestions.py (suggestions de lecture)
-  services/          logique métier, sans dépendance aux vues
-    Sources externes
-    http.py          requêtes communes (session, nouvelles tentatives, cache de développement)
-    crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
-    datacite_api.py  client DataCite (DOI par DOI ou par lots, recherche par titre)
-    openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions, DOI d'une œuvre,
+  services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
+    sources/         sources externes
+      http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
+      crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
+      datacite_api.py  client DataCite (DOI par DOI ou par lots, recherche par titre)
+      openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions, DOI d'une œuvre,
                      publications qui en citent une)
-    openlibrary_api.py  client Open Library (recherche par ISBN)
-    arxiv_api.py     client arXiv (sources LaTeX d'une prépublication, une à la fois)
-    orcid_api.py     client de l'API publique ORCID (enregistrement d'une personne, noms par lots)
-    doi_registration.py  existence des DOI saisis, demandée à doi.org
-    external_records.py  stockage des réponses des sources (ExternalRecord), statut des métadonnées
-    metadata_formats.py  conversion de chaque source vers le format lu par le parser, priorité
-    Import et analyse
-    importer.py      orchestration : récupération puis analyse
-    corpus.py        ajout au corpus par DOI ou ISBN, statut de lecture
-    tags.py          tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
+      openlibrary_api.py  client Open Library (recherche par ISBN)
+      arxiv_api.py   client arXiv (sources LaTeX d'une prépublication, une à la fois)
+      orcid_api.py   client de l'API publique ORCID (enregistrement d'une personne, noms par lots)
+      doi_registration.py  existence des DOI saisis, demandée à doi.org
+      external_records.py  stockage des réponses des sources (ExternalRecord), statut des
+                     métadonnées
+      metadata_formats.py  conversion de chaque source vers le format lu par le parser, priorité
+    identifiers/     identifiants et noms
+      doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
+      names.py       normalisation et comparaison des noms de personnes
+    imports/         import et analyse
+      importer.py    orchestration : récupération puis analyse
+      parser.py      réponse de la source vers les modèles
+      titles.py      nettoyage des titres (entités HTML, balisage JATS)
+      latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
+      jacow.py       actes JACoW : codes écrits dans les références, ordre des auteurs incertain
+      author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
+      enrichment.py  sources complémentaires (OpenAlex), interrogées en plus des autres
+      affiliations.py  rattachement des organisations aux signatures
+      organizations.py  organisations OpenAlex, hiérarchie et regroupement par tutelle
+      books.py       livres identifiés par ISBN (Crossref, puis Open Library)
+      preprints.py   prépublications arXiv remplacées par leur version publiée déclarée
+      published_versions.py  version publiée trouvée par OpenAlex, proposée comme conflit
+      orcid_completion.py  ORCID manquants complétés depuis OpenAlex
+      orcid_merge.py  fusion automatique des auteurs qui ont le même ORCID
+      orcid_names.py  noms des auteurs complétés depuis ORCID
+      orcid_profile.py  profil ORCID d'un auteur, demandé depuis sa fiche
+    corrections/     corrections de la base commune
+      identification.py  identification manuelle des références, « non identifiable », série
+      candidates.py  publications candidates d'une référence (Crossref, DataCite, base)
+      publication_merge.py  fusion d'une publication sans identifiant dans une autre
+      publication_moves.py  report des entrées de corpus d'une publication vers une autre
+      publication_edits.py  corrections de « Modifier » : titre et date protégés, nouvel identifiant
+      author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
+      author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
+      author_distinctions.py  auteurs déclarés différents
+      conflicts.py   signalement et décision des conflits entre sources
+    corpus/          corpus personnel
+      entries.py     ajout au corpus par DOI ou ISBN, statut de lecture
+      tags.py        tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
                      renommage et suppression
-    parser.py        réponse de la source vers les modèles
-    titles.py        nettoyage des titres (entités HTML, balisage JATS)
-    latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
-    jacow.py         actes JACoW : codes écrits dans les références, ordre des auteurs incertain
-    author_resolution.py  noms publiés vers auteurs canoniques (ORCID, nom publié, nom)
-    enrichment.py    sources complémentaires (OpenAlex), interrogées en plus des autres
-    affiliations.py  rattachement des organisations aux signatures
-    organizations.py organisations OpenAlex, hiérarchie et regroupement par tutelle
-    orcid_completion.py  ORCID manquants complétés depuis OpenAlex
-    orcid_merge.py   fusion automatique des auteurs qui ont le même ORCID
-    orcid_profile.py profil ORCID d'un auteur, demandé depuis sa fiche
-    orcid_names.py   noms des auteurs complétés depuis ORCID
-    preprints.py     prépublications arXiv remplacées par leur version publiée déclarée
-    published_versions.py  version publiée trouvée par OpenAlex, proposée comme conflit
-    books.py         livres identifiés par ISBN (Crossref, puis Open Library)
-    Identifiants et noms
-    doi.py, isbn.py, orcid.py  normalisation des identifiants (et validation des DOI et ISBN)
-    names.py         normalisation et comparaison des noms de personnes
-    Corrections
-    identification.py  identification manuelle des références, « non identifiable », série
-    candidates.py    publications candidates d'une référence (Crossref, DataCite, base)
-    publication_merge.py  fusion d'une publication sans identifiant dans une autre
-    publication_moves.py  report des entrées de corpus d'une publication vers une autre
-    publication_edits.py  corrections de « Modifier » : titre et date protégés, nouvel identifiant
-    author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
-    author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
-    author_distinctions.py  auteurs déclarés différents
-    conflicts.py     signalement et décision des conflits entre sources
-    Découverte
-    suggestions.py   publications citées par plusieurs articles du corpus ou d'un tag
-    incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
-    Affichage et échanges
-    search.py        analyse de la barre de recherche, comparaison sans casse ni accents
-    sorting.py       colonnes triables des tableaux (publications, auteurs)
-    filters.py       filtres par colonne des tableaux (texte, plage d'années, choix)
-    publication_table.py  annotations du tableau commun (premier auteur, badges)
-    publication_details.py  informations de la fiche (revue, financeurs, licences, citations, résumé)
-    pending.py       compteurs de la navigation (références à identifier, conflits ouverts)
-    dashboard.py     tableau de bord de l'accueil
-    graph.py         construction des données des graphes
-    corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
-    bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
-    icons.py         icônes SVG de static/icons/ (lecture, téléchargement)
+      corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
+      bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
+    discovery/       découverte d'articles
+      suggestions.py  publications citées par plusieurs articles du corpus ou d'un tag
+      incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
+    display/         affichage
+      search.py      analyse de la barre de recherche, comparaison sans casse ni accents
+      sorting.py     colonnes triables des tableaux (publications, auteurs)
+      filters.py     filtres par colonne des tableaux (texte, plage d'années, choix)
+      publication_table.py  annotations du tableau commun (premier auteur, badges)
+      publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
+                     résumé)
+      pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
+      dashboard.py   tableau de bord de l'accueil
+      graph.py       construction des données des graphes
+      icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
                      pagination, column_header, filter_summary, popover_panel_classes
@@ -144,7 +147,10 @@ Règles :
 
 - Les **vues** restent fines : elles valident l'entrée, appellent un service et rendent
   la réponse.
-- Les **services** portent la logique et se testent sans HTTP.
+- Les **services** portent la logique et se testent sans HTTP. Ils sont rangés par domaine
+  (`sources`, `identifiers`, `imports`, `corrections`, `corpus`, `discovery`, `display`) :
+  un nouveau module va dans le sous-paquet de son domaine, et un client de source dans
+  `sources/`.
 - Les tests ne font **aucun appel réseau** : toutes les sources sont simulées
   (`references/tests/helpers.py`), et le test runner (`config/test_runner.py`) fait
   échouer toute connexion réseau et désactive le cache de développement.

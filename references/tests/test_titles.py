@@ -1,8 +1,8 @@
 from django.test import SimpleTestCase, TestCase
 
 from references.models import Publication
-from references.services.parser import cited_publications, parse_title
-from references.services.titles import clean_title
+from references.services.imports.parser import cited_publications, parse_title
+from references.services.imports.titles import clean_title
 
 
 class CleanTitleTests(SimpleTestCase):

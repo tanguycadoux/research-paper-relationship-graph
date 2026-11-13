@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
-from references.services.parser import parse_publication
+from references.services.imports.parser import parse_publication
 from references.tests.helpers import with_crossref, without_other_sources
 
 
@@ -28,7 +28,7 @@ REF_WITHOUT_DOI = {"key": "ref2", "unstructured": "Smith J. Some book. 1999."}
 
 
 @without_other_sources
-@patch("references.services.importer.fetch_crossref_json", return_value=None)
+@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
 class ParsePublicationTests(TestCase):
     def make_publication(self, json_data):
         pub = Publication.objects.create(title="")
@@ -104,7 +104,7 @@ class PublicationConstraintTests(TestCase):
     def test_doi_is_unique_when_set(self):
         Publication.objects.create(title="A")
         Publication.objects.create(title="B")
-        with patch("references.services.importer.fetch_crossref_json", return_value=None):
+        with patch("references.services.imports.importer.fetch_crossref_json", return_value=None):
             Publication.objects.create(doi="10.1000/abc")
             with self.assertRaises(IntegrityError):
                 Publication.objects.create(doi="https://doi.org/10.1000/ABC")

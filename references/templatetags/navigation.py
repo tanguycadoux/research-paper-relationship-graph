@@ -9,7 +9,7 @@ waits for an action (#152): « Conflits, 2 en attente ». Below md, each group i
 from django import template
 from django.urls import reverse
 
-from ..services import pending
+from ..services.display import pending
 
 register = template.Library()
 

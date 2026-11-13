@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Publication, UserPublication
-from references.services import dashboard
-from references.services.corpus_transfer import export_corpus, import_corpus
+from references.services.corpus.corpus_transfer import export_corpus, import_corpus
+from references.services.display import dashboard
 from references.tests.helpers import without_doi_org
 
 READ = UserPublication.ReadingStatus.READ
@@ -63,7 +63,9 @@ class ReadingStatusTests(TestCase):
         self.assertContains(self.set_status(self.read, "fini"), "Statut de lecture inconnu")
         self.assertEqual(self.entry(self.read).reading_status, READ)
 
-    @patch("references.services.corpus.import_publication", side_effect=lambda pub, **_: pub)
+    @patch(
+        "references.services.corpus.entries.import_publication", side_effect=lambda pub, **_: pub
+    )
     def test_only_my_own_entries(self, _import):
         outside = Publication.objects.create(title="Hors corpus")
         self.assertEqual(self.set_status(outside, "read").status_code, 404)

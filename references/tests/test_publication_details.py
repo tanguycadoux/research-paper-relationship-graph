@@ -2,8 +2,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication
-from references.services.external_records import Source, store_record
-from references.services.publication_details import (
+from references.services.display.publication_details import (
     abstract_paragraphs,
     crossref_details,
     funder_labels,
@@ -12,6 +11,7 @@ from references.services.publication_details import (
     license_labels,
     publication_abstract,
 )
+from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
 
 MESSAGE = {

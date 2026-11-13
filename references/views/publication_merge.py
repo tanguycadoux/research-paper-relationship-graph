@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from ..forms import MergePublicationForm
 from ..models import Publication
-from ..services import publication_merge
+from ..services.corrections import publication_merge
 
 
 @login_required

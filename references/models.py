@@ -3,8 +3,8 @@ from django.db import models, transaction
 from django.db.models.functions import Lower
 from django.utils.formats import date_format
 
-from .services.doi import normalize_doi
-from .services.isbn import normalize_isbn
+from .services.identifiers.doi import normalize_doi
+from .services.identifiers.isbn import normalize_isbn
 
 
 class PublicationQuerySet(models.QuerySet):
@@ -354,7 +354,7 @@ class CitedReference(models.Model):
 class Tag(models.Model):
     """
     A tag of a user, to organize their corpus (#130). Hierarchical: the name is a
-    path, « Projet A/Groupe A », whose parents exist implicitly (services/tags.py).
+    path, « Projet A/Groupe A », whose parents exist implicitly (services/corpus/tags.py).
     """
 
     SEPARATOR = "/"

@@ -6,7 +6,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, Publication
-from references.services.search import (
+from references.services.display.search import (
     filter_publications,
     normalize,
     parse,

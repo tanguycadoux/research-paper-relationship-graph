@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from references.services.icons import UnknownIcon, download_icon
+from references.services.display.icons import UnknownIcon, download_icon
 
 
 class Command(BaseCommand):

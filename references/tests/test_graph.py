@@ -12,8 +12,8 @@ from references.models import (
     Publication,
     UserPublication,
 )
-from references.services.external_records import Source, store_record
-from references.services.graph import base_graph, corpus_graph, publication_graph
+from references.services.display.graph import base_graph, corpus_graph, publication_graph
+from references.services.sources.external_records import Source, store_record
 
 
 class CitationGraphTests(TestCase):

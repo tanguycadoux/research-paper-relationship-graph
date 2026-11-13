@@ -74,7 +74,7 @@ rien ne prouve qu'il s'agit du même ouvrage.
 
 ### Fusion d'auteurs
 
-`services/author_merge.py` : pour chaque champ (prénom, nom, ORCID), on propose les valeurs
+`services/corrections/author_merge.py` : pour chaque champ (prénom, nom, ORCID), on propose les valeurs
 des auteurs fusionnés, ou une autre valeur saisie. Par défaut, on prend la forme la plus
 complète : sans initiale, pas tout en capitales, puis la plus longue. Pour l'ORCID, on
 prend le premier existant. Deux ORCID différents désignent en général deux personnes :
@@ -85,7 +85,7 @@ fusion résiste aux ré-imports. Chaque fusion, manuelle ou automatique, est tra
 
 ### Doublons probables
 
-`services/author_duplicates.py`. Les auteurs sont regroupés par nom de famille normalisé,
+`services/corrections/author_duplicates.py`. Les auteurs sont regroupés par nom de famille normalisé,
 sans accents ni casse. Deux prénoms sont compatibles mot à mot : identiques, ou une
 initiale qui correspond à la première lettre de l'autre (« J.-L. » et « Jean Luc »). Un
 auteur n'entre dans un groupe que s'il est compatible avec **tous** ses membres : sinon,
@@ -108,7 +108,7 @@ distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
 
 ### Même ORCID
 
-`services/orcid_merge.py`, #158. Un ORCID désigne une seule personne : quand un auteur
+`services/imports/orcid_merge.py`, #158. Un ORCID désigne une seule personne : quand un auteur
 reçoit un ORCID déjà porté par un autre (complétion depuis OpenAlex, « Modifier », fusion
 manuelle, conflit d'ORCID accepté), ils sont fusionnés automatiquement dans le plus
 ancien, avec la forme de nom la plus complète. Le cas venait surtout de la complétion
@@ -120,7 +120,7 @@ fusionnés : l'ORCID partagé est signalé comme conflit informatif. La commande
 ## Conflits
 
 Quand une source contredit une valeur connue, l'existant est gardé et le conflit est
-signalé sur la page « Conflits » (`MetadataConflict`, `services/conflicts.py`). La règle
+signalé sur la page « Conflits » (`MetadataConflict`, `services/corrections/conflicts.py`). La règle
 générale (qui fait foi, qui complète) est dans
 [sources.md](sources.md#informations-contradictoires-entre-sources).
 

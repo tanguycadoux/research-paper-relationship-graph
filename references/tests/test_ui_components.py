@@ -6,7 +6,7 @@ from django.core.management import CommandError, call_command
 from django.template import Context, Template, TemplateSyntaxError
 from django.test import SimpleTestCase
 
-from references.services import icons
+from references.services.display import icons
 from references.templatetags.ui import (
     ALERT_VARIANTS,
     BADGE_VARIANTS,

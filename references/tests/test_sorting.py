@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, Publication, UserPublication
-from references.services.sorting import AUTHORS, PUBLICATIONS, Sort
+from references.services.display.sorting import AUTHORS, PUBLICATIONS, Sort
 
 
 class SortingTests(SimpleTestCase):

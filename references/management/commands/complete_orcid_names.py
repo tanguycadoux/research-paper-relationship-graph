@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
 
 from references.models import Author
-from references.services.http import patient_requests
-from references.services.orcid_names import complete_names
+from references.services.imports.orcid_names import complete_names
+from references.services.sources.http import patient_requests
 
 
 class Command(BaseCommand):

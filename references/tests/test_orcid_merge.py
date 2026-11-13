@@ -6,10 +6,10 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorMerge, AuthorPublication, MetadataConflict, Publication
-from references.services import conflicts
-from references.services.author_distinctions import declare_distinct
-from references.services.author_merge import merge_authors
-from references.services.orcid_merge import merge_all_same_orcid, merge_same_orcid
+from references.services.corrections import conflicts
+from references.services.corrections.author_distinctions import declare_distinct
+from references.services.corrections.author_merge import merge_authors
+from references.services.imports.orcid_merge import merge_all_same_orcid, merge_same_orcid
 from references.tests.test_orcid_completion import authorship, publication
 
 ORCID = "0000-0002-1937-4040"

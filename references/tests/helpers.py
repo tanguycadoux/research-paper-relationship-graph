@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from references.services.external_records import Source, store_record
+from references.services.sources.external_records import Source, store_record
 
 
 def with_crossref(pub, data):
@@ -20,12 +20,12 @@ def crossref_record(pub):
 
 def without_openalex(target):
     """Mock OpenAlex as knowing no DOI (without adding arguments to the tests)."""
-    target = patch("references.services.enrichment.fetch_openalex_work", new=lambda doi: None)(
-        target
-    )
+    target = patch(
+        "references.services.imports.enrichment.fetch_openalex_work", new=lambda doi: None
+    )(target)
     for module in ("enrichment", "published_versions"):
         target = patch(
-            f"references.services.{module}.fetch_openalex_works",
+            f"references.services.imports.{module}.fetch_openalex_works",
             new=lambda dois: {doi: None for doi in dois},
         )(target)
     return target
@@ -33,9 +33,11 @@ def without_openalex(target):
 
 def without_datacite(target):
     """Mock DataCite as knowing no DOI (without adding arguments to the tests)."""
-    target = patch("references.services.importer.fetch_datacite_json", new=lambda doi: None)(target)
+    target = patch(
+        "references.services.imports.importer.fetch_datacite_json", new=lambda doi: None
+    )(target)
     return patch(
-        "references.services.importer.fetch_datacite_works",
+        "references.services.imports.importer.fetch_datacite_works",
         new=lambda dois: {doi: None for doi in dois},
     )(target)
 
@@ -43,7 +45,7 @@ def without_datacite(target):
 def without_orcid(target):
     """Mock the grouped ORCID search as knowing no ORCID."""
     return patch(
-        "references.services.orcid_names.fetch_orcid_names",
+        "references.services.imports.orcid_names.fetch_orcid_names",
         new=lambda orcids: dict.fromkeys(orcids),
     )(target)
 
@@ -51,7 +53,7 @@ def without_orcid(target):
 def doi_org_answers(registered):
     """Mock doi.org as giving the same answer for every DOI: True, False, or None (#240)."""
     return patch(
-        "references.services.doi_registration.registered_dois",
+        "references.services.sources.doi_registration.registered_dois",
         new=lambda dois: dict.fromkeys(dois, registered),
     )
 
@@ -72,8 +74,10 @@ def without_other_sources(target):
 def without_candidate_search(target):
     """Mock the searches of the identification page as finding nothing (#160)."""
     for name in ("search_crossref", "search_datacite_title"):
-        target = patch(f"references.services.candidates.{name}", new=lambda text: [])(target)
+        target = patch(f"references.services.corrections.candidates.{name}", new=lambda text: [])(
+            target
+        )
     return patch(
-        "references.services.candidates.fetch_datacite_works",
+        "references.services.corrections.candidates.fetch_datacite_works",
         new=lambda dois: dict.fromkeys(dois),
     )(target)

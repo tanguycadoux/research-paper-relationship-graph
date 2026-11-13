@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Publication, UserPublication
-from references.services.corpus_transfer import import_corpus
-from references.services.doi_registration import (
+from references.services.corpus.corpus_transfer import import_corpus
+from references.services.sources.doi_registration import (
     BATCH_SIZE,
     registered_dois,
     unregistered_dois,
@@ -18,7 +18,7 @@ from references.tests.test_importer import with_mocked_crossref
 ACM_DOI = "10.5555/2627435.2670313"
 
 
-@patch("references.services.doi_registration.get_json")
+@patch("references.services.sources.doi_registration.get_json")
 class RegisteredDoisTests(TestCase):
     def test_answers_of_doi_org(self, get_json):
         get_json.return_value = [
@@ -44,7 +44,7 @@ class RegisteredDoisTests(TestCase):
 class UnregisteredDoisTests(TestCase):
     def test_doi_of_a_publication_with_metadata_is_not_asked(self):
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
-        with patch("references.services.doi_registration.registered_dois") as registered:
+        with patch("references.services.sources.doi_registration.registered_dois") as registered:
             registered.return_value = {ACM_DOI: False}
             self.assertEqual(unregistered_dois(["10.1000/known", ACM_DOI]), {ACM_DOI})
         registered.assert_called_once_with([ACM_DOI])
@@ -88,7 +88,9 @@ class CorpusRefusesUnregisteredDoiTests(TestCase):
         book = Publication.objects.create(isbn="9780262035613")
         with (
             doi_org_answers(False),
-            patch("references.services.corpus.find_or_import_book", return_value=(book, False)),
+            patch(
+                "references.services.corpus.entries.find_or_import_book", return_value=(book, False)
+            ),
         ):
             report = import_corpus(self.user, export_of({"doi": ACM_DOI, "isbn": "9780262035613"}))
         self.assertEqual(report.unregistered, [])

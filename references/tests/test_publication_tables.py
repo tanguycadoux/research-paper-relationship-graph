@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
-from references.services.publication_table import for_publication_table
+from references.services.display.publication_table import for_publication_table
 
 
 class PublicationTablesTests(TestCase):

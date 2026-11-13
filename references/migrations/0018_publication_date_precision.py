@@ -1,6 +1,6 @@
 from django.db import migrations, models
 
-# Copy of the date reading of references.services.metadata_formats at the time of
+# Copy of the date reading of references.services.sources.metadata_formats at the time of
 # this migration: number of date parts given by the preferred source.
 PRIORITY = ["crossref", "datacite", "openlibrary"]
 PRECISIONS = {1: "year", 2: "month", 3: "day"}

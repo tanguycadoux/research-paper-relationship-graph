@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Publication
-from references.services.external_records import (
+from references.services.sources.external_records import (
     METADATA_MISSING,
     METADATA_UNKNOWN,
     Source,

@@ -3,9 +3,12 @@ from unittest.mock import Mock, patch
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from references.models import CitedReference, Publication
-from references.services.enrichment import complete_cited_with_openalex, complete_with_openalex
-from references.services.external_records import Source
-from references.services.openalex_api import fetch_openalex_work, fetch_openalex_works
+from references.services.imports.enrichment import (
+    complete_cited_with_openalex,
+    complete_with_openalex,
+)
+from references.services.sources.external_records import Source
+from references.services.sources.openalex_api import fetch_openalex_work, fetch_openalex_works
 
 WORK = {"doi": "https://doi.org/10.1038/NATURE14539", "authorships": []}
 
@@ -15,7 +18,7 @@ def response(payload, status_code=200):
 
 
 @override_settings(CROSSREF_MAILTO="someone@example.org")
-@patch("references.services.http._get_session")
+@patch("references.services.sources.http._get_session")
 class OpenalexApiTests(SimpleTestCase):
     def call(self, get_session, responses, function, *args):
         get_session.return_value.get.side_effect = responses
@@ -48,7 +51,7 @@ class OpenalexApiTests(SimpleTestCase):
         self.assertEqual(works, {})
 
 
-@patch("references.services.enrichment.fetch_openalex_work", return_value=WORK)
+@patch("references.services.imports.enrichment.fetch_openalex_work", return_value=WORK)
 class CompleteWithOpenalexTests(TestCase):
     def test_work_is_stored_and_not_fetched_again(self, fetch):
         pub = Publication.objects.create(doi="10.1038/nature14539")
@@ -88,7 +91,9 @@ class CompleteCitedWithOpenalexTests(TestCase):
             calls.append(sorted(dois))
             return {doi: WORK if doi == "10.1038/nature14539" else None for doi in dois}
 
-        with patch("references.services.enrichment.fetch_openalex_works", side_effect=fetch_works):
+        with patch(
+            "references.services.imports.enrichment.fetch_openalex_works", side_effect=fetch_works
+        ):
             complete_cited_with_openalex(self.source)
         return calls
 

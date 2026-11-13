@@ -6,7 +6,7 @@ Retour au [sommaire](architecture.md).
 ## Suggestions par co-citation
 
 Page « Suggestions » (`/corpus/suggestions/`, `views/suggestions.py`,
-`services/suggestions.py`, #162). Si plusieurs articles du corpus citent la même
+`services/discovery/suggestions.py`, #162). Si plusieurs articles du corpus citent la même
 publication, elle est sans doute centrale pour le sujet. La page liste les publications
 citées par au moins `MIN_CITING` (2) publications d'un **contexte**, de la plus citée à
 la moins citée.
@@ -32,7 +32,7 @@ la moins citée.
 ## Citations entrantes
 
 Section « Cité dans toute la littérature » de la fiche d'une publication avec DOI
-(`services/incoming_citations.py`, modèle `IncomingCitations`, #163). « Cité par » ne
+(`services/discovery/incoming_citations.py`, modèle `IncomingCitations`, #163). « Cité par » ne
 voit que les bibliographies importées dans la base ; OpenAlex connaît les publications
 qui citent celle-ci partout (`GET /works?filter=cites:W…`).
 

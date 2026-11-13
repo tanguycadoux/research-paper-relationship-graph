@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 
 from ..models import Publication
-from ..services.graph import base_graph, corpus_graph, publication_graph
+from ..services.display.graph import base_graph, corpus_graph, publication_graph
 
 
 def pub_graph(request, pk):

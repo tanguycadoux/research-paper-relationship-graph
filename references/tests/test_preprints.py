@@ -8,14 +8,14 @@ from django.urls import reverse
 
 from references.forms import PublicationForm
 from references.models import CitedReference, Publication, UserPublication
-from references.services.corpus import add_to_corpus
-from references.services.external_records import Source, store_record
-from references.services.importer import import_publication
-from references.services.preprints import (
+from references.services.corpus.entries import add_to_corpus
+from references.services.imports.importer import import_publication
+from references.services.imports.preprints import (
     declared_version,
     is_published_version,
     similar_titles,
 )
+from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref, without_doi_org, without_openalex, without_orcid
 
 ARXIV = "10.48550/arxiv.2403.00171"
@@ -97,13 +97,13 @@ class ReplacementTests(TestCase):
         datacite_record = datacite_record or datacite()
         journal = journal if journal is not None else crossref()
         patches = [
-            patch("references.services.importer.fetch_crossref_json", new=lambda doi: None),
+            patch("references.services.imports.importer.fetch_crossref_json", new=lambda doi: None),
             patch(
-                "references.services.importer.fetch_datacite_json",
+                "references.services.imports.importer.fetch_datacite_json",
                 new=lambda doi: datacite_record if doi == ARXIV else None,
             ),
             patch(
-                "references.services.preprints.fetch_crossref_json",
+                "references.services.imports.preprints.fetch_crossref_json",
                 new=lambda doi: journal if doi == JOURNAL else None,
             ),
         ]
@@ -188,15 +188,15 @@ class CitedPreprintTests(TestCase):
         )
         patches = [
             patch(
-                "references.services.importer.fetch_crossref_works",
+                "references.services.imports.importer.fetch_crossref_works",
                 new=lambda dois: dict.fromkeys(dois),
             ),
             patch(
-                "references.services.importer.fetch_datacite_works",
+                "references.services.imports.importer.fetch_datacite_works",
                 new=lambda dois: {doi: datacite() if doi == ARXIV else None for doi in dois},
             ),
             patch(
-                "references.services.preprints.fetch_crossref_works",
+                "references.services.imports.preprints.fetch_crossref_works",
                 new=lambda dois: {doi: crossref() if doi == JOURNAL else None for doi in dois},
             ),
         ]
@@ -224,7 +224,9 @@ class StoredPreprintTests(TestCase):
         other = Publication.objects.create(doi="10.48550/arxiv.1706.03762")
         store_record(other, Source.DATACITE, datacite(related=None))
         out = StringIO()
-        with patch("references.services.preprints.fetch_crossref_json", return_value=crossref()):
+        with patch(
+            "references.services.imports.preprints.fetch_crossref_json", return_value=crossref()
+        ):
             call_command("replace_preprints", stdout=out)
         pub.refresh_from_db()
         self.assertEqual((pub.doi, pub.preprint_doi), (JOURNAL, ARXIV))

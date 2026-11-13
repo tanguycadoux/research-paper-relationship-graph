@@ -5,8 +5,8 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Author, MetadataConflict
-from references.services.conflicts import compare_names
-from references.services.names import same_words_up_to_initials
+from references.services.corrections.conflicts import compare_names
+from references.services.identifiers.names import same_words_up_to_initials
 
 Kind = MetadataConflict.Kind
 

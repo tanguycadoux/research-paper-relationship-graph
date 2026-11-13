@@ -9,12 +9,13 @@ from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author, Publication
-from ..services import author_distinctions, author_duplicates, author_merge, filters
-from ..services.orcid_merge import merge_same_orcid
-from ..services.orcid_profile import orcid_profile, refresh_orcid_record
-from ..services.organizations import organization_groups
-from ..services.publication_table import corpus_ids, for_publication_table
-from ..services.sorting import AUTHORS
+from ..services.corrections import author_distinctions, author_duplicates, author_merge
+from ..services.display import filters
+from ..services.display.publication_table import corpus_ids, for_publication_table
+from ..services.display.sorting import AUTHORS
+from ..services.imports.orcid_merge import merge_same_orcid
+from ..services.imports.orcid_profile import orcid_profile, refresh_orcid_record
+from ..services.imports.organizations import organization_groups
 from .pagination import PageMixin
 
 

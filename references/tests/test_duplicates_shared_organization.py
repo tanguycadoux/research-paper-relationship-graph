@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, Organization, Publication
-from references.services.author_duplicates import duplicate_groups
+from references.services.corrections.author_duplicates import duplicate_groups
 
 
 def organization(name, *ancestors):

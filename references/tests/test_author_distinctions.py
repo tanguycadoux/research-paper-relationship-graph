@@ -3,9 +3,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorDistinction
-from references.services.author_distinctions import declare_distinct, distinct_pairs
-from references.services.author_duplicates import duplicate_groups
-from references.services.author_merge import merge_authors
+from references.services.corrections.author_distinctions import declare_distinct, distinct_pairs
+from references.services.corrections.author_duplicates import duplicate_groups
+from references.services.corrections.author_merge import merge_authors
 
 
 def author(first_name, last_name="Smith", orcid=""):

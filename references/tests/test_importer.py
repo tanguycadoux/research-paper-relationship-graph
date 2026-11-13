@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
-from references.services.importer import import_publication
+from references.services.imports.importer import import_publication
 from references.tests.helpers import crossref_record, without_other_sources
 
 SOURCE_DOI = "10.1000/source"
@@ -32,10 +32,12 @@ def fake_fetch_works(dois):
 
 def with_mocked_crossref(cls):
     """Mock both Crossref calls; test methods receive (fetch, fetch_works)."""
-    cls = patch("references.services.importer.fetch_crossref_json", side_effect=fake_fetch)(cls)
-    return patch("references.services.importer.fetch_crossref_works", side_effect=fake_fetch_works)(
+    cls = patch("references.services.imports.importer.fetch_crossref_json", side_effect=fake_fetch)(
         cls
     )
+    return patch(
+        "references.services.imports.importer.fetch_crossref_works", side_effect=fake_fetch_works
+    )(cls)
 
 
 @without_other_sources

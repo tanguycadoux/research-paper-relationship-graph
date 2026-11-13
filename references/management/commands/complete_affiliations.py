@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
-from references.services.enrichment import complete_existing_publications
-from references.services.http import patient_requests
+from references.services.imports.enrichment import complete_existing_publications
+from references.services.sources.http import patient_requests
 
 
 class Command(BaseCommand):

@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from django.test import SimpleTestCase
 
 from references.forms import AuthorMergeConfirmForm
-from references.services.author_merge import (
+from references.services.corrections.author_merge import (
     candidate_values,
     default_values,
     has_orcid_conflict,

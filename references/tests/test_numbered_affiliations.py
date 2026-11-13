@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, AuthorPublication, Organization, Publication
-from references.services.organizations import numbered_affiliations
+from references.services.imports.organizations import numbered_affiliations
 
 
 class NumberedAffiliationsTests(TestCase):

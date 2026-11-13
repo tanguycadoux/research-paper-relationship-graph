@@ -23,7 +23,7 @@ from django import template
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
-from references.services.icons import UnknownIcon, icon_parts
+from references.services.display.icons import UnknownIcon, icon_parts
 
 register = template.Library()
 
@@ -364,8 +364,8 @@ def column_filter(request, filters, active, column):
 def column_header(context, label, column, classes=""):
     """
     A column header, {% column_header "Année" "year" %} (#115). With sorting and sort in
-    the context (services/sorting.py), a link that sorts by the column, or reverses it;
-    with filters and active_filters (services/filters.py), a funnel that opens its filter.
+    the context (services/display/sorting.py), a link that sorts by the column, or reverses it;
+    with filters and active_filters (services/display/filters.py), a funnel that opens its filter.
     Both go back to the first page and keep the other parameters.
     """
     request = context["request"]

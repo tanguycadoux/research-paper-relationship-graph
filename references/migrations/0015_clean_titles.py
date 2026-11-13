@@ -3,7 +3,7 @@ import re
 
 from django.db import migrations
 
-# Copy of references.services.titles.clean_title at the time of this migration.
+# Copy of references.services.imports.titles.clean_title at the time of this migration.
 TAG_PATTERN = re.compile(r"</?[A-Za-z][\w:.-]*(?:\s[^<>]*)?/?>")
 SPACES_PATTERN = re.compile(r"\s+")
 

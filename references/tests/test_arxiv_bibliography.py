@@ -9,17 +9,17 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication
-from references.services import http
-from references.services.corpus import add_to_corpus
-from references.services.external_records import Source, store_record
-from references.services.importer import import_publication
-from references.services.latex_bibliography import (
+from references.services.corpus.entries import add_to_corpus
+from references.services.imports.importer import import_publication
+from references.services.imports.latex_bibliography import (
     clean_latex,
     read_eprint,
     references,
     written_identifier,
 )
-from references.services.metadata_formats import bibliography_source
+from references.services.sources import http
+from references.services.sources.external_records import Source, store_record
+from references.services.sources.metadata_formats import bibliography_source
 from references.tests.helpers import without_openalex, without_orcid
 
 ARXIV = "10.48550/arxiv.1706.03762"
@@ -134,7 +134,7 @@ class ReadEprintTests(SimpleTestCase):
         self.assertEqual(written_identifier("Phys. Rev. 24, 054201 (2021)"), "")
 
 
-@patch("references.services.http._get_session")
+@patch("references.services.sources.http._get_session")
 class GetBytesTests(SimpleTestCase):
     def response(self, chunks):
         return Mock(status_code=200, headers={}, iter_content=Mock(return_value=iter(chunks)))
@@ -183,18 +183,18 @@ class ImportTests(TestCase):
     def setUp(self):
         self.eprint = Mock(return_value=read_eprint(tar_gz({"ms.tex": INLINE_TEX})))
         patches = [
-            patch("references.services.importer.fetch_crossref_json", new=lambda doi: None),
+            patch("references.services.imports.importer.fetch_crossref_json", new=lambda doi: None),
             patch(
-                "references.services.importer.fetch_datacite_json",
+                "references.services.imports.importer.fetch_datacite_json",
                 new=lambda doi: datacite_preprint() if doi == ARXIV else None,
             ),
-            patch("references.services.importer.fetch_arxiv_eprint", new=self.eprint),
+            patch("references.services.imports.importer.fetch_arxiv_eprint", new=self.eprint),
             patch(
-                "references.services.importer.fetch_crossref_works",
+                "references.services.imports.importer.fetch_crossref_works",
                 new=lambda dois: dict.fromkeys(dois),
             ),
             patch(
-                "references.services.importer.fetch_datacite_works",
+                "references.services.imports.importer.fetch_datacite_works",
                 new=lambda dois: dict.fromkeys(dois),
             ),
         ]

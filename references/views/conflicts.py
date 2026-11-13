@@ -4,9 +4,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from ..models import MetadataConflict
-from ..services import conflicts, published_versions
-from ..services.importer import import_publication
-from ..services.orcid_merge import merge_same_orcid
+from ..services.corrections import conflicts
+from ..services.imports import published_versions
+from ..services.imports.importer import import_publication
+from ..services.imports.orcid_merge import merge_same_orcid
 
 RECENT_DECISIONS = 20
 

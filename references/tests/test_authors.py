@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Author, Publication
-from references.services.parser import parse_publication
+from references.services.imports.parser import parse_publication
 from references.tests.helpers import with_crossref
 
 ADA = {"given": "Ada", "family": "Lovelace", "ORCID": "https://orcid.org/0000-0001"}

@@ -12,7 +12,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   `filter_summary` ; les panneaux `popover` partagent leurs classes
   (`popover_panel_classes`). **Navigation** décrite dans
   `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
-  (#152, `services/pending.py`) : références à identifier dans son corpus, conflits
+  (#152, `services/display/pending.py`) : références à identifier dans son corpus, conflits
   ouverts. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
   après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
   compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
@@ -33,7 +33,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   dernière ligne d'une page, le retour sur cette page fonctionne encore. Le composant
   `{% pagination %}` garde les autres paramètres de l'URL (tri, filtres) ; sous `sm`, il
   ne montre que les lignes affichées et les liens Précédente et Suivante.
-- **Tri par colonne** (#115, `services/sorting.py`) : `?sort=year`, `?sort=-year`,
+- **Tri par colonne** (#115, `services/display/sorting.py`) : `?sort=year`, `?sort=-year`,
   côté serveur et avant la pagination, donc sur toute la liste. Publications par titre,
   premier auteur (nom de famille) ou année ; auteurs par nom ou prénom. Les noms et les
   titres sont comparés sans casse ni accents (`normalized()`), les publications sans
@@ -43,7 +43,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   un clic sur une autre colonne commence par son sens naturel (années récentes d'abord,
   noms de A à Z), et revient à la première page en gardant la recherche. Sans `sorting`
   dans le contexte (page d'un auteur, « Cité par »), les en-têtes restent simples.
-- **Filtres par colonne** (#115, `services/filters.py`), comme dans un tableur : un
+- **Filtres par colonne** (#115, `services/display/filters.py`), comme dans un tableur : un
   entonnoir dans l'en-tête ouvre un panneau avec le champ de la colonne. Publications :
   titre et auteurs (texte contenu, sans casse ni accents), identifiant (avec DOI, avec
   ISBN, sans identifiant), années (de, à). Auteurs : nom, prénom (texte), ORCID (avec,
@@ -58,7 +58,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   du tableau, chacun retiré d'un clic, et les erreurs (année mal écrite). Un tableau
   filtré sans résultat reste affiché, pour changer les filtres. La recherche (`/search/`)
   et la page d'un auteur n'ont pas de filtres.
-- **Recherche** (#153, `services/search.py`, `/search/?q=…`) : une seule barre, du
+- **Recherche** (#153, `services/display/search.py`, `/search/?q=…`) : une seule barre, du
   texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
   année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
   auteurs et les identifiants ; les mots d'un `auteur:` doivent appartenir à la même
@@ -72,7 +72,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   (une icône vers `/search/` sous `md`) ; l'accueil et la page de recherche ont la leur,
   plus grande, avec l'aide de la syntaxe. Ctrl+K (⌘K sur Mac) y place le curseur, ou
   ouvre la page de recherche quand aucune barre n'est affichée (`static/js/search.js`).
-- **Accueil** (#151, `services/dashboard.py`) : connecté, un tableau de bord (mon corpus
+- **Accueil** (#151, `services/display/dashboard.py`) : connecté, un tableau de bord (mon corpus
   et ses dernières publications ajoutées, « À faire » avec les références à identifier,
   les conflits ouverts et les doublons probables, base commune) ; visiteur, une
   présentation et les chiffres de la base. Nombre de requêtes constant.

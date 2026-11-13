@@ -2,7 +2,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-from ..services import suggestions, tags
+from ..services.corpus import tags
+from ..services.discovery import suggestions
 from .pagination import page_of
 
 
