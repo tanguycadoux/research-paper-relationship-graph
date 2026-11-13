@@ -21,6 +21,14 @@ première qui la connaît, dans l'ordre **Crossref, DataCite, Open Library**, co
 format Crossref (`metadata_formats.py`). La bibliographie tirée d'arXiv ne sert que si
 cette réponse n'en a pas.
 
+Les références sont numérotées dans l'ordre de la réponse, sauf quand toutes leurs clés
+sont de la forme `ref<n>`, sans numéro répété : elles sont alors triées par `n`
+(`parser.in_numbered_order`, #258). IEEE dépose ses bibliographies dans le désordre chez
+Crossref (`ref4, ref3, ref10…` pour `10.1109/tasc.2014.2377730`), mais la clé garde le
+numéro de l'article. Toute autre forme de clé garde l'ordre reçu, sans deviner. La
+migration `0029_sort_ieee_references` a renuméroté les bibliographies déjà importées ;
+les décisions manuelles, portées par la référence et retrouvées par sa clé, suivent.
+
 ## Parcours d'un import
 
 `importer.import_publication` enchaîne les étapes ci-dessous. Chaque réponse est stockée
