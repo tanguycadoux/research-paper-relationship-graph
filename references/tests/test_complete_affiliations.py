@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.test import TestCase
 
-from references.models import Organization, Publication
+from references.models import MetadataConflict, Organization, Publication
 from references.services.imports.parser import parse_publication
 from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
@@ -104,3 +104,50 @@ class CompleteAffiliationsCommandTests(TestCase):
         works.assert_called_once_with(["10.1000/a"])
         self.assertEqual(self.organizations(pub), ["IRFU"])
         self.assertIn("Publications demandées à OpenAlex : 1", output)
+
+
+THUILLIER_ONLY = {"raw_author_name": "Thomas Thuillier", "institutions": []}
+
+
+class FalseAuthorConflictsTests(TestCase):
+    """Conflicts reported before #265 on a truncated or empty author list are closed."""
+
+    def test_publication_without_authors_takes_the_openalex_ones(self):
+        pub = Publication.objects.create(doi="10.1017/9781316809976.027", title="A")
+        with_crossref(pub, {"message": {"title": ["A"], "author": []}})
+        MetadataConflict.objects.create(
+            kind=MetadataConflict.Kind.AUTHORS_MISMATCH,
+            publication=pub,
+            field="authors",
+            current_value="0 auteur : ",
+            proposed_value="1 auteur : Thomas Thuillier",
+            source=Source.OPENALEX,
+        )
+        store_record(pub, Source.OPENALEX, {"authorships": [THUILLIER_ONLY]})
+        output = run()
+        self.assertFalse(MetadataConflict.objects.exists())
+        self.assertEqual(str(pub.authorpublication_set.get().author), "Thomas Thuillier")
+        self.assertIn("Publications sans auteur complétées par OpenAlex : 1", output)
+
+    def test_conflict_on_a_truncated_list_is_closed(self):
+        authors = [{"given": "Thomas", "family": "Thuillier"}] * 101
+        pub = Publication.objects.create(doi="10.1007/lrr-2016-1", title="A")
+        with_crossref(pub, {"message": {"title": ["A"], "author": authors}})
+        parse_publication(pub)  # no OpenAlex answer yet
+        MetadataConflict.objects.create(
+            kind=MetadataConflict.Kind.AUTHORS_MISMATCH,
+            publication=pub,
+            field="authors",
+            current_value="101 auteurs",
+            proposed_value="100 auteurs",
+            source=Source.OPENALEX,
+        )
+        store_record(pub, Source.OPENALEX, {"authorships": [THUILLIER_ONLY] * 100})
+        run()
+        self.assertFalse(MetadataConflict.objects.exists())
+
+    def test_a_real_difference_stays_reported(self):
+        pub = parsed_publication("10.1000/a")
+        store_record(pub, Source.OPENALEX, {"authorships": [{"raw_author_name": "Someone Else"}]})
+        run()
+        self.assertTrue(MetadataConflict.objects.filter(publication=pub).exists())

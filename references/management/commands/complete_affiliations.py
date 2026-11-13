@@ -7,7 +7,8 @@ from references.services.sources.http import patient_requests
 class Command(BaseCommand):
     help = (
         "Rattache les affiliations (et la hiérarchie des organisations) des publications "
-        "déjà en base, à partir des données OpenAlex stockées."
+        "déjà en base, à partir des données OpenAlex stockées. Une publication sans auteur "
+        "reprend ceux d'OpenAlex, et les conflits d'auteurs qui ne tiennent plus sont fermés."
     )
 
     def add_arguments(self, parser):
@@ -34,6 +35,9 @@ class Command(BaseCommand):
         if options["fetch_missing"]:
             self.stdout.write(f"Publications demandées à OpenAlex : {summary['fetched']}")
         self.stdout.write(f"Publications avec une réponse OpenAlex : {summary['with_openalex']}")
+        self.stdout.write(
+            f"Publications sans auteur complétées par OpenAlex : {summary['with_new_authors']}"
+        )
         self.stdout.write(
             self.style.SUCCESS(
                 f"Publications dont les affiliations sont rattachées : {summary['attached']}"

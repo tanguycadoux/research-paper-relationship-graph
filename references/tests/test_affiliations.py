@@ -4,9 +4,9 @@ from unittest.mock import patch
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-from references.models import CitedReference, Organization, Publication
+from references.models import CitedReference, MetadataConflict, Organization, Publication
 from references.services.identifiers.names import same_person_name
-from references.services.imports.affiliations import attach_affiliations
+from references.services.imports.affiliations import OPENALEX_MAX_AUTHORS, attach_affiliations
 from references.services.imports.enrichment import (
     complete_ancestors,
     complete_cited_with_openalex,
@@ -126,6 +126,84 @@ class AttachAffiliationsTests(TestCase):
         ):
             complete_cited_with_openalex(source)
         self.assertEqual(self.organizations(cited), [[LPSC["display_name"]]])
+
+
+def person(index):
+    """A distinct name for each index, made of letters only."""
+    letters = f"{chr(97 + index // 26)}{chr(97 + index % 26)}"
+    return {"given": f"Given{letters}", "family": f"Family{letters}"}
+
+
+class OpenAlexAuthorListsTests(TestCase):
+    """An author list truncated or empty on one side is not a contradiction (#265)."""
+
+    def organizations(self, pub):
+        return [slot.organizations.count() for slot in pub.authorpublication_set.order_by("order")]
+
+    def test_list_truncated_by_openalex_compares_the_first_100_authors(self):
+        authors = [person(i) for i in range(945)]
+        authorships = [
+            authorship(f"{a['given']} {a['family']}", LPSC) for a in authors[:OPENALEX_MAX_AUTHORS]
+        ]
+        pub = publication("Living Reviews", authors, authorships)
+        self.assertFalse(MetadataConflict.objects.exists())
+        self.assertTrue(attach_affiliations(pub))
+        self.assertEqual(self.organizations(pub), [1] * OPENALEX_MAX_AUTHORS + [0] * 845)
+
+    def test_truncated_list_that_differs_is_still_reported(self):
+        authors = [person(i) for i in range(150)]
+        authorships = [authorship("Someone Else", LPSC)] + [
+            authorship(f"{a['given']} {a['family']}", LPSC) for a in authors[1:OPENALEX_MAX_AUTHORS]
+        ]
+        pub = publication("A", authors, authorships)
+        self.assertEqual(MetadataConflict.objects.get().publication, pub)
+        self.assertEqual(sum(self.organizations(pub)), 0)
+
+    def test_a_shorter_openalex_list_is_still_reported(self):
+        authors = [person(i) for i in range(150)]
+        authorships = [authorship(f"{a['given']} {a['family']}") for a in authors[:99]]
+        publication("A", authors, authorships)
+        self.assertTrue(MetadataConflict.objects.exists())
+
+    def test_without_authors_at_crossref_the_openalex_ones_are_taken(self):
+        thuillier = dict(
+            authorship("Thuillier, Thomas", LPSC),
+            author={
+                "display_name": "T. Thuillier",
+                "orcid": "https://orcid.org/0000-0001-2345-6789",
+            },
+        )
+        pub = publication("Private Classical Communication", [], [thuillier])
+        slot = pub.authorpublication_set.get()
+        self.assertEqual(
+            (slot.published_given_name, slot.published_family_name, slot.published_orcid),
+            ("Thomas", "Thuillier", "0000-0001-2345-6789"),
+        )
+        self.assertEqual(self.organizations(pub), [1])
+        self.assertFalse(MetadataConflict.objects.exists())
+
+    def test_without_authors_at_openalex_nothing_is_reported(self):
+        pub = publication("A", [THUILLIER, ANGOT], [])
+        self.assertFalse(attach_affiliations(pub))
+        self.assertFalse(MetadataConflict.objects.exists())
+
+    def test_cited_publication_without_authors_takes_the_openalex_ones(self):
+        source = Publication.objects.create(title="Source")
+        cited = Publication.objects.create(doi="10.1000/cited", title="Cited")
+        with_crossref(cited, {"message": {"title": ["Cited"], "author": []}})
+        parse_publication(cited)
+        CitedReference.objects.create(source=source, target=cited, position=0)
+        work = {"authorships": [authorship("Thomas Thuillier", LPSC)]}
+        with patch(
+            "references.services.imports.enrichment.fetch_openalex_works",
+            return_value={"10.1000/cited": work},
+        ):
+            complete_cited_with_openalex(source)
+        self.assertEqual(
+            [str(slot.author) for slot in cited.authorpublication_set.all()], ["Thomas Thuillier"]
+        )
+        self.assertEqual(self.organizations(cited), [1])
+        self.assertFalse(MetadataConflict.objects.exists())
 
 
 CEA = {

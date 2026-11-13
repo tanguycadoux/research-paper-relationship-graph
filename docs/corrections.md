@@ -129,7 +129,7 @@ générale (qui fait foi, qui complète) est dans
 | ORCID différent | OpenAlex donne à un auteur un autre ORCID que le sien | Remplace l'ORCID (et fusionne avec un auteur qui le porte déjà) |
 | Nom différent selon ORCID | Le nom déclaré sur ORCID ne prolonge pas le nom connu | Remplace prénom et nom |
 | Version publiée selon OpenAlex | OpenAlex regroupe une prépublication avec une version publiée vérifiée chez Crossref | Remplace la prépublication par sa version publiée, ou la fusionne avec elle |
-| Auteurs différents selon les sources | Les auteurs d'OpenAlex ne concordent pas avec les auteurs publiés (Crossref ou DataCite) | Informatif : seulement « Vu » (les affiliations ne sont pas rattachées) |
+| Auteurs différents selon les sources | Les auteurs d'OpenAlex ne concordent pas avec les auteurs publiés (Crossref ou DataCite). Pas pour une liste vide d'un côté, ni pour les 100 premiers d'une liste tronquée par OpenAlex quand ils concordent (#265) | Informatif : seulement « Vu » (les affiliations ne sont pas rattachées) |
 | ORCID porté par des auteurs déclarés distincts | Un même ORCID sur des auteurs qu'un humain a déclarés différents | Informatif : seulement « Vu » |
 
 - Un conflit n'est signalé qu'**une fois** (objet, champ, valeur proposée) : une décision

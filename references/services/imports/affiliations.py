@@ -1,7 +1,8 @@
 """
 Affiliations of the author slots of a publication, from the institutions given by
 OpenAlex. OpenAlex only completes: authorships are matched to the slots by position
-and published name, and nothing is attached when they disagree.
+and published name, and nothing is attached when they disagree. OpenAlex lists at
+most 100 authors of a work: beyond, the first 100 are compared and attached (#265).
 """
 
 import logging
@@ -17,6 +18,9 @@ from .organizations import openalex_id, organizations_for
 
 logger = logging.getLogger(__name__)
 
+# OpenAlex never lists more authors for a work (#265).
+OPENALEX_MAX_AUTHORS = 100
+
 
 def attach_affiliations(pub):
     """
@@ -29,6 +33,11 @@ def attach_affiliations(pub):
         return False
     slots = list(pub.authorpublication_set.order_by("order"))
     authorships = record.data.get("authorships", [])
+    if not slots or not authorships:
+        # An empty list contradicts nothing (#265): there is just nothing to attach.
+        close_obsolete(Kind.AUTHORS_MISMATCH, publication=pub)
+        return False
+    slots = compared_slots(slots, authorships)
     if not authorships_match(slots, authorships):
         logger.warning("OpenAlex authors do not match the published ones for %s", pub)
         report_authors_mismatch(pub, slots, authorships)
@@ -37,6 +46,16 @@ def attach_affiliations(pub):
     link_slots(slots, authorships)
     complete_orcids(slots, authorships)
     return True
+
+
+def compared_slots(slots, authorships):
+    """
+    The slots to compare with the OpenAlex authorships: all of them, or only the first
+    100 when OpenAlex gives exactly 100 for a longer list, which it truncated (#265).
+    """
+    if len(authorships) == OPENALEX_MAX_AUTHORS and len(slots) > OPENALEX_MAX_AUTHORS:
+        return slots[:OPENALEX_MAX_AUTHORS]
+    return slots
 
 
 def report_authors_mismatch(pub, slots, authorships):
