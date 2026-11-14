@@ -37,6 +37,15 @@ projet. Ils ne changent pas le code de l'application.
     de sa composante (les plus citées plus souvent), dates de 1960 à 2025 avec davantage
     de récentes, 2 % sans date. Disposition, création du graphe Cytoscape dans un cadre
     de 690 × 767 px (celui de la page à 1 400 px de large), images pendant un zoom.
+- **`frames.py`** (et `frames.js`, dans la page) mesure le **dessin pendant un geste**,
+  avec de vrais événements de souris envoyés par DevTools : zoom à la molette (30 crans),
+  glisser de la vue, sélection de la publication la plus reliée (animation), survol de
+  30 publications. Il enregistre les intervalles entre images (`requestAnimationFrame`) et
+  donne médiane, 90e centile, maximum et nombre d'images de plus de 50 ms ; médiane de 3
+  séries, chacune repartant de la vue d'ensemble. Les graphes synthétiques sont montés
+  dans une page de l'application avec ses modules (style, vue, étirement, sélection,
+  axe) ; leurs positions sont posées sans la disposition (x : la date, y : au hasard),
+  qui est mesurée par `bench.py`. Son port DevTools est réglable (`--port`).
 - **`bench.js`**, exécuté dans la page : `placeNodes` est appelé avec un objet `timings`,
   dans lequel `layout.js` additionne le temps de chacune de ses étapes (et le nombre de
   recherches de couples, `refreshes`) ; puis les croisements de liens du résultat sont
@@ -122,6 +131,55 @@ viennent de là.
   pendant la disposition), puis 7 images par seconde à l'animation de sélection et au
   zoom.
 
+## Dessin pendant un geste, avant et après (#202, piste 4)
+
+Intervalle entre images, en millisecondes : **médiane / 90e centile**, puis nombre
+d'images de plus de 50 ms. Mesuré avec `frames.py`, Chrome headless à 1 400 px.
+
+| Graphe (éléments) | Geste | Avant | Après |
+|---|---|---|---|
+| Base grossie (4 336) | Zoom | 44 / 195, 35 lentes | **17 / 18**, 3 |
+| | Glisser | 17 / 38 | 17 / 18 |
+| | Sélection | 80 / 176 | **17 / 17** (saut direct) |
+| | Survol | 17 / 50, 7 lentes | 17 / 50, 11 lentes |
+| Synthétique 500 (1 740) | Zoom | 32 / 93, 30 lentes | **17 / 17**, 2 |
+| | Sélection | 23 / 105 | 17 / 18 |
+| Synthétique 1 000 (3 471) | Zoom | 69 / 190, 60 lentes | **17 / 18**, 5 |
+| | Glisser | 48 / 55, 22 lentes | **17 / 17**, 1 |
+| | Sélection | 126 / 203 | **17 / 17** |
+| | Survol | 42 / 79, 29 lentes | 39 / 73, 29 lentes |
+| Synthétique 2 000 (6 956) | Zoom | 152 / 402, 69 lentes | **17 / 24**, 2 |
+| | Glisser | 101 / 109, 31 lentes | **17 / 21**, 3 |
+| | Sélection | 270 / 407 | **17 / 141** |
+| | Survol | 141 / 149, 30 lentes | 137 / 143, 30 lentes |
+| Base de l'utilisateur (161) | Tous les gestes | 17 / 17 à 23 | inchangé |
+
+Ce qui part en temps, sur la base grossie (profil Chrome, 40 images de zoom) :
+- la **réévaluation du style** à chaque image (`style().update()`) : 135 ms sur 4 300
+  éléments, trois fois le dessin ; sans elle, le dessin seul est de 44 ms (`renderOnly`) ;
+- une feuille de style recalculée pour le zoom (`style().fromJson`, tailles en `mapData`)
+  coûte plus cher que les fonctions (236 contre 177 ms par image, zoom compris) : la
+  réévaluation est liée au nombre d'éléments, pas à la forme des valeurs ;
+- sans réévaluation, le dessin d'une image de zoom est de 44 ms, de 41 avec les liens
+  masqués, 37 avec `textureOnViewport` et 36 avec `motionBlur` (mesure sans événements
+  de souris : ce sont les vrais gestes qui font la différence, ci-dessus).
+
+Ce qui a été fait (`viewport.js`, `focus.js`, `main.js`) :
+1. **Au-delà de 600 éléments**, tailles réévaluées une fois le zoom arrêté (150 ms) et
+   sélection sans animation : zoom et sélection de 44 à 17 ms (base grossie).
+2. **Au-delà de 600 éléments aussi**, `textureOnViewport` : le glisser à 1 000 publications
+   passe de 48 à 17 ms, et le zoom de 17 / 61 à 17 / 18.
+3. **Au-delà de 5 000 éléments**, `hideEdgesOnViewport` à la place : la texture devient
+   lente (32 images lentes à 2 000 publications, 2 avec les liens masqués).
+
+Ce qui n'est pas réglé :
+- le **survol** : il redessine tout le canevas (classes `hovered` du nœud et de ses
+  liens) : 39 ms à 1 000 publications, 137 à 2 000 ;
+- **l'image qui suit un zoom ou une sélection** : réévaluer le style une fois reste 140 à
+  200 ms (maximum à 190–480 ms), perceptible comme un à-coup à la fin du geste ;
+- la sélection d'un graphe de 2 000 publications a un 90e centile de 141 ms, pour la même
+  raison (une image longue au saut).
+
 ## Après l'optimisation de la disposition
 
 Disposition par groupes (#230), non datées sur plusieurs rangées (#318), et simulation
@@ -171,9 +229,9 @@ les recherches des couples à portée (`nearEdges` et `nearPairs`, au plus toute
   de Cytoscape et la réévaluation du style (tailles fixes à l'écran, #185) à chaque image.
 - **Serveur : sans souci** à cette taille (moins de 0,5 s, 4 requêtes, 0,7 Mo de JSON).
 
-## Pistes d'optimisation (à décider, rien n'est fait)
+## Pistes d'optimisation
 
-Classées par gain attendu pour l'effort ; les pistes 1 à 3 sont faites (voir plus haut).
+Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #320, voir plus haut) ; 5 et 6 restent à décider.
 
 1. **`clearEdges`** : ne l'appliquer que pendant les dernières itérations (les positions
    ont déjà convergé), et ne garder pour chaque nœud que les liens proches de lui en y,
@@ -184,9 +242,10 @@ Classées par gain attendu pour l'effort ; les pistes 1 à 3 sont faites (voir p
    bandes ne s'entremêlent plus.
 3. **`separateClose`** : moins d'itérations, ou seulement les voisins immédiats en x
    (balayage par tri) au lieu de toutes les paires à moins de 40 px.
-4. **Dessin pendant le mouvement** : options de Cytoscape `hideEdgesOnViewport` et
-   `textureOnViewport` au-delà d'un seuil de nœuds, et tailles à l'écran recalculées à
-   la fin du zoom plutôt qu'à chaque image.
+4. **Dessin pendant le mouvement** (fait, voir la série ci-dessus) : options de Cytoscape
+   `textureOnViewport` et `hideEdgesOnViewport` au-delà d'un seuil, et tailles à l'écran
+   recalculées à la fin du zoom plutôt qu'à chaque image. Reste le survol, et l'image
+   longue à la fin d'un geste.
 5. **Ne pas bloquer la page** : disposition dans un Web Worker, avec un message
    d'attente ; ou positions gardées en cache (navigateur) tant que les données du
    graphe ne changent pas.

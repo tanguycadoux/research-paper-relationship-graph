@@ -143,7 +143,11 @@ export function bindFocus(cy, viewport, stretch) {
         stop();
         cy.stop();
         const from = { stretch: stretch.current(), zoom: cy.zoom(), pan: { ...cy.pan() } };
-        const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        // On a large graph, sizes do not follow the zoom during a motion (viewport.js): an
+        // animation would swell the nodes up to MAX_ZOOM_RATIO times, then shrink them. The
+        // view goes there at once, as when motion is reduced.
+        const still =
+            !viewport.live || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const start = performance.now();
         viewport.hold(true);
         const step = (now) => {

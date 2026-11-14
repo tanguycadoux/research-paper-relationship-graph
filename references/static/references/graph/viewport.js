@@ -33,28 +33,61 @@ function keepWithin(cy, bounds) {
     }
 }
 
+// Evaluating the style again costs Cytoscape about 0.03 ms per element (#202): 135 ms
+// for the 4 300 elements of a graph of 1 800 publications, three times the drawing
+// itself. Up to this many elements (about 20 ms), sizes follow the zoom at each frame.
+export const LIVE_SIZES_MAX_ELEMENTS = 600;
+// On a larger graph, sizes are evaluated again once the zoom has not changed for this
+// long, in milliseconds: meanwhile they scale with the zoom, like a picture.
+const SETTLE_DELAY = 150;
+
+// Beyond this many elements, even moving a picture of the graph is slow (#202).
+const HIDE_EDGES_MIN_ELEMENTS = 5000;
+
+// Options of Cytoscape for a graph of this many elements. On a large one, the drawing
+// itself is slow (45 ms for 4 300 elements, 100 ms for 7 000): while the view is zoomed or
+// dragged by hand, Cytoscape moves a picture of the graph, edges included, and draws it
+// again once the gesture ends. On a very large one, the picture is slow too: the edges are
+// hidden during the gesture instead.
+export function rendererOptions(elementCount) {
+    if (elementCount > HIDE_EDGES_MIN_ELEMENTS) {
+        return { hideEdgesOnViewport: true };
+    }
+    return { textureOnViewport: elementCount > LIVE_SIZES_MAX_ELEMENTS };
+}
+
 // Sizes in the style are divided by the zoom (#185): they are evaluated again when the
-// zoom changes, at most once per frame, so that zooming stays smooth on large graphs.
-function keepScreenSize(cy) {
+// zoom changes, at most once per frame on a small graph, once the zoom stops on a large one.
+function keepScreenSize(cy, live) {
     let zoom = cy.zoom();
     let pending = false;
+    let settle = null;
+    const update = () => {
+        pending = false;
+        zoom = cy.zoom();
+        cy.style().update();
+    };
     cy.style().update();
     cy.on("viewport", () => {
-        if (pending || cy.zoom() === zoom) {
+        if (cy.zoom() === zoom) {
             return;
         }
-        pending = true;
-        requestAnimationFrame(() => {
-            pending = false;
-            zoom = cy.zoom();
-            cy.style().update();
-        });
+        if (!live) {
+            clearTimeout(settle);
+            settle = setTimeout(update, SETTLE_DELAY);
+            return;
+        }
+        if (!pending) {
+            pending = true;
+            requestAnimationFrame(update);
+        }
     });
 }
 
 // showAllButton shows the whole graph again (#196); it is disabled, rather than hidden,
 // while the whole graph is shown: it stays in view and in place. stretch: what
-// makeStretch returns. Returns what a selection needs to move the view (#142): the zoom
+// makeStretch returns. Returns whether sizes follow the zoom at each frame (live: a small
+// graph), and what a selection needs to move the view (#142): the zoom
 // of the whole graph, a view brought within the bounds, a hold on the bounds while it
 // animates, and a callback when the whole graph is shown again; and whether the whole
 // graph is shown (#175).
@@ -142,8 +175,11 @@ export function bindViewport(cy, container, showAllButton, stretch) {
         cy.resize();
         showAll();
     }).observe(container);
-    keepScreenSize(cy);
+    // A small graph is drawn again with its exact sizes at each frame of a motion.
+    const live = cy.elements().length <= LIVE_SIZES_MAX_ELEMENTS;
+    keepScreenSize(cy, live);
     return {
+        live,
         wholeZoom: () => whole.zoom,
         showsAll,
         within,

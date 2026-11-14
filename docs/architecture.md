@@ -149,7 +149,7 @@ static/
   js/search.js       raccourci Ctrl+K vers la barre de recherche
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
   vendor/cytoscape/  Cytoscape.js embarqué
-tools/graph_bench/   banc d'essai des graphes : base grossie, mesures dans Chrome headless (#202)
+tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
 docs/                cette documentation
 ```
 

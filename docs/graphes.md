@@ -83,7 +83,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   seulement). Sa **taille** suit
   son nombre de citations dans la base (aire proportionnelle). Tailles des nœuds, épaisseurs
   des liens et libellés sont **fixes à l'écran** (#185) : divisées par le zoom, réévaluées
-  au plus une fois par image (`requestAnimationFrame`) quand le zoom change. Zoomer écarte
+  au plus une fois par image (`requestAnimationFrame`) quand le zoom change, ou à l'arrêt
+  du zoom sur un grand graphe (voir « Grands graphes »). Zoomer écarte
   donc les nœuds sans les grossir, ce qui sépare les publications proches en date. Les couleurs sont définies
   une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
   `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
@@ -130,7 +131,7 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   sous le graphe.
 - **Recentrage à la sélection** (#142, #291, `focus.js`, `stretch.js`) : l'article et
   ses voisins occupent **tout le cadre, en largeur et en hauteur** (animation de 300 ms,
-  aucune avec « réduire les animations »). Cytoscape n'a qu'un zoom, le même sur les deux
+  aucune avec « réduire les animations » ni sur un grand graphe). Cytoscape n'a qu'un zoom, le même sur les deux
   axes : le zoom remplit l'axe le plus serré (au plus 4 fois celui de la vue d'ensemble),
   puis le graphe est **étiré** sur l'autre axe, autour du centre de la sélection, jusqu'à
   le remplir aussi (au plus 4 fois). L'étirement déplace les positions, toujours
@@ -162,6 +163,30 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   sélection, Échap ou « Vue d'ensemble » repart de la vue du moment ; un zoom ou un
   déplacement à la main arrête l'animation là où elle est. « Vue d'ensemble » pendant une
   sélection y revient par la même animation (un redimensionnement du cadre, sans).
+- **Grands graphes** (#202, `viewport.js`, mesures dans [banc-graphe.md](banc-graphe.md)) :
+  au-delà de **600 éléments** (nœuds et liens, `LIVE_SIZES_MAX_ELEMENTS`), le graphe ne
+  suit plus le mouvement au même prix. Réévaluer le style coûte à Cytoscape environ
+  0,03 ms par élément, quelle que soit la forme des valeurs (fonctions, ou valeurs
+  recalculées pour le zoom et `mapData` : plus cher encore) : 135 ms pour les 4 300
+  éléments d'un graphe de 1 800 publications, trois fois le dessin lui-même. Le seuil
+  garde cette réévaluation sous 20 ms environ : sous lui, rien ne change (le graphe d'une
+  base de 76 publications et 85 citations, 161 éléments, anime et zoome comme avant).
+  Au-delà :
+  - les tailles fixes à l'écran sont réévaluées **une fois le zoom arrêté** (150 ms sans
+    changement) ; pendant le geste, elles grandissent avec le zoom, comme une image ;
+  - la **sélection va directement à sa vue**, sans animation, les tailles réévaluées une
+    fois : sans réévaluation à chaque image, l'animation ferait gonfler les nœuds jusqu'à
+    4 fois (le zoom de la sélection) avant de les réduire ;
+  - pendant un zoom à la molette ou un déplacement à la souris, Cytoscape déplace **une
+    image** du graphe, liens compris (`textureOnViewport`, `rendererOptions`), et le
+    redessine à la fin du geste ; au-delà de **5 000 éléments**, cette image est lente à
+    son tour (32 images de plus de 50 ms pendant un zoom à 2 000 publications) : les
+    **liens sont masqués** pendant le geste (`hideEdgesOnViewport`, 2 images lentes). Les
+    deux gagnent autant jusqu'à 1 800 publications ; l'image garde les liens, d'où son
+    choix sous ce seuil.
+  Limites connues : le survol redessine tout le canevas (40 ms à 1 000 publications,
+  140 ms à 2 000) ; la réévaluation unique à la fin d'un zoom ou d'une sélection reste une
+  image longue (190 ms sur 1 800 publications).
 - **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
   télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
