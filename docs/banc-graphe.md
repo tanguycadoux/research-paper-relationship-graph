@@ -1,0 +1,152 @@
+# Banc d'essai des graphes
+
+Mesures de la disposition et de l'affichage des graphes de citations sur de grands
+graphes (#202), avant toute optimisation. Vue d'ensemble du projet :
+[architecture.md](architecture.md) ; les graphes eux-mêmes : [graphes.md](graphes.md).
+
+## Méthode
+
+Les outils sont dans `tools/graph_bench/`, sans dépendance de plus que celles du
+projet. Ils ne changent pas le code de l'application.
+
+- **`grow_base.py`** fait grossir une **copie** de la base avec de vraies publications,
+  par les services de l'application (`add_to_corpus`) et les vraies sources. À lancer
+  dans une copie de travail du dépôt (worktree) qui a sa propre `db.sqlite3`, avec
+  `DJANGO_DEBUG=1` pour garder les réponses dans `.http_cache.sqlite`. Deux façons de
+  grossir :
+  - **en chaîne** : un utilisateur `bench` reprend les corpus de la base, puis ajoute à
+    son corpus, niveau par niveau, les publications qu'il cite (les plus citées d'abord,
+    60 par niveau), ce qui importe leurs propres bibliographies ;
+  - **sans lien** : douze articles très cités de domaines éloignés (AlphaFold, CRISPR,
+    cancer, vaccin, apprentissage profond, économie, climat, ondes gravitationnelles…),
+    avec leurs bibliographies : des groupes sans lien avec le reste (#230).
+- **`server.py`** mesure, côté serveur, la construction des données de chaque graphe
+  (`services/display/graph.py`) : temps, nombre de requêtes SQL, taille du JSON. Il donne
+  aussi un cookie de session de `bench`, pour le graphe de son corpus.
+- **`bench.py`** pilote Chrome headless par le protocole DevTools (client WebSocket en
+  Python pur) :
+  - pour une **page** de l'application : temps jusqu'à la réponse et jusqu'à
+    `DOMContentLoaded` (les modules de `main.js` s'exécutent avant : disposition et
+    création du graphe), taille des données, étapes de la disposition, une écriture de
+    toutes les positions (ce que fait `stretch.js` à chaque image de l'animation de
+    sélection), intervalles entre images pendant l'animation de sélection de la
+    publication la plus reliée, captures ;
+  - pour des **graphes synthétiques** (`--synthetic 500 1000 2000`) : quatre composantes
+    de tailles décroissantes, chaque publication cite 2 ou 3 publications plus anciennes
+    de sa composante (les plus citées plus souvent), dates de 1960 à 2025 avec davantage
+    de récentes, 2 % sans date. Disposition, création du graphe Cytoscape dans un cadre
+    de 690 × 767 px (celui de la page à 1 400 px de large), images pendant un zoom.
+- **`bench.js`**, exécuté dans la page : `layout.js` est relu, ses fonctions internes
+  exportées depuis une copie chargée comme module, et les étapes de `verticalPositions`
+  chronométrées une à une, comme elle les enchaîne (300 itérations).
+
+Médiane de 3 répétitions (une seule au-delà de 1 000 nœuds), sur la machine de
+développement.
+
+```bash
+# Dans un worktree, sur une copie de la base
+DJANGO_DEBUG=1 python tools/graph_bench/grow_base.py --target 2500 --per-level 60
+DJANGO_DEBUG=1 python tools/graph_bench/server.py --user bench
+DJANGO_DEBUG=1 python manage.py runserver 8120
+python tools/graph_bench/bench.py http://127.0.0.1:8120 --out /tmp/bench \
+    --session <cookie de server.py> --page /graph/ --page /corpus/graph/ \
+    --page /publications/<pk>/graph/ --synthetic 500 1000 2000
+```
+
+## Base grossie (14 novembre 2026)
+
+Partie de la base de développement (76 publications, 85 citations), en 464 s :
+
+| Étape | Publications | Citations identifiées | Auteurs | Corpus de `bench` |
+|---|---|---|---|---|
+| Corpus existants | 76 | 85 | 411 | 4 |
+| Chaîne, niveau 1 | 138 | 174 | 752 | 25 |
+| Niveau 2 | 475 | 651 | 2 139 | 85 |
+| Niveau 3 | 837 | 1 295 | 3 083 | 145 |
+| Niveau 4 | 1 152 | 1 920 | 3 669 | 205 |
+| Douze articles sans lien | **1 797** | **2 559** | **9 507** | 217 |
+
+- Requêtes réseau : 498 (OpenAlex 218, Crossref 178, ORCID 94, DataCite 8), sans
+  `CROSSREF_MAILTO` (*public pool*). Aucune erreur d'import.
+- 31 publications sans date ; 11 publications de plus de 100 auteurs (LIGO surtout :
+  1 012, 964, 945…), qui font l'essentiel des 9 507 auteurs (#292).
+- Restent ouverts : 22 conflits « Auteurs différents » (24 avertissements « OpenAlex
+  authors do not match » à l'import, malgré #265 : à examiner), 33 « Nom différent selon
+  ORCID », 17 « ORCID différent », 5 versions publiées proposées. 1 214 références sur
+  3 776 restent à identifier.
+
+## Résultats
+
+### Base grossie
+
+| Graphe | Nœuds | Liens | Données (serveur) | JSON | Page jusqu'à `DOMContentLoaded` | `placeNodes` | dont `clearEdges` | `separateClose` | `crossedEdges` | Image pendant la sélection |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Base | 1 797 | 2 539 | 437 ms, 4 requêtes SQL | 726 Ko | **11,5 s** | **10,3 s** | 7,2 s | 0,76 s | 0,25 s | 141 ms (max 164) |
+| Corpus de `bench` | 1 775 | 2 517 | 442 ms, 4 requêtes | 719 Ko | **11,4 s** | **10,9 s** | 7,0 s | 1,7 s | 0,15 s | 137 ms (max 170) |
+| Publication la plus citée (32 citants) | 35 | 34 | 10 ms, 3 requêtes | 13 Ko | 73 ms | 6 ms | 4,8 ms | 0,2 ms | 0,2 ms | 17 ms (max 22) |
+
+Sur la base, `closePairs` trouve 488 000 paires proches en date (la plupart des
+publications ont moins de vingt ans) et `crossedEdges` 720 000 couples nœud / lien ;
+`clearEdges` et `separateClose` les parcourent à chacune des 300 itérations. Écrire toutes
+les positions (ce que `stretch.js` fait à chaque image) prend 5 ms : le coût d'une image
+de l'animation est le dessin de Cytoscape, pas l'étirement.
+
+### Graphes synthétiques
+
+| Nœuds | Liens | `placeNodes` | `clearEdges` | `separateClose` | `crossedEdges` | Paires proches | Couples nœud / lien | Création Cytoscape | Image pendant un zoom (médiane / max) |
+|---|---|---|---|---|---|---|---|---|---|
+| 500 | 1 240 | 2,1 s | 2,1 s | 37 ms | 28 ms | 21 000 | 230 000 | 121 ms | 72 / 102 ms |
+| 1 000 | 2 471 | 8,2 s | 7,9 s | 130 ms | 116 ms | 80 000 | 878 000 | 158 ms | 147 / 173 ms |
+| 2 000 | 4 956 | 45 s | 34 s | 0,54 s | 0,44 s | 327 000 | 3,6 M | 331 ms | 295 / 358 ms |
+| 4 000 | 9 940 | 181 s | 163 s | 4,6 s | 2,4 s | 1,3 M | 14,4 M | 532 ms | 535 / 584 ms |
+
+`barycentreOrder`, `closePairs` et `pullLinked` restent sous 50 ms partout. Au-delà de
+1 000 nœuds, une seule répétition : les écarts entre `placeNodes` et la somme des étapes
+viennent de là.
+
+### Ce qui se voit
+
+- **Graphe de la base** (1 797 nœuds) : les domaines sans lien (cancer, AlphaFold, LIGO,
+  aimants supraconducteurs) s'empilent en bandes horizontales et s'entremêlent par leurs
+  liens longs (#230) ; les publications des vingt dernières années sont tassées dans le
+  tiers droit de la frise et se recouvrent ; les 31 non datées forment une rangée
+  régulière en bas, la plupart sans lien daté (réparties sur la largeur).
+- **Sélection** de « Hallmarks of Cancer » (239 références) : l'étirement de #291 marche,
+  mais les références, presque toutes de 2005 à 2011, restent tassées et se recouvrent.
+- **Temps ressentis** : 11 s de page blanche avant le graphe (le navigateur est bloqué
+  pendant la disposition), puis 7 images par seconde à l'animation de sélection et au
+  zoom.
+
+## Limites proposées et étapes qui les dépassent
+
+- **Disposition : 1 s.** Elle est dépassée dès 300 à 350 nœuds (2,1 s à 500, en n²). En
+  cause, dans l'ordre : `clearEdges` (70 à 95 % du temps : chaque couple nœud / lien qui
+  passe au-dessus, à chacune des 300 itérations), puis `separateClose` sur les graphes
+  aux dates serrées (1,7 s sur le corpus de `bench`), puis `crossedEdges` (une fois,
+  n × liens) au-delà de 2 000 nœuds.
+- **Image pendant une animation ou un zoom : 50 ms** (20 images par seconde ; 16 ms pour
+  être fluide). Dépassée dès 500 nœuds (72 ms) ; 140 ms sur la base. En cause : le dessin
+  de Cytoscape et la réévaluation du style (tailles fixes à l'écran, #185) à chaque image.
+- **Serveur : sans souci** à cette taille (moins de 0,5 s, 4 requêtes, 0,7 Mo de JSON).
+
+## Pistes d'optimisation (à décider, rien n'est fait)
+
+Classées par gain attendu pour l'effort :
+
+1. **`clearEdges`** : ne l'appliquer que pendant les dernières itérations (les positions
+   ont déjà convergé), et ne garder pour chaque nœud que les liens proches de lui en y,
+   recalculés de temps en temps (index par tranches). Gain attendu : un ordre de
+   grandeur sur les grands graphes.
+2. **Composantes disposées séparément** (#230) : un graphe de domaines sans lien devient
+   plusieurs petits graphes, empilés ; moins de liens passent au-dessus d'un nœud, et les
+   bandes ne s'entremêlent plus.
+3. **`separateClose`** : moins d'itérations, ou seulement les voisins immédiats en x
+   (balayage par tri) au lieu de toutes les paires à moins de 40 px.
+4. **Dessin pendant le mouvement** : options de Cytoscape `hideEdgesOnViewport` et
+   `textureOnViewport` au-delà d'un seuil de nœuds, et tailles à l'écran recalculées à
+   la fin du zoom plutôt qu'à chaque image.
+5. **Ne pas bloquer la page** : disposition dans un Web Worker, avec un message
+   d'attente ; ou positions gardées en cache (navigateur) tant que les données du
+   graphe ne changent pas.
+6. **Graphe de la base** : au-delà d'un seuil, proposer de le limiter (corpus, tag,
+   composante) plutôt que de tout dessiner.
