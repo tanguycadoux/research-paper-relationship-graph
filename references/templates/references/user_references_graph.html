@@ -1,11 +1,20 @@
 {% extends "references/base.html" %}
+{% load ui %}
 
 {% block title %}Mon graphe · {% endblock title %}
 
 {% block content %}
-    <header class="mb-6">
-        <h1>Mon graphe</h1>
-        <p class="mt-1 text-gray-600">Les publications de mon corpus et celles qu'elles citent.</p>
+    <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1>Mon graphe</h1>
+            <p class="mt-1 text-gray-600">
+                {% if active_tag %}
+                    Les publications du tag « {{ active_tag_label }} » (sous-tags compris) et celles qu'elles citent.
+                {% else %}
+                    Les publications de mon corpus et celles qu'elles citent.
+                {% endif %}
+            </p>
+        </div>
     </header>
 
     {% include "references/_citation_graph.html" %}

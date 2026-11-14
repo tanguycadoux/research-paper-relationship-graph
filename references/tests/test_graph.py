@@ -12,6 +12,7 @@ from references.models import (
     Publication,
     UserPublication,
 )
+from references.services.corpus import tags
 from references.services.display.graph import base_graph, corpus_graph, publication_graph
 from references.services.sources.external_records import Source, store_record
 
@@ -125,8 +126,34 @@ class CitationGraphTests(TestCase):
         self.assertContains(response, "vendor/cytoscape/cytoscape.min.js")
         # The year axis is drawn outside the canvas, to stay in view (#62).
         self.assertContains(response, 'id="citation-graph-axis"')
-        # The information card of a selected publication, filled by the script (#61).
+        # The information card of a selected publication, filled by the script (#61). It is
+        # beside the graph, not over it (#291), and keeps its place with a hint.
         self.assertContains(response, 'id="citation-graph-card"')
+        self.assertContains(response, "Cliquez sur un article du graphe pour le décrire ici.")
+
+    def test_panel_holds_commands_summary_and_legend(self):
+        """
+        The panel beside the graph (#291): the commands, out of the frame, then what the
+        graph shows, then the legend; in this order, so that nothing moves on selection.
+        """
+        response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))
+        html = response.content.decode()
+        panel = html[html.index('aria-label="Informations et commandes du graphe"') :]
+        positions = [
+            panel.index(marker)
+            for marker in (
+                "data-graph-show-all",
+                "data-graph-export",
+                'id="citation-graph-card"',
+                'id="citation-graph-legend"',
+            )
+        ]
+        self.assertEqual(positions, sorted(positions))
+        # Three publications, two citations.
+        self.assertContains(response, "3 publications, 2 citations")
+        # The commands are no longer over the graph.
+        frame = html[html.index('id="citation-graph-axis"') : html.index("<aside")]
+        self.assertNotIn("data-graph-export", frame)
 
     def test_publication_graph_contains_the_citing_publications(self):
         graph = publication_graph(self.cited)
@@ -223,3 +250,96 @@ class BaseGraphTests(TestCase):
         response = self.client.get(reverse("base_graph"))
         self.assertContains(response, "Publication de mon corpus")
         self.assertContains(response, "Autre publication de la base")
+
+
+class TagGraphTests(TestCase):
+    """The graph of a tag of the corpus, its subtags included (#290)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.alice = User.objects.create_user("alice")
+        cls.bob = User.objects.create_user("bob")
+        cls.project = Publication.objects.create(title="Projet")
+        cls.group = Publication.objects.create(title="Groupe")
+        cls.untagged = Publication.objects.create(title="Sans tag")
+        cls.cited = Publication.objects.create(title="Cité")
+        cls.cited_elsewhere = Publication.objects.create(title="Cité ailleurs")
+        CitedReference.objects.create(source=cls.project, target=cls.cited, position=0)
+        CitedReference.objects.create(source=cls.untagged, target=cls.cited_elsewhere, position=0)
+        entries = {
+            pub: UserPublication.objects.create(user=cls.alice, publication=pub)
+            for pub in (cls.project, cls.group, cls.untagged)
+        }
+        tags.tag_entry(entries[cls.project], "Projet")
+        tags.tag_entry(entries[cls.group], "Projet/Groupe")
+        # Bob's tag of the same name does not count for Alice.
+        bob_entry = UserPublication.objects.create(user=cls.bob, publication=cls.untagged)
+        tags.tag_entry(bob_entry, "Projet")
+
+    def labels(self, graph):
+        return {node["data"]["label"] for node in graph["nodes"]}
+
+    def test_a_tag_shows_its_publications_and_those_of_its_subtags(self):
+        graph = corpus_graph(self.alice, "Projet")
+        self.assertEqual(self.labels(graph), {"Projet", "Groupe", "Cité"})
+        self.assertEqual(len(graph["edges"]), 1)
+
+    def test_a_subtag_shows_only_its_own(self):
+        self.assertEqual(self.labels(corpus_graph(self.alice, "Projet/Groupe")), {"Groupe"})
+
+    def test_without_tag_the_whole_corpus(self):
+        self.assertEqual(
+            self.labels(corpus_graph(self.alice)),
+            {"Projet", "Groupe", "Sans tag", "Cité", "Cité ailleurs"},
+        )
+
+    def test_the_tag_of_another_user_is_not_mine(self):
+        self.assertEqual(
+            self.labels(corpus_graph(self.bob, "Projet")), {"Sans tag", "Cité ailleurs"}
+        )
+
+    def test_page_with_a_tag(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("corpus_graph"), {"tag": "Projet"})
+        self.assertContains(response, "du tag « Projet » (sous-tags compris)")
+        self.assertContains(
+            response, '<option value="Projet" selected>Projet (2)</option>', html=True
+        )
+        self.assertContains(response, "Projet › Groupe (1)")
+        self.assertContains(response, 'data-graph-export="graphe-corpus-tag-projet"')
+        nodes = response.context["graph"]["nodes"]
+        self.assertEqual({node["data"]["label"] for node in nodes}, {"Projet", "Groupe", "Cité"})
+
+    def test_exported_image_names_a_subtag_with_a_hyphen(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("corpus_graph"), {"tag": "Projet/Groupe"})
+        # The name of the exported image (graphe-corpus-tag-…, _citation_graph.html).
+        self.assertEqual(response.context["active_tag_slug"], "projet-groupe")
+        # Without any citation, no graph, but the selector stays to choose another tag.
+        self.assertContains(response, "rien à afficher")
+        self.assertContains(response, 'id="graph-tag"')
+
+    def test_an_unknown_tag_falls_back_to_the_whole_corpus(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("corpus_graph"), {"tag": "Disparu"})
+        self.assertContains(response, "Le tag « Disparu » n&#x27;existe plus : tout le corpus.")
+        self.assertEqual(len(response.context["graph"]["nodes"]), 5)
+        self.assertContains(response, 'data-graph-export="graphe-corpus"')
+
+    def test_without_tags_no_selector(self):
+        user = get_user_model().objects.create_user("carol")
+        UserPublication.objects.create(user=user, publication=self.project)
+        self.client.force_login(user)
+        response = self.client.get(reverse("corpus_graph"))
+        self.assertNotContains(response, 'id="graph-tag"')
+
+    def test_anonymous_is_sent_to_the_login_page(self):
+        response = self.client.get(reverse("corpus_graph"), {"tag": "Projet"})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response["Location"])
+
+    def test_my_references_filtered_by_a_tag_link_to_its_graph(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("corpus"), {"tag": "Projet"})
+        self.assertContains(response, reverse("corpus_graph") + "?tag=Projet")

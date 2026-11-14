@@ -1,7 +1,7 @@
 // Selection of a publication (#61): its references and the publications citing it
 // stand out, each with the colour of its relation (nodes and edges), and the compact
-// information card describes it (#187); the view zooms on them beside the card, and goes
-// back on deselection (#142).
+// information card beside the graph describes it (#187, #291); the view zooms on them,
+// and goes back on deselection (#142). Without a selection, the card says how to select.
 
 function fillCard(card, data, referenceCount, citingCount) {
     const field = (name) => card.querySelector(`[data-card="${name}"]`);
@@ -22,14 +22,20 @@ function fillCard(card, data, referenceCount, citingCount) {
     field("citing").textContent = `citée par ${citingCount}`;
     const citations = data.citedBy;
     field("cited-by").textContent = `${citations} citation${citations > 1 ? "s" : ""} dans la base`;
-    card.hidden = false;
+    showCard(card, true);
+}
+
+// The card keeps its place: its content, or the hint when nothing is selected.
+function showCard(card, selected) {
+    card.querySelector("[data-card-content]").hidden = !selected;
+    card.querySelector("[data-card-empty]").hidden = selected;
 }
 
 const SELECTION_CLASSES = "faded selected reference citing reference-node citing-node";
 
 function clearSelection(cy, card) {
     cy.elements().removeClass(SELECTION_CLASSES);
-    card.hidden = true;
+    showCard(card, false);
 }
 
 // An edge goes from the citing publication to the cited one.

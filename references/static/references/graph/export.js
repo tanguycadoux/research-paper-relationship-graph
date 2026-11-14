@@ -38,6 +38,30 @@ function drawAxis(context, axis, width) {
     context.fillRect(0, height - 1, width, 1);
 }
 
+// The band of the publications without a date (#288), when it is on screen: its dashed
+// line and its label, at the height graph/band.js gave it.
+function drawBand(context, band, cy, top, width) {
+    if (!band || band.hidden) {
+        return;
+    }
+    const style = getComputedStyle(band);
+    const label = band.firstElementChild;
+    const y = top + parseFloat(band.style.top) - cy.container().offsetTop;
+    context.strokeStyle = style.borderTopColor;
+    context.lineWidth = 1;
+    context.setLineDash([3, 3]);
+    context.beginPath();
+    context.moveTo(0, y + 0.5);
+    context.lineTo(width, y + 0.5);
+    context.stroke();
+    context.setLineDash([]);
+    context.font = `${style.fontSize} ${style.fontFamily}`;
+    context.fillStyle = style.color;
+    context.textAlign = "left";
+    context.textBaseline = "top";
+    context.fillText(label.textContent, label.offsetLeft + 4, y + 4);
+}
+
 // Each item of the legend as a list of parts: texts, and the swatches (dots and lines)
 // with their size and colour.
 function legendItems(legend) {
@@ -224,7 +248,7 @@ function download(blob, name) {
     setTimeout(() => URL.revokeObjectURL(link.href));
 }
 
-async function exportImage(cy, { axis, legend }, name) {
+async function exportImage(cy, { axis, band, legend }, name) {
     const graph = await loadImage(
         await cy.png({ output: "blob-promise", scale: SCALE, bg: "white" }),
     );
@@ -251,6 +275,7 @@ async function exportImage(cy, { axis, legend }, name) {
     context.fillRect(0, 0, width, legendTop + legendHeight);
     drawAxis(context, axis, width);
     context.drawImage(graph, 0, graphTop, width, cy.height());
+    drawBand(context, band, cy, graphTop, width);
     context.font = `${LABEL_FONT_SIZE}px ${legendStyle.fontFamily}`;
     const labels = placeLabels(context, cy, labelledNodes(cy), width, cy.height());
     drawLabels(context, labels, graphTop, legendStyle.color);
@@ -269,7 +294,7 @@ function fileName(cy, base, viewport) {
     return viewport.showsAll() ? base : `${base}-zoom`;
 }
 
-// page: the axis and legend elements; viewport: what bindViewport returns.
+// page: the axis, band and legend elements; viewport: what bindViewport returns.
 export function bindExport(cy, page, wrapper, viewport) {
     wrapper
         .querySelector("button")
