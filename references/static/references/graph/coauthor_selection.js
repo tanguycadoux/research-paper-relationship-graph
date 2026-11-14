@@ -2,6 +2,10 @@
 // stand out, the rest fades, and the card of the panel describes them (their name links
 // to their page, their publications, their coauthors in this graph and the strongest
 // links). The view zooms on them uniformly (focus.js), and goes back on deselection.
+// Hovering an author shows their name in the frosted tooltip of the citation graphs, and
+// darkens their links on a small graph (hover.js).
+
+import { bindHover } from "./hover.js";
 
 // Coauthors listed on the card, the strongest links first.
 const STRONGEST_SHOWN = 3;
@@ -84,15 +88,7 @@ function deselect(cy, card, focus) {
 }
 
 export function bindCoauthorSelection(cy, card, focus) {
-    // Hovering an author shows their name and darkens their links.
-    cy.on("mouseover", "node", (event) => {
-        event.target.addClass("hovered");
-        event.target.connectedEdges().addClass("hovered");
-    });
-    cy.on("mouseout", "node", (event) => {
-        event.target.removeClass("hovered");
-        event.target.connectedEdges().removeClass("hovered");
-    });
+    bindHover(cy);
     cy.on("tap", "node", (event) => selectNode(cy, event.target, card, focus));
     cy.on("tap", (event) => {
         if (event.target === cy) {

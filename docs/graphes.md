@@ -308,7 +308,8 @@ dessin que les graphes de citations, en vue réseau seulement.
   coauteurs et leurs liens (vert d'eau clair), estompe le reste et zoome sur eux. La carte
   du panneau donne son nom (lien vers sa fiche), son nombre de publications dans la base,
   son nombre de coauteurs dans ce graphe, et ses trois liens les plus forts (avec le
-  nombre de publications communes). Survol : le nom ; double-clic : la fiche.
+  nombre de publications communes). Survol : le nom, dans l'infobulle en verre dépoli des
+  graphes de citations (`hover.js`, liens foncés sous 600 éléments) ; double-clic : la fiche.
 - **Export** : `graphe-auteur-<id>`, `graphe-auteurs`, suivis de `-selection-<id>` ou
   `-zoom` comme les autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur
   sélectionné et ses coauteurs, les plus publiés d'abord.

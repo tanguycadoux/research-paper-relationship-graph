@@ -8,6 +8,11 @@
     <div class="grid min-h-96 grid-cols-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm xl:flex-1 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div class="relative flex h-[70vh] min-h-96 flex-col xl:h-auto">
             <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des coauteurs"></div>
+            {# The name of the hovered author, placed by graph/hover.js, in frosted glass like the citation graphs (#202). #}
+            <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs text-gray-900 select-none {% glass_classes %}"
+                 aria-hidden="true"
+                 data-graph-tooltip
+                 hidden></div>
         </div>
         <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
             <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
