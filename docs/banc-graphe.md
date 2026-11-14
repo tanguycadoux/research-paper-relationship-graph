@@ -262,8 +262,8 @@ base de développement, tous donnent 0 recouvrement, de 9 à 65 ms :
 
 ## Survol léger et réseau disposé hors de la page (#202)
 
-Au-delà de 600 éléments (`LIVE_SIZES_MAX_ELEMENTS`), le survol affiche le titre dans une
-infobulle HTML au lieu des classes `hovered` (`hover.js`), et la vue réseau dispose le
+Le survol affiche le titre dans une infobulle HTML (`hover.js`) ; au-delà de 600 éléments
+(`LIVE_SIZES_MAX_ELEMENTS`), il ne change plus aucune classe `hovered` (liens foncés), et la vue réseau dispose le
 graphe dans un Web Worker (`network-worker.js`). Mesuré le 14 novembre 2026, Chrome
 headless à 1 400 px.
 

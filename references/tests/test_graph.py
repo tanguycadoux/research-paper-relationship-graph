@@ -398,7 +398,7 @@ class GraphViewTests(TestCase):
 
     def test_waiting_message_and_tooltip_of_large_graphs(self):
         # #202: the network may be laid out in a Web Worker, with a message in the frame,
-        # hidden until then; the hover tooltip of large graphs is in both views.
+        # hidden until then; the hover tooltip is in both views.
         network = self.client.get(
             reverse("publication_graph", args=[self.source.pk]), {"vue": "reseau"}
         )

@@ -123,8 +123,12 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
   droits, gris, sans flèche : une
   publication cite des publications plus anciennes, à sa gauche. Survoler un nœud affiche
-  son titre et fonce ses liens (sur un grand graphe : le titre seul, dans une infobulle,
-  voir « Grands graphes »). Seuls les nœuds réagissent à la souris : un lien ne se survole ni ne se clique
+  son titre dans une **infobulle HTML** (`hover.js`, `data-graph-tooltip`) au-dessus du
+  nœud (en dessous s'il n'y a pas la place), centrée sur lui et gardée dans le cadre ; elle
+  disparaît quand la souris quitte le nœud ou le cadre, au début d'un clic ou d'un glisser
+  et à tout mouvement de la vue. Plus lisible qu'un libellé dans le canevas, que d'autres
+  nœuds pouvaient couvrir. Le survol fonce aussi ses liens, sauf sur un grand graphe (voir
+  « Grands graphes »). Seuls les nœuds réagissent à la souris : un lien ne se survole ni ne se clique
   (`events: no`), et Cytoscape ne dessine plus son halo carré au clic. Le nœud sélectionné
   porte un anneau sombre ; un halo rond discret (`underlay`) ne l'entoure que tant que la
   souris est enfoncée (`:active`).
@@ -220,12 +224,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
     deux gagnent autant jusqu'à 1 800 publications ; l'image garde les liens, d'où son
     choix sous ce seuil ;
   - le **survol** (`hover.js`) ne change aucune classe Cytoscape, ce qui redessinerait
-    tout le canevas (40 ms à 1 000 publications, 140 ms à 2 000) : le titre s'affiche dans
-    une **infobulle HTML** (`data-graph-tooltip`) au-dessus du nœud (en dessous s'il n'y a
-    pas la place), centrée sur lui et gardée dans le cadre du graphe, et les liens ne
-    foncent pas. Elle disparaît quand la souris quitte le nœud ou le cadre, au début d'un
-    clic ou d'un glisser et à tout mouvement de la vue (zoom, sélection). Le survol revient
-    à 17 ms par image ;
+    tout le canevas (40 ms à 1 000 publications, 140 ms à 2 000) : l'infobulle seule, les
+    liens ne foncent pas. Le survol revient à 17 ms par image ;
   - en vue réseau, la disposition se fait dans un Web Worker (voir « Vue Réseau »).
   Limite connue : la réévaluation unique à la fin d'un zoom ou d'une sélection reste une
   image longue (190 ms sur 1 800 publications).
@@ -256,7 +256,7 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
   `network-worker.js` (la même dans un Web Worker, chargé comme module),
   `axis.js` (axe des années), `selection.js` (sélection
-  et carte), `hover.js` (survol : libellé, ou infobulle sur un grand graphe), `style.js`
+  et carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
   (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
