@@ -30,6 +30,7 @@ le statut de lecture et les tags sont propres à chaque utilisateur.
 | [auteurs.md](auteurs.md) | Auteurs : affiliations (OpenAlex, hiérarchie des organisations), ORCID complétés depuis OpenAlex, noms et profil ORCID |
 | [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
 | [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export |
+| [banc-graphe.md](banc-graphe.md) | Banc d'essai des graphes (#202) : base grossie de vraies publications, graphes synthétiques, mesures de la disposition et de l'affichage, limites et pistes d'optimisation |
 | [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag ; citations entrantes selon OpenAlex |
 | [interface.md](interface.md) | Navigation, tableaux, pagination, tri, filtres, recherche, accueil, mise en page |
 | [decisions.md](decisions.md) | Journal des décisions, avec leurs raisons et leurs tickets |
@@ -148,6 +149,7 @@ static/
   js/search.js       raccourci Ctrl+K vers la barre de recherche
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
   vendor/cytoscape/  Cytoscape.js embarqué
+tools/graph_bench/   banc d'essai des graphes : base grossie, mesures dans Chrome headless (#202)
 docs/                cette documentation
 ```
 
