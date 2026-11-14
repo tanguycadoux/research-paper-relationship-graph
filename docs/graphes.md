@@ -98,7 +98,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   lien sont rangés par `cose` lui-même, côte à côte. **Au-delà de 600 éléments** (#202,
   même seuil que les grands graphes), `cose` tourne dans un **Web Worker**
   (`network-worker.js`, Cytoscape sans affichage, chargé depuis la même URL que la page) :
-  le cadre affiche « Disposition du graphe… » (`data-graph-waiting`, `role="status"`) et
+  le cadre affiche « Disposition du graphe… » (`data-graph-waiting`, `role="status"`),
+  « Vue d'ensemble » et « Exporter (PNG) » sont désactivés jusqu'à ce que le graphe existe, et
   la page reste utilisable ; le graphe est créé avec les positions reçues. Les positions
   sont **les mêmes** qu'en disposant dans la page (vérifié sur la base du banc) : le worker
   reçoit les tailles des nœuds (`LAYOUT_STYLE`, celles de `style.js` au zoom 1, bordure

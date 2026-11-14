@@ -80,11 +80,16 @@ async function render() {
     const graph = JSON.parse(document.getElementById("citation-graph-data").textContent);
     const layout = JSON.parse(document.getElementById("citation-graph-layout").textContent);
     const isNetwork = layout.vue === "reseau";
+    // While the network waits for its Web Worker, the commands have nothing to act on:
+    // disabled until bound (bindViewport sets the state of « Vue d'ensemble »).
+    const exportButton = document.querySelector("[data-graph-export] button");
+    const showAllButton = document.querySelector("[data-graph-show-all] button");
+    showAllButton.disabled = true;
+    exportButton.disabled = true;
     // The timeline is created at once; the network may wait for its Web Worker.
     const { cy, bindAxes } = isNetwork ? await network(container, graph) : timeline(container, graph);
     // Positions of the layout, kept for the stretch of a selection on the timeline.
     const stretch = makeStretch(cy);
-    const showAllButton = document.querySelector("[data-graph-show-all] button");
     const viewport = bindViewport(cy, container, showAllButton, stretch);
     const card = document.getElementById("citation-graph-card");
     // In the network, distances mean something in both directions: a uniform zoom (#195).
@@ -92,6 +97,7 @@ async function render() {
     const { axis, band } = bindAxes(stretch);
     const legend = document.getElementById("citation-graph-legend");
     bindExport(cy, { axis, band, legend }, document.querySelector("[data-graph-export]"), viewport);
+    exportButton.disabled = false;
     performance.mark(SHOWN_MARK);
 }
 
