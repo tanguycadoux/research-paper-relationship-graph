@@ -1,8 +1,10 @@
 // The view of the graph: the whole graph fitted to the frame is the furthest one can
-// zoom out, and the view never moves beyond it (#141), a selection included (#142);
-// sizes stay constant on the screen (#185).
+// zoom out, and the view never moves beyond it (#141), a selection included (#142): the
+// bounds are stretched with the graph during a selection (#291); sizes stay constant on
+// the screen (#185).
 
 import { MARGIN } from "./scale.js";
+import { isIdentity, stretchedBox } from "./stretch.js";
 
 // Cytoscape's own lower limit, so that a smaller frame can fit the graph again.
 const NO_MIN_ZOOM = 1e-50;
@@ -51,16 +53,23 @@ function keepScreenSize(cy) {
 }
 
 // showAllButton shows the whole graph again (#196); it is disabled, rather than hidden,
-// while the whole graph is shown: it stays in view and in place. Returns what a selection
-// needs to move the view (#142): the zoom of the whole graph, and a view brought within
-// the bounds; and whether the whole graph is shown (#175).
-export function bindViewport(cy, container, showAllButton) {
+// while the whole graph is shown: it stays in view and in place. stretch: what
+// makeStretch returns. Returns what a selection needs to move the view (#142): the zoom
+// of the whole graph, a view brought within the bounds, a hold on the bounds while it
+// animates, and a callback when the whole graph is shown again; and whether the whole
+// graph is shown (#175).
+export function bindViewport(cy, container, showAllButton, stretch) {
     // The view showing the whole graph, and its visible area in graph coordinates: the
     // area the view stays within.
     let whole = null;
+    // While a selection animates the view and the stretch together, the bounds wait.
+    let held = false;
+    const showAllListeners = [];
+    const bounds = () => stretchedBox(stretch.current(), whole.extent);
     const showsAll = () => {
         const pan = cy.pan();
         return (
+            isIdentity(stretch.current()) &&
             Math.abs(cy.zoom() / whole.zoom - 1) < SAME_ZOOM &&
             Math.abs(pan.x - whole.pan.x) < SAME_PAN &&
             Math.abs(pan.y - whole.pan.y) < SAME_PAN
@@ -71,6 +80,9 @@ export function bindViewport(cy, container, showAllButton) {
     };
     const showAll = () => {
         whole = null;
+        for (const listener of showAllListeners) {
+            listener();
+        }
         cy.minZoom(NO_MIN_ZOOM);
         // fit measures the nodes at their size for the current zoom (#185): once more
         // with their size for the new zoom, so that the result is the same from any view.
@@ -81,11 +93,10 @@ export function bindViewport(cy, container, showAllButton) {
         cy.minZoom(whole.zoom);
         updateButton();
     };
-    // The view of this zoom and pan, brought within the bounds: not below the zoom of the
-    // whole graph, around the same centre, then moved as little as needed. An animation
-    // between two views within the bounds stays within them: each side of the view moves
-    // monotonically from one to the other, so keepWithin never fights it.
-    const within = (zoom, pan) => {
+    // The view of this zoom and pan, brought within the bounds of the graph stretched as
+    // given: not below the zoom of the whole graph, around the same centre, then moved as
+    // little as needed.
+    const within = (zoom, pan, stretchAimed) => {
         const kept = Math.max(zoom, whole.zoom);
         const centre = {
             x: (cy.width() / 2 - pan.x) / zoom,
@@ -97,18 +108,28 @@ export function bindViewport(cy, container, showAllButton) {
             y1: centre.y - cy.height() / 2 / kept,
             y2: centre.y + cy.height() / 2 / kept,
         };
-        const bounds = whole.extent;
-        const dx = shiftInto(view.x1, view.x2, bounds.x1, bounds.x2);
-        const dy = shiftInto(view.y1, view.y2, bounds.y1, bounds.y2);
+        const aimed = stretchedBox(stretchAimed, whole.extent);
+        const dx = shiftInto(view.x1, view.x2, aimed.x1, aimed.x2);
+        const dy = shiftInto(view.y1, view.y2, aimed.y1, aimed.y2);
         return { zoom: kept, pan: { x: -(view.x1 + dx) * kept, y: -(view.y1 + dy) * kept } };
     };
     showAll();
     cy.on("viewport", () => {
         if (whole) {
-            keepWithin(cy, whole.extent);
+            if (!held) {
+                keepWithin(cy, bounds());
+            }
             updateButton();
         }
     });
+    // Held during an animation that ends within the bounds; checked again at its end.
+    const hold = (on) => {
+        held = on;
+        if (!on && whole) {
+            keepWithin(cy, bounds());
+            updateButton();
+        }
+    };
     showAllButton.addEventListener("click", showAll);
     // The container may change size after initialization (page layout, window resize).
     new ResizeObserver(() => {
@@ -116,5 +137,11 @@ export function bindViewport(cy, container, showAllButton) {
         showAll();
     }).observe(container);
     keepScreenSize(cy);
-    return { wholeZoom: () => whole.zoom, showsAll, within };
+    return {
+        wholeZoom: () => whole.zoom,
+        showsAll,
+        within,
+        hold,
+        onShowAll: (listener) => showAllListeners.push(listener),
+    };
 }

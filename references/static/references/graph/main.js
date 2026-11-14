@@ -7,6 +7,7 @@ import { bindFocus } from "./focus.js";
 import { placeNodes } from "./layout.js";
 import { makeScale, yearRange } from "./scale.js";
 import { bindInteractions } from "./selection.js";
+import { makeStretch } from "./stretch.js";
 import { graphStyle } from "./style.js";
 import { bindViewport } from "./viewport.js";
 
@@ -24,14 +25,15 @@ function render() {
         autoungrabify: true,
         autounselectify: true,
     });
+    const stretch = makeStretch(cy);
     const showAllButton = document.querySelector("[data-graph-show-all] button");
-    const viewport = bindViewport(cy, container, showAllButton);
+    const viewport = bindViewport(cy, container, showAllButton, stretch);
     const card = document.getElementById("citation-graph-card");
-    bindInteractions(cy, card, bindFocus(cy, viewport));
+    bindInteractions(cy, card, bindFocus(cy, viewport, stretch));
     const axis = document.getElementById("citation-graph-axis");
     const hasUndated = graph.nodes.some((n) => !n.data.date);
-    const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated);
-    cy.on("viewport", drawAxis);
+    const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated, stretch);
+    cy.on("viewport stretch", drawAxis);
     drawAxis();
     const legend = document.getElementById("citation-graph-legend");
     bindExport(cy, { axis, legend }, document.querySelector("[data-graph-export]"), viewport);
