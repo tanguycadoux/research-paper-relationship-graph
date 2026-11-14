@@ -65,8 +65,11 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   fiche ; Échap, un clic dans le vide ou le bouton « Désélectionner » de la carte
   désélectionne.
 - **Panneau** (#291) : **hors du cadre**, toujours présent, il ne cache aucune
-  publication. À partir de `xl`, dans une colonne de 20rem à droite du cadre ; en
-  dessous, sous le cadre. Dans l'ordre : les **commandes** (« Vue d'ensemble », « Exporter
+  publication. Le cadre et le panneau forment **une seule carte**, séparés par une
+  bordure, sans espace entre eux : à partir de `xl`, le panneau est une colonne de 20rem
+  à droite du cadre (`border-l`), qui prend la hauteur du cadre et défile à l'intérieur si
+  son contenu dépasse (il ne rend jamais la carte plus haute) ; en dessous, il est sous le
+  cadre (`border-t`). Dans l'ordre : les **commandes** (« Vue d'ensemble », « Exporter
   (PNG) »), puis la place des contrôles du contexte (tag de « Mon graphe », variantes de
   disposition), puis ce que montre le graphe (« 76 publications, 85 citations » et une
   indication) ou, avec une sélection, la carte de la publication, enfin la légende et
@@ -92,7 +95,9 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   (`viewport.within`) : jamais en deçà du zoom de la vue d'ensemble, et décalée du
   minimum pour ne pas en sortir. Pendant l'animation, le maintien dans les bornes attend
   (`viewport.hold`), puis s'applique de nouveau ; un zoom ou un déplacement à la main
-  pendant une sélection reste dans les bornes étirées.
+  pendant une sélection reste dans les bornes étirées. L'étirement ne vaut que pour la
+  **frise**, où x n'est qu'une date : le graphe sans frise (#195) gardera un zoom
+  uniforme, sans quoi il déformerait les distances qu'il dessine.
 - **Animation du recentrage** (#291) : une seule boucle (`requestAnimationFrame`) déplace
   ensemble la vue et l'étirement. Ce qui est interpolé, c'est la plus petite des deux
   fenêtres de la disposition (celle d'arrivée quand on zoome, celle de départ quand on
