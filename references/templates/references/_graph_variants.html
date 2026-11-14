@@ -1,0 +1,17 @@
+{% comment %}
+    The variants of the graph chosen in the URL (#195, services/display/graph_variants.py):
+    one link per choice, which keeps the other parameters (a tag, #290).
+{% endcomment %}
+{% for variant in graph_variants %}
+    <nav class="flex items-center gap-2"
+         aria-label="Disposition du graphe">
+        <span class="text-gray-700">{{ variant.label }}</span>
+        <span class="flex h-8 flex-1 overflow-hidden rounded-md border border-gray-300 select-none">
+            {% for option in variant.options %}
+                <a href="?{{ option.query }}"
+                   class="flex flex-1 items-center justify-center px-2 no-underline {% if option.current %}bg-gray-100 font-semibold text-gray-900{% else %}text-gray-700 hover:bg-gray-50{% endif %}{% if not forloop.first %} border-l border-gray-300{% endif %}"
+                   {% if option.current %}aria-current="true"{% endif %}>{{ option.label }}</a>
+            {% endfor %}
+        </span>
+    </nav>
+{% endfor %}

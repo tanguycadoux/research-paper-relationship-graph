@@ -2,7 +2,8 @@
 // in width and in height (#142, #291): the zoom fills one axis, and the graph is
 // stretched along the other (stretch.js) until it fills it too. On deselection, the view
 // and the positions go back to what they were before the selection. The view stays
-// within the bounds of #141, stretched with the graph.
+// within the bounds of #141, stretched with the graph. In the network (#195), the zoom is
+// uniform: nothing is stretched, distances keep their meaning in both directions.
 
 import { IDENTITY, isIdentity } from "./stretch.js";
 
@@ -41,14 +42,25 @@ function fittingScales(cy, box, fill) {
 
 // The zoom and the stretch that show the box over the frame: the zoom fits the tighter
 // axis, up to limit; then each axis is stretched to fill the frame too, up to
-// MAX_STRETCH. A pair of nodes fills part of the frame only.
-function aimFor(cy, box, limit, nodeCount) {
+// MAX_STRETCH. A pair of nodes fills part of the frame only. Uniform (the network): the
+// zoom alone fits the box, without any stretch.
+function aimFor(cy, box, limit, nodeCount, uniform) {
+    const centre = { x: (box.x1 + box.x2) / 2, y: (box.y1 + box.y2) / 2 };
+    // The centre of the box does not move with the stretch: on the centre of the frame.
+    const panOn = (zoom) => ({
+        x: cy.width() / 2 - centre.x * zoom,
+        y: cy.height() / 2 - centre.y * zoom,
+    });
+    if (uniform) {
+        const fit = fittingScales(cy, box, nodeCount > 2 ? 1 : PAIR_FILL);
+        const zoom = Math.min(limit, fit.x, fit.y);
+        return { zoom, stretch: IDENTITY, pan: panOn(zoom) };
+    }
     const whole = fittingScales(cy, box, 1);
     const zoom = Math.min(limit, whole.x, whole.y);
     const aimed = fittingScales(cy, box, nodeCount > 2 ? 1 : PAIR_FILL);
     const spread = (scale, span) =>
         span >= MIN_SPAN ? Math.min(MAX_STRETCH, Math.max(1, scale / zoom)) : 1;
-    const centre = { x: (box.x1 + box.x2) / 2, y: (box.y1 + box.y2) / 2 };
     return {
         zoom,
         stretch: {
@@ -57,8 +69,7 @@ function aimFor(cy, box, limit, nodeCount) {
             cx: centre.x,
             cy: centre.y,
         },
-        // The centre of the box does not move with the stretch: on the centre of the frame.
-        pan: { x: cy.width() / 2 - centre.x * zoom, y: cy.height() / 2 - centre.y * zoom },
+        pan: panOn(zoom),
     };
 }
 
@@ -125,8 +136,9 @@ function viewBetween(cy, from, to, e) {
     };
 }
 
-// viewport: what bindViewport returns; stretch: what makeStretch returns.
-export function bindFocus(cy, viewport, stretch) {
+// viewport: what bindViewport returns; stretch: what makeStretch returns. uniform: the
+// network (#195), where a selection zooms without stretching.
+export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
     // The view and the stretch from before the selection, kept until back to them.
     let before = null;
     let frame = null;
@@ -153,7 +165,11 @@ export function bindFocus(cy, viewport, stretch) {
         const step = (now) => {
             const t = still ? 1 : Math.min(1, (now - start) / DURATION);
             const view = t < 1 ? viewBetween(cy, from, target, easeInOutCubic(t)) : target;
-            stretch.apply(view.stretch);
+            // Uniform, the stretch stays the identity: the positions are not written again
+            // (viewBetween gives it, up to rounding).
+            if (!uniform) {
+                stretch.apply(view.stretch);
+            }
             cy.viewport({ zoom: view.zoom, pan: view.pan });
             if (t < 1) {
                 frame = requestAnimationFrame(step);
@@ -174,7 +190,7 @@ export function bindFocus(cy, viewport, stretch) {
     const show = (nodes) => {
         const box = centres(nodes, stretch);
         const limit = viewport.wholeZoom() * MAX_ZOOM_RATIO;
-        const aim = aimFor(cy, box, limit, nodes.length);
+        const aim = aimFor(cy, box, limit, nodes.length, uniform);
         before ??= { zoom: cy.zoom(), pan: { ...cy.pan() }, stretch: stretch.current() };
         moveTo({ ...viewport.within(aim.zoom, aim.pan, aim.stretch), stretch: aim.stretch });
     };

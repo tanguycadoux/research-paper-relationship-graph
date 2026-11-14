@@ -1,5 +1,6 @@
 // The displayed graph as a PNG image (#175): what is on screen, selection included, with
-// the year axis above it and the legend below. Both are HTML, outside the canvas of
+// the year axis above it (on the timeline only: the network has none, #195) and the
+// legend below. Both are HTML, outside the canvas of
 // Cytoscape: they are drawn again on the image from the page. Without hovering, a dot
 // does not say which publication it is: the image names some of them (#289).
 
@@ -264,7 +265,7 @@ async function exportImage(cy, { axis, band, legend }, name) {
     context.font = font;
     const rows = layoutLegend(context, legendItems(legend), width);
     const lineHeight = parseFloat(legendStyle.lineHeight);
-    const graphTop = axis.offsetHeight;
+    const graphTop = axis ? axis.offsetHeight : 0;
     const legendTop = graphTop + cy.height();
     const legendHeight = 2 * LEGEND_PADDING + rows.length * lineHeight + (rows.length - 1) * ROW_GAP;
     // Resizing the canvas resets the context.
@@ -273,7 +274,9 @@ async function exportImage(cy, { axis, band, legend }, name) {
     context.scale(scale, scale);
     context.fillStyle = "white";
     context.fillRect(0, 0, width, legendTop + legendHeight);
-    drawAxis(context, axis, width);
+    if (axis) {
+        drawAxis(context, axis, width);
+    }
     context.drawImage(graph, 0, graphTop, width, cy.height());
     drawBand(context, band, cy, graphTop, width);
     context.font = `${LABEL_FONT_SIZE}px ${legendStyle.fontFamily}`;
@@ -294,7 +297,7 @@ function fileName(cy, base, viewport) {
     return viewport.showsAll() ? base : `${base}-zoom`;
 }
 
-// page: the axis, band and legend elements; viewport: what bindViewport returns.
+// page: the axis, band (null in the network) and legend elements; viewport: what bindViewport returns.
 export function bindExport(cy, page, wrapper, viewport) {
     wrapper
         .querySelector("button")
