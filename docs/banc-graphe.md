@@ -217,6 +217,46 @@ les recherches des couples à portée (`nearEdges` et `nearPairs`, au plus toute
 - **Le dessin** (images pendant un zoom ou une sélection) n'a pas changé : c'est la
   piste 4, traitée à part.
 
+## Vue réseau (#195)
+
+Disposition `cose` de Cytoscape (`network.js`), mesurée dans la page : `bench.py` lit
+maintenant la mesure `citation-graph-layout` de `main.js` (colonne `layout`), pour la
+frise comme pour le réseau. Recouvrements : couples de nœuds dont les cercles se
+chevauchent au zoom de la disposition (1). Médiane de 3 chargements, Chrome headless à
+1 400 px.
+
+| Graphe | Vue | Disposition | Page jusqu'à `DOMContentLoaded` | Recouvrements |
+|---|---|---|---|---|
+| Base de développement (76 nœuds, 85 liens) | Frise | 13 ms | 81 ms | 99 |
+| | Réseau | 20 ms | 83 ms | 0 |
+| Base du banc (1 797 nœuds, 2 539 liens) | Frise | 0,32 s | 1,3 s | 39 650 |
+| | Réseau | **2,9 s** | 3,8 s | 193 |
+
+Réglages de `cose` essayés sur la base du banc (même départ en spirale, zoom 1) ; sur la
+base de développement, tous donnent 0 recouvrement, de 9 à 65 ms :
+
+| Réglage | Itérations | Disposition | Recouvrements | Longueur des liens (médiane / 90e centile) |
+|---|---|---|---|---|
+| Par défaut (`coolingFactor` 0,99) | 690 | 27,6 s | 60 | 120 / 176 px |
+| 0,95 | 135 | 5,6 s | 197 | 126 / 177 px |
+| 0,93 | 95 | 4,1 s | 264 | 129 / 182 px |
+| 0,9 | 66 | 2,9 s | 329 | 131 / 184 px |
+| 0,9, `nodeOverlap` 32 | 66 | 3,0 s | 474 | 157 / 247 px |
+| **0,9, `nodeRepulsion` 16 000 (retenu)** | 66 | **2,9 s** | **193** | 141 / 197 px |
+
+- Chaque itération coûte n² (répulsion entre toutes les paires, groupes sans lien
+  compris) : environ 40 ms à 1 800 nœuds. Disposer chaque groupe à part (10 groupes, le
+  plus grand de 1 129 nœuds) donne 2,1 s au lieu de 2,9 s : trop peu pour écrire notre
+  propre rangement des groupes, que `cose` fait déjà.
+- **Dessin pendant un geste** (`frames.py`, base du banc, 4 336 éléments) : les règles des
+  grands graphes de #320 valent aussi en réseau. Zoom, glisser et sélection à 17 ms en
+  médiane et au 90e centile, comme la frise. Le survol est plus souvent lent (24 images de
+  plus de 50 ms sur 30 survols, 4 en frise) : les nœuds y sont plus serrés et chaque
+  survol redessine tout le canevas (limite connue, #202). Base de développement : 17 à
+  22 ms partout.
+- La page reste bloquée 2,9 s sur la base du banc, au-delà de la limite de 1 s : la
+  piste 5 (Web Worker ou cache des positions) vaudrait aussi pour le réseau.
+
 ## Limites proposées et étapes qui les dépassent
 
 - **Disposition : 1 s.** Elle est dépassée dès 300 à 350 nœuds (2,1 s à 500, en n²). En

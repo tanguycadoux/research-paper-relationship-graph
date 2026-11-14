@@ -163,6 +163,9 @@ def load(tools, url):
         return {response: Math.round(t.responseEnd - t.requestStart),
                 domContentLoaded: Math.round(t.domContentLoadedEventEnd - t.startTime),
                 bytes: t.transferSize,
+                // The layout in main.js, timeline or network (#195).
+                layout: Math.round((performance.getEntriesByName(
+                    'citation-graph-layout', 'measure')[0] || {duration: -1}).duration),
                 data: (document.getElementById('citation-graph-data')
                        || {textContent: ''}).textContent.length}; })()"""
     )

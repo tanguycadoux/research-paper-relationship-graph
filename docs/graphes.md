@@ -27,7 +27,7 @@ Les graphes de citations : données produites par le serveur, dessin et interact
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
-  bande sous la frise.
+  bande sous la frise. Ou en **réseau**, sans axe du temps (#195, voir plus bas).
 - **Disposition** (#138, `layout.js`) : x suit la date ; la position verticale rapproche
   les publications qui se citent, sans dépendance. Chaque **groupe** de publications
   reliées par des citations (composante connexe, #230) est disposé seul : d'abord un
@@ -77,6 +77,25 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   commence à l'année la plus ancienne, et l'axe ne montre que des années. La ligne de la
   bande suit le zoom, le déplacement et l'étirement d'une sélection, comme l'axe. Les liens
   restent sans flèche, comme les autres.
+- **Vue « Réseau »** (#195, `network.js`, `services/display/graph_variants.py`) : sans axe
+  du temps, les publications qui se citent sont rapprochées dans les deux directions. Un
+  sélecteur « Disposition : Frise | Réseau » du panneau, sous les commandes et au-dessus
+  du tag, choisit la vue ; le choix est dans l'URL (`?vue=reseau`), la frise par défaut,
+  et une valeur inconnue ramène à la frise. Rien n'est gardé sur le serveur : une vue se
+  partage et se compare dans deux onglets. Les liens du sélecteur gardent les autres
+  paramètres (`?tag=`), et le formulaire du tag garde le réseau (champ caché,
+  `graph_kept_params`). Une variante se déclare une fois dans `graph_variants.py`
+  (paramètre, libellé, choix, le défaut en premier) ; `main.js` lit les valeurs choisies
+  (`#citation-graph-layout`). Le style, la sélection, le panneau, la légende et l'export
+  sont les mêmes ; l'axe des années et la bande « Non daté » n'existent pas, et l'aide le
+  dit. **Disposition** : `cose`, la disposition à forces de Cytoscape, sans dépendance.
+  Elle part d'une spirale (angle d'or, dans l'ordre des données) plutôt que de positions au
+  hasard : le même graphe est disposé de la même façon à chaque visite. Les tailles des
+  nœuds sont celles de l'écran (au zoom 1 de la disposition). Le refroidissement est plus
+  rapide que par défaut (`coolingFactor` 0,9 : 66 itérations au lieu de 690), avec une
+  répulsion doublée qui compense une partie des recouvrements : 2,9 s au lieu de 27 s sur
+  1 797 publications, 20 ms sur 76 ([banc-graphe.md](banc-graphe.md)). Les groupes sans
+  lien sont rangés par `cose` lui-même, côte à côte.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
   `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
@@ -146,8 +165,10 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   minimum pour ne pas en sortir. Pendant l'animation, le maintien dans les bornes attend
   (`viewport.hold`), puis s'applique de nouveau ; un zoom ou un déplacement à la main
   pendant une sélection reste dans les bornes étirées. L'étirement ne vaut que pour la
-  **frise**, où x n'est qu'une date : le graphe sans frise (#195) gardera un zoom
-  uniforme, sans quoi il déformerait les distances qu'il dessine.
+  **frise**, où x n'est qu'une date : en **réseau** (#195), le zoom est uniforme, sans
+  étirement, sans quoi il déformerait les distances qu'il dessine ; la sélection remplit
+  l'axe le plus serré, et les positions ne bougent pas. Les règles des grands graphes
+  (ci-dessous) s'appliquent de la même façon.
 - **Animation du recentrage** (#291) : une seule boucle (`requestAnimationFrame`) déplace
   ensemble la vue et l'étirement. Ce qui est interpolé, c'est la plus petite des deux
   fenêtres de la disposition (celle d'arrivée quand on zoome, celle de départ quand on
@@ -202,7 +223,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   à une place qui ne couvre aucun nœud, puis à une qui ne couvre qu'un nœud non nommé ; un
   libellé sans place est omis (la sélection, puis les plus citées, passent d'abord). Les
   libellés n'existent que sur l'image, pas à l'écran. Le nom du fichier dit ce que montre l'image :
-  `graphe-corpus`, `graphe-publication-<id>`, suivi de `-selection-<id>` si une
+  `graphe-corpus`, `graphe-publication-<id>`, suivi de `-reseau` en vue réseau (sans axe
+  ni bande sur l'image), puis de `-selection-<id>` si une
   publication est sélectionnée, ou de `-zoom` si la vue n'est pas la vue d'ensemble. Pas
   de SVG : il demanderait une extension à embarquer.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
@@ -210,7 +232,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
   `export.js` (export PNG),
-  `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
+  `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
+  `axis.js` (axe des années), `selection.js` (sélection
   et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,

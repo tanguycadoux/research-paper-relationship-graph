@@ -203,9 +203,11 @@ export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
         }
     };
     // The button shows the whole graph again with the same motion; a resized frame
-    // (or no stretch to undo) shows it at once.
+    // (or no stretch to undo) shows it at once. Uniform, there is never a stretch: the
+    // motion is kept for the way back from a selection.
     viewport.onShowAllRequest(() => {
-        if (isIdentity(stretch.current()) && frame === null) {
+        const nothingToUndo = uniform ? before === null : isIdentity(stretch.current());
+        if (nothingToUndo && frame === null) {
             return false;
         }
         before = null;

@@ -2,6 +2,7 @@ import datetime
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.http import QueryDict
 from django.test import TestCase
 from django.urls import reverse
 
@@ -14,6 +15,7 @@ from references.models import (
 )
 from references.services.corpus import tags
 from references.services.display.graph import base_graph, corpus_graph, publication_graph
+from references.services.display.graph_variants import graph_layout, kept_params
 from references.services.sources.external_records import Source, store_record
 
 
@@ -343,3 +345,72 @@ class TagGraphTests(TestCase):
         self.client.force_login(self.alice)
         response = self.client.get(reverse("corpus"), {"tag": "Projet"})
         self.assertContains(response, reverse("corpus_graph") + "?tag=Projet")
+
+
+class GraphViewTests(TestCase):
+    """The view of a graph chosen in the URL (#195): timeline by default, or network."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user("erin")
+        cls.source = Publication.objects.create(
+            title="Source", publication_date=datetime.date(2020, 1, 1)
+        )
+        cls.cited = Publication.objects.create(title="Cité")
+        CitedReference.objects.create(source=cls.source, target=cls.cited, position=0)
+        entry = UserPublication.objects.create(user=cls.user, publication=cls.source)
+        tags.tag_entry(entry, "Projet")
+
+    def corpus_page(self, **params):
+        self.client.force_login(self.user)
+        return self.client.get(reverse("corpus_graph"), params)
+
+    def test_variants_from_the_query_string(self):
+        self.assertEqual(graph_layout(QueryDict("")), {"vue": "frise"})
+        self.assertEqual(graph_layout(QueryDict("vue=reseau")), {"vue": "reseau"})
+        self.assertEqual(kept_params(QueryDict("vue=frise&tag=Projet")), {})
+        self.assertEqual(kept_params(QueryDict("vue=reseau&tag=Projet")), {"vue": "reseau"})
+
+    def test_timeline_by_default(self):
+        response = self.client.get(reverse("publication_graph", args=[self.source.pk]))
+        self.assertEqual(response.context["graph_layout"], {"vue": "frise"})
+        self.assertContains(response, 'id="citation-graph-layout"')
+        self.assertContains(response, 'id="citation-graph-axis"')
+        self.assertContains(response, 'id="citation-graph-band"')
+        self.assertContains(response, "Axe horizontal : date de publication")
+        self.assertContains(response, '<a href="?vue=reseau"', count=1)
+        self.assertContains(response, f'data-graph-export="graphe-publication-{self.source.pk}"')
+
+    def test_network_has_no_time_axis(self):
+        response = self.client.get(
+            reverse("publication_graph", args=[self.source.pk]), {"vue": "reseau"}
+        )
+        self.assertEqual(response.context["graph_layout"], {"vue": "reseau"})
+        self.assertNotContains(response, 'id="citation-graph-axis"')
+        self.assertNotContains(response, 'id="citation-graph-band"')
+        self.assertContains(response, "la position ne suit pas la date")
+        self.assertContains(
+            response, f'data-graph-export="graphe-publication-{self.source.pk}-reseau"'
+        )
+        # The current choice is marked, the other one leads back to the timeline.
+        self.assertContains(response, 'aria-current="true">Réseau</a>')
+        self.assertContains(response, '<a href="?vue=frise"', count=1)
+
+    def test_an_invalid_view_falls_back_to_the_timeline(self):
+        response = self.client.get(reverse("base_graph"), {"vue": "cercle"})
+        self.assertEqual(response.context["graph_layout"], {"vue": "frise"})
+        self.assertContains(response, 'id="citation-graph-axis"')
+        self.assertContains(response, 'aria-current="true">Frise</a>')
+        self.assertEqual(response.context["graph_kept_params"], {})
+
+    def test_the_links_keep_the_other_parameters(self):
+        response = self.corpus_page(tag="Projet")
+        self.assertContains(response, 'href="?tag=Projet&amp;vue=reseau"')
+        self.assertContains(response, 'href="?tag=Projet&amp;vue=frise"')
+        self.assertContains(response, 'data-graph-export="graphe-corpus-tag-projet"')
+
+    def test_the_tag_form_keeps_the_network(self):
+        response = self.corpus_page(tag="Projet", vue="reseau")
+        self.assertContains(response, '<input type="hidden" name="vue" value="reseau">', html=True)
+        self.assertContains(response, 'data-graph-export="graphe-corpus-tag-projet-reseau"')
+        self.assertNotContains(self.corpus_page(tag="Projet"), 'type="hidden" name="vue"')
