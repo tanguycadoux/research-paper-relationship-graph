@@ -145,18 +145,20 @@ function drawLegend(context, rows, style, top, lineHeight) {
 // The publications named on the image (#289): with a selection, the selected one and its
 // neighbours; otherwise the sources (the publication of the graph, or the corpus). The
 // selected publication first, then the most cited: they keep their label when two
-// labels would overlap.
+// labels would overlap. On a coauthorship graph (#222): the selected author and their
+// coauthors, or the author of the graph; the most published first.
 function labelledNodes(cy) {
     const selected = cy.nodes(".selected");
     const nodes = selected.nonempty()
-        ? selected.union(cy.nodes(".reference-node, .citing-node"))
+        ? selected.union(cy.nodes(".reference-node, .citing-node, .coauthor-node"))
         : cy.nodes('[role = "source"]');
+    const rank = (node) => node.data("citedBy") ?? node.data("publications");
     return nodes
         .filter((node) => node.data("shortLabel"))
         .sort(
             (a, b) =>
                 Number(b.hasClass("selected")) - Number(a.hasClass("selected")) ||
-                b.data("citedBy") - a.data("citedBy"),
+                rank(b) - rank(a),
         );
 }
 

@@ -4,8 +4,11 @@
 {% block title %}Auteurs · {% endblock title %}
 
 {% block content %}
-    <header class="mb-6">
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1>Auteurs</h1>
+        {# The coauthorship graph of all the authors (#222): reached from here, without its own menu entry. #}
+        {% url 'authors_graph' as graph_url %}
+        {% button "Graphe des auteurs" url=graph_url variant="secondary" icon="hub" %}
     </header>
 
     {% if authors or active_filters %}
