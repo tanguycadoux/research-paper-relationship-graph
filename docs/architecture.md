@@ -29,7 +29,7 @@ le statut de lecture et les tags sont propres à chaque utilisateur.
 | [arxiv-jacow.md](arxiv-jacow.md) | Prépublications arXiv et actes JACoW : identifiants arXiv saisis, identifiants écrits dans les références, version publiée (déclarée ou selon OpenAlex), bibliographie tirée des sources LaTeX, ordre des auteurs JACoW |
 | [auteurs.md](auteurs.md) | Auteurs : affiliations (OpenAlex, hiérarchie des organisations), ORCID complétés depuis OpenAlex, noms et profil ORCID |
 | [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
-| [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export |
+| [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export ; graphe des auteurs (coautorat) |
 | [banc-graphe.md](banc-graphe.md) | Banc d'essai des graphes (#202) : base grossie de vraies publications, graphes synthétiques, mesures de la disposition et de l'affichage, limites et pistes d'optimisation |
 | [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag ; citations entrantes selon OpenAlex |
 | [interface.md](interface.md) | Navigation, tableaux, pagination, tri, filtres, recherche, accueil, mise en page |
@@ -47,6 +47,7 @@ references/          application principale
   urls.py            routes, au pluriel pour les collections (publications/, authors/…)
   views/             vues fines, une par domaine
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
+    author_graphs.py (graphe des auteurs, coautorat),
     cited_references.py (identification d'une référence, en série),
     publication_merge.py (« Cette publication est en fait… »),
     corpus_transfer.py (export et import du corpus),
@@ -119,6 +120,7 @@ references/          application principale
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
+      author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
@@ -135,7 +137,7 @@ references/          application principale
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, stretch, export, axis, band, selection, style)
+  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, stretch, export, axis, band, selection, style ; coauthors et coauthor_selection pour le graphe des auteurs)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/

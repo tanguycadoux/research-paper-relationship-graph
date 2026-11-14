@@ -7,6 +7,10 @@ parcours général d'un import est dans [sources.md](sources.md) ; les correctio
 d'auteurs (fusions, doublons, même ORCID) dans [corrections.md](corrections.md#auteurs).
 Vue d'ensemble du projet : [architecture.md](architecture.md).
 
+La fiche d'un auteur mène au **graphe de ses coauteurs**, et la liste des auteurs au
+graphe de tous les auteurs (coautorat pondéré, grandes collaborations écartées) :
+[graphes.md](graphes.md#graphe-des-auteurs-222).
+
 ## Affiliations
 
 Une affiliation est une propriété de la **signature** (`AuthorPublication.organizations`),
