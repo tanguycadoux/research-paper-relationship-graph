@@ -10,7 +10,7 @@
             and the displayed graph as a PNG image, under the given file name (#175).
         {% endcomment %}
         <div class="absolute top-10 right-3 flex gap-2">
-            <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% endif %}">
+            <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% if active_tag %}-tag-{{ active_tag_slug }}{% endif %}{% endif %}">
                 {% button "Exporter l'image (PNG)" variant="secondary" icon="download" icon_only=True type="button" %}
             </div>
             <div data-graph-show-all>

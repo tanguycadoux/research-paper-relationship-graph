@@ -14,7 +14,8 @@ la moins citée.
 - **Contexte** : tout le corpus (par défaut), ou un tag avec ses sous-tags
   (`?tag=Projet` compte aussi les articles tagués « Projet/Groupe », comme le filtre de
   « Mes références », `tags.tagged`). Un tag qui n'existe plus ramène à tout le corpus,
-  avec un message.
+  avec un message. Le graphe d'un tag partage ce contexte (`tags.context_publications`,
+  `views/tag_context.py`, #290 : voir [graphes.md](graphes.md)).
 - **Calcul** : une agrégation sur `CitedReference.target`, en base, sans appel externe.
   Seules les références identifiées comptent ; la page dit combien de références du
   contexte restent à identifier. Une publication qui cite deux fois la même compte
