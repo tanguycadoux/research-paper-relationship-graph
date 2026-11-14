@@ -396,6 +396,21 @@ class GraphViewTests(TestCase):
         self.assertContains(response, 'aria-current="true">Réseau</a>')
         self.assertContains(response, '<a href="?vue=frise"', count=1)
 
+    def test_waiting_message_and_tooltip_of_large_graphs(self):
+        # #202: the network may be laid out in a Web Worker, with a message in the frame,
+        # hidden until then; the hover tooltip of large graphs is in both views.
+        network = self.client.get(
+            reverse("publication_graph", args=[self.source.pk]), {"vue": "reseau"}
+        )
+        self.assertContains(network, "data-graph-waiting", count=1)
+        self.assertContains(network, "Disposition du graphe…</p>")
+        self.assertContains(network, 'role="status"')
+        timeline = self.client.get(reverse("publication_graph", args=[self.source.pk]))
+        self.assertNotContains(timeline, "data-graph-waiting")
+        for response in (network, timeline):
+            self.assertContains(response, "data-graph-tooltip", count=1)
+            self.assertContains(response, "pointer-events-none absolute z-10")
+
     def test_an_invalid_view_falls_back_to_the_timeline(self):
         response = self.client.get(reverse("base_graph"), {"vue": "cercle"})
         self.assertEqual(response.context["graph_layout"], {"vue": "frise"})
