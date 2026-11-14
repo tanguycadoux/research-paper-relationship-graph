@@ -14,13 +14,10 @@ import { bindViewport } from "./viewport.js";
 function render() {
     const container = document.getElementById("citation-graph");
     const graph = JSON.parse(document.getElementById("citation-graph-data").textContent);
-    // The variants of the layout chosen in the URL (#288, graph_variants.py).
-    const layout = JSON.parse(document.getElementById("citation-graph-layout").textContent);
-    const hasUndated = graph.nodes.some((n) => !n.data.date);
-    const undatedBand = hasUndated && layout.non_dates === "bande";
     const years = yearRange(graph.nodes);
-    const scale = makeScale(years, graph.nodes.length, container, !undatedBand);
-    const { elements, bandY } = placeNodes(graph.nodes, graph.edges, scale, undatedBand);
+    const scale = makeScale(years, graph.nodes.length, container);
+    // bandY: the height of the band of the publications without a date, null without any.
+    const { elements, bandY } = placeNodes(graph.nodes, graph.edges, scale);
     const cy = cytoscape({
         container,
         elements: [...elements, ...graph.edges],
@@ -35,9 +32,7 @@ function render() {
     const card = document.getElementById("citation-graph-card");
     bindInteractions(cy, card, bindFocus(cy, card, viewport));
     const axis = document.getElementById("citation-graph-axis");
-    // In the band variant, "Non daté" labels the band, not a column of the axis.
-    const undatedColumn = hasUndated && !undatedBand;
-    const drawAxis = () => drawYearAxis(axis, cy, years, scale, undatedColumn);
+    const drawAxis = () => drawYearAxis(axis, cy, years, scale);
     cy.on("viewport", drawAxis);
     drawAxis();
     bindUndatedBand(cy, document.getElementById("citation-graph-band"), bandY);

@@ -117,7 +117,6 @@ references/          application principale
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
-      graph_variants.py  variantes de disposition des graphes, choisies dans l'URL (non datés)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui.py            composants d'interface : button, badge, alert, card, icon, external_link,

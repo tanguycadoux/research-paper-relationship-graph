@@ -19,8 +19,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
-  chronologique : l'axe horizontal suit la date ; les articles non datés sont dans une
-  colonne à gauche, ou dans une bande sous la frise (voir « Variantes »).
+  chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
+  bande sous la frise.
 - **Disposition** (#138, `layout.js`) : x suit la date ; la position verticale rapproche
   les publications qui se citent, sans dépendance. D'abord un **ordre** par la méthode du
   barycentre (chaque publication va vers la rangée moyenne de ses voisines, en
@@ -30,28 +30,16 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   (écart selon leur taille). Les rangées de départ sont espacées de 36 px quelle que soit
   la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est ramené à la hauteur du cadre, étiré ou comprimé : les nœuds gardent leur taille à l'écran, un dézoom ne les séparerait pas et perdrait de la largeur ; zoomer sépare ceux que la compression rapproche (#185). Sur le graphe du
   corpus de la base réelle : 51 croisements de liens au lieu de 147 avec une rangée par
-  publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
-  publications sans date, dans la variante « à gauche ».
-- **Variantes de disposition** (#288, `services/display/graph_variants.py`) : une valeur
-  de l'URL choisit la disposition, et la barre d'outils du graphe propose un lien vers
-  chaque autre choix (les autres paramètres, un tag par exemple, sont gardés). Rien n'est
-  gardé côté serveur : une variante se partage, se met en favori, se compare dans deux
-  onglets. La page transmet les valeurs choisies à `main.js` (`citation-graph-layout`,
-  en JSON). Une variante se déclare une fois (paramètre, libellé, choix, défaut, et le
-  graphe sur lequel elle change quelque chose) ; le sélecteur n'apparaît que sur ces
-  graphes. Première variante, `?non_dates=` :
-  - `gauche` (par défaut) : la colonne « Non daté » à gauche de la frise, comme avant ;
-  - `bande` : les publications sans date sur une rangée sous la frise (`layout.js`,
-    `band.js`), séparée par une ligne pointillée libellée « Non daté ». Les publications
-    datées sont disposées comme d'habitude, entre elles ; chaque non datée va sous la
-    moyenne des x des publications datées qu'elle cite ou qui la citent, les autres sont
-    réparties sur la largeur, puis elles sont écartées pour ne pas se chevaucher
-    (`spreadAlong`). La frise commence alors à l'année la plus ancienne. Les liens
-    deviennent courts et presque verticaux au lieu de traverser toute la frise.
-
-  Les deux vues sont gardées le temps de les comparer sur des graphes réels ; la plus
-  utile deviendra la seule. Le graphe sans frise (#195, « Frise / Réseau ») sera une
-  autre variante du même mécanisme.
+  publication dans l'ordre des dates.
+- **Publications non datées** (#288, `layout.js`, `band.js`) : sur une rangée sous la
+  frise, séparée par une ligne pointillée libellée « Non daté ». Elles traversaient toute
+  la frise depuis une colonne à gauche, avec des liens dont le sens ne se lisait plus.
+  Les publications datées sont disposées entre elles comme d'habitude ; chaque non datée
+  va **à mi-chemin entre la plus ancienne et la plus récente des publications datées
+  qu'elle cite**, à défaut entre celles qui la citent ; les autres sont réparties sur la
+  largeur, puis toutes sont écartées pour ne pas se chevaucher (`spreadAlong`). La frise
+  commence à l'année la plus ancienne, et l'axe ne montre que des années. Les liens
+  restent sans flèche, comme les autres.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
   `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
@@ -63,12 +51,9 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
   `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
   variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
-  droits et gris, avec une petite **pointe vers la publication citée** (#288) : l'axe du
-  temps donne le sens (une publication cite des publications plus anciennes, à sa
-  gauche), sauf pour les publications sans date. La pointe prend la couleur de son lien
-  (survol, sélection) et garde 8 px à l'écran quel que soit le zoom : Cytoscape la
-  dimensionne d'après l'épaisseur du lien en unités du graphe, et `arrow-scale` compense
-  (`style.js`, `arrowScale`). Survoler un nœud fonce ses liens.
+  droits, gris, sans flèche : une
+  publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
+  ses liens.
 - **Vue** (#141, `viewport.js`) : la vue d'ensemble (tout le graphe dans le cadre, avec
   une petite marge) est le zoom minimal, recalculé quand le cadre change de taille, et
   la vue ne sort jamais de cette emprise : le déplacement est ramené dans les bornes à
@@ -79,9 +64,6 @@ Les graphes de citations : données produites par le serveur, dessin et interact
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
   redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
-  Dans la variante `bande`, le libellé « Non daté » n'est pas sur l'axe mais sur la ligne
-  de la bande (`#citation-graph-band`), HTML lui aussi, replacée à chaque événement
-  `viewport` et masquée quand elle sort du cadre.
 - **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
   vert d'eau) et les articles qui le citent (nœuds orange), chaque lien dans une nuance
   plus claire de son nœud, et estompe le reste. La carte d'informations HTML
@@ -109,8 +91,7 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
   `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
   (recentrage à la sélection), `export.js` (export PNG),
-  `layout.js` (position des nœuds, bande des non datés), `axis.js` (axe des années),
-  `band.js` (ligne et libellé de la bande des non datés), `selection.js` (sélection
+  `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
   et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
