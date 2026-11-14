@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
+from django.utils.text import slugify
 
 from ..models import Publication
 from ..services.corpus import tags
@@ -26,6 +27,8 @@ def my_refs_graph(request):
         ],
         "active_tag": tag,
         "active_tag_label": tags.label(tag),
+        # In the name of the exported image: « Projet/Groupe » gives projet-groupe.
+        "active_tag_slug": slugify(tag.replace("/", " ")),
     }
     return render(request, "references/user_references_graph.html", context)
 

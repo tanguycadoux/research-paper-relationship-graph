@@ -273,6 +273,12 @@ class TagGraphTests(TestCase):
         nodes = response.context["graph"]["nodes"]
         self.assertEqual({node["data"]["label"] for node in nodes}, {"Projet", "Groupe", "Cité"})
 
+    def test_exported_image_names_a_subtag_with_a_hyphen(self):
+        self.client.force_login(self.alice)
+        response = self.client.get(reverse("corpus_graph"), {"tag": "Projet/Groupe"})
+        # The name of the exported image (graphe-corpus-tag-…, _citation_graph.html).
+        self.assertEqual(response.context["active_tag_slug"], "projet-groupe")
+
     def test_an_unknown_tag_falls_back_to_the_whole_corpus(self):
         self.client.force_login(self.alice)
         response = self.client.get(reverse("corpus_graph"), {"tag": "Disparu"})
