@@ -50,7 +50,8 @@ references/          application principale
     publication_merge.py (« Cette publication est en fait… »),
     corpus_transfer.py (export et import du corpus),
     search.py (recherche), pagination.py (listes par pages),
-    suggestions.py (suggestions de lecture)
+    suggestions.py (suggestions de lecture),
+    tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
       http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
@@ -101,7 +102,7 @@ references/          application principale
     corpus/          corpus personnel
       entries.py     ajout au corpus par DOI (ou arXiv) ou ISBN, statut de lecture
       tags.py        tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
-                     renommage et suppression
+                     renommage et suppression, publications d'un tag (contexte)
       corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
       bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
     discovery/       découverte d'articles

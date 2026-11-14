@@ -25,14 +25,14 @@
                     <div data-graph-show-all>
                         {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
                     </div>
-                    <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% endif %}">
+                    <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% if active_tag %}-tag-{{ active_tag_slug }}{% endif %}{% endif %}">
                         {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
                     </div>
                 </div>
-                {% comment %}
-                    Controls of the context go here, under the commands, so that they never move:
-                    the tag of « Mon graphe » (#290) and the variants of the layout (#288).
-                {% endcomment %}
+                {# Controls of the context, under the commands so that they never move: the tag of « Mon graphe » (#290). #}
+                {% if tag_choices %}
+                    {% include "references/_graph_tag_form.html" %}
+                {% endif %}
                 {# Filled by graph/selection.js with the selected publication (#61); otherwise what the graph shows. #}
                 <section id="citation-graph-card"
                          aria-label="Publication sélectionnée"
@@ -148,5 +148,9 @@
     <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
     <script type="module" src="{% static 'references/graph/main.js' %}"></script>
 {% else %}
+    {# Without a graph, the tag selector stays, to choose another tag or the whole corpus (#290). #}
+    {% if tag_choices %}
+        <div class="mb-3 max-w-sm text-sm">{% include "references/_graph_tag_form.html" %}</div>
+    {% endif %}
     <p class="text-gray-600">Aucune citation identifiée : rien à afficher.</p>
 {% endif %}

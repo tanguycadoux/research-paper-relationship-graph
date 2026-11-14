@@ -4,6 +4,7 @@ from django.db.models.functions import Coalesce
 from django.urls import reverse
 
 from ...models import CitedReference, ExternalRecord, Publication
+from ..corpus.tags import context_publications
 from ..sources.external_records import Source
 from .publication_details import clean_text
 
@@ -16,9 +17,12 @@ def publication_graph(pub):
     return citation_graph([pub.pk], with_citing=True)
 
 
-def corpus_graph(user):
-    """Graph of the corpus of a user and the publications it cites."""
-    source_ids = list(user.userpublication_set.values_list("publication_id", flat=True))
+def corpus_graph(user, tag=""):
+    """
+    Graph of the corpus of a user and the publications it cites; with a tag, of the
+    publications with the tag or one of its descendants only (#290).
+    """
+    source_ids = list(context_publications(user, tag).values_list("pk", flat=True))
     return citation_graph(source_ids)
 
 

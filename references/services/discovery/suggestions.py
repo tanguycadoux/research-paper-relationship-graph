@@ -14,16 +14,10 @@ from django.db.models import Count
 
 from ...models import CitedReference, Publication
 from ..corpus import tags
+from ..corpus.tags import context_publications
 from ..display.publication_table import corpus_ids, with_first_author
 
 MIN_CITING = 2
-
-
-def context_publications(user, tag=""):
-    """The publications of the user's corpus, or only those with the tag or a descendant."""
-    if tag:
-        return Publication.objects.filter(tags.tagged(user, tag))
-    return Publication.objects.filter(userpublication__user=user)
 
 
 def co_cited(user, tag=""):
