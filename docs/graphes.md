@@ -1,6 +1,6 @@
 # Graphes
 
-Les graphes de citations : données produites par le serveur, dessin et interactions dans le navigateur. Vue d'ensemble du projet : [architecture.md](architecture.md).
+Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (coautorat) : données produites par le serveur, dessin et interactions dans le navigateur. Vue d'ensemble du projet : [architecture.md](architecture.md).
 
 **Décision : le serveur fournit les données, le navigateur dessine.**
 
@@ -263,3 +263,73 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
   service tiers.
 - Plotly rendu côté serveur (4,8 Mo de JavaScript par page) et `networkx` sont abandonnés.
+
+## Graphe des auteurs (#222)
+
+Les auteurs reliés par les publications qu'ils signent ensemble (coautorat), avec le même
+dessin que les graphes de citations, en vue réseau seulement.
+
+- **Deux graphes, un seul code** (`services/display/author_graph.py`,
+  `views/author_graphs.py`) : celui d'**un auteur** (`/authors/<id>/graph/`, bouton
+  « Graphe » de sa fiche, public comme elle) montre l'auteur, ses coauteurs et les liens
+  entre eux, y compris par des publications où l'auteur n'est pas ; celui de **tous les
+  auteurs** (`/authors/graph/`, bouton « Graphe des auteurs » de la liste des auteurs,
+  public) montre chaque auteur qui a au moins une publication. Pas d'entrée de menu : la
+  page reste sous « Auteurs ». Deux requêtes quelle que soit la taille (les signatures
+  des publications concernées, puis les auteurs) ; les paires sont comptées en Python.
+- **Nœuds** : la taille suit le nombre de publications de l'auteur dans la base (aire
+  proportionnelle), toutes comprises. L'auteur du graphe est en bleu (`source`), les
+  autres de la couleur ordinaire ; pas de couleur par tutelle ni par communauté.
+- **Liens** : pondération de **Newman** : chaque publication de n auteurs apporte
+  1/(n − 1) à chaque paire de ses auteurs (1 pour un article à deux, 0,5 par paire à trois,
+  0,025 à 41). Un seul lien par paire, qui porte la somme (`weight`) et le nombre de
+  publications communes (`shared`). Une personne compte une fois par publication, même
+  avec plusieurs signatures après une fusion. Pas de seuil : la force se lit dans
+  l'**épaisseur** (0,75 à 4 px) et l'**opacité** (0,3 à 0,9) du lien, en racine carrée du
+  poids rapporté au plus fort du graphe, pour que les nombreux liens faibles restent
+  visibles sans couvrir les forts.
+- **Grandes collaborations** : une publication de plus de **50 auteurs**
+  (`LARGE_COLLABORATION`) ne crée aucun lien, mais compte dans la taille des nœuds. Le
+  panneau dit combien de publications sont ainsi écartées (celles qui auraient relié deux
+  auteurs du graphe). Sur le graphe d'un auteur, un coauteur ne l'est que par une
+  publication d'au plus 50 auteurs.
+- **Disposition** : `cose` avec les réglages de la vue réseau (`network.js`, `COSE`), et
+  des liens dont la longueur idéale et la raideur dépendent de la force : de 64 px et une
+  élasticité de 64 pour le lien le plus faible à 32 px et 16 pour le plus fort (`cose`
+  tire avec (longueur − idéale)² / élasticité ; ses valeurs par défaut sont 48 et 32). Un
+  lien fort est donc deux fois plus court et quatre fois plus raide qu'un lien faible ;
+  les liens faibles gardent leur place dans le réseau. Départ en spirale, l'auteur du
+  graphe au centre.
+- **Le reste est celui des graphes de citations** : vue d'ensemble et zoom bornés
+  (`viewport.js`), sélection par un zoom uniforme (`focus.js`, `uniform`), panneau à
+  droite, légende, export PNG. Les éléments de la page portent les mêmes identifiants
+  (`citation-graph`, `citation-graph-data`…), que lisent aussi les outils du banc.
+- **Sélection** (`coauthor_selection.js`) : un clic sur un auteur met en avant ses
+  coauteurs et leurs liens (vert d'eau clair), estompe le reste et zoome sur eux. La carte
+  du panneau donne son nom (lien vers sa fiche), son nombre de publications dans la base,
+  son nombre de coauteurs dans ce graphe, et ses trois liens les plus forts (avec le
+  nombre de publications communes). Survol : le nom, dans l'infobulle en verre dépoli des
+  graphes de citations (`hover.js`, liens foncés sous 600 éléments) ; double-clic : la fiche.
+- **Export** : `graphe-auteur-<id>`, `graphe-auteurs`, suivis de `-selection-<id>` ou
+  `-zoom` comme les autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur
+  sélectionné et ses coauteurs, les plus publiés d'abord.
+- **Modules** : `coauthors.js` (point d'entrée : tailles, épaisseurs, style, disposition)
+  et `coauthor_selection.js` ; `export.js` est partagé.
+- **Taille** (mesures du 14 novembre 2026, Chrome headless, 1 400 px) :
+
+  | Graphe | Auteurs | Liens | JSON | Disposition | Page jusqu'à `DOMContentLoaded` |
+  |---|---|---|---|---|---|
+  | Base de développement, Helene Felice | 163 | 2 906 | 0,29 Mo | 0,16 s | 0,5 s |
+  | Base de développement, tous les auteurs | 411 | 4 886 | 0,51 Mo | 0,40 s | 0,9 s |
+  | Base du banc, Helene Felice | 314 | 7 628 | 0,76 Mo | 0,47 s | 1,3 s |
+  | Base du banc, Arup Ghosh | 308 | 8 865 | 0,88 Mo | 0,59 s | 1,6 s |
+  | Base du banc, tous les auteurs | 9 507 | 56 389 | 6,7 Mo | 120 s | (non chargée) |
+
+  Sur la base du banc (1 797 publications), le graphe de tous les auteurs compte 9 507
+  auteurs (dont 3 566 sans aucun lien, auteurs des seules grandes collaborations) et
+  56 389 liens ; 23 publications de plus de 50 auteurs sont écartées. Le serveur le
+  produit en 0,3 s (0,4 s pour la page, 6,7 Mo). `cose` sur les auteurs les plus reliés :
+  1,0 s pour 500 auteurs (11 192 liens), 3,4 s pour 1 000, 11 s pour 2 000, 33 s pour
+  4 000 (52 470 liens), **120 s pour les 9 507** (mesuré sans dessin, Cytoscape sans
+  cadre) : la page serait bloquée deux minutes. **Limiter ce graphe sur une grande base
+  reste à décider.**

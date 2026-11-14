@@ -12,12 +12,15 @@
             {% endif %}
         </p>
         <h1>{{ author|default:"(sans nom)" }}</h1>
-        {% if user.is_authenticated %}
-            <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2">
+            {# The coauthorship graph of the author (#222), public like this page. #}
+            {% url 'author_graph' author.pk as graph_url %}
+            {% button "Graphe" url=graph_url variant="secondary" icon="hub" %}
+            {% if user.is_authenticated %}
                 {% url 'author_edit' author.pk as edit_url %}
                 {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </header>
 
     <div class="space-y-8">

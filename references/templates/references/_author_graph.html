@@ -1,0 +1,108 @@
+{% load static ui %}
+{% if graph.edges %}
+    {% comment %}
+        A coauthorship graph (#222), in the network view only (#195): the same card as the
+        citation graphs (_citation_graph.html, #291), the frame and the panel beside it, with
+        the same element ids, read by graph/coauthors.js and the benchmark tools.
+    {% endcomment %}
+    <div class="grid min-h-96 grid-cols-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm xl:flex-1 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div class="relative flex h-[70vh] min-h-96 flex-col xl:h-auto">
+            <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des coauteurs"></div>
+            {# The name of the hovered author, placed by graph/hover.js, in frosted glass like the citation graphs (#202). #}
+            <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs text-gray-900 select-none {% glass_classes %}"
+                 aria-hidden="true"
+                 data-graph-tooltip
+                 hidden></div>
+        </div>
+        <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
+            <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
+                   aria-label="Informations et commandes du graphe">
+                <div class="flex flex-wrap gap-2">
+                    <div data-graph-show-all>
+                        {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
+                    </div>
+                    <div data-graph-export="{{ graph_export }}">
+                        {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
+                    </div>
+                </div>
+                {# Filled by graph/coauthor_selection.js with the selected author; otherwise what the graph shows. #}
+                <section id="citation-graph-card"
+                         aria-label="Auteur sélectionné"
+                         aria-live="polite"
+                         class="grid gap-3 border-t border-gray-100 pt-3">
+                    <div class="grid gap-1" data-card-empty>
+                        <p class="font-medium text-gray-900">
+                            {{ graph.nodes|length }} auteur{{ graph.nodes|length|pluralize }}, {{ graph.edges|length }} lien{{ graph.edges|length|pluralize }} de coautorat
+                        </p>
+                        {% include "references/_author_graph_excluded.html" %}
+                        <p class="text-gray-500">Cliquez sur un auteur du graphe pour le décrire ici.</p>
+                    </div>
+                    <div class="grid gap-3" data-card-content hidden>
+                        <div class="flex items-start justify-between gap-2">
+                            <h2 class="text-base">
+                                <a href="#" data-card="title">Auteur sélectionné</a>
+                            </h2>
+                            <div data-card-close>
+                                {% button "Désélectionner" variant="secondary" icon="close" icon_only=True type="button" %}
+                            </div>
+                        </div>
+                        <p class="text-gray-600" data-card="publications"></p>
+                        <div class="grid gap-1">
+                            <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Dans ce graphe</p>
+                            <p>
+                                <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="coauthors"></span>
+                            </p>
+                        </div>
+                        <div class="grid gap-1" data-card-row="strongest">
+                            <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Liens les plus forts</p>
+                            <ol class="grid gap-1" data-card="strongest">
+                            </ol>
+                        </div>
+                    </div>
+                </section>
+                <div class="grid gap-2 border-t border-gray-100 pt-3">
+                    {# Same colours as graph/style.js; also drawn under the exported image (graph/export.js). #}
+                    <ul id="citation-graph-legend"
+                        class="grid gap-1 text-sm text-gray-700 select-none"
+                        aria-label="Légende du graphe">
+                        {% if author %}
+                            <li>
+                                <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
+                                      aria-hidden="true"></span>
+                                Cet auteur
+                            </li>
+                        {% endif %}
+                        <li>
+                            <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+                                  aria-hidden="true"></span>
+                            {% if author %}
+                                Coauteur
+                            {% else %}
+                                Auteur de la base
+                            {% endif %}
+                        </li>
+                        <li>Taille : nombre de publications dans la base</li>
+                        <li>Épaisseur : force du coautorat</li>
+                        <li>
+                            Après un clic :
+                            <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses coauteurs
+                        </li>
+                    </ul>
+                    <p class="text-gray-500">
+                        Une publication de n auteurs compte 1/(n − 1) dans le lien de chaque paire de
+                        ses auteurs : deux auteurs d'un article à deux sont plus liés que deux auteurs
+                        d'un article à vingt. Plus un lien est fort, plus ses auteurs sont rapprochés.
+                        Survolez un auteur pour voir son nom ; cliquez pour le sélectionner, double-cliquez pour ouvrir sa fiche. Échap ou un clic dans le
+                        vide désélectionne.
+                    </p>
+                </div>
+            </aside>
+        </div>
+    </div>
+    {{ graph|json_script:"citation-graph-data" }}
+    <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
+    <script type="module" src="{% static 'references/graph/coauthors.js' %}"></script>
+{% else %}
+    <p class="text-gray-600">Aucun coautorat : rien à afficher.</p>
+    {% include "references/_author_graph_excluded.html" %}
+{% endif %}

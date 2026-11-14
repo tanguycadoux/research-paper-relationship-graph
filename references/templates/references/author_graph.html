@@ -1,0 +1,14 @@
+{% extends "references/base.html" %}
+
+{% block title %}Graphe · {{ author|default:"(sans nom)" }} · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6">
+        <p class="text-sm text-gray-500">
+            <a href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
+        </p>
+        <h1 class="mt-1">Graphe des coauteurs</h1>
+    </header>
+
+    {% include "references/_author_graph.html" %}
+{% endblock content %}
