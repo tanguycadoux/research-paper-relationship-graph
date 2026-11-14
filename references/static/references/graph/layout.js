@@ -195,27 +195,52 @@ function middle(xs) {
     return xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : null;
 }
 
-// The publications without a date on a band under the timeline (#288), each half way
-// between the oldest and the most recent dated publications it cites; without any, the
-// same between those that cite it. The others are spread over the width, in their
-// order. Returns their elements.
+// Where a publication without a date goes on the band (#288), or null without any dated
+// link. A reference is about as old as the other references of the article citing it:
+// for each dated publication citing it, the middle of that article's other dated
+// references (or the article itself, without any), and the oldest of these middles,
+// since a reference is older than every article citing it. A publication is more recent
+// than its own references: never before the most recent one it cites, which is also
+// where it goes when nothing dated cites it.
+function bandX(id, xOf, referencesOf, citersOf) {
+    const ownReferences = (referencesOf.get(id) || [])
+        .filter((r) => xOf.has(r))
+        .map((r) => xOf.get(r));
+    const floor = ownReferences.length ? Math.max(...ownReferences) : null;
+    const middles = (citersOf.get(id) || [])
+        .filter((citer) => xOf.has(citer))
+        .map((citer) => {
+            const siblings = referencesOf.get(citer).filter((r) => r !== id && xOf.has(r));
+            return siblings.length ? middle(siblings.map((r) => xOf.get(r))) : xOf.get(citer);
+        });
+    if (middles.length === 0) {
+        return floor;
+    }
+    const oldest = Math.min(...middles);
+    return floor === null ? oldest : Math.max(oldest, floor);
+}
+
+// The publications without a date on a band under the timeline (#288), each placed by
+// bandX; those without any dated link are spread over the width, in their order. All are
+// then moved apart so that they do not overlap. Returns their elements.
 function placeOnBand(undated, placed, edges, sizeOf, left, right, bandY) {
     const xOf = new Map(placed.map((element) => [element.data.id, element.position.x]));
-    const cited = new Map(undated.map((n) => [n.data.id, []]));
-    const citing = new Map(undated.map((n) => [n.data.id, []]));
     // An edge goes from the citing publication to the cited one.
+    const referencesOf = new Map();
+    const citersOf = new Map();
     for (const { data } of edges) {
-        if (cited.has(data.source) && xOf.has(data.target)) {
-            cited.get(data.source).push(xOf.get(data.target));
-        }
-        if (citing.has(data.target) && xOf.has(data.source)) {
-            citing.get(data.target).push(xOf.get(data.source));
-        }
+        if (!referencesOf.has(data.source)) referencesOf.set(data.source, []);
+        if (!citersOf.has(data.target)) citersOf.set(data.target, []);
+        referencesOf.get(data.source).push(data.target);
+        citersOf.get(data.target).push(data.source);
     }
-    const near = (n) => middle(cited.get(n.data.id)) ?? middle(citing.get(n.data.id));
-    const alone = undated.filter((n) => near(n) === null);
+    const wantedX = new Map(
+        undated.map((n) => [n.data.id, bandX(n.data.id, xOf, referencesOf, citersOf)]),
+    );
+    const alone = undated.filter((n) => wantedX.get(n.data.id) === null);
     const step = (right - left) / (alone.length + 1);
-    const wanted = undated.map((n) => near(n) ?? left + step * (alone.indexOf(n) + 1));
+    const spread = (n) => left + step * (alone.indexOf(n) + 1);
+    const wanted = undated.map((n) => wantedX.get(n.data.id) ?? spread(n));
     const sizes = undated.map(sizeOf);
     const xs = spreadAlong(wanted, sizes, left, right);
     return undated.map((n, i) => ({

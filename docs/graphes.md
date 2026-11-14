@@ -34,10 +34,16 @@ Les graphes de citations : données produites par le serveur, dessin et interact
 - **Publications non datées** (#288, `layout.js`, `band.js`) : sur une rangée sous la
   frise, séparée par une ligne pointillée libellée « Non daté ». Elles traversaient toute
   la frise depuis une colonne à gauche, avec des liens dont le sens ne se lisait plus.
-  Les publications datées sont disposées entre elles comme d'habitude ; chaque non datée
-  va **à mi-chemin entre la plus ancienne et la plus récente des publications datées
-  qu'elle cite**, à défaut entre celles qui la citent ; les autres sont réparties sur la
-  largeur, puis toutes sont écartées pour ne pas se chevaucher (`spreadAlong`). La frise
+  Les publications datées sont disposées entre elles comme d'habitude. Une non datée est
+  placée d'après ses **sœurs**, les autres références datées des articles qui la citent :
+  une référence a à peu près l'âge des autres références du même article. Pour chaque
+  article qui la cite, le milieu de ses références datées (ou l'article lui-même s'il
+  n'en a pas d'autre) ; on garde **le plus ancien de ces milieux**, puisqu'une référence
+  est plus ancienne que tous les articles qui la citent. Une publication est plus
+  récente que ses propres références : jamais avant la plus récente qu'elle cite, et
+  c'est là qu'elle va si rien de daté ne la cite. Sans aucun lien daté, elles sont
+  réparties sur la largeur ; toutes sont ensuite écartées pour ne pas se chevaucher
+  (`spreadAlong`, `bandX`). La frise
   commence à l'année la plus ancienne, et l'axe ne montre que des années. Les liens
   restent sans flèche, comme les autres.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
