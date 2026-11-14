@@ -10,7 +10,7 @@ import { makeScale, yearRange } from "./scale.js";
 import { bindInteractions } from "./selection.js";
 import { makeStretch } from "./stretch.js";
 import { graphStyle } from "./style.js";
-import { bindViewport } from "./viewport.js";
+import { bindViewport, rendererOptions } from "./viewport.js";
 
 function render() {
     const container = document.getElementById("citation-graph");
@@ -27,6 +27,7 @@ function render() {
         layout: { name: "preset", fit: false },
         autoungrabify: true,
         autounselectify: true,
+        ...rendererOptions(graph.nodes.length + graph.edges.length),
     });
     const stretch = makeStretch(cy);
     const showAllButton = document.querySelector("[data-graph-show-all] button");
