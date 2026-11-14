@@ -6,8 +6,10 @@ measured in headless Chrome through the DevTools protocol (pure Python, no depen
     python tools/graph_bench/bench.py http://127.0.0.1:8120 --out /tmp/bench \\
         --page /graph/ --page /publications/123/graph/ --session <sessionid>
 
-For each page: the time to the response and to DOMContentLoaded (main.js runs placeNodes
-and creates the graph before it), the size of the graph data, the steps of the layout
+For each page: the time to the response, to DOMContentLoaded (main.js runs placeNodes and
+creates the graph before it, except a large network, laid out in a Web Worker) and until
+the graph is shown, the longest frame during the layout (whether the page responds), the
+size of the graph data, the steps of the layout
 (bench.js), the frames of the animation of a selection and of a zoom, and screenshots.
 For synthetic graphs (--synthetic 500 1000 2000): the layout and the drawing alone.
 """
@@ -31,6 +33,13 @@ CHROME = os.environ.get("CHROME", "/usr/bin/google-chrome")
 # so that two benchmarks can run at the same time.
 PORT = int(os.environ.get("GRAPH_BENCH_DEVTOOLS_PORT", 9420))
 CY = "document.getElementById('citation-graph')._cyreg.cy"
+# Run in each page before its own scripts: the end and the length of each frame, to tell
+# whether the page responds during the layout.
+FRAME_RECORDER = """window.graphBenchFrames = [];
+(() => { let last = performance.now();
+  const step = (now) => { window.graphBenchFrames.push([now, now - last]); last = now;
+    if (now < 120000) requestAnimationFrame(step); };
+  requestAnimationFrame(step); })();"""
 
 
 class DevTools:
@@ -136,6 +145,7 @@ def start_chrome(width, height, port=PORT):
     tools = DevTools(page["webSocketDebuggerUrl"])
     tools.call("Page.enable")
     tools.call("Network.enable")
+    tools.call("Page.addScriptToEvaluateOnNewDocument", source=FRAME_RECORDER)
     tools.call(
         "Emulation.setDeviceMetricsOverride",
         width=width,
@@ -166,6 +176,19 @@ def load(tools, url):
                 // The layout in main.js, timeline or network (#195).
                 layout: Math.round((performance.getEntriesByName(
                     'citation-graph-layout', 'measure')[0] || {duration: -1}).duration),
+                // Once the graph is created and bound (main.js).
+                shown: Math.round((performance.getEntriesByName(
+                    'citation-graph-shown', 'mark')[0] || {startTime: -1}).startTime),
+                // The longest frame overlapping the layout: as long as the layout when it
+                // runs in the page, short when it runs in a Web Worker.
+                layoutFrameMax: (() => {
+                    const m = performance.getEntriesByName('citation-graph-layout', 'measure')[0];
+                    if (!m) return -1;
+                    const end = m.startTime + m.duration;
+                    return Math.round(Math.max(0, ...window.graphBenchFrames
+                        .filter(([at, length]) => at >= m.startTime && at - length <= end)
+                        .map(([, length]) => length)));
+                })(),
                 data: (document.getElementById('citation-graph-data')
                        || {textContent: ''}).textContent.length}; })()"""
     )

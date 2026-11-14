@@ -3,6 +3,8 @@
 // information card beside the graph describes it (#187, #291); the view zooms on them,
 // and goes back on deselection (#142). Without a selection, the card says how to select.
 
+import { bindHover } from "./hover.js";
+
 function fillCard(card, data, referenceCount, citingCount) {
     const field = (name) => card.querySelector(`[data-card="${name}"]`);
     const showRow = (name, visible) => {
@@ -61,15 +63,8 @@ function deselect(cy, card, focus) {
 }
 
 export function bindInteractions(cy, card, focus) {
-    // Hovering a publication shows its title and darkens its edges.
-    cy.on("mouseover", "node[url]", (event) => {
-        event.target.addClass("hovered");
-        event.target.connectedEdges().addClass("hovered");
-    });
-    cy.on("mouseout", "node[url]", (event) => {
-        event.target.removeClass("hovered");
-        event.target.connectedEdges().removeClass("hovered");
-    });
+    // Hovering a publication shows its title (hover.js).
+    bindHover(cy);
     cy.on("tap", "node[url]", (event) => selectNode(cy, event.target, card, focus));
     cy.on("tap", (event) => {
         if (event.target === cy) {
