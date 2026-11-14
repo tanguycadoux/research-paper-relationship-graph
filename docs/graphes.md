@@ -12,6 +12,13 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   du corpus de la personne connectée y sont en bleu (`source`), les autres en vert d'eau
   (`other`). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
   la position rendait distinctes deux citations d'une même publication.
+- **Graphe d'un tag** (#290) : « Mon graphe » peut se limiter à un tag et ses sous-tags
+  (`?tag=Projet`), choisi dans une liste du panneau du graphe (envoyée dès qu'elle change,
+  `static/js/autosubmit.js`, avec un bouton sans JavaScript). Le contexte est celui des
+  suggestions : `tags.context_publications`, et un tag qui n'existe plus ramène à tout le
+  corpus avec un message (`views/tag_context.requested_tag`, partagé avec les
+  suggestions). « Mes références » filtrée par un tag renvoie au graphe de ce tag, et le
+  nom de l'image exportée le dit (`graphe-corpus-tag-projet`).
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
@@ -44,7 +51,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   c'est là qu'elle va si rien de daté ne la cite. Sans aucun lien daté, elles sont
   réparties sur la largeur ; toutes sont ensuite écartées pour ne pas se chevaucher
   (`spreadAlong`, `bandX`). La frise
-  commence à l'année la plus ancienne, et l'axe ne montre que des années. Les liens
+  commence à l'année la plus ancienne, et l'axe ne montre que des années. La ligne de la
+  bande suit le zoom, le déplacement et l'étirement d'une sélection, comme l'axe. Les liens
   restent sans flèche, comme les autres.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
@@ -59,44 +67,91 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
   droits, gris, sans flèche : une
   publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
-  ses liens.
+  ses liens. Seuls les nœuds réagissent à la souris : un lien ne se survole ni ne se clique
+  (`events: no`), et Cytoscape ne dessine plus son halo carré au clic. Le nœud sélectionné
+  porte un anneau sombre ; un halo rond discret (`underlay`) ne l'entoure que tant que la
+  souris est enfoncée (`:active`).
 - **Vue** (#141, `viewport.js`) : la vue d'ensemble (tout le graphe dans le cadre, avec
   une petite marge) est le zoom minimal, recalculé quand le cadre change de taille, et
   la vue ne sort jamais de cette emprise : le déplacement est ramené dans les bornes à
   chaque événement `viewport`. L'axe n'affiche donc jamais d'années vides.
-  Un bouton en haut à droite du cadre y revient (#196), par le même cadrage que le
+  Le bouton « Vue d'ensemble » du panneau y revient (#196), par le même cadrage que le
   chargement et le redimensionnement. Il est désactivé (grisé), plutôt que masqué, quand
   la vue d'ensemble est déjà affichée : il reste visible et à sa place.
 - **Axe des années** : une bande HTML au-dessus du canevas (`#citation-graph-axis`),
-  redessinée à chaque événement `viewport` de Cytoscape. Le pas des graduations dépend de
+  redessinée à chaque événement `viewport` de Cytoscape et à chaque étirement d'une
+  sélection (voir plus bas), qu'elle suit : les années restent sous les nœuds. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
 - **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
   vert d'eau) et les articles qui le citent (nœuds orange), chaque lien dans une nuance
   plus claire de son nœud, et estompe le reste. La carte d'informations HTML
-  (`#citation-graph-card`, en bas à gauche du cadre) est compacte (#187) : le titre est
-  le lien vers la fiche, puis la revue (lue dans la réponse stockée de Crossref ou de
-  DataCite, dans la même requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la fiche ; Échap ou
-  un clic dans le vide désélectionne.
-- **Recentrage à la sélection** (#142, `focus.js`) : la vue zoome sur l'article et ses
-  voisins (animation de 300 ms, aucune avec « réduire les animations »), dans la zone que
-  la carte laisse libre, à sa droite ou au-dessus, celle où ils paraissent le plus
-  grands ; au plus 4 fois le zoom de la vue d'ensemble, pour un voisin tout proche. La
-  désélection ramène la vue d'avant la sélection (la vue d'ensemble dans le cas courant,
-  un zoom fait à la main sinon). Le temps de la sélection, les bornes de #141 s'élargissent
-  à la vue voulue : dans la vue d'ensemble, un voisin caché sous la carte ne pourrait pas
-  être montré autrement.
-- **Export en image** (#175, `export.js`) : un bouton à côté de celui de la vue
-  d'ensemble télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
+  (`#citation-graph-card`) est compacte (#187) : le titre est le lien vers la fiche, puis
+  la revue (lue dans la réponse stockée de Crossref ou de DataCite, dans la même
+  requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la
+  fiche ; Échap, un clic dans le vide ou le bouton « Désélectionner » de la carte
+  désélectionne.
+- **Panneau** (#291) : **hors du cadre**, toujours présent, il ne cache aucune
+  publication. Le cadre et le panneau forment **une seule carte**, séparés par une
+  bordure, sans espace entre eux : à partir de `xl`, le panneau est une colonne de 20rem
+  à droite du cadre (`border-l`), qui prend la hauteur du cadre et défile à l'intérieur si
+  son contenu dépasse (il ne rend jamais la carte plus haute) ; en dessous, il est sous le
+  cadre (`border-t`). Dans l'ordre : les **commandes** (« Vue d'ensemble », « Exporter
+  (PNG) »), puis les contrôles du contexte (le tag de « Mon graphe », #290 ; restés au-dessus
+  du message quand un tag n'a aucune citation), puis ce que montre le graphe (« 76 publications, 85 citations » et une
+  indication) ou, avec une sélection, la carte de la publication, enfin la légende et
+  l'aide. Les commandes et les contrôles sont au-dessus de ce qui change de hauteur : rien
+  ne bouge à la première sélection. Le cadre gagne la hauteur de la légende et de l'aide,
+  et rien ne se superpose au graphe. Sous `xl`, le cadre a sa propre hauteur (70vh,
+  24rem au moins) plutôt que l'espace restant : un panneau qui grandit ne le
+  redimensionne jamais, ce qui ramènerait la vue d'ensemble ; les commandes sont alors
+  sous le graphe.
+- **Recentrage à la sélection** (#142, #291, `focus.js`, `stretch.js`) : l'article et
+  ses voisins occupent **tout le cadre, en largeur et en hauteur** (animation de 300 ms,
+  aucune avec « réduire les animations »). Cytoscape n'a qu'un zoom, le même sur les deux
+  axes : le zoom remplit l'axe le plus serré (au plus 4 fois celui de la vue d'ensemble),
+  puis le graphe est **étiré** sur l'autre axe, autour du centre de la sélection, jusqu'à
+  le remplir aussi (au plus 4 fois). L'étirement déplace les positions, toujours
+  recalculées depuis celles de la disposition : la désélection ramène exactement les
+  positions et la vue d'avant (la vue d'ensemble dans le cas courant, un zoom fait à la
+  main sinon). Étirer l'axe horizontal change l'échelle du temps le temps de la
+  sélection ; la frise la suit. Limites : un axe où la sélection n'a pas d'étendue
+  (voisins de la même année, ou de la même rangée) n'est pas étiré ; un article et un
+  seul voisin ne remplissent que 60 % du cadre, sans quoi ils finiraient dans deux coins
+  opposés. La vue visée reste dans les bornes de #141, étirées avec le graphe
+  (`viewport.within`) : jamais en deçà du zoom de la vue d'ensemble, et décalée du
+  minimum pour ne pas en sortir. Pendant l'animation, le maintien dans les bornes attend
+  (`viewport.hold`), puis s'applique de nouveau ; un zoom ou un déplacement à la main
+  pendant une sélection reste dans les bornes étirées. L'étirement ne vaut que pour la
+  **frise**, où x n'est qu'une date : le graphe sans frise (#195) gardera un zoom
+  uniforme, sans quoi il déformerait les distances qu'il dessine.
+- **Animation du recentrage** (#291) : une seule boucle (`requestAnimationFrame`) déplace
+  ensemble la vue et l'étirement. Ce qui est interpolé, c'est la plus petite des deux
+  fenêtres de la disposition (celle d'arrivée quand on zoome, celle de départ quand on
+  revient) : son rectangle à l'écran va de sa place à tout le cadre, ou l'inverse, avec
+  son centre en ligne droite et sa largeur et sa hauteur en progression géométrique, au
+  même rythme. Les deux axes se resserrent donc ensemble, et la sélection ne sort jamais
+  du cadre en route : une moyenne géométrique reste sous la linéaire, si bien que chaque
+  bord reste entre sa position de départ et celle d'arrivée. Le zoom (taille des nœuds,
+  #185) progresse aussi géométriquement ; l'étirement fait le reste sur chaque axe. La
+  dernière image est exactement la vue visée. Interpoler séparément le zoom et
+  l'étirement, comme d'abord, désynchronisait les axes (la largeur suivait la hauteur
+  avec retard) et faisait sortir la sélection du cadre à mi-course. Une nouvelle
+  sélection, Échap ou « Vue d'ensemble » repart de la vue du moment ; un zoom ou un
+  déplacement à la main arrête l'animation là où elle est. « Vue d'ensemble » pendant une
+  sélection y revient par la même animation (un redimensionnement du cadre, sans).
+- **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
+  télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
-  années (au-dessus) et la légende (en dessous, renvoyée à la ligne comme sur la page) sont
-  redessinés depuis leur HTML. Le nom du fichier dit ce que montre l'image :
+  années (au-dessus, étirée comme à l'écran) et la légende du panneau (en dessous, renvoyée
+  à la ligne sur la largeur de l'image) sont redessinés depuis leur HTML. Le nom du fichier dit ce que montre l'image :
   `graphe-corpus`, `graphe-publication-<id>`, suivi de `-selection-<id>` si une
   publication est sélectionnée, ou de `-zoom` si la vue n'est pas la vue d'ensemble. Pas
   de SVG : il demanderait une extension à embarquer.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
   chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
   `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
-  (recentrage à la sélection), `export.js` (export PNG),
+  (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
+  `export.js` (export PNG),
   `layout.js` (position des nœuds), `axis.js` (axe des années), `selection.js` (sélection
   et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
