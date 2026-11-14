@@ -37,9 +37,10 @@ function render() {
     const drawAxis = () => drawYearAxis(axis, cy, years, scale, stretch);
     cy.on("viewport stretch", drawAxis);
     drawAxis();
-    bindUndatedBand(cy, document.getElementById("citation-graph-band"), bandY, stretch);
+    const band = document.getElementById("citation-graph-band");
+    bindUndatedBand(cy, band, bandY, stretch);
     const legend = document.getElementById("citation-graph-legend");
-    bindExport(cy, { axis, legend }, document.querySelector("[data-graph-export]"), viewport);
+    bindExport(cy, { axis, band, legend }, document.querySelector("[data-graph-export]"), viewport);
 }
 
 render();

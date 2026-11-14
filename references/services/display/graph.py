@@ -114,7 +114,8 @@ def role(pk, source_ids, citing_ids):
 
 def node_data(pub, role):
     # Each person once, even with several slots after a merge.
-    authors = list(dict.fromkeys(str(slot.author) for slot in pub.authorpublication_set.all()))
+    people = list(dict.fromkeys(slot.author for slot in pub.authorpublication_set.all()))
+    authors = [str(person) for person in people]
     return {
         "data": {
             "id": str(pub.pk),
@@ -123,12 +124,34 @@ def node_data(pub, role):
             # « First author et al. » on the information card.
             "firstAuthor": authors[0] if authors else "",
             "authorCount": len(authors),
+            # « Vaswani 2017 » next to the node on an exported image (#289).
+            "shortLabel": short_label(pub, people[0] if people else None),
             "citedBy": pub.cited_by,
             "role": role,
             "venue": clean_text(pub.venue or ""),
             "url": reverse("publication_detail", args=[pub.pk]),
         }
     }
+
+
+# Without an author, the start of the title stands for the publication, cut at a word.
+SHORT_TITLE_LENGTH = 30
+
+
+def short_label(pub, first_author):
+    """The family name of the first author and the year; the start of the title without author."""
+    if first_author is not None:
+        name = first_author.last_name or str(first_author)
+    else:
+        name = short_title(str(pub))
+    year = str(pub.publication_date.year) if pub.publication_date else ""
+    return " ".join(part for part in (name, year) if part)
+
+
+def short_title(title):
+    if len(title) <= SHORT_TITLE_LENGTH:
+        return title
+    return title[:SHORT_TITLE_LENGTH].rsplit(" ", 1)[0].rstrip(" ,:;.-") + "…"
 
 
 def edge_data(source_id, target_id):

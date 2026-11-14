@@ -77,6 +77,18 @@ class CitationGraphTests(TestCase):
         self.assertEqual(nodes["Source"]["firstAuthor"], "Ada Lovelace")
         self.assertEqual(nodes["Source"]["authorCount"], 4)
         self.assertEqual(nodes["Cité"]["firstAuthor"], "")
+        # Short label of an exported image (#289): family name and year.
+        self.assertEqual(nodes["Source"]["shortLabel"], "Lovelace 2020")
+
+    def test_short_label_without_author_or_date(self):
+        self.cited.title = "A very long title about superconducting magnets and their quench"
+        self.cited.save()
+        nodes = {
+            node["data"]["id"]: node["data"] for node in publication_graph(self.source)["nodes"]
+        }
+        # No author: the start of the title, cut at a word; no date: no year.
+        self.assertEqual(nodes[str(self.cited.pk)]["shortLabel"], "A very long title about…")
+        self.assertEqual(nodes[str(self.source.pk)]["shortLabel"], "Source 2020")
 
     def test_node_venue_from_crossref_then_datacite(self):
         store_record(

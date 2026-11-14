@@ -142,8 +142,18 @@ Les graphes de citations : données produites par le serveur, dessin et interact
 - **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
   télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
-  années (au-dessus, étirée comme à l'écran) et la légende du panneau (en dessous, renvoyée
-  à la ligne sur la largeur de l'image) sont redessinés depuis leur HTML. Le nom du fichier dit ce que montre l'image :
+  années (au-dessus, étirée comme à l'écran), la bande « Non daté » (ligne pointillée et
+  libellé, s'il y en a une à l'écran) et la légende du panneau (en dessous, renvoyée à la
+  ligne sur la largeur de l'image) sont redessinés depuis leur HTML. Sans survol, un point
+  ne dit pas quel article il est : l'image **nomme** donc certaines publications (#289),
+  d'un libellé court (`shortLabel` : nom du premier auteur et année, « Vaswani 2017 » ; à
+  défaut d'auteur, le début du titre). Avec une sélection, la publication sélectionnée et
+  ses voisins ; sans sélection, les publications `source` (la publication du graphe, ou le
+  corpus, y compris sur le graphe de la base pour la personne connectée). Chaque libellé,
+  sur un fond clair, va à droite du nœud, sinon à gauche, au-dessus ou en dessous : d'abord
+  à une place qui ne couvre aucun nœud, puis à une qui ne couvre qu'un nœud non nommé ; un
+  libellé sans place est omis (la sélection, puis les plus citées, passent d'abord). Les
+  libellés n'existent que sur l'image, pas à l'écran. Le nom du fichier dit ce que montre l'image :
   `graphe-corpus`, `graphe-publication-<id>`, suivi de `-selection-<id>` si une
   publication est sélectionnée, ou de `-zoom` si la vue n'est pas la vue d'ensemble. Pas
   de SVG : il demanderait une extension à embarquer.
