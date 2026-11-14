@@ -26,7 +26,8 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
-  chronologique : l'axe horizontal suit la date, et les articles non datés sont à gauche.
+  chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
+  bande sous la frise.
 - **Disposition** (#138, `layout.js`) : x suit la date ; la position verticale rapproche
   les publications qui se citent, sans dépendance. D'abord un **ordre** par la méthode du
   barycentre (chaque publication va vers la rangée moyenne de ses voisines, en
@@ -36,8 +37,23 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   (écart selon leur taille). Les rangées de départ sont espacées de 36 px quelle que soit
   la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est ramené à la hauteur du cadre, étiré ou comprimé : les nœuds gardent leur taille à l'écran, un dézoom ne les séparerait pas et perdrait de la largeur ; zoomer sépare ceux que la compression rapproche (#185). Sur le graphe du
   corpus de la base réelle : 51 croisements de liens au lieu de 147 avec une rangée par
-  publication dans l'ordre des dates. « Non daté » n'apparaît sur l'axe que s'il y a des
-  publications sans date.
+  publication dans l'ordre des dates.
+- **Publications non datées** (#288, `layout.js`, `band.js`) : sur une rangée sous la
+  frise, séparée par une ligne pointillée libellée « Non daté ». Elles traversaient toute
+  la frise depuis une colonne à gauche, avec des liens dont le sens ne se lisait plus.
+  Les publications datées sont disposées entre elles comme d'habitude. Une non datée est
+  placée d'après ses **sœurs**, les autres références datées des articles qui la citent :
+  une référence a à peu près l'âge des autres références du même article. Pour chaque
+  article qui la cite, le milieu de ses références datées (ou l'article lui-même s'il
+  n'en a pas d'autre) ; on garde **le plus ancien de ces milieux**, puisqu'une référence
+  est plus ancienne que tous les articles qui la citent. Une publication est plus
+  récente que ses propres références : jamais avant la plus récente qu'elle cite, et
+  c'est là qu'elle va si rien de daté ne la cite. Sans aucun lien daté, elles sont
+  réparties sur la largeur ; toutes sont ensuite écartées pour ne pas se chevaucher
+  (`spreadAlong`, `bandX`). La frise
+  commence à l'année la plus ancienne, et l'axe ne montre que des années. La ligne de la
+  bande suit le zoom, le déplacement et l'étirement d'une sélection, comme l'axe. Les liens
+  restent sans flèche, comme les autres.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
   `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée

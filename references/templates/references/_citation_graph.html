@@ -11,11 +11,21 @@
         makes the card taller.
     {% endcomment %}
     <div class="grid min-h-96 grid-cols-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm xl:flex-1 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div class="flex h-[70vh] min-h-96 flex-col xl:h-auto">
+        <div class="relative flex h-[70vh] min-h-96 flex-col xl:h-auto">
             <div id="citation-graph-axis"
                  class="relative h-7 shrink-0 overflow-hidden border-b border-gray-100 text-xs text-gray-500 select-none"
                  aria-hidden="true"></div>
             <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des citations"></div>
+            {% comment %}
+                The publications without a date, under the timeline (#288): a dashed line and its
+                label, placed by graph/band.js at the height of the band, when there are any.
+            {% endcomment %}
+            <div id="citation-graph-band"
+                 class="pointer-events-none absolute inset-x-0 border-t border-dashed border-gray-300 text-xs text-gray-500 select-none"
+                 aria-hidden="true"
+                 hidden>
+                <span class="ml-3 inline-block bg-white/90 px-1">Non daté</span>
+            </div>
         </div>
         <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
             <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
@@ -136,7 +146,8 @@
                         </li>
                     </ul>
                     <p class="text-gray-500">
-                        Axe horizontal : date de publication. Survolez un article pour voir son titre ;
+                        Axe horizontal : date de publication ; les articles non datés sont dans la
+                        bande du bas. Survolez un article pour voir son titre ;
                         cliquez pour le sélectionner, double-cliquez pour ouvrir sa fiche. Échap ou un
                         clic dans le vide désélectionne.
                     </p>

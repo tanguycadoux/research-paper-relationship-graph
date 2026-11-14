@@ -2,6 +2,7 @@
 // Entry point, loaded as an ES module after cytoscape.min.js (global `cytoscape`).
 
 import { drawYearAxis } from "./axis.js";
+import { bindUndatedBand } from "./band.js";
 import { bindExport } from "./export.js";
 import { bindFocus } from "./focus.js";
 import { placeNodes } from "./layout.js";
@@ -16,9 +17,11 @@ function render() {
     const graph = JSON.parse(document.getElementById("citation-graph-data").textContent);
     const years = yearRange(graph.nodes);
     const scale = makeScale(years, graph.nodes.length, container);
+    // bandY: the height of the band of the publications without a date, null without any.
+    const { elements, bandY } = placeNodes(graph.nodes, graph.edges, scale);
     const cy = cytoscape({
         container,
-        elements: [...placeNodes(graph.nodes, graph.edges, scale), ...graph.edges],
+        elements: [...elements, ...graph.edges],
         style: graphStyle(),
         // Axes are already scaled to the container; bindViewport fits the graph.
         layout: { name: "preset", fit: false },
@@ -31,10 +34,10 @@ function render() {
     const card = document.getElementById("citation-graph-card");
     bindInteractions(cy, card, bindFocus(cy, viewport, stretch));
     const axis = document.getElementById("citation-graph-axis");
-    const hasUndated = graph.nodes.some((n) => !n.data.date);
-    const drawAxis = () => drawYearAxis(axis, cy, years, scale, hasUndated, stretch);
+    const drawAxis = () => drawYearAxis(axis, cy, years, scale, stretch);
     cy.on("viewport stretch", drawAxis);
     drawAxis();
+    bindUndatedBand(cy, document.getElementById("citation-graph-band"), bandY, stretch);
     const legend = document.getElementById("citation-graph-legend");
     bindExport(cy, { axis, legend }, document.querySelector("[data-graph-export]"), viewport);
 }

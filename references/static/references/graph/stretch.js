@@ -48,6 +48,8 @@ export function makeStretch(cy) {
         // x of the graph for an x of the layout, and back (the year axis).
         x: (x) => current.cx + (x - current.cx) * current.sx,
         layoutX: (x) => current.cx + (x - current.cx) / current.sx,
+        // y of the graph for a y of the layout (the band of the publications without a date).
+        y: (y) => current.cy + (y - current.cy) * current.sy,
         apply,
     };
 }
