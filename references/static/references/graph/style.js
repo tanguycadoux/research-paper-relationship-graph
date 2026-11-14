@@ -39,6 +39,8 @@ export function graphStyle() {
                 // A ring of the surface colour separates overlapping nodes.
                 "border-width": onScreen(2),
                 "border-color": "white",
+                // No square halo when a node is clicked: Cytoscape draws one by default.
+                "overlay-opacity": 0,
             },
         },
         { selector: 'node[role = "source"]', style: { "background-color": color("source") } },
@@ -56,10 +58,13 @@ export function graphStyle() {
                 "z-index": 10,
             },
         },
-        // Straight edges, without arrows: a publication cites older ones, on its left.
+        // Straight edges: a publication cites older ones, on its left. An edge cannot be
+        // clicked or hovered (events: no) nor outlined: the selection goes through the nodes.
         {
             selector: "edge",
             style: {
+                events: "no",
+                "overlay-opacity": 0,
                 width: onScreen(1.25),
                 "line-color": color("edge"),
                 opacity: 0.85,
@@ -73,7 +78,18 @@ export function graphStyle() {
         // Selection (#61): the publication, its references and the publications citing it,
         // each with the colour of its relation; edges in a lighter shade of their nodes.
         { selector: ".faded", style: { opacity: 0.15 } },
+        // The selected publication keeps a dark ring. The soft round halo only shows while
+        // the node is pressed (:active), like Cytoscape's own, which is turned off above.
         { selector: "node.selected", style: { "border-width": onScreen(3), "border-color": "#0b0b0b" } },
+        {
+            selector: "node:active",
+            style: {
+                "underlay-color": "#0b0b0b",
+                "underlay-opacity": 0.12,
+                "underlay-padding": onScreen(6),
+                "underlay-shape": "ellipse",
+            },
+        },
         { selector: "node.reference-node", style: { "background-color": color("cited") } },
         { selector: "node.citing-node", style: { "background-color": color("citing") } },
         {

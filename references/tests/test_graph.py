@@ -114,8 +114,34 @@ class CitationGraphTests(TestCase):
         self.assertContains(response, "vendor/cytoscape/cytoscape.min.js")
         # The year axis is drawn outside the canvas, to stay in view (#62).
         self.assertContains(response, 'id="citation-graph-axis"')
-        # The information card of a selected publication, filled by the script (#61).
+        # The information card of a selected publication, filled by the script (#61). It is
+        # beside the graph, not over it (#291), and keeps its place with a hint.
         self.assertContains(response, 'id="citation-graph-card"')
+        self.assertContains(response, "Cliquez sur un article du graphe pour le décrire ici.")
+
+    def test_panel_holds_commands_summary_and_legend(self):
+        """
+        The panel beside the graph (#291): the commands, out of the frame, then what the
+        graph shows, then the legend; in this order, so that nothing moves on selection.
+        """
+        response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))
+        html = response.content.decode()
+        panel = html[html.index('aria-label="Informations et commandes du graphe"') :]
+        positions = [
+            panel.index(marker)
+            for marker in (
+                "data-graph-show-all",
+                "data-graph-export",
+                'id="citation-graph-card"',
+                'id="citation-graph-legend"',
+            )
+        ]
+        self.assertEqual(positions, sorted(positions))
+        # Three publications, two citations.
+        self.assertContains(response, "3 publications, 2 citations")
+        # The commands are no longer over the graph.
+        frame = html[html.index('id="citation-graph-axis"') : html.index("<aside")]
+        self.assertNotIn("data-graph-export", frame)
 
     def test_publication_graph_contains_the_citing_publications(self):
         graph = publication_graph(self.cited)
@@ -278,6 +304,9 @@ class TagGraphTests(TestCase):
         response = self.client.get(reverse("corpus_graph"), {"tag": "Projet/Groupe"})
         # The name of the exported image (graphe-corpus-tag-…, _citation_graph.html).
         self.assertEqual(response.context["active_tag_slug"], "projet-groupe")
+        # Without any citation, no graph, but the selector stays to choose another tag.
+        self.assertContains(response, "rien à afficher")
+        self.assertContains(response, 'id="graph-tag"')
 
     def test_an_unknown_tag_falls_back_to_the_whole_corpus(self):
         self.client.force_login(self.alice)

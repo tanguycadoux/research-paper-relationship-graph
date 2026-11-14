@@ -15,21 +15,6 @@
                 {% endif %}
             </p>
         </div>
-        {% if tag_choices %}
-            {# The graph of a tag and its subtags (#290), like the suggestions; sent as soon as it changes (static/js/autosubmit.js). #}
-            <form method="get" class="flex items-center gap-1" data-autosubmit>
-                <label for="graph-tag" class="mr-1 mb-0">Afficher</label>
-                <select id="graph-tag" name="tag" class="w-auto py-1 pr-7 pl-2">
-                    <option value="">Tout le corpus</option>
-                    {% for path, choice_label in tag_choices %}
-                        <option value="{{ path }}" {% if path == active_tag %}selected{% endif %}>{{ choice_label }}</option>
-                    {% endfor %}
-                </select>
-                <span data-autosubmit-button>
-                    {% button "Afficher le graphe" variant="secondary" icon="hub" icon_only=True %}
-                </span>
-            </form>
-        {% endif %}
     </header>
 
     {% include "references/_citation_graph.html" %}
