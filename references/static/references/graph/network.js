@@ -1,9 +1,11 @@
 // The network view (#195): no time axis, the positions come from Cytoscape's own
 // force-directed layout (cose), built in: no dependency. Linked publications are drawn
 // close together, in both directions: a selection zooms uniformly (focus.js), without
-// the stretch of the timeline.
+// the stretch of the timeline. A large network is laid out in a Web Worker
+// (network-worker.js, #202): the page keeps responding, with a message in the frame.
 
 import { nodeSizes } from "./style.js";
+import { LIVE_SIZES_MAX_ELEMENTS } from "./viewport.js";
 
 // Distance between two consecutive starting points on the spiral, in pixels.
 const START_SPACING = 30;
@@ -24,8 +26,9 @@ export const COSE = {
     fit: false,
     // Sizes are on the screen (#185): at the zoom of the layout (1), they are in pixels.
     nodeDimensionsIncludeLabels: false,
-    idealEdgeLength: () => 48,
-    nodeRepulsion: () => 16000,
+    // Numbers rather than functions: the options go to the Web Worker as they are.
+    idealEdgeLength: 48,
+    nodeRepulsion: 16000,
     nodeOverlap: 8,
     componentSpacing: 48,
     gravity: 0.5,
@@ -50,4 +53,54 @@ export function networkNodes(nodes) {
 // read the positions.
 export function layOutNetwork(cy) {
     cy.layout(COSE).run();
+}
+
+// cose reads the size of the nodes (with their border) from the style: in the Web Worker,
+// Cytoscape has no page and no style.js, so it gets the sizes of style.js at the zoom of
+// the layout (1). Checked: the positions are the same as in the page (docs/banc-graphe.md).
+export const LAYOUT_STYLE = [
+    { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 2 } },
+];
+
+// Up to this many elements (nodes and edges), cose takes less than about 100 ms: it runs in
+// the page, without a message that would only flash. Beyond, in a Web Worker: 2.9 s for a
+// graph of 1 800 publications, during which the page would not respond.
+const WORKER_MIN_ELEMENTS = LIVE_SIZES_MAX_ELEMENTS;
+
+function startWorker() {
+    try {
+        return new Worker(new URL("./network-worker.js", import.meta.url), { type: "module" });
+    } catch {
+        return null;
+    }
+}
+
+// The nodes of networkNodes with the positions of cose, computed in a Web Worker while
+// `waiting` (the message in the frame) shows; container: the frame of the graph, whose size
+// cose reads. Resolves to null on a small graph, or if the worker fails: the caller then
+// lays the graph out in the page (layOutNetwork).
+export function layOutAside(nodes, edges, container, waiting) {
+    const worker = nodes.length + edges.length > WORKER_MIN_ELEMENTS ? startWorker() : null;
+    if (!worker) {
+        return Promise.resolve(null);
+    }
+    waiting.hidden = false;
+    return new Promise((resolve) => {
+        const done = (positions) => {
+            worker.terminate();
+            waiting.hidden = true;
+            const placed = (node) => ({ ...node, position: positions[node.data.id] });
+            resolve(positions ? nodes.map(placed) : null);
+        };
+        const failed = (error) => {
+            console.error("Network layout failed in the Web Worker, done in the page instead:", error);
+            done(null);
+        };
+        worker.onmessage = ({ data }) => (data.positions ? done(data.positions) : failed(data.error));
+        worker.onerror = (event) => failed(event.message);
+        // The worker loads the same Cytoscape as the page.
+        const library = document.querySelector('script[src$="/cytoscape.min.js"]').src;
+        const size = { width: container.clientWidth, height: container.clientHeight };
+        worker.postMessage({ library, ...size, elements: [...nodes, ...edges] });
+    });
 }

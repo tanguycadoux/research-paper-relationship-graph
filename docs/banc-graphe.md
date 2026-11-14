@@ -28,7 +28,10 @@ projet. Ils ne changent pas le code de l'application.
   Python pur) :
   - pour une **page** de l'application : temps jusqu'à la réponse et jusqu'à
     `DOMContentLoaded` (les modules de `main.js` s'exécutent avant : disposition et
-    création du graphe), taille des données, étapes de la disposition, une écriture de
+    création du graphe, sauf un grand réseau, disposé dans un Web Worker), jusqu'à
+    l'affichage du graphe (marque `citation-graph-shown` de `main.js`, colonne `shown`),
+    la plus longue image pendant la disposition (`layoutFrameMax` : la page répond-elle ?
+    enregistrée par un script posé avant ceux de la page), taille des données, étapes de la disposition, une écriture de
     toutes les positions (ce que fait `stretch.js` à chaque image de l'animation de
     sélection), intervalles entre images pendant l'animation de sélection de la
     publication la plus reliée, captures ;
@@ -254,8 +257,54 @@ base de développement, tous donnent 0 recouvrement, de 9 à 65 ms :
   plus de 50 ms sur 30 survols, 4 en frise) : les nœuds y sont plus serrés et chaque
   survol redessine tout le canevas (limite connue, #202). Base de développement : 17 à
   22 ms partout.
-- La page reste bloquée 2,9 s sur la base du banc, au-delà de la limite de 1 s : la
-  piste 5 (Web Worker ou cache des positions) vaudrait aussi pour le réseau.
+- La page restait bloquée 2,9 s sur la base du banc, au-delà de la limite de 1 s : la
+  disposition se fait maintenant dans un Web Worker (voir la section suivante).
+
+## Survol léger et réseau disposé hors de la page (#202)
+
+Le survol affiche le titre dans une infobulle HTML (`hover.js`) ; au-delà de 600 éléments
+(`LIVE_SIZES_MAX_ELEMENTS`), il ne change plus aucune classe `hovered` (liens foncés), et la vue réseau dispose le
+graphe dans un Web Worker (`network-worker.js`). Mesuré le 14 novembre 2026, Chrome
+headless à 1 400 px.
+
+**Survol** (`frames.py`, 30 survols, médiane de 3 séries) : intervalle entre images,
+**médiane / 90e centile**, puis nombre d'images de plus de 50 ms. Les autres gestes
+(zoom, glisser, sélection) n'ont pas changé.
+
+| Graphe (éléments) | Avant | Après |
+|---|---|---|
+| Base du banc, frise (4 336) | 17 / 48, 2 lentes | **17 / 20**, 0 |
+| Base du banc, réseau (4 336) | 17 / 51, 24 lentes | **17 / 20**, 0 |
+| Synthétique 1 000 (3 471) | 37 / 73, 29 lentes | **17 / 19**, 0 |
+| Synthétique 2 000 (6 956) | 133 / 142, 30 lentes | **17 / 20**, 0 |
+| Base de développement (161), frise et réseau | libellé Cytoscape, liens foncés | inchangé : 17 / 19, 0 |
+
+**Réseau de la base du banc** (1 797 nœuds, 2 539 liens ; `bench.py`, médiane de 3
+chargements) :
+
+| | Avant (dans la page) | Après (Web Worker) |
+|---|---|---|
+| `DOMContentLoaded` | 3,7 s | **0,6 s** |
+| Disposition (`layout`) | 2,9 s | 3,0 s (aller-retour du worker compris) |
+| Graphe affiché (`shown`) | 3,7 s (avec `DOMContentLoaded`) | 4,0 s |
+| Plus longue image pendant la disposition | 3,6 s (page figée) | **17 ms** |
+
+- **Positions** : identiques à celles de la disposition dans la page (écart maximal 0 sur
+  les 1 797 nœuds, et en repli après un échec du worker). Il a fallu donner au worker la
+  taille du cadre : `cose` attire les nœuds vers son centre (`cy.width()`,
+  `cy.height()`, que Cytoscape sans affichage n'a pas), et une disposition `preset` à la
+  création, sans quoi Cytoscape pose tous les nœuds en (0, 0) et `cose` les sépare au
+  hasard (écarts de 300 à 700 px d'une fois à l'autre).
+- **Le graphe s'affiche 0,3 s plus tard** qu'avant (démarrage du worker, chargement de
+  Cytoscape, copie des éléments, puis création du graphe), mais la page est utilisable dès
+  0,6 s, avec le message « Disposition du graphe… » dans le cadre : pendant la
+  disposition, une évaluation DevTools répond en 1 ms et les images restent à 17 ms.
+- **Seuil** : l'aller-retour du worker coûte 70 à 90 ms sur 400 à 750 éléments
+  (démarrage et chargement de Cytoscape compris), autant que `cose` dans la page à cette
+  taille (20 ms pour les 161 éléments de la base de développement) : sous 600 éléments,
+  le worker ne ferait gagner que l'affichage d'un message de moins de 100 ms. Le seuil
+  des grands graphes est donc gardé.
+- La frise ne change pas : positions identiques à `main` sur la base de développement.
 
 ## Limites proposées et étapes qui les dépassent
 
@@ -271,7 +320,7 @@ base de développement, tous donnent 0 recouvrement, de 9 à 65 ms :
 
 ## Pistes d'optimisation
 
-Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #320, voir plus haut) ; 5 et 6 restent à décider.
+Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #320, voir plus haut), la 5 pour la vue réseau ; le cache des positions et la 6 restent à décider.
 
 1. **`clearEdges`** : ne l'appliquer que pendant les dernières itérations (les positions
    ont déjà convergé), et ne garder pour chaque nœud que les liens proches de lui en y,
@@ -284,10 +333,12 @@ Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #
    (balayage par tri) au lieu de toutes les paires à moins de 40 px.
 4. **Dessin pendant le mouvement** (fait, voir la série ci-dessus) : options de Cytoscape
    `textureOnViewport` et `hideEdgesOnViewport` au-delà d'un seuil, et tailles à l'écran
-   recalculées à la fin du zoom plutôt qu'à chaque image. Reste le survol, et l'image
-   longue à la fin d'un geste.
-5. **Ne pas bloquer la page** : disposition dans un Web Worker, avec un message
-   d'attente ; ou positions gardées en cache (navigateur) tant que les données du
-   graphe ne changent pas.
+   recalculées à la fin du zoom plutôt qu'à chaque image ; le survol par une infobulle
+   HTML au-delà du même seuil (fait, « Survol léger »). Reste l'image longue à la fin
+   d'un geste.
+5. **Ne pas bloquer la page** : fait pour la vue réseau (`cose` dans un Web Worker avec
+   un message d'attente, « Survol léger et réseau disposé hors de la page ») ; la frise
+   (0,3 s sur le banc) reste dans la page. Les positions gardées en cache (navigateur)
+   tant que les données du graphe ne changent pas restent à décider.
 6. **Graphe de la base** : au-delà d'un seuil, proposer de le limiter (corpus, tag,
    composante) plutôt que de tout dessiner.

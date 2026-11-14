@@ -95,7 +95,20 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   rapide que par défaut (`coolingFactor` 0,9 : 66 itérations au lieu de 690), avec une
   répulsion doublée qui compense une partie des recouvrements : 2,9 s au lieu de 27 s sur
   1 797 publications, 20 ms sur 76 ([banc-graphe.md](banc-graphe.md)). Les groupes sans
-  lien sont rangés par `cose` lui-même, côte à côte.
+  lien sont rangés par `cose` lui-même, côte à côte. **Au-delà de 600 éléments** (#202,
+  même seuil que les grands graphes), `cose` tourne dans un **Web Worker**
+  (`network-worker.js`, Cytoscape sans affichage, chargé depuis la même URL que la page) :
+  le cadre affiche « Disposition du graphe… » (`data-graph-waiting`, `role="status"`),
+  « Vue d'ensemble » et « Exporter (PNG) » sont désactivés jusqu'à ce que le graphe existe, et
+  la page reste utilisable ; le graphe est créé avec les positions reçues. Les positions
+  sont **les mêmes** qu'en disposant dans la page (vérifié sur la base du banc) : le worker
+  reçoit les tailles des nœuds (`LAYOUT_STYLE`, celles de `style.js` au zoom 1, bordure
+  comprise) et la taille du cadre, vers le centre duquel `cose` attire les nœuds ; il part
+  de la spirale par une disposition `preset` (sans elle, Cytoscape poserait tous les nœuds
+  en (0, 0), que `cose` séparerait au hasard). Si le worker échoue (navigateur sans worker
+  de module, script introuvable), la disposition se fait dans la page, comme sous le
+  seuil. Sous 600 éléments, `cose` prend moins de 100 ms environ : la disposition reste
+  dans la page, sans message qui ne ferait que clignoter.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
   `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
@@ -109,8 +122,13 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
   variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
   droits, gris, sans flèche : une
-  publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
-  ses liens. Seuls les nœuds réagissent à la souris : un lien ne se survole ni ne se clique
+  publication cite des publications plus anciennes, à sa gauche. Survoler un nœud affiche
+  son titre dans une **infobulle HTML** (`hover.js`, `data-graph-tooltip`) au-dessus du
+  nœud (en dessous s'il n'y a pas la place), centrée sur lui et gardée dans le cadre ; elle
+  disparaît quand la souris quitte le nœud ou le cadre, au début d'un clic ou d'un glisser
+  et à tout mouvement de la vue. Plus lisible qu'un libellé dans le canevas, que d'autres
+  nœuds pouvaient couvrir. Le survol fonce aussi ses liens, sauf sur un grand graphe (voir
+  « Grands graphes »). Seuls les nœuds réagissent à la souris : un lien ne se survole ni ne se clique
   (`events: no`), et Cytoscape ne dessine plus son halo carré au clic. Le nœud sélectionné
   porte un anneau sombre ; un halo rond discret (`underlay`) ne l'entoure que tant que la
   souris est enfoncée (`:active`).
@@ -204,9 +222,12 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
     son tour (32 images de plus de 50 ms pendant un zoom à 2 000 publications) : les
     **liens sont masqués** pendant le geste (`hideEdgesOnViewport`, 2 images lentes). Les
     deux gagnent autant jusqu'à 1 800 publications ; l'image garde les liens, d'où son
-    choix sous ce seuil.
-  Limites connues : le survol redessine tout le canevas (40 ms à 1 000 publications,
-  140 ms à 2 000) ; la réévaluation unique à la fin d'un zoom ou d'une sélection reste une
+    choix sous ce seuil ;
+  - le **survol** (`hover.js`) ne change aucune classe Cytoscape, ce qui redessinerait
+    tout le canevas (40 ms à 1 000 publications, 140 ms à 2 000) : l'infobulle seule, les
+    liens ne foncent pas. Le survol revient à 17 ms par image ;
+  - en vue réseau, la disposition se fait dans un Web Worker (voir « Vue Réseau »).
+  Limite connue : la réévaluation unique à la fin d'un zoom ou d'une sélection reste une
   image longue (190 ms sur 1 800 publications).
 - **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
   télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
@@ -233,8 +254,10 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
   `export.js` (export PNG),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
+  `network-worker.js` (la même dans un Web Worker, chargé comme module),
   `axis.js` (axe des années), `selection.js` (sélection
-  et carte), `style.js` (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
+  et carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
+  (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
   intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
