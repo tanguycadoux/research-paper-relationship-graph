@@ -1,6 +1,8 @@
 {% load ui %}
 {# The graph of a tag and its subtags (#290), like the suggestions; sent as soon as it changes (static/js/autosubmit.js). #}
 <form method="get" class="flex items-center gap-1" data-autosubmit>
+    {# The variants chosen in the URL stay (#195): the network of a tag stays a network. #}
+    {% for param, value in graph_kept_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}">{% endfor %}
     <label for="graph-tag" class="mr-1 mb-0">Afficher</label>
     <select id="graph-tag" name="tag" class="w-auto min-w-0 flex-1 py-1 pr-7 pl-2">
         <option value="">Tout le corpus</option>
