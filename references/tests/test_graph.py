@@ -410,6 +410,8 @@ class GraphViewTests(TestCase):
         for response in (network, timeline):
             self.assertContains(response, "data-graph-tooltip", count=1)
             self.assertContains(response, "pointer-events-none absolute z-10")
+            # Frosted glass, shared by what floats over the content (ui.GLASS_CLASSES).
+            self.assertContains(response, "backdrop-blur-md")
 
     def test_an_invalid_view_falls_back_to_the_timeline(self):
         response = self.client.get(reverse("base_graph"), {"vue": "cercle"})

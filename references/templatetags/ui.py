@@ -314,6 +314,14 @@ FILTER_BUTTON_ON = f"{FILTER_BUTTON_BASE} bg-blue-100 text-blue-800 hover:bg-blu
 # a click outside closes it, and opening another one closes it too. Under its button where
 # anchor positioning exists (flipped near the right edge), in the middle of the screen
 # elsewhere. The header styles (select-none…) are undone, for the filters of the columns.
+# Frosted glass (#202): what floats over the content (a tooltip, a floating panel) lets it
+# show through, blurred, under a light border and a soft shadow. Size, spacing and text are
+# left to the element.
+GLASS_CLASSES = (
+    "rounded-lg border border-white/70 bg-white/60 shadow-lg shadow-gray-900/10 "
+    "ring-1 ring-gray-900/5 backdrop-blur-md backdrop-saturate-150"
+)
+
 POPOVER_PANEL_CLASSES = (
     "w-64 rounded-lg border border-gray-200 bg-white p-3 text-left text-sm font-normal "
     "text-gray-900 shadow-lg select-text "
@@ -441,3 +449,9 @@ def message_toast(message):
 def popover_panel_classes():
     """{% popover_panel_classes %}: the classes of a panel opened by a button (popover)."""
     return POPOVER_PANEL_CLASSES
+
+
+@register.simple_tag
+def glass_classes():
+    """{% glass_classes %}: the frosted glass of what floats over the content."""
+    return GLASS_CLASSES
