@@ -44,7 +44,9 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
   droits, gris, sans flèche : une
   publication cite des publications plus anciennes, à sa gauche. Survoler un nœud fonce
-  ses liens.
+  ses liens. Seuls les nœuds réagissent à la souris : un lien ne se survole ni ne se clique
+  (`events: no`), et Cytoscape ne dessine plus son halo carré au clic. Le nœud sélectionné
+  porte un anneau sombre et un halo rond discret (`underlay`).
 - **Vue** (#141, `viewport.js`) : la vue d'ensemble (tout le graphe dans le cadre, avec
   une petite marge) est le zoom minimal, recalculé quand le cadre change de taille, et
   la vue ne sort jamais de cette emprise : le déplacement est ramené dans les bornes à
