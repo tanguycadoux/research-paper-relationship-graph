@@ -92,8 +92,22 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   (`viewport.within`) : jamais en deçà du zoom de la vue d'ensemble, et décalée du
   minimum pour ne pas en sortir. Pendant l'animation, le maintien dans les bornes attend
   (`viewport.hold`), puis s'applique de nouveau ; un zoom ou un déplacement à la main
-  pendant une sélection reste dans les bornes étirées. « Vue d'ensemble » pendant une
-  sélection annule l'étirement.
+  pendant une sélection reste dans les bornes étirées.
+- **Animation du recentrage** (#291) : une seule boucle (`requestAnimationFrame`) déplace
+  ensemble la vue et l'étirement. Ce qui est interpolé, c'est la plus petite des deux
+  fenêtres de la disposition (celle d'arrivée quand on zoome, celle de départ quand on
+  revient) : son rectangle à l'écran va de sa place à tout le cadre, ou l'inverse, avec
+  son centre en ligne droite et sa largeur et sa hauteur en progression géométrique, au
+  même rythme. Les deux axes se resserrent donc ensemble, et la sélection ne sort jamais
+  du cadre en route : une moyenne géométrique reste sous la linéaire, si bien que chaque
+  bord reste entre sa position de départ et celle d'arrivée. Le zoom (taille des nœuds,
+  #185) progresse aussi géométriquement ; l'étirement fait le reste sur chaque axe. La
+  dernière image est exactement la vue visée. Interpoler séparément le zoom et
+  l'étirement, comme d'abord, désynchronisait les axes (la largeur suivait la hauteur
+  avec retard) et faisait sortir la sélection du cadre à mi-course. Une nouvelle
+  sélection, Échap ou « Vue d'ensemble » repart de la vue du moment ; un zoom ou un
+  déplacement à la main arrête l'animation là où elle est. « Vue d'ensemble » pendant une
+  sélection y revient par la même animation (un redimensionnement du cadre, sans).
 - **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
   télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des

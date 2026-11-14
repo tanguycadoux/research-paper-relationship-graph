@@ -65,6 +65,8 @@ export function bindViewport(cy, container, showAllButton, stretch) {
     // While a selection animates the view and the stretch together, the bounds wait.
     let held = false;
     const showAllListeners = [];
+    // A move in progress may take over the button, to show the whole graph with a motion.
+    let showAllRequest = null;
     const bounds = () => stretchedBox(stretch.current(), whole.extent);
     const showsAll = () => {
         const pan = cy.pan();
@@ -130,7 +132,11 @@ export function bindViewport(cy, container, showAllButton, stretch) {
             updateButton();
         }
     };
-    showAllButton.addEventListener("click", showAll);
+    showAllButton.addEventListener("click", () => {
+        if (!showAllRequest?.()) {
+            showAll();
+        }
+    });
     // The container may change size after initialization (page layout, window resize).
     new ResizeObserver(() => {
         cy.resize();
@@ -143,5 +149,10 @@ export function bindViewport(cy, container, showAllButton, stretch) {
         within,
         hold,
         onShowAll: (listener) => showAllListeners.push(listener),
+        onShowAllRequest: (handler) => {
+            showAllRequest = handler;
+        },
+        // The view of the whole graph, unstretched: where the button goes back to.
+        wholeView: () => ({ zoom: whole.zoom, pan: { ...whole.pan } }),
     };
 }

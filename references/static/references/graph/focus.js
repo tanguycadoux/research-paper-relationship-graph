@@ -63,21 +63,65 @@ function aimFor(cy, box, limit, nodeCount) {
 }
 
 const lerp = (a, b, t) => a + (b - a) * t;
+// Sizes change by the same factor at each moment: a zoom looks even, not faster at first.
+const geometric = (a, b, t) => a * (b / a) ** t;
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
-// The centre of an identity stretch does not matter: it takes the other one, so that the
-// stretch grows from, or shrinks to, the centre of the selection.
-function lerpStretch(from, to, t) {
-    if (isIdentity(from)) {
-        from = { ...from, cx: to.cx, cy: to.cy };
-    } else if (isIdentity(to)) {
-        to = { ...to, cx: from.cx, cy: from.cy };
-    }
+// The part of the layout (unstretched coordinates: x is still a date) that a view shows
+// over the frame: {x1, x2, y1, y2}.
+function windowOf(cy, state) {
+    const { zoom, pan, stretch } = state;
+    const layoutX = (u) => stretch.cx + ((u - pan.x) / zoom - stretch.cx) / stretch.sx;
+    const layoutY = (v) => stretch.cy + ((v - pan.y) / zoom - stretch.cy) / stretch.sy;
+    return { x1: layoutX(0), x2: layoutX(cy.width()), y1: layoutY(0), y2: layoutY(cy.height()) };
+}
+
+// Where a window of the layout appears on the screen in a view: {x1, x2, y1, y2} in pixels.
+function onScreen(cy, state, area) {
+    const { zoom, pan, stretch } = state;
+    const screenX = (x) => (stretch.cx + (x - stretch.cx) * stretch.sx) * zoom + pan.x;
+    const screenY = (y) => (stretch.cy + (y - stretch.cy) * stretch.sy) * zoom + pan.y;
+    return { x1: screenX(area.x1), x2: screenX(area.x2), y1: screenY(area.y1), y2: screenY(area.y2) };
+}
+
+// One axis of a rectangle between two others: its centre linearly, its size
+// geometrically. A geometric mean stays under the linear one, so each edge stays between
+// where it starts and where it ends: nothing overshoots.
+function between(a1, a2, b1, b2, e) {
+    const centre = lerp((a1 + a2) / 2, (b1 + b2) / 2, e);
+    const size = geometric(a2 - a1, b2 - b1, e);
+    return [centre - size / 2, centre + size / 2];
+}
+
+// The view, between two others, at eased progress e (#291). What moves is the smaller of
+// the two windows of the layout (the one shown at the end when zooming in, at the start
+// when zooming out): its rectangle on the screen goes from where it is to the whole frame,
+// or back. Both axes grow by the same factor at each moment, in log, so they close in
+// together, and the selection never leaves the frame on the way. The zoom, geometric too,
+// sets the size of the nodes on the screen (#185); the stretch makes up the rest on each
+// axis, around the centre of the window.
+function viewBetween(cy, from, to, e) {
+    const a = windowOf(cy, from);
+    const b = windowOf(cy, to);
+    const zoomingIn = (b.x2 - b.x1) * (b.y2 - b.y1) <= (a.x2 - a.x1) * (a.y2 - a.y1);
+    const area = zoomingIn ? b : a;
+    const frameRect = { x1: 0, x2: cy.width(), y1: 0, y2: cy.height() };
+    const start = zoomingIn ? onScreen(cy, from, area) : frameRect;
+    const end = zoomingIn ? frameRect : onScreen(cy, to, area);
+    const [left, right] = between(start.x1, start.x2, end.x1, end.x2, e);
+    const [top, bottom] = between(start.y1, start.y2, end.y1, end.y2, e);
+    // Pixels per unit of the layout on each axis, and the window that it gives.
+    const kx = (right - left) / (area.x2 - area.x1);
+    const ky = (bottom - top) / (area.y2 - area.y1);
+    const x1 = area.x1 - left / kx;
+    const y1 = area.y1 - top / ky;
+    const centre = { x: x1 + cy.width() / kx / 2, y: y1 + cy.height() / ky / 2 };
+    const zoom = geometric(from.zoom, to.zoom, e);
     return {
-        sx: lerp(from.sx, to.sx, t),
-        sy: lerp(from.sy, to.sy, t),
-        cx: lerp(from.cx, to.cx, t),
-        cy: lerp(from.cy, to.cy, t),
+        zoom,
+        stretch: { sx: kx / zoom, sy: ky / zoom, cx: centre.x, cy: centre.y },
+        // The centre of the stretch does not move: on the centre of the frame.
+        pan: { x: cy.width() / 2 - centre.x * zoom, y: cy.height() / 2 - centre.y * zoom },
     };
 }
 
@@ -93,34 +137,20 @@ export function bindFocus(cy, viewport, stretch) {
             viewport.hold(false);
         }
     };
-    // The stretch and the view move together, frame by frame: the view is interpolated
-    // around the graph point at the centre of the frame, which keeps the motion straight.
+    // One loop moves the view and the stretch together (viewBetween), frame by frame; it
+    // ends on the target exactly. A new move starts from where the view is.
     const moveTo = (target, complete) => {
         stop();
         cy.stop();
         const from = { stretch: stretch.current(), zoom: cy.zoom(), pan: { ...cy.pan() } };
-        const centreOf = (zoom, pan) => ({
-            x: (cy.width() / 2 - pan.x) / zoom,
-            y: (cy.height() / 2 - pan.y) / zoom,
-        });
-        const fromCentre = centreOf(from.zoom, from.pan);
-        const toCentre = centreOf(target.zoom, target.pan);
         const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const start = performance.now();
         viewport.hold(true);
         const step = (now) => {
             const t = still ? 1 : Math.min(1, (now - start) / DURATION);
-            const eased = easeInOutCubic(t);
-            const zoom = lerp(from.zoom, target.zoom, eased);
-            const centre = {
-                x: lerp(fromCentre.x, toCentre.x, eased),
-                y: lerp(fromCentre.y, toCentre.y, eased),
-            };
-            stretch.apply(lerpStretch(from.stretch, target.stretch, eased));
-            cy.viewport({
-                zoom,
-                pan: { x: cy.width() / 2 - centre.x * zoom, y: cy.height() / 2 - centre.y * zoom },
-            });
+            const view = t < 1 ? viewBetween(cy, from, target, easeInOutCubic(t)) : target;
+            stretch.apply(view.stretch);
+            cy.viewport({ zoom: view.zoom, pan: view.pan });
             if (t < 1) {
                 frame = requestAnimationFrame(step);
                 return;
@@ -135,6 +165,8 @@ export function bindFocus(cy, viewport, stretch) {
             frame = requestAnimationFrame(step);
         }
     };
+    // Zooming or panning by hand stops a move where it is.
+    cy.on("scrollzoom pinchzoom dragpan", stop);
     const show = (nodes) => {
         const box = centres(nodes, stretch);
         const limit = viewport.wholeZoom() * MAX_ZOOM_RATIO;
@@ -150,7 +182,16 @@ export function bindFocus(cy, viewport, stretch) {
             });
         }
     };
-    // Showing the whole graph again (button, resized frame) ends the stretch at once.
+    // The button shows the whole graph again with the same motion; a resized frame
+    // (or no stretch to undo) shows it at once.
+    viewport.onShowAllRequest(() => {
+        if (isIdentity(stretch.current()) && frame === null) {
+            return false;
+        }
+        before = null;
+        moveTo({ ...viewport.wholeView(), stretch: IDENTITY });
+        return true;
+    });
     viewport.onShowAll(() => {
         stop();
         before = null;
