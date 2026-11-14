@@ -1,7 +1,8 @@
 # Banc d'essai des graphes
 
 Mesures de la disposition et de l'affichage des graphes de citations sur de grands
-graphes (#202), avant toute optimisation. Vue d'ensemble du projet :
+graphes (#202) : avant toute optimisation, puis après la disposition par groupes et la
+simulation allégée (voir « Après l'optimisation de la disposition »). Vue d'ensemble du projet :
 [architecture.md](architecture.md) ; les graphes eux-mêmes : [graphes.md](graphes.md).
 
 ## Méthode
@@ -45,9 +46,13 @@ projet. Ils ne changent pas le code de l'application.
   dans une page de l'application avec ses modules (style, vue, étirement, sélection,
   axe) ; leurs positions sont posées sans la disposition (x : la date, y : au hasard),
   qui est mesurée par `bench.py`. Son port DevTools est réglable (`--port`).
-- **`bench.js`**, exécuté dans la page : `layout.js` est relu, ses fonctions internes
-  exportées depuis une copie chargée comme module, et les étapes de `verticalPositions`
-  chronométrées une à une, comme elle les enchaîne (300 itérations).
+- **`bench.js`**, exécuté dans la page : `placeNodes` est appelé avec un objet `timings`,
+  dans lequel `layout.js` additionne le temps de chacune de ses étapes (et le nombre de
+  recherches de couples, `refreshes`) ; puis les croisements de liens du résultat sont
+  comptés. Jusqu'à #230, `bench.js` relisait `layout.js` et en refaisait les étapes ; les
+  colonnes de la première série viennent de là.
+- Deux bancs peuvent tourner en même temps : chacun son port DevTools
+  (`--devtools-port`, ou la variable `GRAPH_BENCH_DEVTOOLS_PORT` ; 9420 par défaut).
 
 Médiane de 3 répétitions (une seule au-delà de 1 000 nœuds), sur la machine de
 développement.
@@ -175,6 +180,43 @@ Ce qui n'est pas réglé :
 - la sélection d'un graphe de 2 000 publications a un 90e centile de 141 ms, pour la même
   raison (une image longue au saut).
 
+## Après l'optimisation de la disposition
+
+Disposition par groupes (#230), non datées sur plusieurs rangées (#318), et simulation
+qui ne parcourt que les couples à portée (`clearEdges`, `separateClose` : pistes 1 à 3
+ci-dessous), mesurées le même jour sur la même base et la même machine. « Recherches » :
+les recherches des couples à portée (`nearEdges` et `nearPairs`, au plus toutes les
+10 itérations par groupe).
+
+| Graphe | `placeNodes` avant | après | Recherches | `clearEdges` | Page jusqu'à `DOMContentLoaded` | Croisements avant | après |
+|---|---|---|---|---|---|---|---|
+| Base du banc (1 797 nœuds, 13 groupes) | 11,2 s | **0,30 s** | 115 ms (153) | 123 ms | 11,5 s → **1,5 s** | 42 952 | 49 838 |
+| Publication la plus citée (35 nœuds) | 6 ms | 4 ms | 0,5 ms (15) | 2 ms | 73 ms → 66 ms | — | 0 |
+| Base de développement (76 nœuds, 3 groupes) | 35 ms | 6 ms | 0,5 ms (19) | 3 ms | 99 ms | 78 | 67 |
+
+| Nœuds synthétiques | `placeNodes` avant | après | Recherches | `clearEdges` |
+|---|---|---|---|---|
+| 500 | 2,7 s | 0,81 s | 266 ms | 519 ms |
+| 1 000 | 10,8 s | 2,5 s | 796 ms | 1,7 s |
+| 2 000 | 45,9 s | 8,7 s | 2,7 s | 5,9 s |
+| 4 000 | 181 s | 26,7 s | 8,0 s | 18,3 s |
+
+- **La base du banc passe sous la seconde** (0,3 s), et la page s'affiche en 1,5 s au lieu
+  de 11,5 s (le reste : données, création du graphe Cytoscape).
+- **Croisements** : sur le banc, les groupes séparés n'ont plus de croisements entre eux,
+  mais un peu plus à l'intérieur (42 952 → 49 838 au total) ; l'approximation des
+  recherches n'y est pour rien (50 436 avec une recherche exacte à chaque itération). Sur
+  la base de développement, 78 → 67. Dans la vue d'ensemble, les écarts entre les groupes
+  prennent un peu de hauteur : 99 recouvrements de nœuds au lieu de 83 sur la base de
+  développement, que le zoom sépare toujours.
+- **Les graphes synthétiques restent lents** au-delà de 500 nœuds : très denses (chaque
+  publication cite 2 ou 3 publications de toute sa composante, 292 000 croisements pour
+  1 000 nœuds), beaucoup de couples y sont vraiment à portée, et `clearEdges` les traite
+  à chaque itération. Les vrais graphes en ont beaucoup moins (6 000 couples en moyenne
+  sur la base du banc).
+- **Le dessin** (images pendant un zoom ou une sélection) n'a pas changé : c'est la
+  piste 4, traitée à part.
+
 ## Limites proposées et étapes qui les dépassent
 
 - **Disposition : 1 s.** Elle est dépassée dès 300 à 350 nœuds (2,1 s à 500, en n²). En
@@ -187,9 +229,9 @@ Ce qui n'est pas réglé :
   de Cytoscape et la réévaluation du style (tailles fixes à l'écran, #185) à chaque image.
 - **Serveur : sans souci** à cette taille (moins de 0,5 s, 4 requêtes, 0,7 Mo de JSON).
 
-## Pistes d'optimisation (à décider, rien n'est fait)
+## Pistes d'optimisation
 
-Classées par gain attendu pour l'effort :
+Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #320, voir plus haut) ; 5 et 6 restent à décider.
 
 1. **`clearEdges`** : ne l'appliquer que pendant les dernières itérations (les positions
    ont déjà convergé), et ne garder pour chaque nœud que les liens proches de lui en y,
