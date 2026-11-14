@@ -1,22 +1,17 @@
 // Measures of the layout of a citation graph (#202), run in a page of the application by
-// bench.py (Chrome DevTools). The code of the application is not changed: layout.js is
-// fetched, its internal functions are exported from a copy loaded as a module, and the
-// steps of verticalPositions are timed one by one, as it runs them.
+// bench.py (Chrome DevTools). The code of the application is not changed: placeNodes is
+// called with a timings object, in which layout.js adds up the time of each step.
 //
 // Called as an expression with OPTIONS replaced by a JSON object:
 //   {graph: "page" | {nodes: n, components: k, undated: share, seed: s}, repeat: r,
 //    width: px, height: px}
-// Returns the medians of the timings, in milliseconds, and the sizes of the work.
+// Returns the medians of the timings, in milliseconds, the number of crossings of edges
+// in the result, and the sizes of the work.
 
 (async (OPTIONS) => {
     const base = "/static/references/graph/";
-    const source = await (await fetch(`${base}layout.js`)).text();
-    const exported = source.replace(/from "\.\//g, `from "${location.origin}${base}`) +
-        "\nexport { linkPairs, closePairs, crossedEdges, pullLinked, clearEdges, separateClose };\n";
-    const url = URL.createObjectURL(new Blob([exported], { type: "text/javascript" }));
-    const layout = await import(url);
-    const { makeScale, yearRange, fractionalYear } = await import(`${base}scale.js`);
-    const { nodeSizes } = await import(`${base}style.js`);
+    const layout = await import(`${base}layout.js`);
+    const { makeScale, yearRange } = await import(`${base}scale.js`);
 
     // A synthetic graph: components of decreasing size, each publication citing 2 or 3
     // older ones of its component, the most cited more often (preferential attachment),
@@ -85,45 +80,43 @@
         return [performance.now() - start, result];
     };
 
-    const runs = [];
-    for (let r = 0; r < OPTIONS.repeat; r++) {
-        const run = {};
-        const years = yearRange(graph.nodes);
-        const scale = makeScale(years, graph.nodes.length, frame);
-        // The whole layout, as main.js calls it.
-        [run.placeNodes] = time(() => layout.placeNodes(graph.nodes, graph.edges, scale));
-        // Its steps, on the dated publications, as placeOnTimeline runs them.
-        const dated = graph.nodes.filter((n) => n.data.date);
-        const byDate = [...dated].sort(
-            (a, b) => fractionalYear(a.data.date) - fractionalYear(b.data.date),
-        );
-        const sizesAll = nodeSizes(graph.nodes);
-        const sizeOf = new Map(graph.nodes.map((n, i) => [n.data.id, sizesAll[i]]));
-        const links = layout.linkPairs(byDate, graph.edges);
-        let rows;
-        [run.barycentreOrder, rows] = time(() => layout.barycentreOrder(byDate.length, links));
-        const xs = byDate.map((n) => scale.x(fractionalYear(n.data.date)));
-        const sizes = byDate.map((n) => sizeOf.get(n.data.id));
-        let close;
-        let crossed;
-        [run.closePairs, close] = time(() => layout.closePairs(xs));
-        [run.crossedEdges, crossed] = time(() => layout.crossedEdges(xs, links));
-        const startYs = rows.map((row) => row * 36);
-        const ys = [...startYs];
-        run.pullLinked = 0;
-        run.clearEdges = 0;
-        run.separateClose = 0;
-        for (let step = 0; step < 300; step++) {
-            run.pullLinked += time(() => layout.pullLinked(ys, links))[0];
-            run.clearEdges += time(() => layout.clearEdges(xs, ys, crossed, sizes))[0];
-            run.separateClose += time(() => layout.separateClose(ys, close, startYs, sizes))[0];
+    // Edges that cross, in the result (sharing an end is not crossing).
+    const crossings = (elements) => {
+        const at = new Map(elements.map((e) => [e.data.id, e.position]));
+        const segments = graph.edges
+            .map(({ data }) => [data.source, data.target, at.get(data.source), at.get(data.target)])
+            .filter(([, , p, q]) => p && q);
+        const side = (p, q, r) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+        let count = 0;
+        for (let i = 0; i < segments.length; i++) {
+            const [a, b, p1, p2] = segments[i];
+            for (let j = i + 1; j < segments.length; j++) {
+                const [c, d, q1, q2] = segments[j];
+                if (a === c || a === d || b === c || b === d) continue;
+                if (side(p1, p2, q1) * side(p1, p2, q2) < 0 && side(q1, q2, p1) * side(q1, q2, p2) < 0) {
+                    count++;
+                }
+            }
         }
-        run.closePairCount = close.length;
-        run.crossedCount = crossed.length;
-        runs.push(run);
+        return count;
+    };
+
+    const runs = [];
+    let elements;
+    for (let r = 0; r < OPTIONS.repeat; r++) {
+        const timings = {};
+        const scale = makeScale(yearRange(graph.nodes), graph.nodes.length, frame);
+        // The whole layout, as main.js calls it, and its steps.
+        let placed;
+        [timings.placeNodes, placed] = time(() =>
+            layout.placeNodes(graph.nodes, graph.edges, scale, timings),
+        );
+        elements = placed.elements;
+        runs.push(timings);
     }
     const result = { nodes: graph.nodes.length, edges: graph.edges.length };
     result.undated = graph.nodes.filter((n) => !n.data.date).length;
+    result.crossings = crossings(elements);
     for (const key of Object.keys(runs[0])) {
         result[key] = Math.round(median(runs.map((run) => run[key])) * 10) / 10;
     }

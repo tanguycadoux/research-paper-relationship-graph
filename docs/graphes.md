@@ -29,15 +29,36 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
   bande sous la frise.
 - **Disposition** (#138, `layout.js`) : x suit la date ; la position verticale rapproche
-  les publications qui se citent, sans dépendance. D'abord un **ordre** par la méthode du
-  barycentre (chaque publication va vers la rangée moyenne de ses voisines, en
-  20 passes), puis une petite **simulation verticale** : les publications liées
-  s'attirent, une publication s'écarte des liens qui passent sur elle (aucun lien caché
-  derrière un nœud), et deux publications proches en date ne se chevauchent pas
-  (écart selon leur taille). Les rangées de départ sont espacées de 36 px quelle que soit
-  la taille du cadre : la disposition ne dépend pas de la fenêtre. Le résultat est ramené à la hauteur du cadre, étiré ou comprimé : les nœuds gardent leur taille à l'écran, un dézoom ne les séparerait pas et perdrait de la largeur ; zoomer sépare ceux que la compression rapproche (#185). Sur le graphe du
-  corpus de la base réelle : 51 croisements de liens au lieu de 147 avec une rangée par
-  publication dans l'ordre des dates.
+  les publications qui se citent, sans dépendance. Chaque **groupe** de publications
+  reliées par des citations (composante connexe, #230) est disposé seul : d'abord un
+  **ordre** par la méthode du barycentre (chaque publication va vers la rangée moyenne de
+  ses voisines, en 20 passes), puis une petite **simulation verticale** : les
+  publications liées s'attirent, une publication s'écarte des liens qui passent sur elle
+  (aucun lien caché derrière un nœud), et deux publications proches en date ne se
+  chevauchent pas (écart selon leur taille). Les rangées de départ sont espacées de
+  36 px quelle que soit la taille du cadre : la disposition ne dépend pas de la fenêtre.
+- **Groupes empilés** (#230) : les groupes se suivent de haut en bas, le plus grand en
+  premier, séparés par un écart qui n'est pas comprimé (32 px, et tous les écarts ensemble
+  au plus le quart de la hauteur). Des domaines sans lien entre eux (aimants
+  supraconducteurs, apprentissage profond, cancer…) ne s'entremêlent plus. Ensemble, ils
+  sont ramenés à la hauteur du cadre, chacun en proportion de sa hauteur, étirés ou
+  comprimés : les nœuds gardent leur taille à l'écran, un dézoom ne les séparerait pas et
+  perdrait de la largeur ; zoomer sépare ceux que la compression rapproche (#185). Les
+  publications **sans aucun lien** vont, à leur date, sur des rangées sous les groupes
+  (`packRows` : la première rangée où elles ne recouvrent personne). Sur le graphe de la
+  base de développement (76 publications, trois groupes) : 67 croisements de liens au lieu
+  de 78 quand les groupes étaient disposés ensemble.
+- **Rapidité** (#202, mesures dans [banc-graphe.md](banc-graphe.md)) : la simulation ne
+  parcourt que les couples assez proches pour agir. Les couples publication / lien et les
+  couples de publications proches en date plus loin que leur portée (64 px) plus une marge
+  (64 px) sont mis de côté. Ils sont cherchés à nouveau quand l'un d'eux a pu entrer à
+  portée (`stillApart` : le mouvement depuis la dernière recherche est séparé en une
+  contraction d'ensemble, qui rapproche lentement les publications proches, et un reste),
+  et au plus toutes les 10 itérations : un grand groupe ne s'immobilise jamais tout à
+  fait. Pour trouver les publications sous un lien sans les parcourir toutes, elles sont
+  rangées par blocs de 32 dates voisines, triés par y (`nearEdges`). Sur la base du banc
+  (1 797 publications) : 0,3 s au lieu de 11,2 s, pour un résultat équivalent
+  (49 838 croisements, contre 50 436 avec une recherche exacte à chaque itération).
 - **Publications non datées** (#288, `layout.js`, `band.js`) : sur une rangée sous la
   frise, séparée par une ligne pointillée libellée « Non daté ». Elles traversaient toute
   la frise depuis une colonne à gauche, avec des liens dont le sens ne se lisait plus.
@@ -49,8 +70,10 @@ Les graphes de citations : données produites par le serveur, dessin et interact
   est plus ancienne que tous les articles qui la citent. Une publication est plus
   récente que ses propres références : jamais avant la plus récente qu'elle cite, et
   c'est là qu'elle va si rien de daté ne la cite. Sans aucun lien daté, elles sont
-  réparties sur la largeur ; toutes sont ensuite écartées pour ne pas se chevaucher
-  (`spreadAlong`, `bandX`). La frise
+  réparties sur la largeur (`bandX`). Trop nombreuses pour une seule rangée, elles en
+  prennent plusieurs, au plus quatre (#318) : chacune va sur la première rangée où elle
+  tient à sa place ; au-delà de quatre, elle est poussée le long de la rangée qui finit le
+  plus à gauche (`packRows`). La frise
   commence à l'année la plus ancienne, et l'axe ne montre que des années. La ligne de la
   bande suit le zoom, le déplacement et l'étirement d'une sélection, comme l'axe. Les liens
   restent sans flèche, comme les autres.

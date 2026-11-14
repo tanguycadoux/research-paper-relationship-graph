@@ -27,7 +27,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CHROME = os.environ.get("CHROME", "/usr/bin/google-chrome")
-PORT = 9420
+# The DevTools port of the headless Chrome: --devtools-port, or GRAPH_BENCH_DEVTOOLS_PORT,
+# so that two benchmarks can run at the same time.
+PORT = int(os.environ.get("GRAPH_BENCH_DEVTOOLS_PORT", 9420))
 CY = "document.getElementById('citation-graph')._cyreg.cy"
 
 
@@ -109,14 +111,14 @@ class DevTools:
         Path(path).write_bytes(base64.b64decode(data))
 
 
-def start_chrome(width, height):
+def start_chrome(width, height, port=PORT):
     profile = tempfile.mkdtemp(prefix="graph-bench-")
     chrome = subprocess.Popen(
         [
             CHROME,
             "--headless=new",
             "--hide-scrollbars",
-            f"--remote-debugging-port={PORT}",
+            f"--remote-debugging-port={port}",
             f"--window-size={width},{height}",
             f"--user-data-dir={profile}",
             "about:blank",
@@ -126,7 +128,7 @@ def start_chrome(width, height):
     )
     for _ in range(100):
         try:
-            tabs = json.load(urllib.request.urlopen(f"http://127.0.0.1:{PORT}/json"))
+            tabs = json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/json"))
             break
         except OSError:
             time.sleep(0.1)
@@ -229,9 +231,10 @@ def main():
     parser.add_argument("--repeat", type=int, default=3)
     parser.add_argument("--width", type=int, default=1400)
     parser.add_argument("--height", type=int, default=1000)
+    parser.add_argument("--devtools-port", type=int, default=PORT)
     args = parser.parse_args()
     Path(args.out).mkdir(parents=True, exist_ok=True)
-    chrome, tools = start_chrome(args.width, args.height)
+    chrome, tools = start_chrome(args.width, args.height, args.devtools_port)
     try:
         if args.session:
             tools.call("Network.setCookie", name="sessionid", value=args.session, url=args.server)
