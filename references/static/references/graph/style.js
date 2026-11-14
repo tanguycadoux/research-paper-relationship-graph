@@ -78,12 +78,12 @@ export function graphStyle() {
         // Selection (#61): the publication, its references and the publications citing it,
         // each with the colour of its relation; edges in a lighter shade of their nodes.
         { selector: ".faded", style: { opacity: 0.15 } },
-        // The selected publication: a dark ring, and a soft round halo around it.
+        // The selected publication keeps a dark ring. The soft round halo only shows while
+        // the node is pressed (:active), like Cytoscape's own, which is turned off above.
+        { selector: "node.selected", style: { "border-width": onScreen(3), "border-color": "#0b0b0b" } },
         {
-            selector: "node.selected",
+            selector: "node:active",
             style: {
-                "border-width": onScreen(3),
-                "border-color": "#0b0b0b",
                 "underlay-color": "#0b0b0b",
                 "underlay-opacity": 0.12,
                 "underlay-padding": onScreen(6),
