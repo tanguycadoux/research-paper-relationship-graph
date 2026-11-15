@@ -26,6 +26,11 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
   compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
   toasts (`static/js/toasts.js`).
+- **Ajouter une publication** (`_add_publication.html`, #277) : un seul composant, sur
+  l'accueil, « Mon corpus » et « Publications » : DOI, ISBN ou arXiv, « Ajouter à mon corpus »
+  (avec la bibliographie) ou « Ajouter à lire » (sans, #234) ; retour à la page du
+  formulaire. Une publication sans identifiant se saisit à la main
+  (`/publications/new/`), dans la base seulement.
 - **Retirer du corpus** (`_corpus_remove_form.html`, tableaux et fiche) : immédiat, sauf si
   l'entrée a des tags ou un statut de lecture, que le retrait efface : le bouton ouvre alors
   une confirmation en popover, et le message dit ce qui a été perdu (#280). `corpus_ids`

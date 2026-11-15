@@ -4,13 +4,17 @@
 {% block title %}Publications · {% endblock title %}
 
 {% block content %}
-    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <header class="mb-6">
         <h1>Publications</h1>
-        {% if user.is_authenticated %}
-            {% url 'publication_create' as create_url %}
-            {% button "Ajouter une publication" url=create_url icon="add" %}
-        {% endif %}
     </header>
+
+    {% if user.is_authenticated %}
+        <div class="mb-6">
+            {% card title="Ajouter une publication" %}
+                {% include "references/_add_publication.html" with field_id="add-identifier" %}
+            {% endcard %}
+        </div>
+    {% endif %}
 
     {% if publications or active_filters %}
         {% filter_summary %}

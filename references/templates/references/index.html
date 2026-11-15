@@ -19,6 +19,12 @@
     {% url 'author_list' as authors_url %}
     {% url 'base_graph' as base_graph_url %}
     {% if user.is_authenticated %}
+        {# The main gesture first (#277). #}
+        <div class="mb-6">
+            {% card title="Ajouter une publication" %}
+                {% include "references/_add_publication.html" with field_id="home-identifier" %}
+            {% endcard %}
+        </div>
         {# Dashboard (#151): my corpus, what waits for an action, the common base. #}
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <section aria-labelledby="corpus-title" class="lg:col-span-2">
@@ -51,7 +57,7 @@
                         </ul>
                     {% else %}
                         <p class="mb-4 text-sm text-gray-600">
-                            Votre corpus est vide : ajoutez une publication par son DOI ou son ISBN depuis « Mon corpus », ou depuis la liste des publications.
+                            Votre corpus est vide : ajoutez une première publication par son DOI, son ISBN ou son identifiant arXiv, ci-dessus.
                         </p>
                     {% endif %}
                     <div class="flex flex-wrap gap-2">
