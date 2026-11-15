@@ -30,6 +30,9 @@ class PublicationForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        # A refused DOI or ISBN is not missing: its own error is enough (#272).
+        if any(name in self.errors for name in ("doi", "isbn", "title")):
+            return cleaned_data
         if not any(cleaned_data.get(name) for name in ("doi", "isbn", "title")):
             raise forms.ValidationError("Indiquez au moins un DOI, un ISBN ou un titre.")
         return cleaned_data
