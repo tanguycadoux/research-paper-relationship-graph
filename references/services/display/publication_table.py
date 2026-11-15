@@ -4,7 +4,7 @@ that lists them: first author, references to identify, missing metadata, referen
 not imported.
 """
 
-from django.db.models import Count, IntegerField, OuterRef, Subquery, Value
+from django.db.models import Count, Exists, IntegerField, OuterRef, Subquery, Value
 from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Cast, Coalesce, Concat, Trim
 
@@ -40,11 +40,37 @@ def with_first_author(publications):
     )
 
 
+class CorpusIds(set):
+    """
+    Ids of the publications of the user's corpus, for the add/remove buttons; with_tags
+    and with_status, those whose removal would lose something, to confirm it (#280).
+    """
+
+    def __init__(self, ids=(), with_tags=(), with_status=()):
+        super().__init__(ids)
+        self.with_tags = set(with_tags)
+        self.with_status = set(with_status)
+
+
 def corpus_ids(user):
-    """Ids of the publications of the user's corpus, for the add/remove buttons."""
+    """The CorpusIds of the user, in one query."""
     if not user.is_authenticated:
-        return set()
-    return set(UserPublication.objects.filter(user=user).values_list("publication_id", flat=True))
+        return CorpusIds()
+    rows = (
+        UserPublication.objects.filter(user=user)
+        .annotate(
+            has_tags=Exists(
+                UserPublication.tags.through.objects.filter(userpublication=OuterRef("pk"))
+            )
+        )
+        .values_list("publication_id", "has_tags", "reading_status")
+    )
+    rows = list(rows)
+    return CorpusIds(
+        (pk for pk, _, _ in rows),
+        with_tags=(pk for pk, has_tags, _ in rows if has_tags),
+        with_status=(pk for pk, _, status in rows if status),
+    )
 
 
 def with_references_available(publications):
