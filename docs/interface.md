@@ -48,6 +48,14 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   l'entrée a des tags ou un statut de lecture, que le retrait efface : le bouton ouvre alors
   une confirmation en popover, et le message dit ce qui a été perdu (#280). `corpus_ids`
   rend ces entrées en une requête (`CorpusIds.with_tags`, `with_status`).
+- **Citer** (`_citation_panel.html`, `services/display/citations.py`, #286) : sur la fiche,
+  un popover donne la référence en APA (7ᵉ édition) et en IEEE, et l'entrée BibTeX de la
+  publication seule (`bibtex_entry` de l'export du corpus). Les citations sont mises en
+  forme sur le serveur, à partir de la base : auteurs canoniques dans l'ordre de signature,
+  titre lisible, année, et revue, volume, numéro, pages et éditeur de la réponse Crossref
+  gardée ; une prépublication arXiv est citée par son identifiant. Le popover s'ouvre et se
+  ferme sans JavaScript, le texte reste sélectionnable ; `static/js/copy_citation.js`
+  ajoute « Copier » (HTML, qui garde l'italique, et texte brut ; texte brut pour BibTeX).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce
