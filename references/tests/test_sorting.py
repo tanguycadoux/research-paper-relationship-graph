@@ -74,13 +74,28 @@ class PublicationSortTests(TestCase):
         # Sorted by year, newest first: a click reverses it; the page starts over.
         self.assertRegex(
             response.content.decode(),
-            r'<th scope="col" aria-sort="descending">\s*<div[^>]*>\s*<a href="\?sort=year"',
+            r'<th scope="col" class="hidden sm:table-cell" aria-sort="descending">\s*<div[^>]*>\s*'
+            r'<a href="\?sort=year"',
         )
         self.assertContains(response, 'href="?sort=title"')
         self.assertContains(response, 'href="?sort=author"')
         # Not sortable, but filterable (#115).
         self.assertNotContains(response, "sort=identifier")
         self.assertContains(response, 'popovertarget="filter-identifier"')
+
+    def test_sort_links_for_the_columns_hidden_below_sm(self):
+        # #334: below sm, the author and year columns are hidden, not their sort.
+        response = self.client.get(reverse("publication_list"), {"page": "2"})
+        html = response.content.decode()
+        links = html.split('<span class="text-gray-600">Trier par</span>')[1].split("</p>")[0]
+        self.assertIn('href="?sort=year"', links)
+        self.assertIn('aria-current="true"', links)
+        self.assertIn('href="?sort=author"', links)
+        self.assertIn('href="?sort=title"', links)
+
+    def test_hidden_columns_are_summed_up_under_the_title(self):
+        response = self.client.get(reverse("publication_list"))
+        self.assertContains(response, 'class="block text-sm text-gray-600 sm:hidden"')
 
     def test_headers_keep_the_search(self):
         response = self.client.get(reverse("search"), {"q": "dune", "sort": "title"})
