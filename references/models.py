@@ -369,12 +369,37 @@ class CitedReference(models.Model):
     def __str__(self):
         return f"{self.source} → {self.label}"
 
+    # The fields of a Crossref reference that say what work it is: some publishers (AIP)
+    # give only the key, sometimes the year (#273).
+    DESCRIBING_FIELDS = (
+        "author",
+        "article-title",
+        "volume-title",
+        "series-title",
+        "journal-title",
+        "volume",
+        "first-page",
+    )
+
     @property
     def label(self):
         """Best human-readable description of the cited work."""
         if self.target:
             return str(self.target)
-        return self.unstructured or self.structured_description() or "Référence sans description"
+        if self.is_described:
+            return self.unstructured or self.structured_description()
+        if self.doi:
+            return f"DOI {self.doi}"
+        if self.year:
+            return f"Crossref ne donne que le numéro et l'année ({self.year}) de cette référence"
+        return "Crossref ne donne que le numéro de cette référence"
+
+    @property
+    def is_described(self):
+        """Whether the source says what the cited work is: a text, a title, an author… (#273)."""
+        return bool(self.unstructured.strip()) or any(
+            str(self.raw.get(name, "")).strip() for name in self.DESCRIBING_FIELDS
+        )
 
     @property
     def year(self):
