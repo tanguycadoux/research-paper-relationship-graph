@@ -288,6 +288,28 @@ class ReferenceLabelTests(SimpleTestCase):
         self.assertIsNone(initial_values(ref).get("year"))
 
     def test_never_the_technical_key(self):
+        # Some publishers (AIP) give only the key: say so (#273).
         self.assertEqual(
-            self.label({"key": "2024020419552444200_r1"}), "Référence sans description"
+            self.label({"key": "2024020419552444200_r1"}),
+            "Crossref ne donne que le numéro de cette référence",
         )
+        self.assertEqual(
+            self.label({"key": "r1", "year": "1977"}),
+            "Crossref ne donne que le numéro et l'année (1977) de cette référence",
+        )
+
+    def test_described_or_not(self):
+        for raw, unstructured, described in (
+            ({"key": "r1"}, "", False),
+            ({"key": "r1", "year": "1977"}, "", False),
+            ({"key": "r1"}, "Smith J. 1965.", True),
+            ({"key": "r1", "author": "Arp"}, "", True),
+            ({"key": "r1", "journal-title": "J. Appl. Phys."}, "", True),
+        ):
+            with self.subTest(raw=raw, unstructured=unstructured):
+                ref = CitedReference(raw=raw, unstructured=unstructured)
+                self.assertEqual(ref.is_described, described)
+
+    def test_a_doi_alone(self):
+        ref = CitedReference(raw={"key": "r1", "DOI": "10.1/x"}, doi="10.1/x")
+        self.assertEqual(ref.label, "DOI 10.1/x")

@@ -81,3 +81,35 @@ class ReferencesToIdentifyTests(TestCase):
     def test_summary_when_everything_is_linked(self):
         response = self.client.get(reverse("publication_detail", args=[self.cited.pk]))
         self.assertNotContains(response, "à identifier :")
+
+
+class UndescribedReferenceTests(TestCase):
+    """A reference of which the source gives only the key (#273)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user("alice")
+        cls.pub = Publication.objects.create(doi="10.1063/1.323913", title="Stresses")
+        CitedReference.objects.create(source=cls.pub, position=0, raw={"key": "r1"})
+        CitedReference.objects.create(source=cls.pub, position=2, raw={"key": "r3", "year": "1975"})
+        CitedReference.objects.create(source=cls.pub, position=3, unstructured="Arp V. Stresses.")
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    @patch("references.services.corrections.candidates.search_datacite_title")
+    @patch("references.services.corrections.candidates.search_crossref")
+    def test_the_identification_page_points_to_the_article(self, crossref, datacite):
+        response = self.client.get(reverse("reference_identify", args=[self.pub.pk, 2]))
+        self.assertContains(response, "Crossref ne donne que le numéro et l&#x27;année (1975)")
+        self.assertContains(response, "<strong>[3]</strong>", html=True)
+        self.assertContains(response, 'href="https://doi.org/10.1063/1.323913"')
+        self.assertContains(response, "Aucune recherche : la source ne donne aucun texte")
+        crossref.assert_not_called()  # nothing to search with
+        datacite.assert_not_called()
+
+    def test_the_publication_says_how_many(self):
+        response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
+        self.assertEqual(response.context["references_undescribed"], 2)
+        self.assertContains(response, "dont 2 que Crossref ne décrit pas")
+        self.assertContains(response, "lisez-les dans")

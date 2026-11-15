@@ -275,7 +275,9 @@
                 {% else %}
                     ne sont reliées
                 {% endif %}
-                à aucune publication : à identifier.
+                à aucune publication : à identifier{% if references_undescribed %},
+                    dont {{ references_undescribed }} que Crossref ne décrit pas ({% if references_undescribed == 1 %}lisez-la{% else %}lisez-les{% endif %} dans
+                    {% if publication.doi %}{% external_link "https://doi.org/"|add:publication.doi "l'article" %}{% else %}l'article{% endif %}){% endif %}.
             {% elif references_unidentifiable %}
                 Toutes les références sont reliées à une publication ou déclarées non identifiables.
             {% elif cited_references %}
@@ -341,7 +343,8 @@
                                 {% if ref.target %}
                                     <a class="{% row_title_classes %}" href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
                                 {% else %}
-                                    <span class="text-gray-700">{{ ref.label }}</span>
+                                    {# Without any text from the source: told apart at a glance (#273). #}
+                                    <span class="{% if ref.is_described %}text-gray-700{% else %}text-gray-500 italic{% endif %}">{{ ref.label }}</span>
                                 {% endif %}
                                 {% if ref.unidentifiable %}
                                     {% badge "non identifiable" %}
