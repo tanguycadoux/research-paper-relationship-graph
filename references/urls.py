@@ -17,6 +17,7 @@ from .views import (
     publications,
     search,
     suggestions,
+    title_search,
 )
 
 urlpatterns = [
@@ -45,6 +46,8 @@ urlpatterns = [
     path(
         "publications/new/", publications.PublicationCreateView.as_view(), name="publication_create"
     ),
+    # Find a publication by its title, to add it (#309)
+    path("publications/by-title/", title_search.title_search_view, name="publication_title_search"),
     path(
         "publications/<int:pk>/",
         publications.PublicationDetailView.as_view(),

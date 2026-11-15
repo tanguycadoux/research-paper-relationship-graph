@@ -56,3 +56,28 @@ qui citent celle-ci partout (`GET /works?filter=cites:W…`).
   moment. Un citant sans DOI renvoie à OpenAlex, sans ajout possible.
 - OpenAlex peut avoir deux fiches pour un même article (prépublication et version
   publiée) : elles apparaissent telles quelles.
+
+## Chercher une publication par son titre
+
+Pour ajouter une publication dont on ne connaît pas le DOI (#309) :
+`/publications/by-title/`, atteinte par « Chercher par titre » sous le champ « Ajouter ».
+On y saisit un titre (au moins deux mots significatifs), et si on les connaît, le nom du
+premier auteur et l'année.
+
+- **Sources** : la base d'abord (`candidates.publications_titled`), pour ne pas recréer
+  une publication connue ; puis Crossref (`query.bibliographic` sur « auteur titre année »,
+  10 résultats) et DataCite (le titre). Une requête par source à l'envoi du formulaire,
+  jamais à la frappe ; les réponses sont gardées 10 minutes dans le cache de Django, si
+  bien que revenir aux résultats après un ajout ne demande rien.
+- **Vérification** : celle des candidats d'une référence (#160, `candidates.select_likely`),
+  avec deux différences. Sans auteur saisi, aucun n'est exigé. Le titre saisi peut n'être
+  qu'un morceau du vrai titre : un candidat qui en contient presque tous les mots est
+  gardé même s'il est bien plus long, et les candidats sont classés par part des mots
+  saisis retrouvés, le titre identique d'abord, puis dans l'ordre des sources (8 au plus).
+- **Ajout** : par les boutons des tableaux de publications : par sa fiche si la
+  publication est dans la base, sinon par son DOI (vérification doi.org, file des
+  récupérations, corpus ou « à lire »). Aucune publication n'est créée avant ce clic.
+
+Mesuré sur 8 publications de la base de développement : avec le titre entier comme avec
+ses six premiers mots, la bonne publication est la première proposée dans les 16 cas.
+`query.bibliographic` a trouvé autant que `query.title` + `query.author` sur ces cas : il est gardé.

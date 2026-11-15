@@ -124,6 +124,7 @@ references/          application principale
     discovery/       découverte d'articles
       suggestions.py  publications citées par plusieurs articles du corpus ou d'un tag
       incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
+      title_search.py  publication cherchée par son titre pour l'ajouter (base, Crossref, DataCite)
     display/         affichage
       search.py      analyse de la barre de recherche, comparaison sans casse ni accents
       sorting.py     colonnes triables des tableaux (publications, auteurs)

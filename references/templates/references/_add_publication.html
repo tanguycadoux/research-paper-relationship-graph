@@ -1,8 +1,9 @@
 {% comment %}
 The one way to add a publication (#277), the same on the home page, « Mon corpus »
 and « Publications »: by its DOI, ISBN or arXiv identifier, into my corpus (with its
-bibliography) or to read (without it, until the status changes, #234). A publication
-without identifier, into the base only, is typed by hand on its own page. Context:
+bibliography) or to read (without it, until the status changes, #234); by its title on
+its own page (#309). A publication without identifier, into the base only, is typed by
+hand on its own page. Context:
 field_id, unique in the page; after the addition, back to the page holding the form.
 {% endcomment %}
 {% load ui %}
@@ -25,6 +26,7 @@ field_id, unique in the page; after the addition, back to the page holding the f
     </div>
     <p id="{{ field_id }}-help" class="text-sm text-gray-600">
         « À lire » : sans sa bibliographie, importée quand vous changerez son statut.
+        Seulement le titre ? <a href="{% url 'publication_title_search' %}">Chercher par titre</a>.
         Sans identifiant ? <a href="{% url 'publication_create' %}">Saisir à la main</a>, dans la base seulement.
         Plusieurs ? <a href="{% url 'corpus' %}#import">Importer un fichier</a>.
     </p>

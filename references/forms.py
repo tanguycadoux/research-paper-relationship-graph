@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import Author, Publication
+from .services.discovery.title_search import is_searchable
 from .services.identifiers.arxiv import typed_doi
 from .services.identifiers.doi import is_valid_doi, normalize_doi
 from .services.identifiers.isbn import is_valid_isbn, normalize_isbn
@@ -193,3 +194,25 @@ class MergePublicationForm(forms.Form):
         label="DOI, ISBN, arXiv ou lien d'une publication de l'application", max_length=500
     )
     confirm = forms.BooleanField(required=False, widget=forms.HiddenInput)
+
+
+class TitleSearchForm(forms.Form):
+    """A publication searched by its title, to add it without its DOI (#309)."""
+
+    title = forms.CharField(label="Titre", max_length=500, help_text="Au moins deux mots du titre.")
+    author = forms.CharField(
+        label="Premier auteur",
+        required=False,
+        max_length=100,
+        help_text="Son nom, facultatif : il départage les titres proches.",
+    )
+    year = forms.IntegerField(label="Année", required=False, min_value=1000, max_value=2100)
+
+    def clean_title(self):
+        title = " ".join(self.cleaned_data["title"].split())
+        if not is_searchable(title):
+            raise forms.ValidationError("Écrivez au moins deux mots du titre.")
+        return title
+
+    def clean_author(self):
+        return " ".join(self.cleaned_data.get("author", "").split())

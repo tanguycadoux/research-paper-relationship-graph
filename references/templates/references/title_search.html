@@ -1,0 +1,56 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Chercher par titre · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6">
+        <p class="text-sm text-gray-500">
+            <a href="{% url 'publication_list' %}">Publications</a>
+        </p>
+        <h1 class="mt-1">Chercher une publication par son titre</h1>
+        <p class="mt-1 text-gray-600">
+            Sans DOI : dans la base, chez Crossref et chez DataCite. Rien n'est ajouté avant votre choix.
+        </p>
+    </header>
+
+    <div class="space-y-6">
+        {% card %}
+            {# GET: the results have an address, and the page comes back to them after an addition. #}
+            <form method="get" class="space-y-4">
+                {% form_errors form %}
+                {% field form.title %}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {% field form.author %}
+                    {% field form.year %}
+                </div>
+                {% button "Chercher" icon="search" %}
+            </form>
+        {% endcard %}
+
+        {% if searched %}
+            <section aria-labelledby="results-title">
+                <h2 id="results-title" class="mb-3">Publications trouvées</h2>
+                {% if failed %}
+                    <div class="mb-3">
+                        {% alert "Une source n'a pas répondu : la liste peut être incomplète. Relancez la recherche plus tard." variant="warning" %}
+                    </div>
+                {% endif %}
+                {% card %}
+                    {% if candidates %}
+                        <ul class="divide-y divide-gray-200">
+                            {% for candidate in candidates %}
+                                {% include "references/_title_candidate.html" %}
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-gray-600">
+                            Aucune publication proche de ce titre. Essayez avec moins de mots, ou ajoutez le nom du premier auteur.
+                            Sans DOI ? <a href="{% url 'publication_create' %}">Saisir à la main</a>, dans la base seulement.
+                        </p>
+                    {% endif %}
+                {% endcard %}
+            </section>
+        {% endif %}
+    </div>
+{% endblock content %}

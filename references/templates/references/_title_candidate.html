@@ -1,0 +1,73 @@
+{% comment %}
+A publication found from a title (#309), with what was checked, and the buttons that add
+it: by its page if it is in the base, else by its DOI (the publication is created only
+then). Context: candidate (services/corrections/candidates.Candidate), user_pub_ids.
+{% endcomment %}
+{% load ui %}
+<li class="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
+    <div class="min-w-0 space-y-1">
+        <p class="font-medium">
+            {% if candidate.publication %}
+                <a class="{% row_title_classes %}"
+                   href="{% url 'publication_detail' candidate.publication.pk %}">{{ candidate.title }}</a>
+            {% else %}
+                {{ candidate.title }}
+            {% endif %}
+        </p>
+        <p class="text-sm text-gray-600">
+            {{ candidate.authors|join:", " }}
+            {% if candidate.year %}· {{ candidate.year }}{% endif %}
+            {% if candidate.venue %}· {{ candidate.venue }}{% endif %}
+        </p>
+        <p class="flex flex-wrap items-center gap-2 text-sm">
+            {% if candidate.doi %}
+                {% external_link "https://doi.org/"|add:candidate.doi candidate.doi class="break-all" %}
+            {% endif %}
+            {% if candidate.kind %}
+                {% badge candidate.kind %}
+            {% endif %}
+            {% if candidate.publication.pk in user_pub_ids %}
+                {% badge "Dans votre corpus" variant="success" %}
+            {% elif candidate.publication %}
+                {% badge "Dans la base" variant="primary" %}
+            {% endif %}
+        </p>
+        <p class="flex flex-wrap gap-2">
+            {% if candidate.same_title %}
+                {% badge "Titre identique" variant="success" icon="check_circle" %}
+            {% else %}
+                {% badge "Titre proche" icon="info" %}
+            {% endif %}
+            {% if candidate.year_found %}
+                {% badge "Année concordante" variant="success" icon="check_circle" %}
+            {% endif %}
+            {% if candidate.author_found %}
+                {% badge "Premier auteur concordant" variant="success" icon="check_circle" %}
+            {% elif candidate.author_found is False %}
+                {% badge "Autre premier auteur" icon="info" %}
+            {% endif %}
+        </p>
+    </div>
+    <div class="shrink-0">
+        {% if candidate.publication.pk in user_pub_ids %}
+            {% url 'publication_detail' candidate.publication.pk as detail_url %}
+            {% button "Voir la fiche" url=detail_url variant="secondary" %}
+        {% else %}
+            {# « + » last, as in the tables of publications. #}
+            {% if candidate.publication %}
+                {% url 'corpus_add' candidate.publication.pk as add_url %}
+            {% else %}
+                {% url 'corpus_add_by_identifier' as add_url %}
+            {% endif %}
+            <form method="post" action="{{ add_url }}" class="flex gap-1">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                {% if not candidate.publication %}
+                    <input type="hidden" name="identifier" value="{{ candidate.doi }}">
+                {% endif %}
+                {% button "Ajouter à mon corpus, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                {% button "Ajouter à mon corpus" variant="success-light" icon="add" icon_only=True %}
+            </form>
+        {% endif %}
+    </div>
+</li>
