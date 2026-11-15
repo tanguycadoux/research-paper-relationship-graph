@@ -105,12 +105,48 @@ class PublicationDetailView(DetailView):
         )
         context["details"] = crossref_details(pub)
         context["abstract"] = publication_abstract(pub)
-        context["authors"] = numbered_affiliations(
-            pub.authorpublication_set.select_related("author")
-            .prefetch_related("organizations__ancestors")
-            .order_by("order")
-        )
+        context.update(long_lists_context(self.request, pub, context["cited_references"]))
         return context
+
+
+# Long lists folded (#269): a LIGO article has 1 012 authors, « Hallmarks of Cancer »
+# 247 references; the page was 9 000 to 13 600 px high.
+AUTHORS_SHOWN = 20
+REFERENCES_SHOWN = 100
+
+
+def long_lists_context(request, pub, cited_references):
+    """
+    The authors (the first 20 and the last one, with the affiliations of these only)
+    and the references (the first 100) shown, unless ?auteurs=tous or
+    ?references=toutes asks for all of them; and the links that unfold them.
+    """
+    slots = list(
+        pub.authorpublication_set.select_related("author")
+        .prefetch_related("organizations__ancestors")
+        .order_by("order")
+    )
+    all_authors = request.GET.get("auteurs") == "tous" or len(slots) <= AUTHORS_SHOWN + 1
+    shown = slots if all_authors else [*slots[:AUTHORS_SHOWN], slots[-1]]
+    all_references = request.GET.get("references") == "toutes"
+    references = list(cited_references)
+    return {
+        "authors": numbered_affiliations(shown),
+        "author_total": len(slots),
+        "authors_hidden": len(slots) - len(shown),
+        "authors_shown": AUTHORS_SHOWN,
+        "all_authors_url": query_with(request, auteurs="tous") + "#authors-title",
+        "shown_references": references if all_references else references[:REFERENCES_SHOWN],
+        "references_hidden": 0 if all_references else max(len(references) - REFERENCES_SHOWN, 0),
+        "all_references_url": query_with(request, references="toutes") + "#references-title",
+    }
+
+
+def query_with(request, **params):
+    query = request.GET.copy()
+    for key, value in params.items():
+        query[key] = value
+    return f"?{query.urlencode()}"
 
 
 def incoming_citations_context(request, pub):
