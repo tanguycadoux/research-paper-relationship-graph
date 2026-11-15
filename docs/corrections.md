@@ -26,9 +26,16 @@ reliées sans un clic sur « C'est celle-ci » :
 
 - Crossref sur le texte complet de la référence (`query.bibliographic`), DataCite sur
   son titre seul (actes JACoW, prépublications arXiv ; sur le texte complet, DataCite
-  exige tous les mots et ne trouve rien), le DOI d'un code JACoW écrit dans la
-  référence, et les publications de la base au titre proche. Le titre est le champ
-  structuré, ou la phrase qui suit les auteurs dans le texte brut.
+  exige tous les mots et ne trouve rien), le DOI de l'identifiant écrit dans la
+  référence (code JACoW ou identifiant arXiv, par le même chemin que l'import :
+  `written_identifiers.written_doi`, #311), et les publications de la base au titre
+  proche. Le titre est le champ structuré, ou la phrase qui suit les auteurs dans le
+  texte brut.
+- Le candidat d'un identifiant écrit vient en premier, avec la pastille « Identifiant
+  écrit dans la référence », **quel que soit son titre** : la référence le nomme, et
+  c'est souvent parce que son titre est abrégé, différent de celui de la source ou
+  absent qu'il n'a pas été relié à l'import. Il n'est proposé que si DataCite connaît son
+  DOI.
 - Le score de Crossref ne se compare pas d'une recherche à l'autre : chaque candidat est
   vérifié ici. Titres proches dans les deux sens (le plus long au plus deux fois plus
   long), année à ±1 près, premier auteur exigé si le titre n'est que proche ; copies

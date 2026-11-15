@@ -264,3 +264,75 @@ class CandidateViewTests(CandidateTestCase):
     def test_manual_title_prefilled_from_the_text(self, *_mocks):
         response = self.client.get(self.url("reference_identify"))
         self.assertContains(response, 'value="Recurrent neural network grammars"')
+
+
+ARXIV_DOI = "10.48550/arxiv.1512.03385"
+# Its title is abbreviated in the reference: it was not linked at import.
+ABBREVIATED = {
+    "key": "he",
+    "unstructured": "K. He et al. Deep residual learning. CoRR, arXiv:1512.03385, 2015.",
+}
+# Another title than the one of arXiv: the checks of the candidates would leave it out.
+DIFFERENT = {"key": "he2", "unstructured": "He K. Residual nets. CoRR, arXiv:1512.03385, 2015."}
+ARXIV_RECORD = datacite_record(
+    ARXIV_DOI, "Deep Residual Learning for Image Recognition", "He", 2015
+)
+
+
+@patch("references.services.corrections.candidates.search_datacite_title", return_value=[])
+@patch("references.services.corrections.candidates.search_crossref", return_value=[])
+@patch("references.services.corrections.candidates.fetch_datacite_works")
+class WrittenIdentifierCandidateTests(TestCase):
+    """The identifier written in a reference is a candidate, whatever its title (#311)."""
+
+    def setUp(self):
+        self.source = Publication.objects.create(title="Source")
+        with_crossref(
+            self.source,
+            {"message": {"title": ["Source"], "reference": [ABBREVIATED, JACOW, DIFFERENT]}},
+        )
+        parse_publication(self.source)
+
+    def ref(self, position):
+        return CitedReference.objects.get(source=self.source, position=position)
+
+    def test_an_arxiv_identifier_written(self, works, _crossref, _datacite):
+        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+        found, _failed = candidates.candidates_for(self.ref(0))
+        works.assert_called_once_with([ARXIV_DOI])
+        self.assertEqual([(c.doi, c.written) for c in found], [(ARXIV_DOI, True)])
+        self.assertEqual(found[0].kind, "Prépublication arXiv")
+
+    def test_shown_whatever_its_title(self, works, _crossref, _datacite):
+        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+        found, _failed = candidates.candidates_for(self.ref(2))
+        self.assertEqual([c.doi for c in found], [ARXIV_DOI])
+        self.assertFalse(candidates.is_likely(found[0]))
+
+    def test_a_jacow_code_by_the_same_path(self, works, _crossref, _datacite):
+        works.return_value = {JACOW_DOI: JACOW_RECORD}
+        found, _failed = candidates.candidates_for(self.ref(1))
+        self.assertEqual(
+            [(c.doi, c.kind, c.written) for c in found], [(JACOW_DOI, "Actes JACoW", True)]
+        )
+
+    def test_first_before_the_other_candidates(self, works, crossref, _datacite):
+        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+        crossref.return_value = [
+            crossref_item("10.1109/cvpr.2016.90", "Deep residual learning", "He", 2016)
+        ]
+        found, _failed = candidates.candidates_for(self.ref(0))
+        self.assertEqual([c.doi for c in found], [ARXIV_DOI, "10.1109/cvpr.2016.90"])
+
+    def test_unknown_to_datacite_it_is_not_proposed(self, works, _crossref, _datacite):
+        works.return_value = {}
+        found, _failed = candidates.candidates_for(self.ref(0))
+        self.assertEqual(found, [])
+
+    def test_the_page_says_where_it_comes_from(self, works, _crossref, _datacite):
+        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+        self.client.force_login(get_user_model().objects.create_user("alice"))
+        response = self.client.get(reverse("reference_identify", args=[self.source.pk, 0]))
+        self.assertContains(response, "Identifiant écrit dans la référence")
+        self.assertContains(response, ARXIV_DOI)
+        self.assertFalse(CitedReference.objects.filter(target__isnull=False).exists())
