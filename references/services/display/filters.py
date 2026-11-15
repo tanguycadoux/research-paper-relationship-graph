@@ -8,9 +8,9 @@ it. Server side, before the pagination, like the sort.
 import re
 from dataclasses import dataclass, field
 
-from django.db.models import F, Q
+from django.db.models import Exists, F, OuterRef, Q
 
-from ...models import UserPublication
+from ...models import CitedReference, UserPublication
 from ..corpus import tags
 from .search import Normalized, author_named, contains
 
@@ -115,6 +115,31 @@ class TagFilter:
         return f"« {tags.label(value)} »"
 
 
+class ToIdentifyFilter:
+    """
+    Publications with references to identify (#276), ?to_identify=1. No column: the
+    « À identifier » link of the navigation sets it.
+    """
+
+    kind = "flag"
+    params = ("to_identify",)
+
+    def read(self, data, errors):
+        return True if data.get("to_identify") == "1" else None
+
+    def apply(self, queryset, value):
+        return queryset.filter(
+            Exists(
+                CitedReference.objects.filter(
+                    source=OuterRef("pk"), target__isnull=True, unidentifiable=False
+                )
+            )
+        )
+
+    def describe(self, value):
+        return "à identifier"
+
+
 @dataclass
 class ActiveFilters:
     values: dict = field(default_factory=dict)
@@ -203,8 +228,14 @@ CORPUS = Filters(
 
 
 def corpus_filters(user):
-    """My references: the columns of CORPUS, and the tags of the user."""
-    return Filters(CORPUS.columns | {"tag": ("Tag", TagFilter(user))})
+    """My corpus: the columns of CORPUS, the tags of the user, the references to identify."""
+    return Filters(
+        CORPUS.columns
+        | {
+            "tag": ("Tag", TagFilter(user)),
+            "to_identify": ("Références", ToIdentifyFilter()),
+        }
+    )
 
 
 AUTHORS = Filters(

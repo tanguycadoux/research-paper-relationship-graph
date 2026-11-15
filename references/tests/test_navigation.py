@@ -21,6 +21,13 @@ class CurrentUrlTests(TestCase):
         self.assertEqual(current_url(self.URLS, "/corpus/graph/"), "/corpus/graph/")
         self.assertEqual(current_url(self.URLS, "/publications/3/edit/"), "/publications/")
 
+    def test_a_link_with_a_query_is_current_on_its_filtered_page(self):
+        user = get_user_model().objects.create_user("hugo")
+        html = render_navigation("/corpus/?to_identify=1&sort=year", user)
+        self.assertIn("À identifier", html.split('aria-current="page"')[1].split("</a>")[0])
+        html = render_navigation("/corpus/?sort=year", user)
+        self.assertIn("Publications", html.split('aria-current="page"')[1].split("</a>")[0])
+
     def test_root_matches_only_itself(self):
         self.assertIsNone(current_url(["/", "/publications/"], "/conflicts/"))
         self.assertEqual(current_url(["/", "/publications/"], "/"), "/")
@@ -98,7 +105,11 @@ class NavigationCounterTests(TestCase):
             source="crossref",
         )
         html = render_navigation("/", self.user)
-        self.assertIn('<span class="sr-only">, 1 à identifier</span>', self.link(html, "/corpus/"))
+        self.assertIn(
+            '<span class="sr-only">, 1 en attente</span>', self.link(html, "/corpus/?to_identify=1")
+        )
+        # Publications has no counter: the count is not read as a number of publications.
+        self.assertNotIn("sr-only", self.link(html, "/corpus/"))
         self.assertIn('<span class="sr-only">, 1 en attente</span>', self.link(html, "/conflicts/"))
 
     def test_the_menu_of_a_group_shows_the_total_of_its_counters(self):
@@ -109,7 +120,7 @@ class NavigationCounterTests(TestCase):
 
     def test_nothing_at_zero(self):
         html = render_navigation("/", self.user)
-        self.assertNotIn("en attente", html)
+        self.assertNotIn("sr-only", self.link(html, "/conflicts/"))
 
     def test_visitors_have_no_counter_and_no_query(self):
         with self.assertNumQueries(0):
