@@ -6,12 +6,17 @@ itself, as before: the development server alone still works.
 """
 
 import logging
-from datetime import timedelta
+from collections import Counter
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from ...models import FetchRequest, FetchWorker
+from ..display.wording import count
 from ..sources.external_records import has_metadata
 from .books import import_queued_book
 from .importer import import_publication
@@ -122,3 +127,101 @@ def finish(request, status, *, error="", publication=None):
     if publication is not None:
         changes["publication"] = publication
     FetchRequest.objects.filter(pk=request.pk).update(**changes)
+
+
+# Progress of the requests of a user (#379)
+
+
+@dataclass
+class Progress:
+    """The requests of a user since the oldest still active: a batch, for the toast."""
+
+    start: datetime
+    total: int
+    done: int
+    failed: int
+    # Active requests of other users that pass before the first active one of the user.
+    ahead: int
+    active: bool
+    # Publications whose request is still pending or running.
+    publications: set = field(default_factory=set)
+
+
+def progress(user, since=None):
+    """
+    The Progress of the requests of user, or None without any active. since is the start
+    of the batch the page follows: kept while its first requests are done, and once none
+    is active, it still gives its outcome.
+    """
+    mine = FetchRequest.objects.filter(requesters=user)
+    active = mine.filter(status__in=FetchRequest.ACTIVE).order_by("requested_at", "pk")
+    first = active.first()
+    if first is not None and since is not None and over_before(mine, since, first):
+        since = None
+    if first is None and since is None:
+        return None
+    # The batch followed keeps its start while its first requests are done.
+    start = min(filter(None, (first and first.requested_at, since)))
+    statuses = Counter(mine.filter(requested_at__gte=start).values_list("status", flat=True))
+    return Progress(
+        start=start,
+        total=sum(statuses.values()),
+        done=statuses[Status.DONE],
+        failed=statuses[Status.FAILED],
+        ahead=requests_ahead(first, user) if first else 0,
+        active=first is not None,
+        publications=set(active.values_list("publication_id", flat=True)),
+    )
+
+
+def over_before(mine, since, first):
+    """Whether the batch started at since was over before first was asked: another batch."""
+    earlier = mine.filter(requested_at__gte=since, requested_at__lt=first.requested_at)
+    return not earlier.filter(
+        Q(status__in=FetchRequest.ACTIVE) | Q(finished_at__gte=first.requested_at)
+    ).exists()
+
+
+def requests_ahead(request, user):
+    before = Q(requested_at__lt=request.requested_at) | Q(
+        requested_at=request.requested_at, pk__lt=request.pk
+    )
+    return (
+        FetchRequest.objects.filter(before, status__in=FetchRequest.ACTIVE)
+        .exclude(requesters=user)
+        .count()
+    )
+
+
+def progress_text(state):
+    """« 3 publications récupérées sur 12 · 2 demandes avant les vôtres »."""
+    if not state.active:
+        text = f"Récupération terminée : {count(state.done, 'publication récupérée')}"
+    else:
+        text = f"{count(state.done, 'publication récupérée')} sur {state.total}"
+    if state.failed:
+        text += f", {count(state.failed, 'échec')}"
+    if state.active and state.ahead:
+        text += f" · {count(state.ahead, 'demande')} avant les vôtres"
+    return text + "."
+
+
+SESSION_KEY = "fetch_batch"
+
+
+def followed_batch(session):
+    """The start of the batch the pages of this session follow, or None."""
+    return parse_datetime(session.get(SESSION_KEY, "")) if SESSION_KEY in session else None
+
+
+def follow_batch(session, state):
+    """Remember an active batch; forget one that is over, once its outcome is shown."""
+    if state.active:
+        session[SESSION_KEY] = state.start.isoformat()
+    else:
+        session.pop(SESSION_KEY, None)
+
+
+def publication_pending(pub):
+    """Whether the data of pub is still to come from the queue (its page says so)."""
+    return pub.fetch_requests.filter(status__in=FetchRequest.ACTIVE).exists()
