@@ -136,6 +136,10 @@ python manage.py dev           # tailwind runserver et le worker, dans un seul t
 python manage.py fetch_worker  # ou le worker seul, dans un second terminal
 ```
 
+Le worker prend ensemble jusqu'à 20 imports en attente (ajouts, fichier importé) et
+interroge chaque source pour tout le lot : un import de fichier demande environ cinq fois
+moins de requêtes et deux fois moins de temps qu'une publication après l'autre.
+
 `dev` accepte les arguments de `runserver` (`python manage.py dev 8001`) et relance le
 worker quand le code change. Sans worker signalé depuis 30 s, les pages font la
 récupération elles-mêmes, comme avant : `tailwind runserver` seul fonctionne toujours. Une

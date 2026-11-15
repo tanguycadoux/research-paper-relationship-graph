@@ -84,6 +84,8 @@ references/          application principale
                      traitée par fetch_worker, repli synchrone sans worker ; avancement des
                      demandes d'un utilisateur (toast)
       fetch_actions.py  ce que le worker fait pour chaque action de la file
+      batch_import.py  import de plusieurs publications à la fois par le worker : chaque
+                     étape interroge chaque source pour tout le lot (#381)
       fetch_admin.py  administration de la file : état des demandes et du worker, relancer
                      une demande échouée, annuler une demande en attente
       parser.py      réponse de la source vers les modèles

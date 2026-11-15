@@ -33,7 +33,12 @@ def complete_with_openalex(pub, force_fetch=False):
 
 def complete_cited_with_openalex(pub):
     """Store the OpenAlex works of the cited publications, one request per batch."""
-    targets = {target.doi: target for target in cited_without_openalex(pub)}
+    complete_cited_of_with_openalex([pub])
+
+
+def complete_cited_of_with_openalex(sources):
+    """complete_cited_with_openalex for all the publications cited by sources (#381)."""
+    targets = {target.doi: target for target in cited_without_openalex(sources)}
     if not targets:
         return
     works = fetch_openalex_works(list(targets))
@@ -57,9 +62,9 @@ def complete_affiliations(pub):
     return attach_affiliations(pub)
 
 
-def cited_without_openalex(pub):
+def cited_without_openalex(sources):
     return (
-        Publication.objects.filter(citations__source=pub)
+        Publication.objects.filter(citations__source__in=sources)
         .exclude(doi="")
         .exclude(external_records__source=Source.OPENALEX)
         .distinct()

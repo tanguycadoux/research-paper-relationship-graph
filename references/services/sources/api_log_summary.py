@@ -114,7 +114,8 @@ class QueueStats:
         self.durations.append(entry.get("ms") or 0)
         if entry.get("wait_ms") is not None:
             self.waits.append(entry["wait_ms"])
-        self.api_requests += entry.get("api_requests") or 0
+        # A batch (#381) gives its requests on each of its lines: shared out.
+        self.api_requests += (entry.get("api_requests") or 0) / (entry.get("batch") or 1)
 
     def median(self):
         return round(statistics.median(self.durations)) if self.durations else 0

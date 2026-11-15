@@ -17,7 +17,7 @@ from references.models import (
     Publication,
     UserPublication,
 )
-from references.services.imports import fetch_actions, fetch_queue
+from references.services.imports import batch_import, fetch_actions, fetch_queue
 from references.tests.helpers import with_crossref, with_openlibrary, without_other_sources
 from references.tests.test_corpus_transfer import export_of
 from references.tests.test_importer import with_mocked_crossref
@@ -131,22 +131,24 @@ class WorkerTests(TestCase):
         self.assertIn("DOI inconnu", request.error)
 
     def test_an_exception_fails_the_request_and_the_worker_goes_on(self, fetch, fetch_works):
-        broken = fetch_queue.enqueue(
-            Publication.objects.create(doi="10.1000/broken"), self.user, with_references=False
+        broken_pub = with_crossref(
+            Publication.objects.create(doi="10.1000/broken"), {"message": {}}
         )
+        broken = fetch_queue.enqueue(broken_pub, self.user, with_references=False)
         next_one = fetch_queue.enqueue(
             Publication.objects.create(doi="10.1000/source"), self.user, with_references=False
         )
-        real = fetch_actions.import_publication
+        # Both are imported in one batch (#381): the error of one fails it only.
+        real = batch_import.parse_publication
 
-        def import_publication(pub, **kwargs):
+        def parse_publication(pub, **kwargs):
             if pub.doi == "10.1000/broken":
                 raise RuntimeError("panne")
             return real(pub, **kwargs)
 
         with (
-            patch.object(fetch_actions, "import_publication", side_effect=import_publication),
-            self.assertLogs("references.services.imports.fetch_queue", "ERROR"),
+            patch.object(batch_import, "parse_publication", side_effect=parse_publication),
+            self.assertLogs("references.services.imports.batch_import", "ERROR"),
         ):
             run_worker()
         broken.refresh_from_db()
