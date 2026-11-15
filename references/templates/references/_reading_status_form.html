@@ -23,7 +23,7 @@ of a table).
     <select id="reading-status-{{ pub.pk }}"
             name="status"
             class="w-auto py-1 pr-7 pl-2">
-        <option value="">Aucun</option>
+        <option value="">Sans statut</option>
         {% for value, choice_label in reading_statuses %}
             <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ choice_label }}</option>
         {% endfor %}

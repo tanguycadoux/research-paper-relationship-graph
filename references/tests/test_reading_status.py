@@ -88,6 +88,13 @@ class ReadingStatusTests(TestCase):
         self.assertContains(response, "Statut de lecture de « Lue »")
         self.assertContains(response, '<option value="read" selected>Lu</option>', html=True)
 
+    def test_no_status_has_the_same_name_everywhere(self):
+        # The menu, the filter and the dashboard: « Sans statut », never « Aucun » (#279).
+        response = self.client.get(reverse("corpus"))
+        self.assertContains(response, '<option value="">Sans statut</option>', html=True)
+        self.assertNotContains(response, ">Aucun<")
+        self.assertContains(self.client.get(reverse("index")), "Sans statut")
+
     def test_other_tables_have_no_status_column(self):
         response = self.client.get(reverse("publication_list"))
         self.assertNotContains(response, "reading-status-")
