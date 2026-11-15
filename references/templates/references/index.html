@@ -68,7 +68,7 @@
                     <h2 id="to-do-title" class="mb-2 text-base font-semibold">À faire</h2>
                     <ul class="space-y-2 text-sm">
                         <li class="flex items-baseline justify-between gap-3">
-                            <a href="{% url 'corpus' %}">Références à identifier</a>
+                            <a href="{% url 'corpus' %}?to_identify=1">Références à identifier</a>
                             {% include "references/_to_do_count.html" with count=to_do.to_identify %}
                         </li>
                         <li class="flex items-baseline justify-between gap-3">

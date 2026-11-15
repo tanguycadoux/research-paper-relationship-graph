@@ -20,7 +20,9 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   reste blanche et opaque. **Navigation** décrite dans
   `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
   (#152, `services/display/pending.py`) : références à identifier dans son corpus, conflits
-  ouverts. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
+  ouverts. Les références à identifier ont leur propre lien, « Mon corpus › À identifier »,
+  qui filtre le corpus sur les publications concernées (`?to_identify=1`, #276) : posé sur
+  « Publications », le nombre se lisait comme une taille de corpus. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
   après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
   compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
   toasts (`static/js/toasts.js`).

@@ -2,9 +2,12 @@
 The main navigation: {% load navigation %}{% main_navigation %}. The current link is
 the one whose URL is the longest prefix of the page path: « Publications » on a
 publication, « Combiner des auteurs » on a merge confirmation. Some links count what
-waits for an action (#152): « Conflits, 2 en attente ». Below md, each group is a menu
-(#207); from md, the groups follow each other in a sidebar.
+waits for an action (#152): « Conflits, 2 en attente »; the references to identify have
+their own link, « À identifier », which filters the corpus (#276). Below md, each group
+is a menu (#207); from md, the groups follow each other in a sidebar.
 """
+
+from urllib.parse import parse_qsl
 
 from django import template
 from django.urls import reverse
@@ -13,13 +16,15 @@ from ..services.display import pending
 
 register = template.Library()
 
-# (group title, reserved to logged-in users, [(label, URL name, icon)])
+# (group title, reserved to logged-in users, [(label, URL name, icon[, query])])
 NAVIGATION = [
     (
         "Mon corpus",
         True,
         [
             ("Publications", "corpus", "bookmarks"),
+            # Its own link, so that the count is not read as a number of publications (#276).
+            ("À identifier", "corpus", "playlist_play", "?to_identify=1"),
             ("Suggestions", "corpus_suggestions", "lightbulb"),
             ("Mon graphe", "corpus_graph", "hub"),
         ],
@@ -43,10 +48,10 @@ NAVIGATION = [
         ],
     ),
 ]
-# Counters of the private links, by URL name: the count and what it is, for screen
-# readers. Nothing is shown at zero.
+# Counters of the private links, by URL: the count and what it is, for screen readers.
+# Nothing is shown at zero.
 COUNTERS = {
-    "corpus": (pending.references_to_identify, "à identifier"),
+    "corpus?to_identify=1": (pending.references_to_identify, "en attente"),
     "conflict_list": (lambda user: pending.open_conflicts(), "en attente"),
 }
 # relative: the text of a counter for screen readers stays inside the link, which may be
@@ -71,16 +76,37 @@ def current_url(urls, path):
 
 @register.inclusion_tag("references/_navigation.html", takes_context=True)
 def main_navigation(context):
-    user = context["user"]
+    user, request = context["user"], context["request"]
     authenticated = user.is_authenticated
     groups = [
-        (title, [(label, reverse(name), icon, counter(name, user)) for label, name, icon in links])
+        (title, [navigation_link(entry, user) for entry in links])
         for title, private, links in NAVIGATION
         if authenticated or not private
     ]
-    path = context["request"].path
-    current = current_url([url for _, links in groups for _, url, _, _ in links], path)
-    return {"groups": [navigation_group(title, links, current, path) for title, links in groups]}
+    urls = [url for _, links in groups for _, url, _, _ in links]
+    # A link with a query is current when the page has its parameters (« À identifier »
+    # on /corpus/?to_identify=1&sort=year); otherwise, the longest parent.
+    current = next((url for url in urls if with_query(url, request)), None) or current_url(
+        [url for url in urls if "?" not in url], request.path
+    )
+    here = current if current and "?" in current else request.path
+    return {"groups": [navigation_group(title, links, current, here) for title, links in groups]}
+
+
+def navigation_link(entry, user):
+    """(label, URL, icon, counter) of an entry of NAVIGATION."""
+    label, name, icon, *query = entry
+    query = query[0] if query else ""
+    return label, reverse(name) + query, icon, counter(name + query, user)
+
+
+def with_query(url, request):
+    path, _, query = url.partition("?")
+    return (
+        bool(query)
+        and request.path == path
+        and all(request.GET.get(key) == value for key, value in parse_qsl(query))
+    )
 
 
 def navigation_group(title, links, current, path):
@@ -110,7 +136,10 @@ def navigation_group(title, links, current, path):
 
 
 def counter(name, user):
-    """(count, what it is) for a link with a counter and something to count, else None."""
+    """
+    (count, what it is) for a link with a counter and something to count, else None.
+    name: the URL name, followed by the query of the link if it has one.
+    """
     if name not in COUNTERS or not user.is_authenticated:
         return None
     count_of, what = COUNTERS[name]
