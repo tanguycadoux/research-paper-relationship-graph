@@ -44,6 +44,16 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   après l'import d'un fichier, un seul toast court ; le détail (publications ajoutées avec
   leur lien, déjà présentes, sans métadonnées, entrées ignorées et pourquoi, 20 par liste)
   est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture.
+- **Exporter** (carte « Exporter et importer » de « Mon corpus », #285) : sans filtre, les
+  boutons exportent tout le corpus (« JSON (réimportable) », « BibTeX ») ; avec des filtres
+  (tag et ses sous-tags, colonnes, « à identifier »), ils exportent les publications
+  affichées, toutes pages comprises, et le disent (« BibTeX des 12 publications
+  affichées ») ; deux liens gardent l'export de tout le corpus. Aucun résultat : les
+  boutons restent en place, désactivés. Les vues d'export lisent les mêmes paramètres que
+  le tableau, par la même fonction (`filters.filtered_corpus`) ; le tri et la page sont
+  ignorés. Le fichier s'appelle `corpus-<tag>-<date>` pour un tag seul,
+  `corpus-selection-<date>` pour d'autres filtres ; son format est celui de l'export
+  complet, il se réimporte de même.
 - **Retirer du corpus** (`_corpus_remove_form.html`, tableaux et fiche) : immédiat, sauf si
   l'entrée a des tags, un statut de lecture ou une note, que le retrait efface : le bouton
   ouvre alors une confirmation en popover, et le message dit ce qui a été perdu (#280,

@@ -24,8 +24,16 @@ EXPORT_VERSION = 3
 IMPORTED_VERSIONS = (1, 2, 3)
 
 
-def corpus_publications(user):
-    return Publication.objects.filter(userpublication__user=user).order_by("title")
+def corpus_publications(user, selected=None):
+    """
+    The corpus of user, by title; only the publications of selected if given (a queryset
+    of publications: those the filters of « Mon corpus » show, #285). Whatever selected
+    holds, nothing outside the corpus of user is exported.
+    """
+    publications = Publication.objects.filter(userpublication__user=user).order_by("title")
+    if selected is not None:
+        publications = publications.filter(pk__in=selected.values("pk"))
+    return publications
 
 
 def exportable(publications):
@@ -42,8 +50,8 @@ def notes_by_publication(user):
 # JSON
 
 
-def export_corpus(user):
-    publications = exportable(with_reading_status(corpus_publications(user), user))
+def export_corpus(user, selected=None):
+    publications = exportable(with_reading_status(corpus_publications(user, selected), user))
     tags = tags_by_publication(user, publications)
     notes = notes_by_publication(user)
     return {
@@ -194,9 +202,9 @@ MATH_PATTERN = re.compile(r"(\$[^$]*\$)")
 SPECIAL_CHARACTERS = re.compile(r"([&%#_])")
 
 
-def corpus_bibtex(user):
+def corpus_bibtex(user, selected=None):
     keys = set()
-    publications = exportable(corpus_publications(user).with_author_slots())
+    publications = exportable(corpus_publications(user, selected).with_author_slots())
     tags = tags_by_publication(user, publications)
     notes = notes_by_publication(user)
     return "\n".join(

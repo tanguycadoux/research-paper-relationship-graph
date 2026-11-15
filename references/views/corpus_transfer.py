@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from ..models import UserPublication
@@ -17,32 +18,57 @@ from ..services.corpus.corpus_transfer import (
     import_corpus,
     import_entries,
 )
+from ..services.display.filters import filtered_corpus
 from ..services.display.wording import count
 from ..services.imports import fetch_queue
 
 MAX_IMPORT_SIZE = 1024 * 1024
 
 
-def attachment(response, extension):
-    filename = f"corpus-{timezone.localdate().isoformat()}.{extension}"
+def attachment(response, extension, selection):
+    filename = f"{export_name(selection)}-{timezone.localdate().isoformat()}.{extension}"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
 
+def export_name(selection):
+    """« corpus », « corpus-projet-a-groupe-a » for a tag alone, else « corpus-selection »."""
+    values = selection.active.values
+    if not values:
+        return "corpus"
+    if values.keys() == {"tag"}:
+        return f"corpus-{slugify(values['tag'].replace('/', ' ')) or 'tag'}"
+    return "corpus-selection"
+
+
+def selected(request):
+    """
+    The publications the filters of « Mon corpus » show, as its export buttons pass them
+    (#285): the whole corpus without a filter.
+    """
+    return filtered_corpus(request.user, request.GET)
+
+
+def chosen(selection):
+    return selection.publications if selection.active else None
+
+
 @login_required
 def export_json(request):
-    data = export_corpus(request.user)
-    return attachment(
-        JsonResponse(data, json_dumps_params={"ensure_ascii": False, "indent": 2}), "json"
-    )
+    selection = selected(request)
+    data = export_corpus(request.user, chosen(selection))
+    response = JsonResponse(data, json_dumps_params={"ensure_ascii": False, "indent": 2})
+    return attachment(response, "json", selection)
 
 
 @login_required
 def export_bibtex(request):
+    selection = selected(request)
     response = HttpResponse(
-        corpus_bibtex(request.user), content_type="text/x-bibtex; charset=utf-8"
+        corpus_bibtex(request.user, chosen(selection)),
+        content_type="text/x-bibtex; charset=utf-8",
     )
-    return attachment(response, "bib")
+    return attachment(response, "bib", selection)
 
 
 @login_required
