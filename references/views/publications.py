@@ -103,6 +103,8 @@ class PublicationDetailView(DetailView):
         )
         to_identify = [ref for ref in context["cited_references"] if is_to_identify(ref)]
         context["references_to_identify"] = len(to_identify)
+        # Those the source does not describe: the article alone says what they are (#273).
+        context["references_undescribed"] = sum(1 for ref in to_identify if not ref.is_described)
         # Start of « Identifier en série » (#242).
         context["first_to_identify"] = min(to_identify, key=lambda ref: ref.position, default=None)
         context["references_unidentifiable"] = sum(

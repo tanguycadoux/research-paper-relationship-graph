@@ -21,6 +21,14 @@ quand DataCite le confirme ([arxiv-jacow.md](arxiv-jacow.md#identifiants-écrits
 restent à identifier celles qui n'ont aucun identifiant, ou dont l'identifiant n'a pas
 pu être confirmé.
 
+Certains éditeurs (AIP surtout, aussi IEEE) déposent des références qui n'ont qu'une clé,
+parfois une année : 32 sur la base de l'utilisateur, 104 sur la base de banc (#273). Leur
+libellé le dit (« Crossref ne donne que le numéro de cette référence », en italique sur
+la fiche) ; la fiche les compte à part dans « à identifier » avec un lien vers l'article ;
+la page d'identification met en avant leur numéro (« la référence [3] de la
+bibliographie »), avec « Ouvrir l'article », et ne lance aucune recherche de candidats,
+faute de texte. Elles restent « à identifier » : seul l'article dit de quoi il s'agit.
+
 La page propose d'abord des **publications candidates** (`candidates.py`, #160), jamais
 reliées sans un clic sur « C'est celle-ci » :
 

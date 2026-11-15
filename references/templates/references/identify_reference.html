@@ -35,6 +35,18 @@
             <blockquote class="border-l-4 border-gray-200 pl-3 text-sm text-gray-700">
                 {{ ref.label|default:"(aucun texte)" }}
             </blockquote>
+            {% if not ref.is_described and not ref.target %}
+                {# Only its number is known: the article says what it is (#273). #}
+                <div class="mt-3 space-y-2 text-sm">
+                    <p>
+                        C'est la référence <strong>[{{ ref.position|add:1 }}]</strong> de la bibliographie de l'article :
+                        lisez-la dans l'article, puis identifiez-la par son DOI, son ISBN ou sans identifiant.
+                    </p>
+                    {% if ref.source.doi %}
+                        <p>{% external_link "https://doi.org/"|add:ref.source.doi "Ouvrir l'article" %}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
             {% if ref.unidentifiable %}
                 <p class="mt-3 text-sm">
                     Déclarée non identifiable
@@ -124,6 +136,8 @@
                         </li>
                     {% endfor %}
                 </ol>
+            {% elif not ref.is_described %}
+                <p class="text-sm text-gray-600">Aucune recherche : la source ne donne aucun texte pour cette référence.</p>
             {% elif not search_failed %}
                 <p class="text-sm text-gray-600">
                     Aucune publication proche, ni dans la base, ni chez Crossref ou DataCite.

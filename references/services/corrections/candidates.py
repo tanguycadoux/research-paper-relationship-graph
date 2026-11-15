@@ -76,6 +76,8 @@ def candidates_for(ref):
     The sources are asked once; the answer is kept unless a source failed.
     """
     failed = False
+    if not ref.is_described:
+        return [], False  # nothing to search with (#273)
     if ref.candidates is None:
         found, failed = search_sources(ref)
         if not failed:
