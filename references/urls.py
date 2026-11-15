@@ -7,6 +7,7 @@ from .views import (
     conflicts,
     corpus,
     corpus_transfer,
+    fetch_progress,
     graph_images,
     graphs,
     home,
@@ -29,6 +30,8 @@ urlpatterns = [
         graph_images.graph_image_status,
         name="graph_image_status",
     ),
+    # Progress of the requests in the queue (#379)
+    path("queue/progress/", fetch_progress.fetch_progress, name="fetch_progress"),
     path("", home.index, name="index"),
     path("search/", search.search, name="search"),
     # Publications

@@ -79,13 +79,42 @@
                 </div>
             </main>
         </div>
-        {% if messages %}
+        {% if messages or fetch_progress %}
             <div class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
                 {% for message in messages %}
                     {% message_toast message %}
                 {% endfor %}
+                {% if fetch_progress %}
+                    {# The requests of the user in the queue (#379), followed by fetch_progress.js. #}
+                    {% if fetch_progress.active %}
+                        <div role="status"
+                             class="{% toast_classes %}"
+                             data-fetch-progress-toast
+                             data-fetch-progress="{% url 'fetch_progress' %}"
+                             data-fetch-since="{{ fetch_progress.since.isoformat }}">
+                            {% icon "progress_activity" class="size-5 shrink-0 motion-safe:animate-spin" %}
+                            <p class="flex-1" data-fetch-progress-text>{{ fetch_progress.text }}</p>
+                        </div>
+                    {% else %}
+                        {# The outcome of a batch that ended between two pages: a toast that fades. #}
+                        <div role="status" class="{% toast_classes %}" data-toast data-toast-autohide>
+                            {% icon "check_circle" %}
+                            <p class="flex-1">{{ fetch_progress.text }}</p>
+                            <button type="button"
+                                    class="-m-1 shrink-0 cursor-pointer rounded p-1 hover:bg-black/5"
+                                    aria-label="Fermer la notification"
+                                    data-toast-close
+                                    hidden>
+                                {% icon "close" %}
+                            </button>
+                        </div>
+                    {% endif %}
+                {% endif %}
             </div>
             <script src="{% static 'js/toasts.js' %}" defer></script>
+        {% endif %}
+        {% if fetch_progress.active or fetch_pending_publication %}
+            <script src="{% static 'js/fetch_progress.js' %}" defer></script>
         {% endif %}
     </body>
 </html>
