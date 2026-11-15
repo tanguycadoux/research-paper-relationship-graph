@@ -53,8 +53,9 @@ class Command(BaseCommand):
         while True:
             request = fetch_queue.claim_next()
             if request is not None:
-                self.stdout.write(f"{request.get_action_display()} {request.identifier}…")
-                fetch_queue.process(request)
+                done = fetch_queue.process_claimed(request)
+                what = f"{len(done)} imports" if len(done) > 1 else request.identifier
+                self.stdout.write(f"{request.get_action_display()} {what}")
             elif once:
                 return
             else:

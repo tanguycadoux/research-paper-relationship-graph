@@ -86,6 +86,11 @@ def doi_sources():
 
 
 def import_cited_publications(pub):
+    """Import the cited publications of pub never fetched (import_cited_of)."""
+    import_cited_of([pub])
+
+
+def import_cited_of(sources):
     """
     Import the cited publications never fetched: one Crossref request per batch
     of DOIs, then one DataCite request per batch for the DOIs Crossref does not
@@ -93,7 +98,7 @@ def import_cited_publications(pub):
     request it again (an explicit action can still retry it). Cited arXiv preprints
     that declare their published version are replaced by it.
     """
-    targets = {target.doi: target for target in unfetched_cited_publications(pub)}
+    targets = {target.doi: target for target in unfetched_cited_publications(sources)}
     if not targets:
         return
     answers = fetch_cited_works(list(targets))
@@ -127,10 +132,10 @@ def store_cited_work(pub, records):
         parse_publication(pub, parse_references=False)
 
 
-def unfetched_cited_publications(pub):
-    """Publications cited by pub, with a DOI, that Crossref was never asked about."""
+def unfetched_cited_publications(sources):
+    """Publications cited by sources, with a DOI, that Crossref was never asked about."""
     return (
-        Publication.objects.filter(citations__source=pub)
+        Publication.objects.filter(citations__source__in=sources)
         .exclude(doi="")
         .exclude(external_records__source=Source.CROSSREF)
         .distinct()

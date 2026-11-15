@@ -22,7 +22,7 @@ from ..display.wording import count
 from ..sources import api_log
 from ..sources.api_log import api_context
 from ..sources.external_records import has_metadata
-from . import fetch_actions
+from . import batch_import, fetch_actions
 from .fetch_actions import FetchFailed
 
 logger = logging.getLogger(__name__)
@@ -104,6 +104,89 @@ def claim_next():
         if claimed:
             return FetchRequest.objects.get(pk=pk[0])
     return None
+
+
+# Imports by DOI that the worker takes together (#381): each source is asked for all of
+# them at once. 20 keeps the toast moving while filling the batches of the sources (a
+# publication brings about 13 cited DOIs).
+BATCH_SIZE = 20
+BATCHED_ACTIONS = (Action.IMPORT, Action.IMPORT_WITH_REFERENCES)
+
+
+def process_claimed(request):
+    """Do a request claimed by the worker, with the imports that wait after it if any."""
+    if batchable(request):
+        return process_batch([request, *claim_companions(BATCH_SIZE - 1)])
+    process(request)
+    return [request]
+
+
+def batchable(request):
+    pub = request.publication
+    return request.action in BATCHED_ACTIONS and pub is not None and bool(pub.doi)
+
+
+def claim_companions(limit):
+    """Pending imports by DOI, the oldest first, now running: a batch (#381)."""
+    pks = (
+        FetchRequest.objects.filter(status=Status.PENDING, action__in=BATCHED_ACTIONS)
+        .exclude(publication=None)
+        .exclude(publication__doi="")
+        .values_list("pk", flat=True)[:limit]
+    )
+    claimed = [
+        pk
+        for pk in list(pks)
+        if FetchRequest.objects.filter(pk=pk, status=Status.PENDING).update(
+            status=Status.RUNNING, started_at=timezone.now()
+        )
+    ]
+    return list(FetchRequest.objects.filter(pk__in=claimed).select_related("publication"))
+
+
+def process_batch(requests):
+    """
+    Import the publications of several requests together (batch_import), then keep the
+    outcome of each, and write each in the journal (#395) with the size of the batch.
+    """
+    started = time.monotonic()
+    label = f"lot de {len(requests)} imports"
+    with api_context("file", label, requests=[request.pk for request in requests]) as counter:
+        items = batch_items(requests)
+        try:
+            batch_import.import_publications(list(items.values()))
+        except Exception as error:  # the whole batch fails; the worker goes on
+            logger.exception("Échec du lot %s", [request.pk for request in requests])
+            for item in items.values():
+                item.error = item.error or f"{type(error).__name__} : {error}"
+    ms = (time.monotonic() - started) * 1000
+    for request in requests:
+        item = items[request.publication_id]
+        if item.error:
+            finish(request, Status.FAILED, error=item.error)
+        else:
+            finish(request, Status.DONE, publication=item.result)
+        request.refresh_from_db()
+        api_log.record_request(
+            request,
+            ms=ms,
+            api_requests=counter.api_requests,
+            references=item.result.cited_references.count() if item.result else None,
+            batch=len(requests),
+        )
+    return requests
+
+
+def batch_items(requests):
+    """One Item per publication: with its bibliography if one of its requests wants it."""
+    items = {}
+    for request in requests:
+        wants = request.action == Action.IMPORT_WITH_REFERENCES
+        item = items.setdefault(
+            request.publication_id, batch_import.Item(request.publication, wants)
+        )
+        item.with_references = item.with_references or wants
+    return items
 
 
 def process(request):

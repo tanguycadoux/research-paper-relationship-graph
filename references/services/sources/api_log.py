@@ -82,10 +82,11 @@ def record(service, subject, url, params, response=None, *, ms, attempt, stream,
     logger.info(json.dumps(entry, ensure_ascii=False, default=str))
 
 
-def record_request(request, *, ms, api_requests, references=None):
+def record_request(request, *, ms, api_requests, references=None, batch=None):
     """
     One request of the queue, once done (#378): its wait in the queue, its duration, the
-    API requests it made, the references of its publication, its outcome.
+    API requests it made, the references of its publication, its outcome. Done in a batch
+    of imports (#381), the duration and the API requests are those of the whole batch.
     """
     if not logger.isEnabledFor(logging.INFO):
         return
@@ -102,6 +103,7 @@ def record_request(request, *, ms, api_requests, references=None):
         "ms": round(ms),
         "api_requests": api_requests,
         "references": references,
+        "batch": batch,
         "error": request.error,
     }
     logger.info(json.dumps(entry, ensure_ascii=False, default=str))
