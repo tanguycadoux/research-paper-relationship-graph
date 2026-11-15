@@ -1,7 +1,11 @@
 {% extends "references/base.html" %}
-{% load ui %}
+{% load static ui %}
 
 {% block title %}Mon corpus · {% endblock title %}
+
+{% block head %}
+    <script src="{% static 'js/bulk_actions.js' %}" defer></script>
+{% endblock head %}
 
 {% block content %}
     <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -54,7 +58,8 @@
             </div>
             {% if publications or active_filters %}
                 {% filter_summary %}
-                {% include "references/_publication_table.html" with caption="Publications de mon corpus" reading_column=True %}
+                {% include "references/_bulk_actions.html" with form_id="bulk-actions" %}
+                {% include "references/_publication_table.html" with caption="Publications de mon corpus" reading_column=True bulk_form="bulk-actions" %}
                 {% pagination page_obj %}
             {% else %}
                 <p class="text-gray-600">Aucune publication dans votre corpus.</p>

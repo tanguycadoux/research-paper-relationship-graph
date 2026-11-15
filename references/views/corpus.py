@@ -233,6 +233,7 @@ def my_references(request):
         "tag_tree": tags.tag_tree(request.user),
         "active_tag": active_filters.values.get("tag"),
         "reading_statuses": UserPublication.ReadingStatus.choices,
+        "tag_max_length": tags.MAX_LENGTH,
         "corpus_count": pubs.count(),
         "latest_first": latest_first(request, sort),
         "import_report": import_reports.last(request.session),

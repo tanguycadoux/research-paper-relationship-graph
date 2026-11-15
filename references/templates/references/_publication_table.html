@@ -7,7 +7,8 @@ sorting and sort (services/display/sorting.py), headers that sort the list; with
 active_filters (services/display/filters.py), headers that filter it, and a row that says when
 nothing matches; with reading_column (my references, publications annotated by
 corpus.with_reading_status, and with my_tags), a column to set the reading status
-(reading_statuses) and the tags under each title.
+(reading_statuses) and the tags under each title; with bulk_form (the id of the form of
+_bulk_actions.html, #287), a first column of checkboxes that belong to that form.
 The identifier is hidden below xl, where the content is too narrow for it (#150), and
 always beside the reading status: it stays on the page of each publication.
 {% endcomment %}
@@ -23,6 +24,13 @@ always beside the reading status: it stays on the page of each publication.
         <caption class="sr-only">{{ caption }}</caption>
         <thead>
             <tr>
+                {% if bulk_form %}
+                    {# Check them all: shown by static/js/bulk_actions.js, useless without it. #}
+                    <th scope="col" class="w-px pr-0">
+                        <span class="sr-only">Sélection</span>
+                        <input type="checkbox" aria-label="Tout cocher" hidden data-bulk-all>
+                    </th>
+                {% endif %}
                 {% column_header "Titre" "title" %}
                 {% if not hide_authors %}
                     {% column_header "Auteurs" "author" classes="hidden sm:table-cell" %}
@@ -44,6 +52,16 @@ always beside the reading status: it stays on the page of each publication.
         <tbody>
             {% for pub in publications %}
                 <tr>
+                    {% if bulk_form %}
+                        <td class="pr-0">
+                            <input type="checkbox"
+                                   name="publication"
+                                   value="{{ pub.pk }}"
+                                   form="{{ bulk_form }}"
+                                   aria-label="Cocher « {{ pub }} »"
+                                   data-bulk-row>
+                        </td>
+                    {% endif %}
                     <td>
                         <a class="{% row_title_classes %}" href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
                         {# Below sm, the hidden columns in one grey line under the title (#334). #}
@@ -119,7 +137,7 @@ always beside the reading status: it stays on the page of each publication.
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="{% if reading_column %}4{% elif hide_authors %}{% if corpus_actions %}4{% else %}3{% endif %}{% elif corpus_actions %}5{% else %}4{% endif %}"
+                    <td colspan="{% if bulk_form %}5{% elif reading_column %}4{% elif hide_authors %}{% if corpus_actions %}4{% else %}3{% endif %}{% elif corpus_actions %}5{% else %}4{% endif %}"
                         class="text-gray-600">Aucune publication ne correspond aux filtres.</td>
                 </tr>
             {% endfor %}

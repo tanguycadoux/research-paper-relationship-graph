@@ -1,0 +1,50 @@
+{% comment %}
+The bar of bulk actions of « Mon corpus » (#287), above its table: the checkboxes of
+the rows belong to this form by their form attribute (each row already holds the form
+of its reading status, and forms do not nest). One button per action (name="action"),
+removal confirmed in a popover. static/js/bulk_actions.js counts the rows checked,
+checks them all and disables the buttons while none is; without it, the server says
+when nothing is checked. Context: form_id, reading_statuses.
+{% endcomment %}
+{% load ui %}
+<form method="post"
+      action="{% url 'corpus_bulk' %}"
+      id="{{ form_id }}"
+      aria-label="Actions sur les publications cochées"
+      class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm"
+      data-bulk-actions>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <p class="w-full text-gray-600 select-none" data-bulk-count aria-live="polite">Pour les publications cochées :</p>
+    {# The tag first: Enter in its field sends this button, the first of the form. #}
+    <div class="flex min-w-0 items-center gap-1">
+        <label for="bulk-tag" class="mb-0 mr-1">Tag</label>
+        <input type="text"
+               id="bulk-tag"
+               name="name"
+               maxlength="{{ tag_max_length }}"
+               placeholder="Projet/Groupe"
+               class="w-40 min-w-0 py-1">
+        {% button "Ajouter le tag" variant="secondary" icon="new_label" name="action" value="tag" %}
+    </div>
+    <div class="flex items-center gap-1">
+        <label for="bulk-status" class="mb-0 mr-1">Statut</label>
+        <select id="bulk-status" name="status" class="w-auto py-1 pr-7 pl-2">
+            <option value="">Sans statut</option>
+            {% for value, choice_label in reading_statuses %}
+                <option value="{{ value }}">{{ choice_label }}</option>
+            {% endfor %}
+        </select>
+        {% button "Changer le statut" variant="secondary" icon="check_circle" name="action" value="status" %}
+    </div>
+    {% button "Retirer de mon corpus…" type="button" variant="danger-light" icon="remove" popovertarget="bulk-remove" %}
+    <div popover
+         id="bulk-remove"
+         class="{% popover_panel_classes %} max-w-sm space-y-2">
+        <p>
+            Retirer les publications cochées de votre corpus ?
+            Leurs tags, statuts de lecture et notes seront perdus.
+        </p>
+        {% button "Retirer" variant="danger" icon="remove" name="action" value="remove" %}
+    </div>
+</form>

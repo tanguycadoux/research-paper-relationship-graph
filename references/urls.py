@@ -8,6 +8,7 @@ from .views import (
     cited_references,
     conflicts,
     corpus,
+    corpus_bulk,
     corpus_transfer,
     fetch_admin,
     fetch_progress,
@@ -150,6 +151,7 @@ urlpatterns = [
     # Corpus of the current user
     path("corpus/", corpus.my_references, name="corpus"),
     path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
+    path("corpus/bulk/", corpus_bulk.bulk_action, name="corpus_bulk"),
     path("corpus/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
     path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
     path("corpus/import/", corpus_transfer.import_file, name="corpus_import"),
