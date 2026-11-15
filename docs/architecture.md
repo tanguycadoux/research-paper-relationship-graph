@@ -46,6 +46,7 @@ references/          application principale
   forms.py           formulaires (publication, auteur, fusions, identification)
   urls.py            routes, au pluriel pour les collections (publications/, authors/…)
   views/             vues fines, une par domaine
+  context_processors.py  toast de la file des récupérations sur toutes les pages
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
     author_graphs.py (graphe des auteurs, coautorat),
     cited_references.py (identification d'une référence, en série),
@@ -75,7 +76,7 @@ references/          application principale
     imports/         import et analyse
       importer.py    orchestration : récupération puis analyse
       fetch_queue.py  file des récupérations (ajout, import de fichier) traitée par fetch_worker,
-                     repli synchrone sans worker
+                     repli synchrone sans worker ; avancement des demandes d'un utilisateur (toast)
       parser.py      réponse de la source vers les modèles
       titles.py      titres : nettoyage (entités HTML, balisage JATS), forme lisible du LaTeX
       latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
@@ -151,6 +152,7 @@ static/
   css/tailwind.css   feuille compilée, non versionnée
   icons/             icônes SVG
   js/toasts.js       notifications
+  js/fetch_progress.js  avancement de la file (toast), fiche rechargée une fois sa demande faite
   js/navigation.js   menus de la navigation sur petit écran
   js/search.js       raccourci Ctrl+K vers la barre de recherche
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)

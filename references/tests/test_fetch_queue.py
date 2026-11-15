@@ -267,3 +267,186 @@ class AddWithWorkerTests(TestCase):
         self.assertContains(response, "Import enregistré : 2 publications en file de récupération.")
         self.assertEqual(response.context["import_report"]["queued"]["count"], 2)
         self.assertContains(response, "2</strong> publications en file de récupération")
+
+
+class ProgressTests(TestCase):
+    """The toast of the requests in the queue (#379)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        User = get_user_model()
+        cls.alice, cls.bob = User.objects.create_user("alice"), User.objects.create_user("bob")
+
+    def request(self, user, doi, status=Status.PENDING):
+        pub = Publication.objects.get_or_create_doi(doi)
+        request = fetch_queue.enqueue(pub, user, with_references=False)
+        FetchRequest.objects.filter(pk=request.pk).update(status=status)
+        return request
+
+    def test_nothing_without_an_active_request(self):
+        self.request(self.alice, "10.1000/old", Status.DONE)
+        self.assertIsNone(fetch_queue.progress(self.alice))
+        self.client.force_login(self.alice)
+        self.assertNotContains(self.client.get(reverse("corpus")), "data-fetch-progress-toast")
+
+    def test_counts_since_the_oldest_active_request(self):
+        self.request(self.alice, "10.1000/a", Status.DONE)
+        FetchRequest.objects.update(requested_at=timezone.now() - timedelta(hours=1))
+        self.request(self.alice, "10.1000/b", Status.DONE)
+        self.request(self.alice, "10.1000/c", Status.FAILED)
+        FetchRequest.objects.exclude(identifier="10.1000/a").update(
+            requested_at=timezone.now() - timedelta(minutes=1)
+        )
+        self.request(self.alice, "10.1000/d")
+        self.request(self.alice, "10.1000/e", Status.RUNNING)
+        # a, b and c were asked before the oldest active request: an earlier batch.
+        state = fetch_queue.progress(self.alice)
+        self.assertEqual((state.total, state.done, state.failed), (2, 0, 0))
+        self.assertEqual(fetch_queue.progress_text(state), "0 publication récupérée sur 2.")
+
+    def test_a_followed_batch_keeps_its_start(self):
+        first = self.request(self.alice, "10.1000/a")
+        since = fetch_queue.progress(self.alice).start
+        self.request(self.alice, "10.1000/b")
+        FetchRequest.objects.exclude(pk=first.pk).update(requested_at=since + timedelta(seconds=1))
+        # a finished while b was waiting: the same batch.
+        FetchRequest.objects.filter(pk=first.pk).update(
+            status=Status.DONE, finished_at=since + timedelta(seconds=3)
+        )
+        state = fetch_queue.progress(self.alice, since=since)
+        self.assertEqual((state.total, state.done, state.active), (2, 1, True))
+
+    def test_a_batch_over_long_ago_is_not_followed_any_more(self):
+        old = self.request(self.alice, "10.1000/old")
+        since = fetch_queue.progress(self.alice).start
+        FetchRequest.objects.filter(pk=old.pk).update(
+            status=Status.DONE, finished_at=since + timedelta(seconds=5)
+        )
+        self.request(self.alice, "10.1000/new")
+        FetchRequest.objects.exclude(pk=old.pk).update(requested_at=since + timedelta(days=2))
+        state = fetch_queue.progress(self.alice, since=since)
+        self.assertEqual((state.total, state.done), (1, 0))
+
+    def test_requests_of_others_before_mine(self):
+        self.request(self.bob, "10.1000/bob1")
+        self.request(self.bob, "10.1000/bob2", Status.RUNNING)
+        mine = self.request(self.alice, "10.1000/mine")
+        self.request(self.bob, "10.1000/bob3")
+        state = fetch_queue.progress(self.alice)
+        self.assertEqual(state.ahead, 2)
+        self.assertEqual(state.publications, {mine.publication_id})
+        self.assertEqual(
+            fetch_queue.progress_text(state),
+            "0 publication récupérée sur 1 · 2 demandes avant les vôtres.",
+        )
+
+    def test_a_joined_request_is_not_ahead(self):
+        shared = self.request(self.bob, "10.1000/shared")
+        shared.requesters.add(self.alice)
+        self.assertEqual(fetch_queue.progress(self.alice).ahead, 0)
+
+    def test_outcome_of_a_batch_once_over(self):
+        first = self.request(self.alice, "10.1000/a")
+        since = fetch_queue.progress(self.alice).start
+        self.request(self.alice, "10.1000/b")
+        FetchRequest.objects.filter(pk=first.pk).update(status=Status.DONE)
+        FetchRequest.objects.exclude(pk=first.pk).update(status=Status.FAILED)
+        state = fetch_queue.progress(self.alice, since=since)
+        self.assertFalse(state.active)
+        self.assertEqual(
+            fetch_queue.progress_text(state),
+            "Récupération terminée : 1 publication récupérée, 1 échec.",
+        )
+
+    def test_toast_on_every_page_and_json(self):
+        self.request(self.alice, "10.1000/a", Status.DONE)
+        self.request(self.alice, "10.1000/b")
+        FetchRequest.objects.filter(identifier="10.1000/a").update(
+            requested_at=timezone.now() + timedelta(seconds=1)
+        )
+        self.client.force_login(self.alice)
+        for name in ("index", "corpus", "publication_list"):
+            with self.subTest(page=name):
+                response = self.client.get(reverse(name))
+                self.assertContains(response, "data-fetch-progress-toast")
+                self.assertContains(response, "1 publication récupérée sur 2.")
+                self.assertContains(response, "js/fetch_progress.js")
+        data = self.client.get(reverse("fetch_progress")).json()
+        self.assertEqual((data["active"], data["text"]), (True, "1 publication récupérée sur 2."))
+
+    def test_json_once_over(self):
+        self.client.force_login(self.alice)
+        data = self.client.get(reverse("fetch_progress"), {"since": "pas une date"}).json()
+        self.assertEqual(data, {"active": False, "text": ""})
+
+    def test_the_page_of_a_publication_in_the_queue(self):
+        request = self.request(self.bob, "10.1000/a")
+        self.client.force_login(self.alice)
+        url = reverse("publication_detail", args=[request.publication_id])
+        response = self.client.get(url)
+        self.assertContains(response, "Données en cours de récupération")
+        self.assertContains(response, f'data-fetch-pending-publication="{request.publication_id}"')
+        self.assertContains(response, "js/fetch_progress.js")
+        data = self.client.get(
+            reverse("fetch_progress"), {"publication": request.publication_id}
+        ).json()
+        self.assertTrue(data["publication_pending"])
+        FetchRequest.objects.update(status=Status.DONE)
+        self.assertNotContains(self.client.get(url), "Données en cours de récupération")
+        data = self.client.get(
+            reverse("fetch_progress"), {"publication": request.publication_id}
+        ).json()
+        self.assertFalse(data["publication_pending"])
+
+    def test_visitors_see_nothing(self):
+        request = self.request(self.bob, "10.1000/a")
+        response = self.client.get(reverse("publication_detail", args=[request.publication_id]))
+        self.assertNotContains(response, "Données en cours de récupération")
+        self.assertNotContains(response, "fetch_progress.js")
+
+
+class BatchOutcomeTests(TestCase):
+    """Once a batch is over, the next page says how it went, once (#379)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.alice = get_user_model().objects.create_user("alice")
+
+    def setUp(self):
+        self.client.force_login(self.alice)
+        self.request = fetch_queue.enqueue(
+            Publication.objects.create(doi="10.1000/a"), self.alice, with_references=False
+        )
+        self.client.get(reverse("corpus"))  # the batch is followed from now on
+
+    def finish(self):
+        FetchRequest.objects.update(status=Status.DONE)
+
+    def test_the_next_page_says_it_once(self):
+        self.finish()
+        response = self.client.get(reverse("corpus"))
+        self.assertContains(response, "Récupération terminée : 1 publication récupérée.")
+        self.assertContains(response, "data-toast-autohide")
+        self.assertNotContains(response, "fetch_progress.js")
+        self.assertNotContains(self.client.get(reverse("corpus")), "Récupération terminée")
+
+    def test_not_again_once_the_toast_said_it(self):
+        self.finish()
+        data = self.client.get(reverse("fetch_progress")).json()
+        self.assertEqual(data["text"], "Récupération terminée : 1 publication récupérée.")
+        self.assertNotContains(self.client.get(reverse("corpus")), "Récupération terminée")
+
+    def test_the_page_that_reloads_says_it(self):
+        self.finish()
+        pk = self.request.publication_id
+        data = self.client.get(reverse("fetch_progress"), {"publication": pk}).json()
+        self.assertFalse(data["publication_pending"])
+        response = self.client.get(reverse("publication_detail", args=[pk]))
+        self.assertContains(response, "Récupération terminée")
+
+    def test_the_pending_page_does_not_offer_to_refresh(self):
+        response = self.client.get(
+            reverse("publication_detail", args=[self.request.publication_id])
+        )
+        self.assertContains(response, "Données en cours de récupération")
+        self.assertNotContains(response, "pas encore été récupérées")
