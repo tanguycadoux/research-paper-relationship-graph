@@ -1,0 +1,16 @@
+{% comment %}
+A form field (#337): label, input, help, errors. Rendered by {% field %} of ui.py.
+{% endcomment %}
+<div class="space-y-1">
+    <label for="{{ field_id }}">{{ field.label }}</label>
+    {{ widget }}
+    {% if field.help_text %}
+        {# Django's own help can hold HTML (the password rules): trusted, not user input. #}
+        <div id="{{ field_id }}-help" class="text-xs text-gray-600 [&_ul]:list-disc [&_ul]:pl-4">{{ field.help_text|safe }}</div>
+    {% endif %}
+    {% if field.errors %}
+        <ul id="{{ field_id }}-errors" class="text-sm text-red-700">
+            {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    {% endif %}
+</div>

@@ -11,7 +11,10 @@
         {% card %}
             <form method="post" class="space-y-4">
                 {% csrf_token %}
-                {{ form.as_div }}
+                {% form_errors form %}
+                {% for item in form %}
+                    {% field item %}
+                {% endfor %}
                 {% button "S'inscrire" icon="person_add" %}
             </form>
         {% endcard %}

@@ -16,12 +16,9 @@
             {% csrf_token %}
             <fieldset class="space-y-4">
                 <legend class="sr-only">Identité</legend>
-                {% for field in form %}
-                    <div>
-                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                        {{ field }}
-                        {{ field.errors }}
-                    </div>
+                {% form_errors form %}
+                {% for item in form %}
+                    {% field item %}
                 {% endfor %}
             </fieldset>
             <div class="flex gap-2">
