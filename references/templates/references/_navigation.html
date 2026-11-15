@@ -19,7 +19,12 @@
             {% for group in groups %}
                 <details name="navigation" class="group" data-nav-menu>
                     <summary class="{{ group.classes }}">
-                        {{ group.title }}
+                        {% if group.short_title != group.title %}
+                            <span class="sm:hidden">{{ group.short_title }}</span>
+                            <span class="hidden sm:inline">{{ group.title }}</span>
+                        {% else %}
+                            {{ group.title }}
+                        {% endif %}
                         {% if group.count %}
                             <span aria-hidden="true">{% badge group.count|stringformat:"d" variant="warning" %}</span>
                             <span class="sr-only">, {{ group.count }} à traiter</span>

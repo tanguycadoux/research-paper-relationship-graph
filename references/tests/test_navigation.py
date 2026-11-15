@@ -53,6 +53,16 @@ class MainNavigationTests(TestCase):
         self.assertNotIn("Mon corpus", html)
         self.assertNotIn("Conflits", html)
 
+    def test_short_menu_names_below_sm(self):
+        # #331: the three menus fit in 390 px.
+        user = get_user_model().objects.create_user("jade")
+        html = render_navigation("/", user)
+        summaries = [part.split("</summary>")[0] for part in html.split("<summary")[1:]]
+        self.assertIn('<span class="sm:hidden">Corpus</span>', summaries[0])
+        self.assertIn('<span class="hidden sm:inline">Mon corpus</span>', summaries[0])
+        self.assertIn('<span class="sm:hidden">Base</span>', summaries[1])
+        self.assertNotIn("sm:hidden", summaries[2])
+
     def test_one_menu_per_group_on_a_small_screen(self):
         user = get_user_model().objects.create_user("gina")
         html = render_navigation("/authors/merge/", user)
