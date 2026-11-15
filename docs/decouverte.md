@@ -13,7 +13,7 @@ la moins citée.
 
 - **Contexte** : tout le corpus (par défaut), ou un tag avec ses sous-tags
   (`?tag=Projet` compte aussi les articles tagués « Projet/Groupe », comme le filtre de
-  « Mes références », `tags.tagged`). Un tag qui n'existe plus ramène à tout le corpus,
+  « Mon corpus », `tags.tagged`). Un tag qui n'existe plus ramène à tout le corpus,
   avec un message. Le graphe d'un tag partage ce contexte (`tags.context_publications`,
   `views/tag_context.py`, #290 : voir [graphes.md](graphes.md)).
 - **Calcul** : une agrégation sur `CitedReference.target`, en base, sans appel externe.
@@ -28,7 +28,7 @@ la moins citée.
   leur nombre ; listées dans la ligne, elles la rendaient très haute. Les boutons
   d'ajout sont ceux des autres tableaux (« à lire », puis « + »).
 - **Accès** : la navigation (« Mon corpus › Suggestions ») et le bouton « Suggestions »
-  de « Mes références », qui garde le tag filtré.
+  de « Mon corpus », qui garde le tag filtré.
 
 ## Citations entrantes
 

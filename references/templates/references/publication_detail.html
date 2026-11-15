@@ -23,7 +23,7 @@
                 {% if belongs_to_user %}
                     <form method="post" action="{% url 'corpus_remove' publication.pk %}">
                         {% csrf_token %}
-                        {% button "Retirer de mes références" variant="danger-light" icon="remove" %}
+                        {% button "Retirer de mon corpus" variant="danger-light" icon="remove" %}
                     </form>
                     {% include "references/_reading_status_form.html" with pub=publication status=reading_status %}
                 {% else %}
@@ -32,7 +32,7 @@
                           action="{% url 'corpus_add' publication.pk %}"
                           class="flex flex-wrap gap-2">
                         {% csrf_token %}
-                        {% button "Ajouter à mes références" variant="success-light" icon="add" %}
+                        {% button "Ajouter à mon corpus" variant="success-light" icon="add" %}
                         {% button "Ajouter à lire" variant="secondary" icon="bookmark_add" name="status" value="to_read" %}
                     </form>
                 {% endif %}
@@ -437,8 +437,8 @@
                                                         {% csrf_token %}
                                                         <input type="hidden" name="identifier" value="{{ work.doi }}">
                                                         <input type="hidden" name="next" value="{{ request.get_full_path }}#incoming-title">
-                                                        {% button "Ajouter à mes références, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
-                                                        {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
+                                                        {% button "Ajouter à mon corpus, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                                                        {% button "Ajouter à mon corpus" variant="success-light" icon="add" icon_only=True %}
                                                     </form>
                                                 {% endif %}
                                             </td>

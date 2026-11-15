@@ -100,7 +100,7 @@ class SuggestionTests(TestCase):
         central = response.context["publications"][0]
         self.assertEqual(central.citing, [self.mine[2], self.mine[1], self.mine[0]])
         self.assertFalse(central.in_corpus)
-        self.assertContains(response, "Ajouter à mes références, à lire")
+        self.assertContains(response, "Ajouter à mon corpus, à lire")
         self.assertContains(response, 'popovertarget="citing-1"')
         self.assertContains(response, '<div popover id="citing-1"')
 

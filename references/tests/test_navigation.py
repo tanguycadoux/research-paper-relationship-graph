@@ -43,7 +43,7 @@ class MainNavigationTests(TestCase):
     def test_private_groups_are_hidden_from_visitors(self):
         html = render_navigation("/", AnonymousUser())
         self.assertIn("Publications", html)
-        self.assertNotIn("Mes références", html)
+        self.assertNotIn("Mon corpus", html)
         self.assertNotIn("Conflits", html)
 
     def test_one_menu_per_group_on_a_small_screen(self):
@@ -85,8 +85,8 @@ class NavigationCounterTests(TestCase):
         other = Publication.objects.create(title="Autre")
         CitedReference.objects.create(source=other, position=0, unstructured="Ailleurs")
 
-    def link(self, html, label):
-        return html.split(f"{label}")[1].split("</a>")[0]
+    def link(self, html, url):
+        return html.split(f'href="{url}"')[1].split("</a>")[0]
 
     def test_counts_with_a_text_for_screen_readers(self):
         MetadataConflict.objects.create(
@@ -98,10 +98,8 @@ class NavigationCounterTests(TestCase):
             source="crossref",
         )
         html = render_navigation("/", self.user)
-        self.assertIn(
-            '<span class="sr-only">, 1 à identifier</span>', self.link(html, "Mes références")
-        )
-        self.assertIn('<span class="sr-only">, 1 en attente</span>', self.link(html, "Conflits"))
+        self.assertIn('<span class="sr-only">, 1 à identifier</span>', self.link(html, "/corpus/"))
+        self.assertIn('<span class="sr-only">, 1 en attente</span>', self.link(html, "/conflicts/"))
 
     def test_the_menu_of_a_group_shows_the_total_of_its_counters(self):
         html = render_navigation("/", self.user)

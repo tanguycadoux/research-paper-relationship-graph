@@ -17,7 +17,7 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   `static/js/autosubmit.js`, avec un bouton sans JavaScript). Le contexte est celui des
   suggestions : `tags.context_publications`, et un tag qui n'existe plus ramène à tout le
   corpus avec un message (`views/tag_context.requested_tag`, partagé avec les
-  suggestions). « Mes références » filtrée par un tag renvoie au graphe de ce tag, et le
+  suggestions). « Mon corpus » filtré par un tag renvoie au graphe de ce tag, et le
   nom de l'image exportée le dit (`graphe-corpus-tag-projet`).
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la

@@ -25,14 +25,14 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
   toasts (`static/js/toasts.js`).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
-  des publications, « Mes références », « Cité par » et la page d'un auteur.
+  des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce
   qu'il affiche à côté du titre : le premier auteur (« et al. » s'il y en a d'autres,
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
   que les jointures ne multiplient pas les décomptes.
-- **Listes paginées** (#154, `views/pagination.py`) : les publications, « Mes
-  références » et les auteurs par pages de 50. Les annotations du tableau ne sont
+- **Listes paginées** (#154, `views/pagination.py`) : les publications, « Mon
+  corpus » et les auteurs par pages de 50. Les annotations du tableau ne sont
   calculées que pour la page, et le nombre de requêtes ne dépend pas de la taille de la
   base. Le tri finit sur l'identifiant, pour que des lignes de même date ou de même nom
   ne passent pas d'une page à l'autre. Une page invalide ou au-delà de la dernière mène
