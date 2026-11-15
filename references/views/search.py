@@ -14,9 +14,13 @@ def search(request):
     """Publications in pages, then the first matching authors (#153)."""
     text = request.GET.get("q", "").strip()
     query = parse(text)
+    if query.notes and not request.user.is_authenticated:
+        query.errors.append("note: cherche dans vos notes : connectez-vous pour l'utiliser.")
     context = {"q": text, "query": query}
     if query:
-        publications = for_publication_table(filter_publications(Publication.objects.all(), query))
+        publications = for_publication_table(
+            filter_publications(Publication.objects.all(), query, request.user)
+        )
         sort = PUBLICATIONS.read(request.GET.get("sort"))
         page = page_of(request, PUBLICATIONS.apply(publications, sort))
         authors = search_authors(query).order_by("last_name", "first_name", "pk")

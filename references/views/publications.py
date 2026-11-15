@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from ..forms import PublicationForm
+from ..forms import NoteForm, PublicationForm
 from ..models import CitedReference, FetchRequest, Publication, UserPublication
 from ..services.corpus import tags
 from ..services.corrections.identification import is_to_identify
@@ -20,6 +20,8 @@ from ..services.corrections.publication_edits import (
 )
 from ..services.discovery import incoming_citations
 from ..services.display import filters, wording
+from ..services.display.citations import publication_citations
+from ..services.display.open_access import open_access_link
 from ..services.display.publication_details import crossref_details, publication_abstract
 from ..services.display.publication_table import (
     corpus_ids,
@@ -77,6 +79,7 @@ class PublicationDetailView(DetailView):
             context["reading_status"] = entry.reading_status
             context["reading_statuses"] = UserPublication.ReadingStatus.choices
             context["entry_tags"] = entry.tags.all()
+            context["note_form"] = NoteForm(instance=entry)
             context["known_tags"] = sorted(tags.known_paths(self.request.user), key=str.casefold)
 
         context["cited_references"] = pub.cited_references.select_related("target")
@@ -110,10 +113,19 @@ class PublicationDetailView(DetailView):
         context["references_unidentifiable"] = sum(
             1 for ref in context["cited_references"] if ref.unidentifiable
         )
-        context["details"] = crossref_details(pub)
-        context["abstract"] = publication_abstract(pub)
+        context |= description_context(pub)
         context.update(long_lists_context(self.request, pub, context["cited_references"]))
         return context
+
+
+def description_context(pub):
+    """What the page shows of the publication itself, read from the stored responses."""
+    return {
+        "details": crossref_details(pub),
+        "abstract": publication_abstract(pub),
+        "citations": publication_citations(pub),
+        "open_access": open_access_link(pub),
+    }
 
 
 # Long lists folded (#269): a LIGO article has 1 012 authors, « Hallmarks of Cancer »

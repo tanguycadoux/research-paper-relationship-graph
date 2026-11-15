@@ -2,7 +2,7 @@ from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Author, Publication
+from .models import Author, Publication, UserPublication
 from .services.corrections import typed_authors
 from .services.discovery.title_search import is_searchable
 from .services.identifiers.arxiv import typed_doi
@@ -235,3 +235,20 @@ class TitleSearchForm(forms.Form):
 
     def clean_author(self):
         return " ".join(self.cleaned_data.get("author", "").split())
+
+
+class NoteForm(forms.ModelForm):
+    """The note of an entry of my corpus (#283), on the page of the publication."""
+
+    note = forms.CharField(
+        label="Ce que vous en retenez",
+        required=False,
+        max_length=20000,
+        strip=True,
+        widget=forms.Textarea,
+        help_text="Visible de vous seul. La recherche la trouve : note:mot.",
+    )
+
+    class Meta:
+        model = UserPublication
+        fields = ["note"]

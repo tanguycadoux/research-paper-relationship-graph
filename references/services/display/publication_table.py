@@ -4,7 +4,17 @@ that lists them: first author, references to identify, missing metadata, referen
 not imported.
 """
 
-from django.db.models import Count, Exists, IntegerField, OuterRef, Subquery, Value
+from django.db.models import (
+    BooleanField,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    IntegerField,
+    OuterRef,
+    Q,
+    Subquery,
+    Value,
+)
 from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Cast, Coalesce, Concat, Trim
 
@@ -42,14 +52,16 @@ def with_first_author(publications):
 
 class CorpusIds(set):
     """
-    Ids of the publications of the user's corpus, for the add/remove buttons; with_tags
-    and with_status, those whose removal would lose something, to confirm it (#280).
+    Ids of the publications of the user's corpus, for the add/remove buttons; with_tags,
+    with_status and with_note, those whose removal would lose something, to confirm it
+    (#280, #283).
     """
 
-    def __init__(self, ids=(), with_tags=(), with_status=()):
+    def __init__(self, ids=(), with_tags=(), with_status=(), with_note=()):
         super().__init__(ids)
         self.with_tags = set(with_tags)
         self.with_status = set(with_status)
+        self.with_note = set(with_note)
 
 
 def corpus_ids(user):
@@ -61,15 +73,18 @@ def corpus_ids(user):
         .annotate(
             has_tags=Exists(
                 UserPublication.tags.through.objects.filter(userpublication=OuterRef("pk"))
-            )
+            ),
+            # Not the notes themselves: they can be long, and every table asks.
+            has_note=ExpressionWrapper(~Q(note=""), output_field=BooleanField()),
         )
-        .values_list("publication_id", "has_tags", "reading_status")
+        .values_list("publication_id", "has_tags", "reading_status", "has_note")
     )
     rows = list(rows)
     return CorpusIds(
-        (pk for pk, _, _ in rows),
-        with_tags=(pk for pk, has_tags, _ in rows if has_tags),
-        with_status=(pk for pk, _, status in rows if status),
+        (pk for pk, *_ in rows),
+        with_tags=(pk for pk, has_tags, *_ in rows if has_tags),
+        with_status=(pk for pk, _, status, _ in rows if status),
+        with_note=(pk for pk, *_, has_note in rows if has_note),
     )
 
 

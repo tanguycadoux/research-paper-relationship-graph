@@ -1,9 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from ..forms import NoteForm
 from ..models import Publication, Tag, UserPublication
 from ..services.corpus import import_reports, tags
 from ..services.corpus.entries import (
@@ -149,7 +151,12 @@ def removal_losses(entry):
         lost.append(f"{'ses tags' if len(labels) > 1 else 'son tag'} {', '.join(labels)}")
     if entry.reading_status:
         lost.append(f"son statut « {entry.get_reading_status_display()} »")
-    return f", avec {' et '.join(lost)}" if lost else ""
+    if entry.note:
+        lost.append("sa note")
+    if not lost:
+        return ""
+    listed = ", ".join(lost[:-1]) + " et " if len(lost) > 1 else ""
+    return f", avec {listed}{lost[-1]}"
 
 
 @login_required
@@ -182,6 +189,20 @@ def set_reading_status(request, pk):
     else:
         messages.success(request, report)
     return redirect_back(request, imported.pk if imported else pk)
+
+
+@login_required
+@require_POST
+def set_note(request, pk):
+    """Save the note of an entry of my corpus (#283); an empty note erases it."""
+    entry = get_object_or_404(UserPublication, user=request.user, publication_id=pk)
+    form = NoteForm(request.POST, instance=entry)
+    if not form.is_valid():
+        messages.error(request, " ".join(form.errors.get("note", [])))
+    else:
+        form.save()
+        messages.success(request, "Note enregistrée." if entry.note else "Note effacée.")
+    return redirect(reverse("publication_detail", args=[pk]) + "#note")
 
 
 def reading_status_report(entry, status):

@@ -19,7 +19,7 @@ auteurs écrits de plusieurs façons, ORCID ou nom différents selon la source. 
 les corrige (identification d'une référence, fusion d'auteurs ou de publications,
 décision sur un conflit), et ces corrections sont **communes à tous** : les publications,
 les auteurs et les décisions forment une base de connaissances partagée. Seuls le corpus,
-le statut de lecture et les tags sont propres à chaque utilisateur.
+le statut de lecture, les tags et les notes sont propres à chaque utilisateur.
 
 ## Documents
 
@@ -136,6 +136,7 @@ references/          application principale
       publication_table.py  annotations du tableau commun (premier auteur, badges)
       publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
                      résumé)
+      citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
@@ -233,7 +234,7 @@ erDiagram
 | `OrcidRecord` | Ce qu'ORCID a répondu sur une personne, stocké tel quel : l'enregistrement public (noms, résumé des travaux, `data`), demandé depuis la fiche auteur, et les noms donnés par la recherche groupée (`search_data`, `{}` si ORCID ne connaît pas la personne), chacun avec sa date. Il est rattaché à l'ORCID et non à l'auteur : il survit aux fusions. |
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
 | `MetadataConflict` | Une valeur d'une source qui contredit une valeur connue, sur une publication ou un auteur : type, valeur retenue, valeur proposée, source, ce que la page affiche de la proposition (`details`), décision (ouvert, existant gardé, proposée retenue, vu), qui et quand. Signalé une seule fois. Détails dans [corrections.md](corrections.md#conflits). |
-| `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi), et ses tags. |
+| `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi), ses tags et sa note (`note`, texte libre et privé, #283). |
 | `FetchRequest` | Une récupération auprès des sources laissée au worker (#378) : publication, identifiant demandé (DOI ou ISBN, gardé si la publication disparaît dans une fusion), action (importer, avec ou sans la bibliographie), état (en attente, en cours, faite, échouée), demandeurs, dates et erreur. Une seule demande active par publication et par action : un second demandeur rejoint la ligne existante. Les administrateurs relancent une demande échouée (elle repart en fin de file) ou annulent une demande en attente (elle passe en échouée, « Annulée par … ») depuis la page « File des récupérations » (#382). |
 | `FetchWorker` | La dernière date à laquelle `fetch_worker` s'est signalé (toutes les 10 s, même pendant un long import). Sans signe depuis 30 s, les pages font la récupération elles-mêmes. |
 | `Tag` | Un tag d'un utilisateur, hiérarchique : son nom est un chemin, « Projet A/Groupe A », dont les parents existent implicitement. Unique par utilisateur, casse ignorée ; un tag qui ne classe plus aucune publication est oublié. |

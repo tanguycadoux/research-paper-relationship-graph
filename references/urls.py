@@ -166,6 +166,7 @@ urlpatterns = [
         name="corpus_add_by_identifier",
     ),
     path("corpus/<int:pk>/status/", corpus.set_reading_status, name="corpus_reading_status"),
+    path("corpus/<int:pk>/note/", corpus.set_note, name="corpus_note"),
     path("corpus/suggestions/", suggestions.corpus_suggestions, name="corpus_suggestions"),
     path("corpus/tags/", corpus.manage_tags, name="tag_list"),
     path("corpus/tags/rename/", corpus.rename_tag, name="tag_rename"),

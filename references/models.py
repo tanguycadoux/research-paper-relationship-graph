@@ -467,6 +467,8 @@ class UserPublication(models.Model):
         "statut de lecture", max_length=10, choices=ReadingStatus.choices, blank=True
     )
     tags = models.ManyToManyField(Tag, blank=True, related_name="entries")
+    # What the user keeps from the publication (#283): private, free text.
+    note = models.TextField("note", blank=True)
 
     class Meta:
         constraints = [

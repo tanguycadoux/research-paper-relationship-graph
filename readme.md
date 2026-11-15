@@ -11,7 +11,8 @@ sur [arXiv](https://arxiv.org/). Les livres sont identifiés par leur ISBN, avec
 [Open Library](https://openlibrary.org/) en recours.
 
 Fonctionnalités :
-- un **corpus** personnel, avec statut de lecture et tags hiérarchiques, importable
+- un **corpus** personnel, avec statut de lecture, tags hiérarchiques et une note
+  privée par publication, importable
   depuis un fichier BibTeX, RIS ou un export JSON, exportable en JSON et en BibTeX ;
 - une **base commune** de publications et d'auteurs, corrigée par tous : identification
   assistée des références citées (candidats proposés, en série), fusion d'auteurs et de

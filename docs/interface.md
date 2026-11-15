@@ -45,9 +45,22 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   leur lien, déjà présentes, sans métadonnées, entrées ignorées et pourquoi, 20 par liste)
   est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture.
 - **Retirer du corpus** (`_corpus_remove_form.html`, tableaux et fiche) : immédiat, sauf si
-  l'entrée a des tags ou un statut de lecture, que le retrait efface : le bouton ouvre alors
-  une confirmation en popover, et le message dit ce qui a été perdu (#280). `corpus_ids`
-  rend ces entrées en une requête (`CorpusIds.with_tags`, `with_status`).
+  l'entrée a des tags, un statut de lecture ou une note, que le retrait efface : le bouton
+  ouvre alors une confirmation en popover, et le message dit ce qui a été perdu (#280,
+  #283). `corpus_ids` rend ces entrées en une requête (`CorpusIds.with_tags`,
+  `with_status`, `with_note`, sans lire le texte des notes).
+- **Note** (#283) : sur la fiche d'une publication de mon corpus, une carte « Ma note » en
+  tête de la colonne de droite, un champ de texte libre enregistré par un bouton (vide, la
+  note est effacée). Privée : seul son auteur la voit. Cherchée par `note:` dans la
+  recherche, exportée en JSON (`note`, version 3) et en BibTeX (`annote`).
+- **Citer** (`_citation_panel.html`, `services/display/citations.py`, #286) : sur la fiche,
+  un popover donne la référence en APA (7ᵉ édition) et en IEEE, et l'entrée BibTeX de la
+  publication seule (`bibtex_entry` de l'export du corpus). Les citations sont mises en
+  forme sur le serveur, à partir de la base : auteurs canoniques dans l'ordre de signature,
+  titre lisible, année, et revue, volume, numéro, pages et éditeur de la réponse Crossref
+  gardée ; une prépublication arXiv est citée par son identifiant. Le popover s'ouvre et se
+  ferme sans JavaScript, le texte reste sélectionnable ; `static/js/copy_citation.js`
+  ajoute « Copier » (HTML, qui garde l'italique, et texte brut ; texte brut pour BibTeX).
 - **Actions groupées** (`_bulk_actions.html`, `views/corpus_bulk.py`,
   `services/corpus/bulk.py`, #287) : dans « Mon corpus », une case par ligne et, au-dessus
   du tableau, une barre pour ajouter un tag, changer le statut de lecture ou retirer du
@@ -105,7 +118,8 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
   année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
   auteurs et les identifiants ; les mots d'un `auteur:` doivent appartenir à la même
-  personne ; un `titre:` entre guillemets est une expression. Un opérateur inconnu reste
+  personne ; un `titre:` entre guillemets est une expression ; `note:` cherche dans les
+  notes de mon corpus (#283), aucune pour un visiteur, à qui la page dit de se connecter. Un opérateur inconnu reste
   du texte (« Re:thinking ») ; une année mal écrite est signalée sans bloquer le reste.
   Résultats : les publications par pages, et les 20 premiers auteurs (sauf si la
   question porte sur des titres, des années ou des identifiants). Les comparaisons
