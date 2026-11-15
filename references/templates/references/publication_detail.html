@@ -21,10 +21,7 @@
         <div class="flex flex-wrap items-center gap-2">
             {% if user.is_authenticated %}
                 {% if belongs_to_user %}
-                    <form method="post" action="{% url 'corpus_remove' publication.pk %}">
-                        {% csrf_token %}
-                        {% button "Retirer de mon corpus" variant="danger-light" icon="remove" %}
-                    </form>
+                    {% include "references/_corpus_remove_form.html" with pub=publication %}
                     {% include "references/_reading_status_form.html" with pub=publication status=reading_status %}
                 {% else %}
                     {# « À lire »: without its bibliography until the status changes (#234). #}

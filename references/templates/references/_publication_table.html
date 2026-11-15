@@ -88,11 +88,7 @@ always beside the reading status: it stays on the page of each publication.
                     {% if corpus_actions %}
                         <td class="text-right">
                             {% if pub.id in user_pub_ids %}
-                                <form method="post" action="{% url 'corpus_remove' pub.pk %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    {% button "Retirer de mon corpus" variant="danger-light" icon="remove" icon_only=True %}
-                                </form>
+                                {% include "references/_corpus_remove_form.html" with icon_only=True next=request.get_full_path %}
                             {% else %}
                                 <form method="post"
                                       action="{% url 'corpus_add' pub.pk %}"

@@ -26,6 +26,10 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
   compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
   toasts (`static/js/toasts.js`).
+- **Retirer du corpus** (`_corpus_remove_form.html`, tableaux et fiche) : immédiat, sauf si
+  l'entrée a des tags ou un statut de lecture, que le retrait efface : le bouton ouvre alors
+  une confirmation en popover, et le message dit ce qui a été perdu (#280). `corpus_ids`
+  rend ces entrées en une requête (`CorpusIds.with_tags`, `with_status`).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce

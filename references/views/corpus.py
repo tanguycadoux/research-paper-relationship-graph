@@ -116,10 +116,23 @@ def back_or_corpus(request):
 @require_POST
 def remove_from_user_refs(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
+    entry = UserPublication.objects.filter(user=request.user, publication=pub).first()
+    lost = removal_losses(entry) if entry else ""
     UserPublication.objects.filter(user=request.user, publication=pub).delete()
     tags.forget_unused_tags(request.user)
-    messages.success(request, f"« {pub} » a été retiré de votre corpus.")
+    messages.success(request, f"« {pub} » a été retiré de votre corpus{lost}.")
     return redirect_back(request, pk)
+
+
+def removal_losses(entry):
+    """What the removal of an entry loses, for its message (#280): « , avec … »."""
+    lost = []
+    labels = [f"« {tag.label} »" for tag in entry.tags.all()]
+    if labels:
+        lost.append(f"{'ses tags' if len(labels) > 1 else 'son tag'} {', '.join(labels)}")
+    if entry.reading_status:
+        lost.append(f"son statut « {entry.get_reading_status_display()} »")
+    return f", avec {' et '.join(lost)}" if lost else ""
 
 
 @login_required
