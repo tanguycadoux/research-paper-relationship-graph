@@ -146,11 +146,23 @@ class EditionTests(TestCase):
 
 
 class RegistrationTests(TestCase):
-    def test_registration_creates_the_account_then_asks_to_log_in(self):
+    def test_registration_creates_the_account_and_logs_in(self):
         password = "un-mot-de-passe-solide-42"
         response = self.client.post(
             reverse("register"),
             {"username": "alice", "password1": password, "password2": password},
+            follow=True,
         )
-        self.assertRedirects(response, reverse("login"))
-        self.assertTrue(get_user_model().objects.get(username="alice").check_password(password))
+        self.assertRedirects(response, reverse("index"))
+        alice = get_user_model().objects.get(username="alice")
+        self.assertTrue(alice.check_password(password))
+        self.assertEqual(response.context["user"], alice)
+        self.assertContains(response, "Bienvenue, alice : votre compte est créé.")
+
+    def test_an_invalid_registration_logs_nobody_in(self):
+        response = self.client.post(
+            reverse("register"), {"username": "bob", "password1": "a", "password2": "b"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["user"].is_authenticated)
+        self.assertFalse(get_user_model().objects.filter(username="bob").exists())
