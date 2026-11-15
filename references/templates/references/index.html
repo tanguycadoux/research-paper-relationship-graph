@@ -51,13 +51,13 @@
                         </ul>
                     {% else %}
                         <p class="mb-4 text-sm text-gray-600">
-                            Votre corpus est vide : ajoutez une publication par son DOI ou son ISBN depuis « Mes références », ou depuis la liste des publications.
+                            Votre corpus est vide : ajoutez une publication par son DOI ou son ISBN depuis « Mon corpus », ou depuis la liste des publications.
                         </p>
                     {% endif %}
                     <div class="flex flex-wrap gap-2">
                         {% url 'corpus' as corpus_url %}
                         {% url 'corpus_graph' as corpus_graph_url %}
-                        {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
+                        {% button "Mon corpus" url=corpus_url variant="secondary" icon="bookmarks" %}
                         {% button "Mon graphe" url=corpus_graph_url variant="secondary" icon="hub" %}
                     </div>
                 {% endcard %}

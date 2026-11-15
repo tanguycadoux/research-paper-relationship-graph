@@ -19,7 +19,7 @@ NAVIGATION = [
         "Mon corpus",
         True,
         [
-            ("Mes références", "corpus", "bookmarks"),
+            ("Publications", "corpus", "bookmarks"),
             ("Suggestions", "corpus_suggestions", "lightbulb"),
             ("Mon graphe", "corpus_graph", "hub"),
         ],

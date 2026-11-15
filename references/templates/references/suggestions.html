@@ -18,7 +18,7 @@
             </p>
         </div>
         {% url 'corpus' as corpus_url %}
-        {% button "Mes références" url=corpus_url variant="secondary" icon="bookmarks" %}
+        {% button "Mon corpus" url=corpus_url variant="secondary" icon="bookmarks" %}
     </header>
 
     {# The context comes first below xl: it decides what the list shows. #}
@@ -132,8 +132,8 @@
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next" value="{{ request.get_full_path }}">
                                                 {# « + » last, as in the other tables. #}
-                                                {% button "Ajouter à mes références, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
-                                                {% button "Ajouter à mes références" variant="success-light" icon="add" icon_only=True %}
+                                                {% button "Ajouter à mon corpus, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                                                {% button "Ajouter à mon corpus" variant="success-light" icon="add" icon_only=True %}
                                             </form>
                                         {% endif %}
                                     </td>

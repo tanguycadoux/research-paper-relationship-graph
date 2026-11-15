@@ -60,7 +60,7 @@ class PublicationTablesTests(TestCase):
         self.assertEqual(list(response.context["publications"]), [self.book])
         # Counted once despite the two slots.
         self.assertContains(response, "1 à identifier")
-        self.assertContains(response, "Ajouter à mes références")
+        self.assertContains(response, "Ajouter à mon corpus")
         # Its own name on every row would say nothing.
         self.assertNotContains(response, '<th scope="col">Auteurs</th>', html=True)
 

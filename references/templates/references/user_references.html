@@ -1,11 +1,11 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}Mes références · {% endblock title %}
+{% block title %}Mon corpus · {% endblock title %}
 
 {% block content %}
     <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1>Mes références</h1>
+        <h1>Mon corpus</h1>
         <div class="flex flex-wrap gap-2">
             {# The suggestions (#162) and the graph (#290) of the tag filtered on, if any. #}
             {% url 'corpus_suggestions' as suggestions_url %}
