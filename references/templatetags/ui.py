@@ -308,7 +308,7 @@ FILTER_BUTTON_BASE = (
     "inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded "
     "focus-visible:outline-2 focus-visible:outline-blue-700"
 )
-FILTER_BUTTON_OFF = f"{FILTER_BUTTON_BASE} text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+FILTER_BUTTON_OFF = f"{FILTER_BUTTON_BASE} text-gray-500 hover:bg-gray-100 hover:text-gray-700"
 FILTER_BUTTON_ON = f"{FILTER_BUTTON_BASE} bg-blue-100 text-blue-800 hover:bg-blue-200"
 # A panel opened by a button, a popover: in the top layer, a scrolling card cannot cut it;
 # a click outside closes it, and opening another one closes it too. Under its button where
