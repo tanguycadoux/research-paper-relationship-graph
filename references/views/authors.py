@@ -198,8 +198,14 @@ def author_merge_confirm_view(request, ids):
 
 @login_required
 def author_duplicates_view(request):
-    groups = author_duplicates.duplicate_groups()
-    return render(request, "references/author_duplicates.html", {"groups": groups})
+    """The probable duplicates, the most likely first, in pages of 50 groups (#270)."""
+    page = page_of(request, author_duplicates.duplicate_groups(), DUPLICATES_PAGE_SIZE)
+    return render(
+        request, "references/author_duplicates.html", {"groups": page.object_list, "page_obj": page}
+    )
+
+
+DUPLICATES_PAGE_SIZE = 50
 
 
 @login_required
@@ -214,4 +220,7 @@ def author_duplicates_dismiss_view(request):
         author_distinctions.declare_distinct(authors, request.user)
         names = ", ".join(str(author) for author in authors)
         messages.success(request, f"Ne seront plus proposés ensemble : {names}.")
-    return redirect("author_duplicates")
+    # Back to the same page of suggestions.
+    page = request.POST.get("page", "")
+    url = reverse("author_duplicates")
+    return redirect(f"{url}?page={page}" if page.isdigit() else url)

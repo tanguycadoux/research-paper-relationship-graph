@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 
 from django.db.models import Count
 
-from ...models import Author, AuthorPublication
+from ...models import Author, AuthorPublication, Organization
 from ..identifiers.names import name_parts, normalized
 from ..imports.organizations import top_levels
 from .author_distinctions import distinct_pairs, ordered_pair
@@ -65,14 +65,28 @@ def add_shared_organizations(groups):
 
 
 def top_level_organizations(author_pks):
-    """{author pk: set of top-level organizations declared on its publications}."""
-    slots = AuthorPublication.objects.filter(author_id__in=author_pks).prefetch_related(
-        "organizations__ancestors__ancestors"
+    """
+    {author pk: set of top-level organizations declared on its publications}. The pairs
+    (author, organization) in one query, and the top levels of each organization once:
+    loading every slot with its organizations took 500 ms for 3 500 authors (#270).
+    """
+    pairs = (
+        AuthorPublication.organizations.through.objects.filter(
+            authorpublication__author_id__in=author_pks
+        )
+        .values_list("authorpublication__author_id", "organization_id")
+        .distinct()
     )
+    pairs = list(pairs)
+    tops = {
+        organization.pk: top_levels(organization)
+        for organization in Organization.objects.filter(
+            pk__in={organization_id for _, organization_id in pairs}
+        ).prefetch_related("ancestors__ancestors")
+    }
     organizations = defaultdict(set)
-    for slot in slots:
-        for organization in slot.organizations.all():
-            organizations[slot.author_id].update(top_levels(organization))
+    for author_id, organization_id in pairs:
+        organizations[author_id].update(tops[organization_id])
     return organizations
 
 
