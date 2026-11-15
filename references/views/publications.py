@@ -26,6 +26,7 @@ from ..services.display.publication_table import (
     references_available,
 )
 from ..services.display.sorting import PUBLICATIONS
+from ..services.imports import fetch_queue
 from ..services.imports.importer import import_publication
 from ..services.imports.jacow import is_jacow
 from ..services.imports.organizations import numbered_affiliations
@@ -65,6 +66,9 @@ class PublicationDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         pub = self.object
 
+        # Its data still to come from the queue: the page says so, and reloads once done (#379).
+        if self.request.user.is_authenticated and fetch_queue.publication_pending(pub):
+            context["fetch_pending_publication"] = pub.pk
         context["user_pub_ids"] = corpus_ids(self.request.user)
         context["belongs_to_user"] = pub.pk in context["user_pub_ids"]
         if context["belongs_to_user"]:

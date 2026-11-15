@@ -532,6 +532,12 @@ def message_toast(message):
 
 
 @register.simple_tag
+def toast_classes(variant="primary"):
+    """{% toast_classes %}: a toast that is not a message (the progress of the queue, #379)."""
+    return f"{TOAST_BASE} {TOAST_VARIANTS[variant]} {TOAST_CLASSES}"
+
+
+@register.simple_tag
 def popover_panel_classes():
     """{% popover_panel_classes %}: the classes of a panel opened by a button (popover)."""
     return POPOVER_PANEL_CLASSES

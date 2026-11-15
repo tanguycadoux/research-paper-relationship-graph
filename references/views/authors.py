@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
 
@@ -114,7 +115,9 @@ def author_merge_select_view(request):
         form = AuthorMergeSelectForm(request.POST)
         if form.is_valid():
             ids = [a.id for a in form.cleaned_data["authors"]]
-            return redirect("author_merge_confirm", ids=",".join(map(str, ids)))
+            confirm_url = reverse("author_merge_confirm", args=[",".join(map(str, ids))])
+            back = safe_next(request, request.POST.get("next", ""))
+            return redirect(with_next(confirm_url, back) if back else confirm_url)
         messages.error(request, "Veuillez sélectionner au moins deux auteurs.")
     text = request.GET.get("q", "").strip()
     selected = authors_from_ids(request.GET.get("selected", ""))
@@ -137,7 +140,10 @@ def author_merge_select_view(request):
         "page_obj": page,
         "authors": page.object_list,
         "confirm_url": (
-            reverse("author_merge_confirm", args=[",".join(map(str, selected_ids))])
+            with_next(
+                reverse("author_merge_confirm", args=[",".join(map(str, selected_ids))]),
+                search_url(request),
+            )
             if len(selected) >= 2
             else ""
         ),
@@ -146,6 +152,25 @@ def author_merge_select_view(request):
 
 
 MERGE_PAGE_SIZE = 50
+
+
+def search_url(request):
+    """This page with its search, without the selection: where a merge comes back (#388)."""
+    query = request.GET.copy()
+    for name in ("page", "selected"):
+        query.pop(name, None)
+    url = reverse("author_merge_select")
+    return f"{url}?{query.urlencode()}" if query else url
+
+
+def with_next(url, next_url):
+    return f"{url}?{urlencode({'next': next_url})}"
+
+
+def safe_next(request, next_url):
+    """next_url if it is a page of this site, else ""."""
+    allowed = url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()})
+    return next_url if next_url and allowed else ""
 
 
 def selection_url(request, ids):
@@ -178,6 +203,8 @@ def author_merge_confirm_view(request, ids):
         return redirect("author_merge_select")
 
     kept = authors[0]
+    # Back where the merge started (#388): the search, or the page of duplicates.
+    back = safe_next(request, request.GET.get("next", "")) or reverse("author_merge_select")
     candidates = author_merge.candidate_values(authors)
     form = AuthorMergeConfirmForm(
         request.POST or None,
@@ -188,11 +215,15 @@ def author_merge_confirm_view(request, ids):
     if request.method == "POST" and form.is_valid():
         author_merge.merge_authors(kept, authors[1:], form.cleaned_data, user=request.user)
         messages.success(request, f"{len(authors)} auteurs fusionnés en « {kept} ».")
-        kept = merge_same_orcid(kept, user=request.user)
-        return redirect("author_detail", pk=kept.pk)
+        final = merge_same_orcid(kept, user=request.user)
+        if final != kept:
+            messages.success(request, f"Même ORCID : fusionné aussi dans « {final} ».")
+        return redirect(back)
 
     return render(
-        request, "references/authors_merge_confirm.html", {"form": form, "authors": authors}
+        request,
+        "references/authors_merge_confirm.html",
+        {"form": form, "authors": authors, "back_url": back},
     )
 
 
