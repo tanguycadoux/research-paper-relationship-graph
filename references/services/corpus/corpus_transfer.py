@@ -14,7 +14,7 @@ from ...models import Publication, UserPublication
 from ..identifiers.doi import is_valid_doi, normalize_doi
 from ..sources.doi_registration import unregistered_dois
 from ..sources.external_records import Source, records_by_source
-from .entries import add_identified, find_or_create, with_reading_status
+from .entries import add_identified, find_or_create, queue_identified, with_reading_status
 from .tags import InvalidTag, tag_entry, tags_by_publication
 
 EXPORT_FORMAT = "research-paper-relationship-graph/corpus"
@@ -69,14 +69,16 @@ class ImportReport:
     ignored: list = field(default_factory=list)
     # Titles of the entries whose only identifier is a DOI unknown to doi.org (#240).
     unregistered: list = field(default_factory=list)
+    # Added, their retrieval left to the queue (#378).
+    queued: list = field(default_factory=list)
 
 
-def import_corpus(user, data, default_status=""):
+def import_corpus(user, data, default_status="", *, queued=False):
     """Add the publications of an export of this application to the corpus of user."""
-    return import_entries(user, export_entries(data), default_status)
+    return import_entries(user, export_entries(data), default_status, queued=queued)
 
 
-def import_entries(user, entries, default_status=""):
+def import_entries(user, entries, default_status="", *, queued=False):
     """
     Add the publications of entries ({doi, isbn, title}, and status and tags from an
     export) to the corpus of user, the new ones with default_status when an entry has
@@ -84,6 +86,7 @@ def import_entries(user, entries, default_status=""):
     stored metadata are fetched from the external sources. The status of an entry
     never replaces one the user chose; its tags are added to those of the user. A DOI
     that doi.org does not know is dropped, the ISBN of the entry used instead if any.
+    Queued, the publications are fetched by the fetch_worker command (#378).
     """
     report = ImportReport()
     in_corpus = set(UserPublication.objects.filter(user=user).values_list("publication", flat=True))
@@ -91,7 +94,7 @@ def import_entries(user, entries, default_status=""):
     unregistered = unregistered_dois([doi for doi in dois if is_valid_doi(doi)])
     for entry, doi in zip(entries, dois, strict=True):
         fake_doi = doi in unregistered
-        pub = find_or_create("" if fake_doi else doi, entry.get("isbn"))
+        pub = find_or_create("" if fake_doi else doi, entry.get("isbn"), queued=queued)
         file_status = entry.get("status")
         if file_status not in UserPublication.ReadingStatus.values:
             file_status = ""
@@ -103,16 +106,29 @@ def import_entries(user, entries, default_status=""):
             report.already_there.append(pub)
         else:
             in_corpus.add(pub.pk)
-            imported = add_identified(user, pub, file_status or default_status)
-            # The publication imported may be the published version of a preprint (#227).
-            if imported:
-                report.added.append(imported)
-                pub = imported
-            else:
-                report.without_metadata.append(pub)
+            add = add_queued if queued else add_now
+            pub = add(user, pub, file_status or default_status, report)
         keep_status(user, pub, file_status)
         add_tags(user, pub, entry.get("tags"))
     return report
+
+
+def add_now(user, pub, status, report):
+    """Add and fetch pub; return the publication added, maybe the published version (#227)."""
+    imported = add_identified(user, pub, status)
+    if imported:
+        report.added.append(imported)
+        return imported
+    report.without_metadata.append(pub)
+    return pub
+
+
+def add_queued(user, pub, status, report):
+    if queue_identified(user, pub, status):
+        report.queued.append(pub)
+    else:
+        report.added.append(pub)
+    return pub
 
 
 def entry_doi(entry):

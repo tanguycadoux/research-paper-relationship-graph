@@ -18,6 +18,7 @@ from ..services.corpus.corpus_transfer import (
     import_entries,
 )
 from ..services.display.wording import count
+from ..services.imports import fetch_queue
 
 MAX_IMPORT_SIZE = 1024 * 1024
 
@@ -60,9 +61,10 @@ def import_file(request):
     text = decoded(upload.read())
     # « à lire »: the bibliographies are left aside, the import is much faster (#234).
     default_status = UserPublication.ReadingStatus.TO_READ if request.POST.get("to_read") else ""
+    queued = fetch_queue.worker_alive()
     if text.lstrip().startswith(("{", "[")):
         try:
-            report = import_corpus(request.user, json.loads(text), default_status)
+            report = import_corpus(request.user, json.loads(text), default_status, queued=queued)
         except json.JSONDecodeError:
             messages.error(request, "Le fichier n'est pas un JSON valide.")
             return redirect("corpus")
@@ -78,7 +80,7 @@ def import_file(request):
                 "application, ni un fichier BibTeX ou RIS.",
             )
             return redirect("corpus")
-        report = import_entries(request.user, entries, default_status)
+        report = import_entries(request.user, entries, default_status, queued=queued)
     report_import(request, report)
     return redirect("corpus")
 
@@ -99,6 +101,11 @@ def report_import(request, report):
     import_reports.remember(request.session, report)
     ignored = len(report.ignored) + len(report.unregistered)
     summary = f"Import terminé : {count(len(report.added), 'publication ajoutée')}"
+    if report.queued:
+        queued = count(len(report.queued), "publication")
+        summary = f"Import enregistré : {queued} en file de récupération"
+        if report.added:
+            summary += f", {count(len(report.added), 'publication ajoutée')}"
     if ignored:
         summary += f", {count(ignored, 'entrée ignorée')}"
     messages.success(request, f"{summary}. Le rapport est en haut de la page.")

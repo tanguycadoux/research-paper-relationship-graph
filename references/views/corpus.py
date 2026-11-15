@@ -10,12 +10,14 @@ from ..services.corpus.entries import (
     add_identified,
     change_reading_status,
     find_or_create,
+    queue_identified,
     with_reading_status,
 )
 from ..services.display import filters, wording
 from ..services.display.publication_table import for_publication_table
 from ..services.display.sorting import CORPUS
 from ..services.identifiers.arxiv import typed_doi
+from ..services.imports import fetch_queue
 from ..services.sources.doi_registration import is_unregistered_doi, unregistered_message
 from .pagination import page_of
 
@@ -29,8 +31,12 @@ def requested_status(request):
 def add_and_report(request, pub, status=""):
     """
     Add pub to the corpus and say how it went. Return the publication added: the
-    published version of a preprint, maybe (#227).
+    published version of a preprint, maybe (#227). With a worker, the retrieval is left
+    to the queue (#378).
     """
+    if fetch_queue.worker_alive():
+        report_queued(request, pub, queue_identified(request.user, pub, status), status)
+        return pub
     asked_doi = pub.doi
     imported = add_identified(request.user, pub, status)
     report_addition(request, imported or pub, imported, status)
@@ -41,6 +47,16 @@ def add_and_report(request, pub, status=""):
             f"DOI {imported.doi}.",
         )
     return imported or pub
+
+
+def report_queued(request, pub, fetch_request, status=""):
+    added = f"« {pub} » a été ajouté à votre corpus"
+    if status == UserPublication.ReadingStatus.TO_READ:
+        added += ", à lire"
+    if fetch_request is None:
+        messages.success(request, f"{added}.")
+    else:
+        messages.success(request, f"{added} ; ses données sont en file de récupération.")
 
 
 def report_addition(request, pub, imported, status=""):
@@ -91,7 +107,7 @@ def add_publication_to_user_refs_by_identifier(request):
     if doi and is_unregistered_doi(doi):
         messages.error(request, f"{unregistered_message(doi)} Rien n'a été ajouté.")
         return back_or_corpus(request)
-    pub = find_or_create(doi=doi, isbn=identifier)
+    pub = find_or_create(doi=doi, isbn=identifier, queued=fetch_queue.worker_alive())
     if pub is None:
         messages.error(
             request,

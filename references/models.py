@@ -545,3 +545,62 @@ class GraphImage(models.Model):
 
     def __str__(self):
         return f"{self.get_kind_display()} ({self.get_status_display().lower()})"
+
+
+class FetchRequest(models.Model):
+    """
+    A retrieval from the external sources waiting for the fetch_worker command (#378),
+    so that the page that asked for it answers at once. One active request per
+    publication and action: a second requester joins the same row.
+    """
+
+    class Action(models.TextChoices):
+        IMPORT = "import", "Importer"
+        IMPORT_WITH_REFERENCES = "import_with_references", "Importer avec la bibliographie"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "En attente"
+        RUNNING = "running", "En cours"
+        DONE = "done", "Faite"
+        FAILED = "failed", "Échouée"
+
+    ACTIVE = (Status.PENDING, Status.RUNNING)
+
+    # Null once the publication is gone: merged into its published version, or the
+    # placeholder of an ISBN merged into the publication of its DOI.
+    publication = models.ForeignKey(
+        Publication, null=True, on_delete=models.SET_NULL, related_name="fetch_requests"
+    )
+    # The DOI or ISBN asked for, kept when the publication changes.
+    identifier = models.CharField(max_length=255)
+    action = models.CharField(max_length=30, choices=Action.choices)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    requesters = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="+")
+    requested_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["requested_at", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["publication", "action"],
+                condition=models.Q(status__in=["pending", "running"]),
+                name="one_active_fetch_request",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.get_action_display()} {self.identifier} ({self.get_status_display().lower()})"
+        )
+
+
+class FetchWorker(models.Model):
+    """The last sign of life of the fetch_worker command: without one, requests are synchronous."""
+
+    seen_at = models.DateTimeField()
+
+    def __str__(self):
+        return f"Worker vu le {self.seen_at:%Y-%m-%d %H:%M:%S}"

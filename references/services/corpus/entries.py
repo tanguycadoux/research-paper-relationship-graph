@@ -3,6 +3,7 @@ from django.db.models import OuterRef, Subquery
 from ...models import Publication, UserPublication
 from ..identifiers.doi import is_valid_doi, normalize_doi
 from ..identifiers.isbn import is_valid_isbn, normalize_isbn
+from ..imports import fetch_queue
 from ..imports.books import find_or_import_book
 from ..imports.importer import import_publication
 from ..sources.external_records import has_metadata
@@ -41,6 +42,18 @@ def add_identified(user, pub, status=""):
     return add_to_corpus(user, pub, status) if pub.doi else add_book(user, pub, status)
 
 
+def queue_identified(user, pub, status=""):
+    """
+    add_identified with the retrieval left to the queue (#378): return the FetchRequest,
+    or None when there is nothing to fetch (a book whose metadata is stored).
+    """
+    entry = add_entry(user, pub, status)
+    if not fetch_queue.needs_fetch(pub):
+        return None
+    with_references = bool(pub.doi) and entry.reading_status != TO_READ
+    return fetch_queue.enqueue(pub, user, with_references=with_references)
+
+
 def change_reading_status(entry, status):
     """
     Change the reading status of a corpus entry. Leaving « à lire » imports the
@@ -56,18 +69,21 @@ def change_reading_status(entry, status):
     return import_publication(entry.publication, with_references=True)
 
 
-def find_or_create(doi="", isbn=""):
+def find_or_create(doi="", isbn="", *, queued=False):
     """
     The publication of a raw DOI, else of a raw ISBN (looked up in Crossref, then
-    Open Library); None without a valid identifier.
+    Open Library; queued, created with the ISBN alone, the queue will look it up);
+    None without a valid identifier.
     """
     doi = normalize_doi(str(doi or ""))
     if is_valid_doi(doi):
         return Publication.objects.get_or_create_doi(doi)
     isbn = normalize_isbn(str(isbn or ""))
-    if is_valid_isbn(isbn):
-        return Publication.objects.filter(isbn=isbn).first() or find_or_import_book(isbn)[0]
-    return None
+    if not is_valid_isbn(isbn):
+        return None
+    if pub := Publication.objects.filter(isbn=isbn).first():
+        return pub
+    return Publication.objects.create(isbn=isbn) if queued else find_or_import_book(isbn)[0]
 
 
 def with_reading_status(publications, user):

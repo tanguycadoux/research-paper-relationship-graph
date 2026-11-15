@@ -5,7 +5,8 @@ books with a DOI), otherwise from Open Library.
 
 from django.db import transaction
 
-from ...models import Publication
+from ...models import CitedReference, Publication
+from ..corrections.publication_moves import move_corpus_entries
 from ..identifiers.doi import normalize_doi
 from ..sources.crossref_api import fetch_crossref_by_isbn
 from ..sources.external_records import Source, has_metadata, store_record
@@ -43,6 +44,32 @@ def store_crossref_book(isbn, work):
     store_record(pub, Source.CROSSREF, work)
     parse_publication(pub, parse_references=False)
     return pub
+
+
+def import_queued_book(pub):
+    """
+    find_or_import_book for a publication created with its ISBN alone, whose metadata
+    was left to the queue (#378). If Crossref gives the DOI of another publication, that
+    one takes its place: citations and corpus entries move to it. Return the publication
+    that holds the book, or None if neither Crossref nor Open Library knows it.
+    """
+    if has_metadata(pub):
+        return pub
+    work = fetch_crossref_by_isbn(pub.isbn)
+    if work is None:
+        return pub if import_from_openlibrary(pub) else None
+    doi = normalize_doi(work["message"].get("DOI", ""))
+    holder = doi and Publication.objects.filter(doi=doi).exclude(pk=pub.pk).first()
+    if holder:
+        replace_placeholder(pub, holder)
+    return store_crossref_book(pub.isbn, work)
+
+
+@transaction.atomic
+def replace_placeholder(placeholder, holder):
+    CitedReference.objects.filter(target=placeholder).update(target=holder)
+    move_corpus_entries(placeholder, holder)
+    placeholder.delete()
 
 
 def import_book_metadata(pub):
