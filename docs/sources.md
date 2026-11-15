@@ -143,10 +143,17 @@ Deux formes du titre sont gardées (`services/imports/titles.py`) :
   `$\beta$`) ; la forme lisible le convertit : commandes de police (`\rm`, `\hbox`,
   `\mathrm`, `\textit`…) et accolades retirées, indices et exposants simples en
   caractères Unicode (`Nb₃Sn`, `10⁻³`), lettres grecques et quelques symboles (`β`, `±`,
-  `°`). Une formule qui ne se rend pas entièrement (`\sqrt`, `T$_c$`, sans indice « c » en
-  Unicode) laisse tout le titre inchangé : pas de rendu approché. `save()`, `bulk_create`
-  et `bulk_update` de `Publication` le tiennent à jour ; la migration `0031` l'a rempli
-  pour les titres déjà en base.
+  `°`). Chaque formule est rendue à part : une formule qui ne se rend pas entièrement
+  (`\sqrt`, `T$_c$`, sans indice « c » en Unicode) reste écrite telle quelle, sans
+  empêcher de rendre les autres (#345) ; pas de rendu approché. Certains titres IEEE ont
+  perdu leurs barres obliques et leurs espaces (`90 mm$hboxNb_3hboxSn$Model`,
+  `Low-$beta$Triplets`) : dans une formule, `hbox`, `mbox`, `mathrm` et les noms de lettres
+  grecques sont lus comme des commandes, et une espace est rendue entre une formule et
+  le mot collé à elle quand les deux sont des lettres et le mot suivant une majuscule
+  (`Nb$_3$Sn` reste un mot). L'ancien balisage IEEE (`/spl beta/`, `/sub 3/`, `/sup 3/`)
+  est lu comme la commande, l'indice ou l'exposant qu'il note. `save()`, `bulk_create` et
+  `bulk_update` de `Publication` le tiennent à jour ; les migrations `0031` et `0034` l'ont
+  calculé pour les titres déjà en base.
 
 ## Bibliographies
 

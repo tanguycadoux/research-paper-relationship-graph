@@ -1,5 +1,6 @@
 import html
 import re
+import unicodedata
 
 # JATS or MathML elements (<i>, <sub>, <scp>, <mml:math>…), not a lone "<" in the text.
 TAG_PATTERN = re.compile(r"</?[A-Za-z][\w:.-]*(?:\s[^<>]*)?/?>")
@@ -28,8 +29,14 @@ def clean_title(raw):
 # Readable form of a title written in LaTeX (#264): « ${\rm Nb}_{3}{\rm Sn}$ » becomes
 # « Nb₃Sn ». The title of the source is kept as is (it is authoritative, and BibTeX needs
 # its LaTeX); this form is the one shown and searched. A formula that cannot be rendered
-# whole leaves the title unchanged: no approximate rendering.
+# whole stays as it is, the others are rendered (#345): no approximate rendering.
 MATH_SEGMENT = re.compile(r"\$([^$]*)\$")
+# Old IEEE markup (#345): « low-/spl beta/ », « T/sub c/ », « 10/sup 3/ ».
+IEEE_MARKUP = re.compile(r"/(spl|sub|sup)\s+([^/\s]+)\s*/")
+IEEE_AS_LATEX = {"spl": "$\\{}$", "sub": "$_{{{}}}$", "sup": "$^{{{}}}$"}
+# Commands whose backslash the publisher dropped, in a formula (IEEE, #345):
+# « $hboxNb_3hboxSn$ », « $beta$ ».
+BARE_BOX = re.compile(r"(?<![\\A-Za-z])(?:hbox|mbox|mathrm)(?=[A-Z{])")
 # Font and box commands: their argument, or the rest of their group, is kept.
 FONT_COMMAND = re.compile(
     r"\\(?:rm|it|bf|sf|tt|cal|mathrm|mathit|mathbf|mathsf|mathtt|mathcal|text|textrm|textit|"
@@ -77,19 +84,62 @@ def readable_title(title):
     """
     The title as plain text when it is written in LaTeX (#264): font commands and
     braces removed, simple subscripts and superscripts in Unicode, Greek letters and a
-    few symbols as characters. The title is returned unchanged when it holds no LaTeX,
-    or LaTeX that cannot be rendered whole.
+    few symbols as characters. Each formula, and each piece of text between them, is
+    rendered on its own: one that cannot be rendered whole stays as it is (#345). The
+    title is returned unchanged when it holds no LaTeX.
     """
+    if title and IEEE_MARKUP.search(title):
+        title = IEEE_MARKUP.sub(lambda m: IEEE_AS_LATEX[m.group(1)].format(m.group(2)), title)
     if not title or ("$" not in title and "\\" not in title):
         return title or ""
     if title.count("$") % 2:
         return title
+    # Text and formulas alternate: text, formula, text… (split keeps the formulas).
+    parts = MATH_SEGMENT.split(title)
+    rendered = [readable_part(part, math=bool(index % 2)) for index, part in enumerate(parts)]
+    return SPACES_PATTERN.sub(" ", "".join(spaced(rendered, parts))).strip()
+
+
+def readable_part(part, *, math):
+    """A rendered piece of the title, or the piece as written when it cannot be."""
     try:
-        text = MATH_SEGMENT.sub(lambda match: readable_latex(match.group(1), math=True), title)
-        text = readable_latex(text, math=False)
+        return readable_latex(bare_commands(part) if math else part, math=math)
     except Unreadable:
-        return title
-    return SPACES_PATTERN.sub(" ", text).strip()
+        return f"${part}$" if math else part
+
+
+def bare_commands(formula):
+    """Commands written without their backslash, read as commands (#345)."""
+    formula = BARE_BOX.sub("", formula)
+    return re.sub(
+        r"(?<![\\A-Za-z])([A-Za-z]+)(?![A-Za-z])",
+        lambda m: f"\\{m.group(1)}" if m.group(1) in GREEK else m.group(1),
+        formula,
+    )
+
+
+def spaced(rendered, parts):
+    """
+    The spaces some publishers drop around a formula (#345): « mm$…$Model » reads
+    « mm Nb₃Sn Model ». Only between two letters, and a formula that begins or ends with
+    a letter, not a subscript: « Nb$_3$Sn » stays one word.
+    """
+    pieces = list(rendered)
+    for index in range(1, len(pieces), 2):
+        formula = pieces[index]
+        if formula == f"${parts[index]}$" or not formula:
+            continue
+        before, after = pieces[index - 1], pieces[index + 1]
+        if before and is_letter(before[-1]) and formula[0].isupper():
+            pieces[index] = " " + pieces[index]
+        if after and is_letter(formula[-1]) and after[0].isupper():
+            pieces[index] += " "
+    return pieces
+
+
+def is_letter(character):
+    """A letter of a word (Latin, Greek), not a subscript or superscript letter."""
+    return unicodedata.category(character) in ("Lu", "Ll")
 
 
 def readable_latex(text, *, math):
