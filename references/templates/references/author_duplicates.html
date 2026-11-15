@@ -24,6 +24,8 @@
                       class="space-y-3">
                     {% csrf_token %}
                     <input type="hidden" name="page" value="{{ page_obj.number }}">
+                    {# Back to this page once the merge is done (#388). #}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
                     {% if group.shared_organizations %}
                         <p class="text-sm text-gray-500">
                             Tutelle commune à plusieurs d'entre eux : {{ group.shared_organizations|join:", " }}

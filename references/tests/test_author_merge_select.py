@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.http import urlencode
 
 from references.models import Author
 from references.views.authors import MERGE_PAGE_SIZE
@@ -52,7 +53,7 @@ class AuthorMergeSelectTests(TestCase):
         self.assertContains(response, "disabled")
         response = self.get(selected=f"{self.ada.pk},{self.initial.pk}")
         confirm = reverse("author_merge_confirm", args=[f"{self.ada.pk},{self.initial.pk}"])
-        self.assertContains(response, f'href="{confirm}"')
+        self.assertEqual(response.context["confirm_url"], f"{confirm}?next=%2Fauthors%2Fmerge%2F")
 
     def test_removing_from_the_selection(self):
         response = self.get(selected=f"{self.ada.pk},{self.initial.pk}")
@@ -65,3 +66,52 @@ class AuthorMergeSelectTests(TestCase):
     def test_nothing_changes_on_a_get(self):
         self.get(selected=f"{self.ada.pk},{self.initial.pk}")
         self.assertEqual(Author.objects.count(), MERGE_PAGE_SIZE + 3)
+
+
+class MergeComesBackTests(TestCase):
+    """After the merge, back to the page it started from (#388)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user("olga")
+
+    def setUp(self):
+        self.client.force_login(self.user)
+        self.ada = Author.objects.create(first_name="Ada", last_name="Lovelace")
+        self.initial = Author.objects.create(first_name="A.", last_name="Lovelace")
+        self.ids = f"{self.ada.pk},{self.initial.pk}"
+
+    def confirm_url(self, **params):
+        url = reverse("author_merge_confirm", args=[self.ids])
+        return f"{url}?{urlencode(params)}" if params else url
+
+    def test_the_search_is_kept_without_the_selection(self):
+        response = self.client.get(
+            reverse("author_merge_select"), {"q": "lovelace", "selected": self.ids, "page": 2}
+        )
+        back = reverse("author_merge_select") + "?q=lovelace"
+        self.assertEqual(response.context["confirm_url"], self.confirm_url(next=back))
+
+    def test_from_the_duplicates_with_their_page(self):
+        back = reverse("author_duplicates") + "?page=2"
+        response = self.client.post(
+            reverse("author_merge_select"),
+            {"authors": [self.ada.pk, self.initial.pk], "next": back},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response["Location"].endswith(f"/?{urlencode({'next': back})}"))
+
+    def test_the_merge_comes_back(self):
+        back = reverse("author_duplicates") + "?page=2"
+        page = self.client.get(self.confirm_url(next=back))
+        self.assertContains(page, f'href="{back}"')  # « Annuler »
+        response = self.client.post(self.confirm_url(next=back), page.context["form"].initial)
+        self.assertRedirects(response, back, fetch_redirect_response=False)
+        self.assertEqual(Author.objects.count(), 1)
+
+    def test_another_site_is_refused(self):
+        page = self.client.get(self.confirm_url(next="https://example.org/"))
+        response = self.client.post(
+            self.confirm_url(next="https://example.org/"), page.context["form"].initial
+        )
+        self.assertRedirects(response, reverse("author_merge_select"))

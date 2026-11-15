@@ -86,7 +86,10 @@ prend le premier existant. Deux ORCID différents désignent en général deux p
 la fusion demande alors une confirmation explicite. Les noms publiés restent sur chaque
 publication (`AuthorPublication`), si bien qu'aucune variante n'est perdue et que la
 fusion résiste aux ré-imports. Chaque fusion, manuelle ou automatique, est tracée
-(`AuthorMerge`) et listée sur la fiche de l'auteur.
+(`AuthorMerge`) et listée sur la fiche de l'auteur. Une fois validée (ou annulée), la
+fusion revient à la page d'où elle est partie, pour enchaîner les suivantes : la même
+recherche de « Combiner des auteurs », sans la sélection, ou la même page de « Doublons
+probables » (#388).
 
 ### Doublons probables
 
