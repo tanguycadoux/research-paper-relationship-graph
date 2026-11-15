@@ -1,6 +1,6 @@
 {% extends "references/base.html" %}
 
-{% block title %}Graphe de la base · {% endblock title %}
+{% block title %}Graphe des publications · {% endblock title %}
 
 {% load static %}
 {% block head %}
@@ -12,7 +12,10 @@
 
 {% block content %}
     <header class="mb-6">
-        <h1>Graphe de la base</h1>
+        <p class="text-sm text-gray-500">
+            <a href="{% url 'publication_list' %}">Publications</a>
+        </p>
+        <h1 class="mt-1">Graphe des publications</h1>
         <p class="mt-1 text-gray-600">Toutes les publications de la base commune et leurs citations.</p>
     </header>
 

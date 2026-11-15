@@ -3,6 +3,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.template import Context, Template
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
 from references.models import (
     Author,
@@ -87,10 +88,12 @@ class MainNavigationTests(TestCase):
         self.assertNotIn("<details", render_navigation("/", AnonymousUser()))
 
     def test_graph_of_the_base_and_of_the_corpus(self):
-        # Two graphs (#131): /corpus/graph/ does not start with /graph/.
-        self.assertIn("Graphe", self.current_link("/graph/", "page"))
+        # The graph of the base under « Publications », as that of the authors under
+        # « Auteurs »; the graph of the corpus keeps its entry.
+        self.assertIn("Publications", self.current_link("/publications/graph/", "true"))
+        self.assertIn("Auteurs", self.current_link("/authors/graph/", "true"))
         self.assertIn("Mon graphe", self.current_link("/corpus/graph/", "page"))
-        self.assertIn("Graphe", render_navigation("/", AnonymousUser()))
+        self.assertNotIn(reverse("base_graph"), render_navigation("/", AnonymousUser()))
 
 
 class NavigationCounterTests(TestCase):

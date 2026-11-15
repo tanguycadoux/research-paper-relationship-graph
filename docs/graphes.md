@@ -6,8 +6,9 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
 
 - Trois graphes : celui d'une **publication** montre ses références identifiées et les
   publications de la base qui la citent (#186) ; celui du **corpus** montre les
-  publications du corpus et ce qu'elles citent ; celui de **la base** (#131, `/graph/`,
-  public comme la liste des publications) montre toutes les publications, y compris
+  publications du corpus et ce qu'elles citent ; celui de **la base** (#131, `/publications/graph/`,
+  public comme la liste des publications, ouvert depuis elle par « Graphe des
+  publications », sans entrée de menu comme celui des auteurs, #391) montre toutes les publications, y compris
   celles sans citation identifiée, et toutes les citations identifiées. Les publications
   du corpus de la personne connectée y sont en bleu (`source`), les autres en vert d'eau
   (`other`). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi

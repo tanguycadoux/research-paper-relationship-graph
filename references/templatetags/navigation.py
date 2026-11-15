@@ -34,8 +34,8 @@ NAVIGATION = [
         False,
         [
             ("Publications", "publication_list", "article"),
+            # Their graphs are reached from their lists, without a menu entry.
             ("Auteurs", "author_list", "group"),
-            ("Graphe", "base_graph", "hub"),
         ],
     ),
     (

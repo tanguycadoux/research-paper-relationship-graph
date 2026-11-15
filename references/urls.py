@@ -1,4 +1,5 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
 from .views import (
     author_graphs,
@@ -65,7 +66,10 @@ urlpatterns = [
         name="publication_incoming_citations",
     ),
     path("publications/<int:pk>/graph/", graphs.pub_graph, name="publication_graph"),
-    path("graph/", graphs.base_graph_view, name="base_graph"),
+    # Reached from the list of publications, as the graph of the authors from theirs.
+    path("publications/graph/", graphs.base_graph_view, name="base_graph"),
+    # Its former address, kept for the bookmarks.
+    path("graph/", RedirectView.as_view(pattern_name="base_graph", permanent=True)),
     path(
         "publications/<int:pk>/references/import/",
         publications.import_publication_references,
