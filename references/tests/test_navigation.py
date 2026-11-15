@@ -1,9 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
 from django.template import Context, Template
 from django.test import RequestFactory, TestCase
 
-from references.models import CitedReference, MetadataConflict, Publication, UserPublication
+from references.models import (
+    Author,
+    CitedReference,
+    MetadataConflict,
+    Publication,
+    UserPublication,
+)
+from references.services.display import pending
 from references.templatetags.navigation import current_url
 
 
@@ -137,6 +145,31 @@ class NavigationCounterTests(TestCase):
             html = render_navigation("/", AnonymousUser())
         self.assertNotIn("sr-only", html)
 
-    def test_one_query_per_counter(self):
-        with self.assertNumQueries(2):
+    def test_a_constant_number_of_queries(self):
+        cache.clear()
+        # One per counter; for the probable duplicates, two for the key of the cache,
+        # and two more to count them when the authors have changed.
+        with self.assertNumQueries(6):
             render_navigation("/", self.user)
+        with self.assertNumQueries(4):
+            render_navigation("/", self.user)
+        Author.objects.bulk_create(Author(first_name="A.", last_name=f"N{i}") for i in range(20))
+        with self.assertNumQueries(6):
+            render_navigation("/", self.user)
+
+    def test_the_duplicates_are_counted_again_when_a_name_changes(self):
+        cache.clear()
+        Author.objects.create(first_name="Ada", last_name="Lovelace")
+        other = Author.objects.create(first_name="Alan", last_name="Lovelace")
+        self.assertEqual(pending.probable_duplicates(), 0)
+        Author.objects.filter(pk=other.pk).update(first_name="A.")
+        self.assertEqual(pending.probable_duplicates(), 1)
+
+    def test_probable_duplicates_are_counted(self):
+        # #270: like the conflicts, something to look at.
+        Author.objects.create(first_name="Ada", last_name="Lovelace")
+        Author.objects.create(first_name="A.", last_name="Lovelace")
+        html = render_navigation("/", self.user)
+        self.assertIn(
+            '<span class="sr-only">, 1 à examiner</span>', self.link(html, "/authors/duplicates/")
+        )

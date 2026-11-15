@@ -56,6 +56,8 @@ SHORT_TITLES = {"Mon corpus": "Corpus", "Base commune": "Base"}
 COUNTERS = {
     "corpus?to_identify=1": (pending.references_to_identify, "en attente"),
     "conflict_list": (lambda user: pending.open_conflicts(), "en attente"),
+    # Suggestions rather than tasks, but each waits for a look (#270).
+    "author_duplicates": (lambda user: pending.probable_duplicates(), "à examiner"),
 }
 # relative: the text of a counter for screen readers stays inside the link, which may be
 # in the scrolling strip of a small screen (#150).
