@@ -42,6 +42,7 @@
             {% endif %}
             {% url 'publication_graph' publication.pk as graph_url %}
             {% button "Graphe" url=graph_url variant="secondary" icon="hub" %}
+            {% include "references/_citation_panel.html" %}
             {% if user.is_authenticated %}
                 {% url 'publication_edit' publication.pk as edit_url %}
                 {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}

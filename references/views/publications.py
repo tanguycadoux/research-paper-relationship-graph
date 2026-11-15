@@ -20,6 +20,7 @@ from ..services.corrections.publication_edits import (
 )
 from ..services.discovery import incoming_citations
 from ..services.display import filters, wording
+from ..services.display.citations import publication_citations
 from ..services.display.publication_details import crossref_details, publication_abstract
 from ..services.display.publication_table import (
     corpus_ids,
@@ -112,6 +113,7 @@ class PublicationDetailView(DetailView):
         )
         context["details"] = crossref_details(pub)
         context["abstract"] = publication_abstract(pub)
+        context["citations"] = publication_citations(pub)
         context.update(long_lists_context(self.request, pub, context["cited_references"]))
         return context
 

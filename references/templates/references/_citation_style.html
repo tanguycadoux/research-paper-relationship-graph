@@ -1,0 +1,19 @@
+{% comment %}
+One citation of the panel, with its « Copier » button, hidden until the script shows it.
+Context: id, label, and citation (a formatted style) or bibtex (the entry).
+{% endcomment %}
+{% load ui %}
+<section aria-labelledby="{{ id }}-title">
+    <div class="mb-1 flex items-center justify-between gap-2">
+        <h3 id="{{ id }}-title" class="text-sm font-medium text-gray-500 select-none">{{ label }}</h3>
+        <div class="flex items-center gap-2" data-copy="{{ id }}" hidden>
+            <span class="text-xs text-gray-500 select-none" role="status" data-copy-status></span>
+            {% button "Copier" type="button" variant="secondary" icon="content_copy" %}
+        </div>
+    </div>
+    {% if bibtex %}
+        <pre id="{{ id }}" class="overflow-x-auto rounded-md bg-white/70 p-2 text-xs">{{ bibtex }}</pre>
+    {% else %}
+        <p id="{{ id }}" class="leading-relaxed">{{ citation.html }}</p>
+    {% endif %}
+</section>
