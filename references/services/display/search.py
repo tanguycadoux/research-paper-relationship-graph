@@ -1,9 +1,10 @@
 """
 Search of publications and authors (#153): one bar, free text and operators,
 
-    auteur:Felice titre:"champ magnétique" année:2020..2024 doi:10.1109
+    auteur:Felice titre:"champ magnétique" année:2020..2024 doi:10.1109 note:aimant
 
-Free text looks in the titles, the author names and the identifiers. Comparisons ignore
+Free text looks in the titles, the author names and the identifiers; note: in the notes
+of the user's own corpus (#283), private. Comparisons ignore
 case and accents through normalized(), an SQL function registered on every SQLite
 connection: SQLite's LIKE only folds ASCII, and has no unaccent.
 """
@@ -16,7 +17,7 @@ from dataclasses import dataclass, field
 from django.db.models import Exists, F, Func, OuterRef, Q, TextField, Value
 from django.db.models.functions import Concat
 
-from ...models import Author, AuthorPublication
+from ...models import Author, AuthorPublication, UserPublication
 
 # Operator, as typed (accents optional), to the field it fills.
 OPERATORS = {
@@ -25,6 +26,7 @@ OPERATORS = {
     "annee": "years",
     "doi": "identifiers",
     "isbn": "identifiers",
+    "note": "notes",
 }
 YEARS = re.compile(r"^(\d{4})?(\.\.)?(\d{4})?$")
 
@@ -54,12 +56,20 @@ class Query:
     authors: list[str] = field(default_factory=list)
     titles: list[str] = field(default_factory=list)
     identifiers: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
     year_from: int | None = None
     year_to: int | None = None
     errors: list[str] = field(default_factory=list)
 
     def __bool__(self):
-        return bool(self.terms or self.authors or self.titles or self.identifiers or self.has_years)
+        return bool(
+            self.terms
+            or self.authors
+            or self.titles
+            or self.identifiers
+            or self.notes
+            or self.has_years
+        )
 
     @property
     def has_years(self):
@@ -67,8 +77,8 @@ class Query:
 
     @property
     def about_publications_only(self):
-        """Titles, years or identifiers asked: authors would answer another question."""
-        return bool(self.titles or self.identifiers or self.has_years)
+        """Titles, years, identifiers or notes asked: authors would answer another question."""
+        return bool(self.titles or self.identifiers or self.notes or self.has_years)
 
 
 def tokens(text):
@@ -130,8 +140,19 @@ def author_named(words):
     return Exists(slots)
 
 
-def filter_publications(publications, query):
-    """The publications matching every part of the query."""
+def noted(user, text):
+    """Publications whose note, in the corpus of user, contains text."""
+    entries = UserPublication.objects.filter(user=user, publication=OuterRef("pk")).alias(
+        _note=Normalized(F("note"))
+    )
+    return Exists(entries.filter(contains("_note", text)))
+
+
+def filter_publications(publications, query, user=None):
+    """
+    The publications matching every part of the query; the notes asked are those of
+    user, none for a visitor.
+    """
     publications = publications.alias(
         _title=Normalized(F("readable_title")), _doi=Normalized(F("doi"))
     )
@@ -151,6 +172,10 @@ def filter_publications(publications, query):
         publications = publications.filter(
             contains("_doi", identifier) | Q(isbn__contains=identifier.replace("-", ""))
         )
+    for note in query.notes:
+        if user is None or not user.is_authenticated:
+            return publications.none()
+        publications = publications.filter(noted(user, note))
     if query.year_from is not None:
         publications = publications.filter(publication_date__year__gte=query.year_from)
     if query.year_to is not None:

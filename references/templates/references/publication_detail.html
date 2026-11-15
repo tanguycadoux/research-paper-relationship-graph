@@ -185,6 +185,20 @@
         </div>
 
         <div class="space-y-6">
+            {% if belongs_to_user %}
+                {# Private: only the owner of the entry sees it (#283). #}
+                <div id="note" class="scroll-mt-20">
+                    {% card title="Ma note" %}
+                        <form method="post"
+                              action="{% url 'corpus_note' publication.pk %}"
+                              class="space-y-3 text-sm">
+                            {% csrf_token %}
+                            {% field note_form.note rows=6 %}
+                            {% button "Enregistrer la note" variant="secondary" icon="save" %}
+                        </form>
+                    {% endcard %}
+                </div>
+            {% endif %}
             {% card title="Informations" %}
                 <dl class="space-y-3 text-sm">
                     {% if publication.doi %}

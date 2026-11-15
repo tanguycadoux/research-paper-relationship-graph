@@ -118,7 +118,7 @@ class ReadingStatusTests(TestCase):
 
 @without_doi_org
 class ReadingStatusTransferTests(TestCase):
-    """The status in the JSON export, version 2."""
+    """The status in the JSON export, since version 2."""
 
     @classmethod
     def setUpTestData(cls):
@@ -137,7 +137,6 @@ class ReadingStatusTransferTests(TestCase):
     def test_export_holds_the_status(self):
         UserPublication.objects.create(user=self.alice, publication=self.pub, reading_status=READ)
         data = export_corpus(self.alice)
-        self.assertEqual(data["version"], 2)
         self.assertEqual(data["publications"][0]["status"], "read")
 
     def test_import_keeps_the_status_of_the_file(self):

@@ -1,14 +1,14 @@
 {% comment %}
 The button that takes a publication away from my corpus. Context: pub; user_pub_ids
 (services/display/publication_table.CorpusIds); with icon_only, the « − » of the
-tables; with next, the page to come back to. When the entry has tags or a reading
-status, which the removal loses, the button opens a confirmation in a popover (#280);
-otherwise the removal is immediate.
+tables; with next, the page to come back to. When the entry has tags, a reading
+status or a note, which the removal loses, the button opens a confirmation in a popover
+(#280, #283); otherwise the removal is immediate.
 {% endcomment %}
 {% load ui %}
 {% with pk=pub.pk|stringformat:"d" %}
     {% with panel_id="remove-"|add:pk %}
-        {% if pub.pk in user_pub_ids.with_tags or pub.pk in user_pub_ids.with_status %}
+        {% if pub.pk in user_pub_ids.with_tags or pub.pk in user_pub_ids.with_status or pub.pk in user_pub_ids.with_note %}
             {% button "Retirer de mon corpus…" type="button" variant="danger-light" icon="remove" icon_only=icon_only popovertarget=panel_id %}
             <form method="post"
                   action="{% url 'corpus_remove' pub.pk %}"
@@ -23,9 +23,10 @@ otherwise the removal is immediate.
                         Ses tags et son statut de lecture seront perdus.
                     {% elif pub.pk in user_pub_ids.with_tags %}
                         Ses tags seront perdus.
-                    {% else %}
+                    {% elif pub.pk in user_pub_ids.with_status %}
                         Son statut de lecture sera perdu.
                     {% endif %}
+                    {% if pub.pk in user_pub_ids.with_note %}Sa note sera perdue.{% endif %}
                 </p>
                 {% button "Retirer" variant="danger" icon="remove" %}
             </form>

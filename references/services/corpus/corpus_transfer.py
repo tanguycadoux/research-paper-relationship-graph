@@ -18,10 +18,10 @@ from .entries import add_identified, find_or_create, queue_identified, with_read
 from .tags import InvalidTag, tag_entry, tags_by_publication
 
 EXPORT_FORMAT = "research-paper-relationship-graph/corpus"
-# Version 2 adds the reading status (#164) and the tags (#130) as optional keys:
-# version 1 still imports.
-EXPORT_VERSION = 2
-IMPORTED_VERSIONS = (1, 2)
+# Version 2 adds the reading status (#164) and the tags (#130), version 3 the note
+# (#283), as optional keys: versions 1 and 2 still import.
+EXPORT_VERSION = 3
+IMPORTED_VERSIONS = (1, 2, 3)
 
 
 def corpus_publications(user):
@@ -33,12 +33,19 @@ def exportable(publications):
     return [pub for pub in publications if pub.doi or pub.isbn]
 
 
+def notes_by_publication(user):
+    """The notes of the corpus of user (#283): publication id → note, the empty ones left out."""
+    entries = UserPublication.objects.filter(user=user).exclude(note="")
+    return dict(entries.values_list("publication_id", "note"))
+
+
 # JSON
 
 
 def export_corpus(user):
     publications = exportable(with_reading_status(corpus_publications(user), user))
     tags = tags_by_publication(user, publications)
+    notes = notes_by_publication(user)
     return {
         "format": EXPORT_FORMAT,
         "version": EXPORT_VERSION,
@@ -50,6 +57,7 @@ def export_corpus(user):
                 "title": pub.title,
                 "status": pub.reading_status,
                 "tags": [tag.name for tag in tags[pub.pk]],
+                "note": notes.get(pub.pk, ""),
             }
             for pub in publications
         ],
@@ -80,11 +88,11 @@ def import_corpus(user, data, default_status="", *, queued=False):
 
 def import_entries(user, entries, default_status="", *, queued=False):
     """
-    Add the publications of entries ({doi, isbn, title}, and status and tags from an
-    export) to the corpus of user, the new ones with default_status when an entry has
+    Add the publications of entries ({doi, isbn, title}, and status, tags and note from
+    an export) to the corpus of user, the new ones with default_status when an entry has
     none: « à lire » leaves the bibliographies aside (#234). Only publications without
-    stored metadata are fetched from the external sources. The status of an entry
-    never replaces one the user chose; its tags are added to those of the user. A DOI
+    stored metadata are fetched from the external sources. The status and the note of
+    an entry never replace those the user wrote; its tags are added to those of the user. A DOI
     that doi.org does not know is dropped, the ISBN of the entry used instead if any.
     Queued, the publications are fetched by the fetch_worker command (#378).
     """
@@ -110,6 +118,7 @@ def import_entries(user, entries, default_status="", *, queued=False):
             pub = add(user, pub, file_status or default_status, report)
         keep_status(user, pub, file_status)
         add_tags(user, pub, entry.get("tags"))
+        keep_note(user, pub, entry.get("note"))
     return report
 
 
@@ -153,6 +162,13 @@ def keep_status(user, pub, status):
         )
 
 
+def keep_note(user, pub, note):
+    if isinstance(note, str) and note.strip():
+        UserPublication.objects.filter(user=user, publication=pub, note="").update(
+            note=note.strip()
+        )
+
+
 def export_entries(data):
     if not isinstance(data, dict) or data.get("format") != EXPORT_FORMAT:
         raise InvalidExport("Ce fichier n'est pas un export de corpus de cette application.")
@@ -182,10 +198,13 @@ def corpus_bibtex(user):
     keys = set()
     publications = exportable(corpus_publications(user).with_author_slots())
     tags = tags_by_publication(user, publications)
-    return "\n".join(bibtex_entry(pub, keys, tags[pub.pk]) for pub in publications)
+    notes = notes_by_publication(user)
+    return "\n".join(
+        bibtex_entry(pub, keys, tags[pub.pk], notes.get(pub.pk, "")) for pub in publications
+    )
 
 
-def bibtex_entry(pub, keys, tags=()):
+def bibtex_entry(pub, keys, tags=(), note=""):
     crossref = (records_by_source(pub).get(Source.CROSSREF) or {}).get("message", {})
     entry_type = ENTRY_TYPES.get(crossref.get("type"), "book" if pub.isbn else "misc")
     fields = {
@@ -196,6 +215,8 @@ def bibtex_entry(pub, keys, tags=()):
         "isbn": pub.isbn,
         # Zotero reads « Projet A/Groupe A » as one tag.
         "keywords": ", ".join(bibtex_escape(tag.name) for tag in tags),
+        # annote, not note: the bibliography styles print note in the reference.
+        "annote": bibtex_note(note),
     }
     venue = next(iter(crossref.get("container-title", [])), "")
     if entry_type in VENUE_FIELDS:
@@ -223,6 +244,17 @@ def bibtex_escape(text):
         part if MATH_PATTERN.fullmatch(part) else SPECIAL_CHARACTERS.sub(r"\\\1", part)
         for part in parts
     )
+
+
+def bibtex_note(note):
+    """The note, escaped; its braces dropped when unbalanced, which would end the field."""
+    text = bibtex_escape(note.strip())
+    depth = 0
+    for character in text:
+        depth += {"{": 1, "}": -1}.get(character, 0)
+        if depth < 0:
+            break
+    return text if depth == 0 else text.replace("{", "").replace("}", "")
 
 
 def citation_key(pub, keys):
