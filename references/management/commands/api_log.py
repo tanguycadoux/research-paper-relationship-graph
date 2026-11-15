@@ -4,13 +4,15 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 
+from references.services.display.wording import count
 from references.services.sources import api_log_summary as summary
 
 
 class Command(BaseCommand):
     help = (
         "Résume le journal des appels aux sources externes (#395) : par source, par "
-        "origine (page, demande de la file, commande), et les requêtes les plus lentes."
+        "origine (page, demande de la file, commande), les demandes de la file par action, et "
+        "les requêtes les plus lentes."
     )
 
     def add_arguments(self, parser):
@@ -32,15 +34,34 @@ class Command(BaseCommand):
         self.overview(found)
         self.table("Par source", result["by_service"], options["top"])
         self.table("Par origine", result["by_origin"], options["top"])
+        self.queue(result["by_action"])
         self.slowest(result["slowest"][: options["top"]])
 
     def overview(self, found):
-        cached = sum(1 for entry in found if entry.get("cache"))
+        api = [entry for entry in found if summary.is_api(entry)]
+        cached = sum(1 for entry in api if entry.get("cache"))
+        done = len(found) - len(api)
         first, last = found[0]["at"], found[-1]["at"]
+        queue = count(done, "demande de la file traitée", "demandes de la file traitées")
         self.stdout.write(
-            f"{len(found)} requêtes du {first:%Y-%m-%d %H:%M} au {last:%Y-%m-%d %H:%M}, "
-            f"dont {cached} servies par le cache.\n"
+            f"{count(len(api), 'requête')} du {first:%Y-%m-%d %H:%M} au {last:%Y-%m-%d %H:%M}, "
+            f"dont {cached} servie{'s' if cached > 1 else ''} par le cache ; {queue}.\n"
         )
+
+    def queue(self, by_action):
+        if not by_action:
+            return
+        self.stdout.write(self.style.MIGRATE_HEADING("Demandes de la file"))
+        self.stdout.write(
+            f"  {'':44} {'demandes':>8} {'échecs':>6} {'attente':>8} {'durée':>8} "
+            f"{'appels/demande':>14}"
+        )
+        for action, line in sorted(by_action.items(), key=lambda item: -item[1].requests):
+            self.stdout.write(
+                f"  {action[:44]:44} {line.requests:>8} {line.failed:>6} "
+                f"{line.median_wait():>6}ms {line.median():>6}ms {line.per_request():>14}"
+            )
+        self.stdout.write("")
 
     def table(self, title, stats, top):
         self.stdout.write(self.style.MIGRATE_HEADING(title))

@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.test import RequestFactory, SimpleTestCase, TestCase
 
 from references.middleware import ApiLogContextMiddleware
-from references.models import FetchRequest, Publication
+from references.models import CitedReference, FetchRequest, Publication
 from references.services.imports import fetch_actions, fetch_queue
 from references.services.sources import api_log, http
 from references.services.sources import api_log_summary as summary
@@ -49,6 +49,7 @@ class JournalTests(SimpleTestCase):
 
     def test_a_request(self):
         (line,) = self.lines(lambda: self.get(response()))
+        self.assertEqual(line["event"], "api")
         self.assertEqual(line["service"], "Crossref")
         self.assertEqual(line["subject"], "10.1000/a")
         self.assertEqual(line["url"], "https://api.crossref.org/works/10.1000/a")
@@ -112,6 +113,56 @@ class ContextTests(TestCase):
         self.assertEqual(FetchRequest.objects.get().status, FetchRequest.Status.DONE)
 
 
+class QueueRequestLineTests(TestCase):
+    """One line per request of the queue the worker did (#395)."""
+
+    def setUp(self):
+        self.pub = Publication.objects.create(doi="10.1000/a")
+        for position in range(3):
+            CitedReference.objects.create(source=self.pub, position=position)
+
+    def process(self, run):
+        request = fetch_queue.enqueue(self.pub, None, with_references=True)
+        claimed = fetch_queue.claim_next()
+        with (
+            patch.object(fetch_actions, "run", side_effect=run),
+            patch.object(LOGGER, "disabled", False),
+            self.assertLogs(LOGGER, "INFO") as logs,
+        ):
+            fetch_queue.process(claimed)
+        lines = [json.loads(record.getMessage()) for record in logs.records]
+        return request, lines
+
+    def api_request(self):
+        api_log.record("Crossref", "x", "https://x", {}, response(), ms=5, attempt=1, stream=False)
+
+    def test_a_request_done(self):
+        def run(fetch):
+            self.api_request()
+            self.api_request()
+            return self.pub
+
+        request, lines = self.process(run)
+        self.assertEqual([line["event"] for line in lines], ["api", "api", "file"])
+        line = lines[-1]
+        self.assertEqual(
+            (line["action"], line["identifier"], line["request"]),
+            ("import_with_references", "10.1000/a", request.pk),
+        )
+        self.assertEqual((line["status"], line["error"]), ("done", ""))
+        self.assertEqual((line["api_requests"], line["references"]), (2, 3))
+        self.assertIsInstance(line["wait_ms"], int)
+        self.assertIsInstance(line["ms"], int)
+
+    def test_a_request_failed(self):
+        def run(fetch):
+            raise fetch_actions.FetchFailed("DOI inconnu.")
+
+        _request, (line,) = self.process(run)
+        self.assertEqual((line["status"], line["error"]), ("failed", "DOI inconnu."))
+        self.assertEqual((line["api_requests"], line["references"]), (0, None))
+
+
 class HandlerTests(SimpleTestCase):
     def test_the_folder_is_created_with_the_first_line(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -155,6 +206,17 @@ class SummaryTests(SimpleTestCase):
                     line("2026-11-15T11:00:01+00:00", status=404, ms=50),
                     line("2026-11-15T11:00:02+00:00", service="OpenAlex", cache=True),
                     line("2026-11-15T11:00:03+00:00", service="ORCID", status=None, ms=10_000),
+                    json.dumps(
+                        {
+                            "event": "file",
+                            "at": "2026-11-15T11:00:04+00:00",
+                            "action": "import_with_references",
+                            "status": "done",
+                            "wait_ms": 170,
+                            "ms": 1300,
+                            "api_requests": 3,
+                        }
+                    ),
                     "pas du JSON",
                 ]
             )
@@ -165,7 +227,7 @@ class SummaryTests(SimpleTestCase):
 
     def test_the_rotated_files_are_read_first(self):
         found = self.found()
-        self.assertEqual(len(found), 5)
+        self.assertEqual(len(found), 6)
         self.assertEqual(found[0]["via"], "file")
 
     def test_by_source(self):
@@ -177,6 +239,13 @@ class SummaryTests(SimpleTestCase):
         orcid = summary.summarize(self.found())["by_service"]["ORCID"]
         self.assertEqual((orcid.errors, orcid.seconds()), (1, 10.0))
 
+    def test_the_requests_of_the_queue(self):
+        queue = summary.summarize(self.found())["by_action"]["import_with_references"]
+        self.assertEqual((queue.requests, queue.failed), (1, 0))
+        self.assertEqual((queue.median_wait(), queue.median(), queue.per_request()), (170, 1300, 3))
+        # Not counted as a request to an API.
+        self.assertNotIn(None, summary.summarize(self.found())["by_service"])
+
     def test_by_origin_without_numbers(self):
         origins = summary.summarize(self.found())["by_origin"]
         self.assertIn("page POST /publications/<n>/refresh/", origins)
@@ -187,7 +256,8 @@ class SummaryTests(SimpleTestCase):
         call_command("api_log", file=str(self.path), stdout=out)
         text = out.getvalue()
         self.assertIn("5 requêtes du 2026-11-15 10:00 au 2026-11-15 11:00", text)
-        self.assertIn("dont 1 servies par le cache", text)
+        self.assertIn("dont 1 servie par le cache ; 1 demande de la file traitée.", text)
+        self.assertIn("Demandes de la file", text)
         self.assertIn("Par source", text)
         self.assertIn("page POST /publications/<n>/refresh/", text)
         self.assertIn("Les plus lentes", text)

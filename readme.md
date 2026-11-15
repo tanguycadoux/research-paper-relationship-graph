@@ -157,13 +157,15 @@ redemande donc pas.
 ### Journal des appels aux sources
 
 Chaque requête aux sources externes (Crossref, DataCite, OpenAlex, ORCID, doi.org, arXiv,
-Open Library) est écrite dans `logs/api.log`, une ligne JSON par requête : source, objet,
-statut, durée, réponse du cache, taille, et ce qui l'a demandée (la page et l'utilisateur,
-la demande de la file, ou la commande). Le fichier tourne à 10 Mo (5 anciens gardés) et
+Open Library) est écrite dans `logs/api.log`, une ligne JSON par requête (`"event": "api"`) :
+source, objet, statut, durée, réponse du cache, taille, et ce qui l'a demandée (la page et
+l'utilisateur, la demande de la file, ou la commande). Chaque demande de la file traitée par
+le worker a aussi sa ligne (`"event": "file"`) : attente dans la file, durée, nombre de
+requêtes, références de la publication, résultat. Le fichier tourne à 10 Mo (5 anciens gardés) et
 n'est pas versionné. `API_LOG_PATH` change son chemin ; vide, il coupe le journal.
 
 ```bash
-python manage.py api_log              # résumé : par source, par origine, les plus lentes
+python manage.py api_log              # résumé : par source, par origine, demandes de la file, les plus lentes
 python manage.py api_log --hours 24   # sur les dernières 24 h
 ```
 

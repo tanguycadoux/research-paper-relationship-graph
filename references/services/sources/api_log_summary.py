@@ -97,14 +97,60 @@ def origin(entry):
     return f"{via} {label}".strip()
 
 
+@dataclass
+class QueueStats:
+    """The requests of the queue done for one action: « event »: « file » lines."""
+
+    requests: int = 0
+    failed: int = 0
+    durations: list = field(default_factory=list)
+    waits: list = field(default_factory=list)
+    api_requests: int = 0
+
+    def add(self, entry):
+        self.requests += 1
+        if entry.get("status") == "failed":
+            self.failed += 1
+        self.durations.append(entry.get("ms") or 0)
+        if entry.get("wait_ms") is not None:
+            self.waits.append(entry["wait_ms"])
+        self.api_requests += entry.get("api_requests") or 0
+
+    def median(self):
+        return round(statistics.median(self.durations)) if self.durations else 0
+
+    def median_wait(self):
+        return round(statistics.median(self.waits)) if self.waits else 0
+
+    def per_request(self):
+        return round(self.api_requests / self.requests, 1) if self.requests else 0
+
+
+def is_api(entry):
+    """A request to an API; the lines written before the queue lines have no event."""
+    return entry.get("event", "api") == "api"
+
+
 def summarize(found):
-    by_service, by_origin = defaultdict(Stats), defaultdict(Stats)
+    by_service, by_origin, by_action = (
+        defaultdict(Stats),
+        defaultdict(Stats),
+        defaultdict(QueueStats),
+    )
     for entry in found:
-        by_service[entry.get("service", "?")].add(entry)
-        by_origin[origin(entry)].add(entry)
+        if is_api(entry):
+            by_service[entry.get("service", "?")].add(entry)
+            by_origin[origin(entry)].add(entry)
+        elif entry.get("event") == "file":
+            by_action[entry.get("action", "?")].add(entry)
     slowest = sorted(
-        (entry for entry in found if not entry.get("cache")),
+        (entry for entry in found if is_api(entry) and not entry.get("cache")),
         key=lambda entry: entry.get("ms") or 0,
         reverse=True,
     )
-    return {"by_service": by_service, "by_origin": by_origin, "slowest": slowest}
+    return {
+        "by_service": by_service,
+        "by_origin": by_origin,
+        "by_action": by_action,
+        "slowest": slowest,
+    }
