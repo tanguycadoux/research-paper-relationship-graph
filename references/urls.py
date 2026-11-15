@@ -7,6 +7,7 @@ from .views import (
     conflicts,
     corpus,
     corpus_transfer,
+    graph_images,
     graphs,
     home,
     publication_merge,
@@ -16,6 +17,18 @@ from .views import (
 )
 
 urlpatterns = [
+    # Images of the graphs too large for the page (#328)
+    path(
+        "graph/image/<str:kind>/generate/",
+        graph_images.generate_graph_image,
+        name="graph_image_generate",
+    ),
+    path("graph/image/<str:kind>.svg", graph_images.graph_image_svg, name="graph_image_svg"),
+    path(
+        "graph/image/<str:kind>/status/",
+        graph_images.graph_image_status,
+        name="graph_image_status",
+    ),
     path("", home.index, name="index"),
     path("search/", search.search, name="search"),
     # Publications

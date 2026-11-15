@@ -2,7 +2,8 @@
 
 from django.shortcuts import get_object_or_404, render
 
-from ..models import Author
+from ..models import Author, GraphImage
+from ..services.display import graph_images
 from ..services.display.author_graph import LARGE_COLLABORATION, all_authors_graph, author_graph
 
 
@@ -23,6 +24,12 @@ def author_graph_view(request, pk):
 
 
 def authors_graph_view(request):
-    """Every author of the base, for everyone, like the list of authors."""
-    context = graph_context(all_authors_graph(), "graphe-auteurs")
+    """
+    Every author of the base, for everyone, like the list of authors; beyond
+    graph_images.LARGE_GRAPH of them, its full image, computed in the background (#328).
+    """
+    if graph_images.is_large(GraphImage.Kind.AUTHORS):
+        context = {"large_graph": graph_images.image_state(GraphImage.Kind.AUTHORS)}
+    else:
+        context = graph_context(all_authors_graph(), "graphe-auteurs")
     return render(request, "references/authors_graph.html", context)

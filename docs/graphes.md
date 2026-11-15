@@ -333,3 +333,33 @@ dessin que les graphes de citations, en vue réseau seulement.
   4 000 (52 470 liens), **120 s pour les 9 507** (mesuré sans dessin, Cytoscape sans
   cadre) : la page serait bloquée deux minutes. **Limiter ce graphe sur une grande base
   reste à décider.**
+
+## Grands graphes : une image calculée sur le serveur (#328)
+
+Au-delà de `LARGE_GRAPH` nœuds (1 000), le graphe de la base et celui de tous les auteurs
+ne sont plus dessinés dans la page : sur la base de banc, le premier a 1 797 publications,
+le second 9 507 auteurs et 56 389 liens (2 minutes de disposition `cose` dans le
+navigateur, 6,8 Mo de données). La page propose à la place leur **image complète**,
+calculée sur le serveur et gardée pour tous (`services/display/graph_images.py`, modèle
+`GraphImage`, une ligne par graphe).
+
+- **Calcul** : un utilisateur connecté le lance (`POST /graph/image/<kind>/generate/`) ; il
+  tourne dans un thread (en attendant la file d'attente de #246). Un calcul « en cours »
+  depuis plus de 5 minutes est considéré comme mort avec son thread et peut être relancé.
+  Pendant le calcul, `static/js/graph_image.js` interroge l'état toutes les 2 s
+  (`/graph/image/<kind>/status/`) et recharge la page une fois l'image prête.
+- **Disposition** : igraph (dépendance du projet), Fruchterman-Reingold, **composante par
+  composante** : chaque groupe relié dans un carré à sa mesure, les carrés rangés par
+  taille décroissante, puis les nœuds sans lien en grille. Disposés ensemble, les petits
+  groupes et les auteurs isolés (ceux des grandes collaborations, qui ne relient personne)
+  s'étalaient sur toute l'image autour d'un petit cœur relié.
+- **SVG** : un cercle par nœud (taille selon les publications ou les citations), lien vers
+  sa page et nom au survol (`<title>`) ; les noms des 150 plus gros nœuds écrits à côté ;
+  les liens en quelques chemins, un par épaisseur (quartiles du poids), pour que le
+  fichier reste léger. Servi avec `Content-Security-Policy: default-src 'none'`.
+- **Mesures** (base de banc) : graphe des auteurs, 1,2 s et 2,9 Mo ; graphe de la base,
+  0,6 s et 0,5 Mo.
+- **Fraîcheur** : la signature de l'image (nombres et derniers identifiants des
+  publications, des créneaux d'auteurs, des citations) dit quand la base a changé depuis ;
+  la page le signale et propose « Recalculer l'image ».
+- L'image est commune : le corpus de la personne connectée n'y est pas distingué.

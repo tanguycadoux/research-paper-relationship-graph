@@ -2,6 +2,14 @@
 
 {% block title %}Graphe des auteurs · {% endblock title %}
 
+{% load static %}
+{% block head %}
+    {# While the image is computed, the page asks whether it is ready (#328). #}
+    {% if large_graph.pending %}
+        <script src="{% static 'js/graph_image.js' %}" defer></script>
+    {% endif %}
+{% endblock head %}
+
 {% block content %}
     <header class="mb-6">
         <p class="text-sm text-gray-500">
@@ -11,5 +19,9 @@
         <p class="mt-1 text-gray-600">Tous les auteurs de la base commune, reliés par les publications qu'ils signent ensemble.</p>
     </header>
 
-    {% include "references/_author_graph.html" %}
+    {% if large_graph %}
+        {% include "references/_graph_image.html" %}
+    {% else %}
+        {% include "references/_author_graph.html" %}
+    {% endif %}
 {% endblock content %}

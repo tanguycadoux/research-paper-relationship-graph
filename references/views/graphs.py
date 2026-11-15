@@ -2,8 +2,9 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
 from django.utils.text import slugify
 
-from ..models import Publication
+from ..models import GraphImage, Publication
 from ..services.corpus import tags
+from ..services.display import graph_images
 from ..services.display.graph import base_graph, corpus_graph, publication_graph
 from ..services.display.graph_variants import graph_layout, kept_params, variant_links
 from .tag_context import requested_tag
@@ -48,6 +49,13 @@ def my_refs_graph(request):
 
 
 def base_graph_view(request):
-    """The whole base, for everyone, like the list of publications (#131)."""
-    context = graph_context(request, base_graph(request.user), "base")
+    """
+    The whole base, for everyone, like the list of publications (#131); beyond
+    graph_images.LARGE_GRAPH publications, its full image, computed in the background
+    (#328).
+    """
+    if graph_images.is_large(GraphImage.Kind.BASE):
+        context = {"large_graph": graph_images.image_state(GraphImage.Kind.BASE)}
+    else:
+        context = graph_context(request, base_graph(request.user), "base")
     return render(request, "references/base_graph.html", context)

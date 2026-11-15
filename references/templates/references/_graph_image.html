@@ -1,0 +1,54 @@
+{% comment %}
+A graph too large to be drawn in the page (#328): its full image, computed in the
+background on the server and kept for everyone. Context: large_graph
+(services/display/graph_images.image_state).
+{% endcomment %}
+{% load ui %}
+{% with state=large_graph image=large_graph.image %}
+    {% card %}
+        <div class="space-y-4">
+            <p class="max-w-3xl text-gray-700">
+                Ce graphe compte {{ state.nodes }} {{ state.noun }} : trop pour être dessiné et manipulé dans la page.
+                Son image complète est calculée sur le serveur en quelques secondes, puis gardée pour tous :
+                chaque point mène à sa page, et le nom apparaît au survol.
+            </p>
+            {% if state.pending %}
+                <p class="flex items-center gap-2 text-sm text-gray-700"
+                   role="status"
+                   data-graph-image-status="{% url 'graph_image_status' state.kind %}">
+                    {% icon "refresh" class="size-4 shrink-0 animate-spin" %}
+                    Calcul de l'image en cours depuis {{ image.requested_at|time:"H:i" }} : la page se met à jour seule une fois l'image prête.
+                </p>
+            {% elif image.status == "done" %}
+                <div class="flex flex-wrap items-center gap-3">
+                    {% url 'graph_image_svg' state.kind as image_url %}
+                    {% button "Ouvrir l'image complète" url=image_url icon="hub" %}
+                    <p class="text-sm text-gray-600">
+                        Image du {{ image.finished_at|date:"j F Y à H:i" }} : {{ image.nodes }} {{ state.noun }}, {{ image.edges }} liens (SVG, zoomable).
+                    </p>
+                </div>
+                {% if state.outdated %}
+                    {% alert "La base a changé depuis le calcul de cette image." variant="warning" %}
+                {% endif %}
+            {% elif image.status == "failed" %}
+                {% alert "Le calcul de l'image a échoué : "|add:image.error variant="danger" %}
+            {% endif %}
+            {% if not state.pending %}
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'graph_image_generate' state.kind %}">
+                        {% csrf_token %}
+                        {% if image %}
+                            {% button "Recalculer l'image" variant="secondary" icon="refresh" %}
+                        {% else %}
+                            {% button "Calculer l'image complète" icon="hub" %}
+                        {% endif %}
+                    </form>
+                {% elif not image %}
+                    <p class="text-sm text-gray-600">
+                        <a href="{% url 'login' %}?next={{ request.path|urlencode }}">Connectez-vous</a> pour lancer son calcul.
+                    </p>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endcard %}
+{% endwith %}

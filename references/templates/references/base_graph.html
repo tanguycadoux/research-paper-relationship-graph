@@ -2,11 +2,23 @@
 
 {% block title %}Graphe de la base · {% endblock title %}
 
+{% load static %}
+{% block head %}
+    {# While the image is computed, the page asks whether it is ready (#328). #}
+    {% if large_graph.pending %}
+        <script src="{% static 'js/graph_image.js' %}" defer></script>
+    {% endif %}
+{% endblock head %}
+
 {% block content %}
     <header class="mb-6">
         <h1>Graphe de la base</h1>
         <p class="mt-1 text-gray-600">Toutes les publications de la base commune et leurs citations.</p>
     </header>
 
-    {% include "references/_citation_graph.html" %}
+    {% if large_graph %}
+        {% include "references/_graph_image.html" %}
+    {% else %}
+        {% include "references/_citation_graph.html" %}
+    {% endif %}
 {% endblock content %}
