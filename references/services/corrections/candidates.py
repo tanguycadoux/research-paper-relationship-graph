@@ -20,8 +20,9 @@ from django.utils import timezone
 from ...models import Publication
 from ..display.search import Normalized, contains, normalize
 from ..identifiers.doi import normalize_doi
-from ..imports.jacow import reference_text, without_jacow_code, written_jacow_doi
+from ..imports.jacow import without_jacow_code
 from ..imports.preprints import is_arxiv, title_words
+from ..imports.written_identifiers import written_doi
 from ..sources.crossref_api import search_crossref
 from ..sources.datacite_api import fetch_datacite_works, search_datacite_title
 from ..sources.metadata_formats import datacite_message
@@ -60,6 +61,9 @@ class Candidate:
     coverage: float = 0  # share of the words searched found in the title (#309)
     year_found: bool | None = None  # None: a year is missing on one side
     author_found: bool | None = None
+    # Its identifier is written in the reference (JACoW code, arXiv identifier, #311):
+    # shown first, whatever its title, since the reference names it.
+    written: bool = False
 
     @property
     def same_title(self):
@@ -93,14 +97,16 @@ def forget_candidates(ref):
 
 def search_sources(ref):
     """
-    The works found by the sources, as Candidate fields (JSON for the cache), JACoW
-    code first, then Crossref, then DataCite. failed: a source did not answer.
+    The works found by the sources, as Candidate fields (JSON for the cache): the
+    identifier written in the reference first, then Crossref, then DataCite. failed: a
+    source did not answer.
     """
     found = []
-    jacow_doi = written_jacow_doi(reference_text(ref))
-    if jacow_doi:
-        record = fetch_datacite_works([jacow_doi]).get(jacow_doi)
-        found += [datacite_fields(record, kind="Actes JACoW")] if record else []
+    # The identifier written in the reference, of any kind (written_identifiers, #311).
+    doi = written_doi(ref)
+    if doi:
+        record = fetch_datacite_works([doi]).get(doi)
+        found += [datacite_fields(record) | {"written": True}] if record else []
     crossref = search_crossref(search_text(ref))
     found += [crossref_fields(item) for item in crossref or []]
     title = cited_title(ref)
@@ -248,7 +254,7 @@ def select_likely(
         if candidate.publication is not None and candidate.publication.pk == linked:
             continue
         check(candidate, text, title, year, author_text, fragment)
-        if is_likely(candidate):
+        if candidate.written or is_likely(candidate):
             selected.append(candidate)
     if fragment:
         # The words typed found first, the same title before the others, then the order
@@ -256,7 +262,7 @@ def select_likely(
         # is close to none.
         selected.sort(key=lambda c: (round(c.coverage, 1), c.same_title), reverse=True)
     else:
-        selected.sort(key=lambda candidate: candidate.closeness, reverse=True)
+        selected.sort(key=lambda candidate: (candidate.written, candidate.closeness), reverse=True)
     return selected[:limit]
 
 

@@ -86,6 +86,10 @@
                                     {% endif %}
                                 </p>
                                 <p class="flex flex-wrap gap-2">
+                                    {% if candidate.written %}
+                                        {# Shown whatever its title: the reference names it (#311). #}
+                                        {% badge "Identifiant écrit dans la référence" variant="success" icon="check_circle" %}
+                                    {% endif %}
                                     {% if candidate.same_title %}
                                         {% badge "Titre identique" variant="success" icon="check_circle" %}
                                     {% else %}
