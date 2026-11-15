@@ -1,6 +1,10 @@
 {% extends "references/base.html" %}
 {% load ui %}
 {% block title %}Identifier une référence · {% endblock title %}
+{% load static %}
+{% block head %}
+    <script src="{% static 'js/identify_authors.js' %}" defer></script>
+{% endblock head %}
 {% block content %}
     <header class="mb-6">
         <p class="text-sm text-gray-500">
@@ -173,6 +177,7 @@
                     <label for="{{ form.year.id_for_label }}" class="mt-2">{{ form.year.label }}</label>
                     {{ form.year }}
                     {{ form.year.errors }}
+                    <div class="mt-4">{% include "references/_identify_authors.html" %}</div>
                 </div>
                 {% button "Identifier" %}
             </form>

@@ -12,6 +12,7 @@ from ...models import Publication
 from ..imports.books import find_or_import_book
 from ..imports.importer import import_publication
 from ..sources.external_records import has_metadata
+from .typed_authors import create_slots
 
 
 def with_references_to_identify(publications):
@@ -71,14 +72,18 @@ def identify_by_isbn(ref, isbn, user):
     return pub, imported
 
 
-def identify_without_identifier(ref, title, year, user):
-    """Create a publication without identifier from the reference, and link it."""
+def identify_without_identifier(ref, title, year, user, authors=()):
+    """
+    Create a publication without identifier from the reference, with its authors in
+    signing order (TypedAuthor of typed_authors, #259), and link it.
+    """
     with transaction.atomic():
         pub = Publication.objects.create(
             title=title,
             publication_date=year_to_date(year),
             publication_date_precision=Publication.DatePrecision.YEAR,
         )
+        create_slots(pub, authors)
         resolve(ref, pub, user)
     return pub
 

@@ -1,0 +1,122 @@
+{% load ui %}
+{% comment %}
+The authors of a publication identified without identifier (#259), in signing order.
+Without script, the text field « un auteur par ligne » is all there is; identify_authors.js
+hides it, shows the list below in its place, and keeps the text field filled from it.
+{% endcomment %}
+<div data-author-editor data-suggest-url="{% url 'author_suggestions' %}">
+    <div data-author-lines>
+        {% field form.authors rows=4 %}
+        {% if author_proposal %}
+            <p class="mt-1 text-xs text-gray-600">
+                La référence cite d'abord « {{ author_proposal.line }} » : écrivez cette ligne pour un nouvel
+                auteur{% for match in author_proposal.matches %}, ou « #{{ match.id }} » pour {{ match.name }}{% if match.orcid %} ({{ match.orcid }}){% endif %}{% endfor %}.
+            </p>
+        {% endif %}
+    </div>
+    <fieldset data-author-rich hidden class="space-y-3">
+        <legend>Auteurs</legend>
+        {% if form.authors.errors %}
+            <ul class="text-sm text-red-700">
+                {% for error in form.authors.errors %}<li>{{ error }}</li>{% endfor %}
+            </ul>
+        {% endif %}
+        {% if author_proposal %}
+            <div data-author-proposal
+                 hidden
+                 class="rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
+                <p>
+                    La référence cite d'abord <strong>{{ author_proposal.line }}</strong>.
+                    {% if author_proposal.matches %}
+                        Est-ce un auteur de la base ?
+                    {% else %}
+                        Aucun auteur de la base ne porte ce nom.
+                    {% endif %}
+                </p>
+                <ul class="mt-2 space-y-2">
+                    {% for match in author_proposal.matches %}
+                        <li class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="min-w-0">
+                                {{ match.name }}
+                                <span class="text-xs text-gray-600">
+                                    {% if match.orcid %}· {{ match.orcid }}{% endif %}
+                                    · {{ match.publications }} publication{{ match.publications|pluralize }}
+                                </span>
+                            </span>
+                            <span data-author-choice
+                                  data-id="{{ match.id }}"
+                                  data-name="{{ match.name }}"
+                                  data-orcid="{{ match.orcid }}"
+                                  data-publications="{{ match.publications }}"
+                                  data-line="#{{ match.id }}">
+                                {% button "Ajouter "|add:match.name variant="secondary" icon="check_circle" type="button" %}
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <span data-author-choice
+                          data-name="{{ author_proposal.line }}"
+                          data-line="{{ author_proposal.line }}">
+                        {% button "Nouvel auteur « "|add:author_proposal.line|add:" »" variant="secondary" icon="person_add" type="button" %}
+                    </span>
+                    <span data-author-dismiss>{% button "Ignorer" variant="secondary" type="button" %}</span>
+                </div>
+            </div>
+        {% endif %}
+        <ol data-author-list class="divide-y divide-gray-100">
+        </ol>
+        <p data-author-empty class="text-sm text-gray-600">Aucun auteur pour l'instant.</p>
+        <div class="space-y-1">
+            <label for="author-search">Ajouter un auteur</label>
+            <div class="relative max-w-xl">
+                <input id="author-search"
+                       type="text"
+                       autocomplete="off"
+                       role="combobox"
+                       aria-autocomplete="list"
+                       aria-expanded="false"
+                       aria-controls="author-search-options"
+                       aria-describedby="author-search-help"
+                       data-author-search>
+                <ul id="author-search-options"
+                    role="listbox"
+                    aria-label="Suggestions d'auteurs"
+                    hidden
+                    class="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto py-1 {% glass_classes %}">
+                </ul>
+            </div>
+            <p id="author-search-help" class="text-xs text-gray-600">
+                Nom ou ORCID d'un auteur de la base, ou « Nom, Prénom » d'un nouvel auteur, ajouté à la suite.
+            </p>
+        </div>
+        <p data-author-status class="sr-only" aria-live="polite"></p>
+    </fieldset>
+    <template data-author-item>
+        <li class="flex items-center gap-3 py-2">
+            <span data-rank class="w-6 shrink-0 text-right text-sm text-gray-500 tabular-nums select-none"></span>
+            <div class="min-w-0 flex-1">
+                <p data-name class="font-medium break-words"></p>
+                <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600">
+                    <span data-existing>{% badge "Dans la base" variant="primary" %}</span>
+                    <span data-new>{% badge "Nouvel auteur" %}</span>
+                    <span data-detail></span>
+                </p>
+            </div>
+            <div class="flex shrink-0 gap-1">
+                <span data-move="-1">{% button "Monter" variant="secondary" icon="arrow_upward" icon_only=True type="button" %}</span>
+                <span data-move="1">{% button "Descendre" variant="secondary" icon="arrow_downward" icon_only=True type="button" %}</span>
+                <span data-remove>{% button "Retirer" variant="secondary" icon="close" icon_only=True type="button" %}</span>
+            </div>
+        </li>
+    </template>
+    <template data-author-option>
+        <li role="option"
+            aria-selected="false"
+            class="cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 aria-selected:bg-blue-100">
+            <span data-name class="font-medium"></span>
+            <span data-detail class="text-xs text-gray-600"></span>
+        </li>
+    </template>
+    {{ author_entries|json_script:"author-entries" }}
+</div>

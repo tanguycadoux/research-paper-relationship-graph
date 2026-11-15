@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import Author, Publication
+from .services.corrections import typed_authors
 from .services.discovery.title_search import is_searchable
 from .services.identifiers.arxiv import typed_doi
 from .services.identifiers.doi import is_valid_doi, normalize_doi
@@ -160,6 +161,16 @@ class IdentifyReferenceForm(forms.Form):
     isbn = forms.CharField(label="ISBN", required=False)
     title = forms.CharField(label="Titre", required=False)
     year = forms.IntegerField(label="Année", required=False, min_value=1000, max_value=2100)
+    # Without script, the text itself; with it, filled by the list of identify_authors.js.
+    authors = forms.CharField(
+        label="Auteurs, un par ligne",
+        required=False,
+        widget=forms.Textarea,
+        help_text=(
+            "Dans l'ordre de signature : « Nom, Prénom » pour un nouvel auteur (prénom "
+            "facultatif), « #42 » pour l'auteur n° 42 de la base."
+        ),
+    )
 
     def clean(self):
         cleaned = super().clean()
@@ -168,9 +179,17 @@ class IdentifyReferenceForm(forms.Form):
             self.clean_identifier_doi(cleaned)
         elif method == self.METHOD_ISBN:
             self.clean_identifier_isbn(cleaned)
-        elif not cleaned.get("title"):
-            self.add_error("title", "Le titre est obligatoire sans identifiant.")
+        else:
+            self.clean_without_identifier(cleaned)
         return cleaned
+
+    def clean_without_identifier(self, cleaned):
+        if not cleaned.get("title"):
+            self.add_error("title", "Le titre est obligatoire sans identifiant.")
+        try:
+            cleaned["typed_authors"] = typed_authors.parse_lines(cleaned.get("authors", ""))
+        except typed_authors.AuthorLineError as error:
+            self.add_error("authors", str(error))
 
     def clean_identifier_doi(self, cleaned):
         doi = typed_doi(cleaned.get("doi", ""))

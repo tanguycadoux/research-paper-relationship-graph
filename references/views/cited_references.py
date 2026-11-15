@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from ..forms import IdentifyReferenceForm
 from ..models import CitedReference, Publication
-from ..services.corrections import candidates, identification
+from ..services.corrections import candidates, identification, typed_authors
 from ..services.identifiers.doi import is_valid_doi, normalize_doi
 from ..services.sources.doi_registration import is_unregistered_doi, unregistered_message
 from ..services.sources.external_records import Source
@@ -28,6 +28,7 @@ def identify_reference(request, pk, position):
         "reference_title": reference_title(ref),
         "candidates": found,
         "search_failed": search_failed,
+        **author_editor(ref, form),
     }
     if in_series(request):
         context["series"] = series_progress(ref)
@@ -147,6 +148,17 @@ def initial_values(ref):
     }
 
 
+def author_editor(ref, form):
+    """
+    What the list of authors of « Sans identifiant » starts with (#259): the authors
+    already typed, and the first author cited by the reference, to confirm.
+    """
+    return {
+        "author_entries": typed_authors.editor_entries(form["authors"].value()),
+        "author_proposal": typed_authors.proposal(ref),
+    }
+
+
 def refuse_unregistered_doi(form):
     """Put an error on the DOI field if doi.org does not know it (#240); return True then."""
     data = form.cleaned_data
@@ -167,7 +179,7 @@ def apply_identification(request, ref, data):
         pub, imported = identification.identify_by_isbn(ref, data["isbn"], request.user)
     else:
         pub = identification.identify_without_identifier(
-            ref, data["title"], data["year"], request.user
+            ref, data["title"], data["year"], request.user, data["typed_authors"]
         )
         imported = True
     report_identification(request, ref, pub, imported)
