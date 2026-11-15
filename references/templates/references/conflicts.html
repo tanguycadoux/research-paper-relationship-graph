@@ -13,129 +13,148 @@
     </header>
 
     <div class="space-y-8">
-        <section aria-labelledby="open-conflicts-title">
-            <h2 id="open-conflicts-title" class="mb-3">
-                À trancher <span class="font-normal text-gray-500">({{ open_conflicts|length }})</span>
-            </h2>
-            <div class="space-y-4">
-                {% for conflict in open_conflicts %}
-                    <article aria-labelledby="conflict-{{ conflict.pk }}-title"
-                             class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                        <h3 id="conflict-{{ conflict.pk }}-title" class="mb-3 text-base font-semibold">
-                            {{ conflict.get_kind_display }} :
-                            {% if conflict.publication %}
-                                <a href="{% url 'publication_detail' conflict.publication.pk %}">{{ conflict.publication }}</a>
-                            {% else %}
-                                <a href="{% url 'author_detail' conflict.author.pk %}">{{ conflict.author }}</a>
-                            {% endif %}
+        <section aria-labelledby="open-conflicts-title" class="space-y-6">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 id="open-conflicts-title">
+                    À trancher <span class="font-normal text-gray-500">({{ open_count }})</span>
+                </h2>
+                {% if alone %}
+                    <a href="{% url 'conflict_list' %}" class="text-sm">Tous les types</a>
+                {% endif %}
+            </div>
+            {% for group in groups %}
+                {# One section per type, its explanation once (#335). #}
+                <section aria-labelledby="kind-{{ group.kind }}-title">
+                    <div class="mb-3">
+                        <h3 id="kind-{{ group.kind }}-title" class="text-base font-semibold">
+                            {{ group.label }} <span class="font-normal text-gray-500">({{ group.count }})</span>
                         </h3>
-                        {% if conflict.names %}
-                            <table class="mb-3 w-auto">
-                                <thead class="bg-white">
-                                    <tr>
-                                        <td></td>
-                                        <th scope="col">Prénom</th>
-                                        <th scope="col">Nom</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <th scope="row" class="font-normal text-gray-500">Valeur retenue</th>
-                                        <td>{{ conflict.names.current.given|default:"(vide)" }}</td>
-                                        <td>{{ conflict.names.current.family|default:"(vide)" }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row" class="font-normal text-gray-500">Proposée par {{ conflict.get_source_display }}</th>
-                                        <td>{{ conflict.names.proposed.given|default:"(vide)" }}</td>
-                                        <td>{{ conflict.names.proposed.family|default:"(vide)" }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        {% endif %}
-                        <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-                            {% if conflict.kind == "shared_orcid" %}
-                                <dt class="text-gray-500">ORCID</dt>
-                                <dd>{{ conflict.current_value }}</dd>
-                                <dt class="text-gray-500">Porté aussi par</dt>
-                                <dd>{{ conflict.proposed_value }}</dd>
-                            {% elif conflict.kind == "published_version" %}
-                                <dt class="text-gray-500">Prépublication</dt>
-                                <dd>
-                                    {% external_link "https://doi.org/"|add:conflict.current_value conflict.current_value class="break-all" %}
-                                </dd>
-                                <dt class="text-gray-500">Version publiée selon OpenAlex</dt>
-                                <dd class="space-y-1">
-                                    <p class="font-medium">{{ conflict.details.title|default:"(sans titre)" }}</p>
-                                    <p class="text-gray-600">
-                                        {{ conflict.details.venue|default:"(revue inconnue)" }}{% if conflict.details.year %} · {{ conflict.details.year }}{% endif %}
-                                    </p>
-                                    <p>
-                                        {% external_link "https://doi.org/"|add:conflict.proposed_value conflict.proposed_value class="break-all" %}
-                                    </p>
-                                    <p class="flex flex-wrap gap-2">
-                                        {% if conflict.details.same_title %}
-                                            {% badge "Titre identique" variant="success" icon="check_circle" %}
-                                        {% else %}
-                                            {% badge "Titre proche" variant="warning" icon="warning" %}
-                                        {% endif %}
-                                        {% badge "Premier auteur identique" variant="success" icon="check_circle" %}
-                                        {% badge "Année concordante" variant="success" icon="check_circle" %}
-                                    </p>
-                                </dd>
-                            {% elif not conflict.names %}
-                                <dt class="text-gray-500">Valeur retenue</dt>
-                                <dd>{{ conflict.current_value|default:"(vide)" }}</dd>
-                                <dt class="text-gray-500">Proposée par {{ conflict.get_source_display }}</dt>
-                                <dd>{{ conflict.proposed_value|default:"(vide)" }}</dd>
-                            {% endif %}
-                            <dt class="text-gray-500">Détecté le</dt>
-                            <dd>
-                                <time datetime="{{ conflict.detected_at|date:'Y-m-d\TH:i:sO' }}">{{ conflict.detected_at|date:"j F Y" }}</time>
-                            </dd>
-                        </dl>
-                        {% if conflict.kind == "shared_orcid" %}
-                            <p class="mt-3 text-sm text-gray-500">
+                        <p class="mt-1 max-w-3xl text-sm text-gray-600">
+                            {% if group.kind == "shared_orcid" %}
                                 Un ORCID désigne une seule personne, mais ces auteurs ont été déclarés distincts : ils ne sont pas fusionnés.
                                 Corrigez l'ORCID de l'un d'eux, ou fusionnez-les à la main.
-                            </p>
-                        {% elif conflict.names.split_differently %}
-                            <p class="mt-3 text-sm text-gray-500">
-                                Mêmes mots, répartis autrement entre prénom et nom. ORCID est rempli par la personne elle-même,
-                                mais elle a pu se tromper de champ, comme l'éditeur de la publication.
-                            </p>
-                        {% elif conflict.kind == "published_version" %}
-                            <p class="mt-3 text-sm text-gray-500">
-                                OpenAlex regroupe cette prépublication avec une version publiée ; Crossref confirme le type de publication,
+                            {% elif group.kind == "published_version" %}
+                                OpenAlex regroupe ces prépublications avec une version publiée ; Crossref confirme le type de publication,
                                 le premier auteur et l'année. Ce regroupement reste automatique : vérifiez avant de prendre la valeur proposée.
                                 La prépublication est alors remplacée par sa version publiée (ou fusionnée avec elle si elle est déjà dans
                                 la base), qui garde les citations et les corpus.
-                            </p>
-                        {% elif conflict.kind == "orcid_name" %}
-                            <p class="mt-3 text-sm text-gray-500">
+                            {% elif group.kind == "orcid_name" %}
                                 Le nom déclaré sur ORCID ne prolonge pas le nom connu. Un ORCID mal attribué peut en être la cause :
                                 vérifiez-le avant de prendre la valeur proposée.
-                            </p>
-                        {% elif conflict.is_informative %}
-                            <p class="mt-3 text-sm text-gray-500">
-                                Les affiliations de cette publication ne sont pas rattachées tant que les listes d'auteurs diffèrent.
-                            </p>
-                        {% endif %}
-                        <form method="post"
-                              action="{% url 'conflict_resolve' conflict.pk %}"
-                              class="mt-4 flex flex-wrap gap-2">
-                            {% csrf_token %}
-                            {% if conflict.is_informative %}
-                                {% button "Vu" variant="secondary" name="decision" value="seen" %}
-                            {% else %}
-                                {% button "Garder l'existant" variant="secondary" name="decision" value="kept" %}
-                                {% button "Prendre la valeur proposée" name="decision" value="accepted" %}
+                            {% elif group.kind == "authors_mismatch" %}
+                                Les sources ne donnent pas la même liste d'auteurs. Les affiliations de ces publications ne sont pas
+                                rattachées tant que les listes diffèrent.
+                            {% elif group.kind == "orcid" %}
+                                Une source donne à un auteur un autre ORCID que celui qui est connu.
                             {% endif %}
-                        </form>
-                    </article>
-                {% empty %}
-                    <p class="text-gray-600">Aucun conflit à trancher.</p>
-                {% endfor %}
-            </div>
+                        </p>
+                    </div>
+                    <div class="space-y-4">
+                        {% for conflict in group.conflicts %}
+                            <article aria-labelledby="conflict-{{ conflict.pk }}-title"
+                                     class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                                <h3 id="conflict-{{ conflict.pk }}-title" class="mb-3 text-base font-semibold">
+                                    {% if conflict.publication %}
+                                        <a href="{% url 'publication_detail' conflict.publication.pk %}">{{ conflict.publication }}</a>
+                                    {% else %}
+                                        <a href="{% url 'author_detail' conflict.author.pk %}">{{ conflict.author }}</a>
+                                    {% endif %}
+                                </h3>
+                                {% if conflict.names %}
+                                    <table class="mb-3 w-auto">
+                                        <thead class="bg-white">
+                                            <tr>
+                                                <td></td>
+                                                <th scope="col">Prénom</th>
+                                                <th scope="col">Nom</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row" class="font-normal text-gray-500">Valeur retenue</th>
+                                                <td>{{ conflict.names.current.given|default:"(vide)" }}</td>
+                                                <td>{{ conflict.names.current.family|default:"(vide)" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row" class="font-normal text-gray-500">Proposée par {{ conflict.get_source_display }}</th>
+                                                <td>{{ conflict.names.proposed.given|default:"(vide)" }}</td>
+                                                <td>{{ conflict.names.proposed.family|default:"(vide)" }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                {% endif %}
+                                <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+                                    {% if conflict.kind == "shared_orcid" %}
+                                        <dt class="text-gray-500">ORCID</dt>
+                                        <dd>{{ conflict.current_value }}</dd>
+                                        <dt class="text-gray-500">Porté aussi par</dt>
+                                        <dd>{{ conflict.proposed_value }}</dd>
+                                    {% elif conflict.kind == "published_version" %}
+                                        <dt class="text-gray-500">Prépublication</dt>
+                                        <dd>
+                                            {% external_link "https://doi.org/"|add:conflict.current_value conflict.current_value class="break-all" %}
+                                        </dd>
+                                        <dt class="text-gray-500">Version publiée selon OpenAlex</dt>
+                                        <dd class="space-y-1">
+                                            <p class="font-medium">{{ conflict.details.title|default:"(sans titre)" }}</p>
+                                            <p class="text-gray-600">
+                                                {{ conflict.details.venue|default:"(revue inconnue)" }}{% if conflict.details.year %} · {{ conflict.details.year }}{% endif %}
+                                            </p>
+                                            <p>
+                                                {% external_link "https://doi.org/"|add:conflict.proposed_value conflict.proposed_value class="break-all" %}
+                                            </p>
+                                            <p class="flex flex-wrap gap-2">
+                                                {% if conflict.details.same_title %}
+                                                    {% badge "Titre identique" variant="success" icon="check_circle" %}
+                                                {% else %}
+                                                    {% badge "Titre proche" variant="warning" icon="warning" %}
+                                                {% endif %}
+                                                {% badge "Premier auteur identique" variant="success" icon="check_circle" %}
+                                                {% badge "Année concordante" variant="success" icon="check_circle" %}
+                                            </p>
+                                        </dd>
+                                    {% elif not conflict.names %}
+                                        <dt class="text-gray-500">Valeur retenue</dt>
+                                        <dd>{{ conflict.current_value|default:"(vide)" }}</dd>
+                                        <dt class="text-gray-500">Proposée par {{ conflict.get_source_display }}</dt>
+                                        <dd>{{ conflict.proposed_value|default:"(vide)" }}</dd>
+                                    {% endif %}
+                                    <dt class="text-gray-500">Détecté le</dt>
+                                    <dd>
+                                        <time datetime="{{ conflict.detected_at|date:'Y-m-d\TH:i:sO' }}">{{ conflict.detected_at|date:"j F Y" }}</time>
+                                    </dd>
+                                </dl>
+                                {% if conflict.names.split_differently %}
+                                    <p class="mt-3 text-sm text-gray-500">
+                                        Mêmes mots, répartis autrement entre prénom et nom. ORCID est rempli par la personne elle-même,
+                                        mais elle a pu se tromper de champ, comme l'éditeur de la publication.
+                                    </p>
+                                {% endif %}
+                                <form method="post"
+                                      action="{% url 'conflict_resolve' conflict.pk %}"
+                                      class="mt-4 flex flex-wrap gap-2">
+                                    {% csrf_token %}
+                                    {% if conflict.is_informative %}
+                                        {% button "Vu" variant="secondary" name="decision" value="seen" %}
+                                    {% else %}
+                                        {% button "Garder l'existant" variant="secondary" name="decision" value="kept" %}
+                                        {% button "Prendre la valeur proposée" name="decision" value="accepted" %}
+                                    {% endif %}
+                                </form>
+                            </article>
+                        {% endfor %}
+                    </div>
+                    {% if group.page %}
+                        <div class="mt-4">{% pagination group.page %}</div>
+                    {% elif group.count > group.conflicts|length %}
+                        <p class="mt-3 text-sm">
+                            <a href="?type={{ group.kind }}">Voir les {{ group.count }} conflits de ce type</a>
+                        </p>
+                    {% endif %}
+                </section>
+            {% empty %}
+                <p class="text-gray-600">Aucun conflit à trancher.</p>
+            {% endfor %}
         </section>
 
         {% if recent_decisions %}
