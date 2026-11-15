@@ -25,8 +25,11 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   ouverts. Les références à identifier ont leur propre lien, « Mon corpus › À identifier »,
   qui filtre le corpus sur les publications concernées (`?to_identify=1`, #276) : posé sur
   « Publications », le nombre se lisait comme une taille de corpus. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
-  après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
-  compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
+  après l'action ; rien n'est affiché à zéro. Les doublons probables ont aussi
+  leur compteur (« à examiner », #270), par un comptage léger
+  (`author_duplicates.duplicate_count`, 78 ms pour 9 500 auteurs), gardé en cache sous une
+  clé qui résume les auteurs (nombre, dernier, longueur des noms, ORCID, paires déclarées
+  distinctes) : recompté seulement quand ils changent. **Notifications** : les messages Django s'affichent en
   toasts (`static/js/toasts.js`). **Boutons occupés** (`static/js/busy.js`, #339) : à
   l'envoi d'un formulaire POST, ses boutons sont désactivés (après la lecture du bouton
   cliqué, dont la valeur compte : « à lire ») et celui qui a été cliqué remplace son icône

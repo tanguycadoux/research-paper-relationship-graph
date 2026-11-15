@@ -5,6 +5,7 @@ from django.urls import reverse
 from references.models import Author
 from references.services.corrections.author_duplicates import (
     compatible_given_names,
+    duplicate_count,
     duplicate_groups,
 )
 
@@ -63,6 +64,22 @@ class DuplicateGroupsTests(TestCase):
         groups = duplicate_groups()
         self.assertEqual(len(groups), 1)
         self.assertEqual(len(groups[0]), 2)
+
+    def test_the_count_matches_the_groups(self):
+        # #270: the light count of the counters, the same grouping.
+        for first, last, orcid in (
+            ("Ada", "Lovelace", ""),
+            ("A.", "Lovelace", ""),
+            ("John", "Smith", ""),
+            ("James", "Smith", ""),
+            ("J.", "Smith", ""),
+            ("Jose", "Pérez", "0000-0001"),
+            ("J.", "Perez", "0000-0002"),
+            ("Alan", "Turing", ""),
+        ):
+            self.author(first, last, orcid)
+        self.assertEqual(duplicate_count(), len(duplicate_groups()))
+        self.assertEqual(duplicate_count(), 2)
 
     def test_groups_form_around_the_author_with_an_orcid(self):
         self.author("J.", "Smith")

@@ -6,7 +6,6 @@ of the base or of the corpus.
 from django.db.models import Count, Max
 
 from ...models import Author, CitedReference, Publication, UserPublication
-from ..corrections import author_duplicates
 from . import pending
 
 LATEST_COUNT = 5
@@ -83,5 +82,5 @@ def to_do(user):
     return {
         "to_identify": pending.references_to_identify(user),
         "conflicts": pending.open_conflicts(),
-        "duplicates": len(author_duplicates.duplicate_groups()),
+        "duplicates": pending.probable_duplicates(),
     }
