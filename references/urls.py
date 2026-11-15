@@ -8,6 +8,7 @@ from .views import (
     conflicts,
     corpus,
     corpus_transfer,
+    fetch_admin,
     fetch_progress,
     graph_images,
     graphs,
@@ -33,6 +34,10 @@ urlpatterns = [
     ),
     # Progress of the requests in the queue (#379)
     path("queue/progress/", fetch_progress.fetch_progress, name="fetch_progress"),
+    # Administration of the queue, reserved to the staff (#382)
+    path("queue/", fetch_admin.fetch_queue_admin, name="fetch_queue_admin"),
+    path("queue/<int:pk>/retry/", fetch_admin.fetch_request_retry, name="fetch_request_retry"),
+    path("queue/<int:pk>/cancel/", fetch_admin.fetch_request_cancel, name="fetch_request_cancel"),
     path("", home.index, name="index"),
     path("search/", search.search, name="search"),
     # Publications

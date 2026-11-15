@@ -138,6 +138,11 @@ worker quand le code change. Sans worker signalé depuis 30 s, les pages font la
 récupération elles-mêmes, comme avant : `tailwind runserver` seul fonctionne toujours. Une
 demande mise en file pendant que le worker est arrêté attend son prochain lancement.
 
+Les administrateurs (`is_staff`) suivent la file sur la page « File des récupérations »
+(menu « Corrections », adresse `/queue/`) : demandes en attente, en cours, échouées avec
+leur erreur, faites récemment, et état du worker. Ils peuvent y relancer une demande
+échouée et annuler une demande en attente.
+
 La base `db.sqlite3` est locale et n'est pas versionnée.
 Pour récupérer ses données sur une autre machine, il faut la copier à la main.
 
