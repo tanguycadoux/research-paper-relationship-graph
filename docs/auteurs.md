@@ -36,6 +36,19 @@ désaccords (#265) :
   (`metadata_formats.openalex_authors` : nom publié `raw_author_name`, ORCID). Une
   publication citée, analysée avant l'arrivée de sa réponse OpenAlex, est analysée de
   nouveau à ce moment-là.
+- **Collectifs** (#317). Crossref range parmi les auteurs des collaborations, consortiums
+  et bureaux, sans prénom (« The LIGO Scientific Collaboration », « US Department of
+  Energy »), souvent absents chez OpenAlex : un seul décalait toutes les positions
+  suivantes. Ils sont retirés de la comparaison (`without_collectives`), avec les
+  signatures OpenAlex qui portent leur nom ; s'il ne reste personne côté Crossref (un
+  article signé du seul consortium), il n'y a rien à rattacher.
+- **Initiale intermédiaire d'un seul côté** (#317) : « Hannah R. Meredith » et « Hannah
+  Meredith », « G. van der Werf » et « G. R. van der Werf »
+  (`same_name_but_middle_initials`), jamais deux initiales différentes.
+
+Sur la base du banc, 19 des 22 conflits « Auteurs différents » tombent ainsi ; les 3
+restants sont de vraies différences : un auteur absent d'un côté, ou toute la liste des
+auteurs écrite dans un seul nom chez OpenAlex.
 
 Une organisation est reconnue par
 son identifiant OpenAlex ou par son ROR. Les liens sont recréés à chaque analyse, puisque

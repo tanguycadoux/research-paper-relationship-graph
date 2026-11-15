@@ -5,7 +5,7 @@ from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, MetadataConflict, Organization, Publication
-from references.services.identifiers.names import same_person_name
+from references.services.identifiers.names import same_name_but_middle_initials, same_person_name
 from references.services.imports.affiliations import OPENALEX_MAX_AUTHORS, attach_affiliations
 from references.services.imports.enrichment import (
     complete_ancestors,
@@ -352,3 +352,88 @@ class OrganizationGroupsWithoutHierarchyTests(TestCase):
         self.assertEqual(
             [(str(g["organization"]), g["details"]) for g in groups], [(LPSC["display_name"], [])]
         )
+
+
+class CollectivesAndMiddleInitialsTests(TestCase):
+    """
+    The false « Auteurs différents » of the bench base (#317), one test per real case:
+    collectives listed by Crossref among the authors, and middle initials.
+    """
+
+    def organizations(self, pub):
+        return [slot.organizations.count() for slot in pub.authorpublication_set.order_by("order")]
+
+    def test_a_collaboration_at_the_end_of_the_list(self):
+        # « Observation of Gravitational Waves… »: 1 012 slots at Crossref, the last one
+        # the collaboration; 1 011 people at OpenAlex.
+        authors = [person(i) for i in range(30)] + [
+            {"name": "LIGO Scientific Collaboration and Virgo Collaboration"}
+        ]
+        authorships = [authorship(f"{a['given']} {a['family']}", LPSC) for a in authors[:30]]
+        pub = publication("Observation", authors, authorships)
+        self.assertFalse(MetadataConflict.objects.exists())
+        self.assertEqual(self.organizations(pub), [1] * 30 + [0])
+
+    def test_a_consortium_in_the_middle_of_the_list(self):
+        # « CryoEM and AI reveal… »: the QCRG consortium at position 67 shifted the rest.
+        authors = [person(0), {"name": "QCRG Structural Biology Consortium"}, person(1)]
+        authorships = [
+            authorship(f"{a['given']} {a['family']}", CERN) for a in (person(0), person(1))
+        ]
+        pub = publication("CryoEM", authors, authorships)
+        self.assertFalse(MetadataConflict.objects.exists())
+        self.assertEqual(self.organizations(pub), [1, 0, 1])
+
+    def test_an_office_kept_by_openalex_too(self):
+        # « MQXFS1 Quadrupole Design Report »: the laboratory first at Crossref only, the
+        # funding office at both.
+        office = "USDOE Office of Science (SC), High Energy Physics (HEP) (SC-25)"
+        authors = [
+            {"name": "Fermi National Accelerator Laboratory (FNAL), Batavia, IL (United States)"},
+            {"given": "Giorgio", "family": "Ambrosio"},
+            {"name": office},
+        ]
+        authorships = [authorship("Giorgio Ambrosio", LPSC), authorship(office)]
+        pub = publication("MQXFS1", authors, authorships)
+        self.assertFalse(MetadataConflict.objects.exists())
+        self.assertEqual(self.organizations(pub), [0, 1, 0])
+
+    def test_only_a_consortium_at_crossref(self):
+        # « A framework for human microbiome research »: the consortium at Crossref, 100 of
+        # its members at OpenAlex. No person to compare: nothing to report.
+        authors = [{"name": "The Human Microbiome Project Consortium"}]
+        authorships = [authorship(f"{a['given']} {a['family']}") for a in map(person, range(5))]
+        publication("Framework", authors, authorships)
+        self.assertFalse(MetadataConflict.objects.exists())
+
+    def test_a_middle_initial_on_one_side(self):
+        # « The Incubation Period of COVID-19 », « The global carbon budget 1959–2011 ».
+        authors = [
+            {"given": "Hannah R.", "family": "Meredith"},
+            {"given": "G.", "family": "van der Werf"},
+        ]
+        authorships = [
+            authorship("Hannah Meredith", LPSC),
+            authorship("G. R. van der Werf", CERN),
+        ]
+        pub = publication("Incubation", authors, authorships)
+        self.assertFalse(MetadataConflict.objects.exists())
+        self.assertEqual(self.organizations(pub), [1, 1])
+
+    def test_a_missing_author_is_still_reported(self):
+        # « Gravitational-Wave Extraction… »: Joan Centrella is missing at OpenAlex.
+        authors = [person(0), {"given": "Joan", "family": "Centrella"}, person(1)]
+        authorships = [authorship(f"{a['given']} {a['family']}") for a in (person(0), person(1))]
+        publication("Extraction", authors, authorships)
+        self.assertTrue(MetadataConflict.objects.exists())
+
+
+class MiddleInitialsTests(SimpleTestCase):
+    def test_initials_written_on_one_side_only(self):
+        self.assertTrue(same_name_but_middle_initials("Kristen Pascal", "Kristen E. Pascal"))
+        self.assertTrue(same_name_but_middle_initials("G. van der Werf", "G. R. van der Werf"))
+
+    def test_never_two_different_initials(self):
+        self.assertFalse(same_name_but_middle_initials("J. Smith", "A. Smith"))
+        self.assertFalse(same_name_but_middle_initials("J. A. Smith", "J. B. Smith"))
+        self.assertFalse(same_name_but_middle_initials("Ada Smith", "Alan Smith"))
