@@ -48,6 +48,9 @@ NAVIGATION = [
         ],
     ),
 ]
+# Below sm, the menus are named shorter, so that the three fit in 390 px without
+# scrolling (#331): « Corrections » was cut at the right edge, with its counter.
+SHORT_TITLES = {"Mon corpus": "Corpus", "Base commune": "Base"}
 # Counters of the private links, by URL: the count and what it is, for screen readers.
 # Nothing is shown at zero.
 COUNTERS = {
@@ -128,6 +131,7 @@ def navigation_group(title, links, current, path):
     holds_current = any(link["current"] for link in links)
     return {
         "title": title,
+        "short_title": SHORT_TITLES.get(title, title),
         "links": links,
         "current": holds_current,
         "classes": f"{MENU_BASE} {LINK_CURRENT if holds_current else LINK_OTHER}",
