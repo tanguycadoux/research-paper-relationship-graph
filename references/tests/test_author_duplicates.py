@@ -8,6 +8,7 @@ from references.services.corrections.author_duplicates import (
     duplicate_count,
     duplicate_groups,
 )
+from references.views.authors import DUPLICATES_PAGE_SIZE
 
 
 class CompatibleGivenNamesTests(SimpleTestCase):
@@ -109,6 +110,26 @@ class DuplicatesPageTests(TestCase):
         response = self.client.get(reverse("author_duplicates"))
         self.assertContains(response, "Ada Lovelace")
         self.assertContains(response, f'value="{self.initial.pk}"')
+
+    def test_pages_of_50_groups(self):
+        # #270: 1 484 groups were one page of 6.3 MB on the bench base.
+        Author.objects.bulk_create(
+            Author(first_name=first, last_name=f"Nom{i:03d}")
+            for i in range(DUPLICATES_PAGE_SIZE + 5)
+            for first in ("Jean", "J.")
+        )
+        response = self.client.get(reverse("author_duplicates"))
+        self.assertEqual(len(response.context["groups"]), DUPLICATES_PAGE_SIZE)
+        self.assertContains(response, f"({DUPLICATES_PAGE_SIZE + 6} groupes)")
+        response = self.client.get(reverse("author_duplicates"), {"page": "2"})
+        self.assertEqual(len(response.context["groups"]), 6)
+
+    def test_a_dismissal_comes_back_to_the_same_page(self):
+        response = self.client.post(
+            reverse("author_duplicates_dismiss"),
+            {"authors": [self.ada.pk, self.initial.pk], "page": "3"},
+        )
+        self.assertEqual(response.url, f"{reverse('author_duplicates')}?page=3")
 
     def test_group_form_leads_to_the_merge_confirmation(self):
         response = self.client.post(

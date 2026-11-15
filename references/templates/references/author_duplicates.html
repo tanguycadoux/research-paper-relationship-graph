@@ -3,7 +3,12 @@
 {% block title %}Doublons probables · {% endblock title %}
 {% block content %}
     <header class="mb-6">
-        <h1>Doublons probables</h1>
+        <h1>
+            Doublons probables
+            {% if page_obj.paginator.count %}
+                <span class="font-normal text-gray-500">({{ page_obj.paginator.count }} groupe{{ page_obj.paginator.count|pluralize }})</span>
+            {% endif %}
+        </h1>
         <p class="mt-2 max-w-3xl text-gray-600">
             Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
             Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
@@ -18,6 +23,7 @@
                       action="{% url 'author_merge_select' %}"
                       class="space-y-3">
                     {% csrf_token %}
+                    <input type="hidden" name="page" value="{{ page_obj.number }}">
                     {% if group.shared_organizations %}
                         <p class="text-sm text-gray-500">
                             Tutelle commune à plusieurs d'entre eux : {{ group.shared_organizations|join:", " }}
@@ -53,4 +59,5 @@
             <p class="text-gray-600">Aucun doublon probable.</p>
         {% endfor %}
     </div>
+    {% pagination page_obj %}
 {% endblock content %}
