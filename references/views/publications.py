@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from ..forms import PublicationForm
+from ..forms import NoteForm, PublicationForm
 from ..models import CitedReference, FetchRequest, Publication, UserPublication
 from ..services.corpus import tags
 from ..services.corrections.identification import is_to_identify
@@ -77,6 +77,7 @@ class PublicationDetailView(DetailView):
             context["reading_status"] = entry.reading_status
             context["reading_statuses"] = UserPublication.ReadingStatus.choices
             context["entry_tags"] = entry.tags.all()
+            context["note_form"] = NoteForm(instance=entry)
             context["known_tags"] = sorted(tags.known_paths(self.request.user), key=str.casefold)
 
         context["cited_references"] = pub.cited_references.select_related("target")
