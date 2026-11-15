@@ -1,8 +1,9 @@
 """
-The queue of retrievals (#378): adding a publication or importing a file leaves the
-requests to the external sources to the fetch_worker command, so that the page answers
-at once. Without a worker seen in the last WORKER_TIMEOUT, the request does the work
-itself, as before: the development server alone still works.
+The queue of retrievals (#378): adding a publication or importing a file, and the other
+long actions (#380), leave the requests to the external sources to the fetch_worker
+command, so that the page answers at once. Without a worker seen in the last
+WORKER_TIMEOUT, the request does the work itself, as before: the development server
+alone still works. What the worker does for each action: fetch_actions.py.
 """
 
 import logging
@@ -18,18 +19,21 @@ from django.utils.dateparse import parse_datetime
 from ...models import FetchRequest, FetchWorker
 from ..display.wording import count
 from ..sources.external_records import has_metadata
-from .books import import_queued_book
-from .importer import import_publication
+from . import fetch_actions
+from .fetch_actions import FetchFailed
 
 logger = logging.getLogger(__name__)
 
 WORKER_TIMEOUT = timedelta(seconds=30)
 Action = FetchRequest.Action
 Status = FetchRequest.Status
-
-
-class FetchFailed(Exception):
-    """A retrieval that could not be done: its message is kept with the request."""
+# The actions about a publication of a corpus: those the toast counts (#379).
+PUBLICATION_ACTIONS = (
+    Action.IMPORT,
+    Action.IMPORT_WITH_REFERENCES,
+    Action.REFRESH,
+    Action.PUBLISHED_VERSION,
+)
 
 
 def worker_alive():
@@ -52,21 +56,33 @@ def needs_fetch(pub):
 
 
 def enqueue(pub, user, *, with_references):
-    """
-    Put the retrieval of pub in the queue, or join the request already there for the same
-    publication and action. Return the request.
-    """
+    """Put the import of pub in the queue (#378); return the request."""
     action = Action.IMPORT_WITH_REFERENCES if with_references else Action.IMPORT
+    return enqueue_action(action, user, publication=pub)
+
+
+def enqueue_action(action, user, *, publication=None, author=None, identifier=""):
+    """
+    Put an action in the queue, or join the request already there for the same identifier
+    and action (#380). The identifier defaults to that of the publication. Return the
+    request.
+    """
+    identifier = identifier or publication_identifier(publication)
     with transaction.atomic():
         request, _ = FetchRequest.objects.get_or_create(
-            publication=pub,
+            identifier=identifier,
             action=action,
             status__in=FetchRequest.ACTIVE,
-            defaults={"identifier": pub.doi or pub.isbn, "status": Status.PENDING},
+            defaults={"publication": publication, "author": author, "status": Status.PENDING},
         )
-        if user is not None:
+        if user is not None and user.is_authenticated:
             request.requesters.add(user)
     return request
+
+
+def publication_identifier(pub):
+    """Its DOI or ISBN; its pk without either, so that two never share a request."""
+    return pub.doi or pub.isbn or f"publication:{pub.pk}"
 
 
 def recover_interrupted():
@@ -101,21 +117,7 @@ def process(request):
 
 
 def fetched(request):
-    pub = request.publication
-    if pub is None:
-        raise FetchFailed("La publication n'existe plus.")
-    if not pub.doi:
-        pub = import_queued_book(pub)
-        if pub is None:
-            raise FetchFailed("ISBN inconnu de Crossref et d'Open Library, ou service injoignable.")
-        if not pub.doi:
-            return pub
-    imported = import_publication(
-        pub, with_references=request.action == Action.IMPORT_WITH_REFERENCES
-    )
-    if imported is None:
-        raise FetchFailed("DOI inconnu de Crossref et de DataCite, ou service injoignable.")
-    return imported
+    return fetch_actions.run(request)
 
 
 def finish(request, status, *, error="", publication=None):
@@ -145,6 +147,8 @@ class Progress:
     active: bool
     # Publications whose request is still pending or running.
     publications: set = field(default_factory=set)
+    # The request when the batch has only one: the toast says what it does (#380).
+    single: FetchRequest | None = None
 
 
 def progress(user, since=None):
@@ -153,7 +157,7 @@ def progress(user, since=None):
     of the batch the page follows: kept while its first requests are done, and once none
     is active, it still gives its outcome.
     """
-    mine = FetchRequest.objects.filter(requesters=user)
+    mine = FetchRequest.objects.filter(requesters=user, action__in=PUBLICATION_ACTIONS)
     active = mine.filter(status__in=FetchRequest.ACTIVE).order_by("requested_at", "pk")
     first = active.first()
     if first is not None and since is not None and over_before(mine, since, first):
@@ -162,15 +166,18 @@ def progress(user, since=None):
         return None
     # The batch followed keeps its start while its first requests are done.
     start = min(filter(None, (first and first.requested_at, since)))
-    statuses = Counter(mine.filter(requested_at__gte=start).values_list("status", flat=True))
+    batch = mine.filter(requested_at__gte=start)
+    statuses = Counter(batch.values_list("status", flat=True))
+    total = sum(statuses.values())
     return Progress(
         start=start,
-        total=sum(statuses.values()),
+        total=total,
         done=statuses[Status.DONE],
         failed=statuses[Status.FAILED],
         ahead=requests_ahead(first, user) if first else 0,
         active=first is not None,
         publications=set(active.values_list("publication_id", flat=True)),
+        single=batch.select_related("publication").first() if total == 1 else None,
     )
 
 
@@ -195,6 +202,8 @@ def requests_ahead(request, user):
 
 def progress_text(state):
     """« 3 publications récupérées sur 12 · 2 demandes avant les vôtres »."""
+    if state.single is not None:
+        return single_text(state.single, state.ahead if state.active else 0)
     if not state.active:
         text = f"Récupération terminée : {count(state.done, 'publication récupérée')}"
     else:
@@ -204,6 +213,37 @@ def progress_text(state):
     if state.active and state.ahead:
         text += f" · {count(state.ahead, 'demande')} avant les vôtres"
     return text + "."
+
+
+# What a single request does, while it waits or runs, and once it is done (#380): one
+# request is one publication, but with its bibliography it brings many references.
+SINGLE_ACTIVE = {
+    Action.IMPORT: "Récupération de « {pub} »…",
+    Action.IMPORT_WITH_REFERENCES: "Récupération de « {pub} » et de sa bibliographie…",
+    Action.REFRESH: "Rafraîchissement des métadonnées de « {pub} »…",
+    Action.PUBLISHED_VERSION: "Remplacement de « {pub} » par sa version publiée…",
+}
+SINGLE_DONE = {
+    Action.IMPORT: "« {pub} » récupérée.",
+    Action.IMPORT_WITH_REFERENCES: "« {pub} » récupérée avec sa bibliographie : {references}.",
+    Action.REFRESH: "Métadonnées de « {pub} » rafraîchies.",
+    Action.PUBLISHED_VERSION: "La prépublication est remplacée par « {pub} ».",
+}
+
+
+def single_text(request, ahead):
+    """The toast of a batch of one request: what it does, not « 1 publication »."""
+    pub = request.publication
+    name = str(pub) if pub is not None else request.identifier
+    if request.status == Status.FAILED:
+        return f"Échec de la récupération de « {name} » : {request.error}"
+    if request.status == Status.DONE:
+        references = count(pub.cited_references.count(), "référence") if pub else ""
+        return SINGLE_DONE[request.action].format(pub=name, references=references)
+    text = SINGLE_ACTIVE[request.action].format(pub=name)
+    if ahead:
+        text += f" {count(ahead, 'demande')} avant la vôtre."
+    return text
 
 
 SESSION_KEY = "fetch_batch"
@@ -225,3 +265,8 @@ def follow_batch(session, state):
 def publication_pending(pub):
     """Whether the data of pub is still to come from the queue (its page says so)."""
     return pub.fetch_requests.filter(status__in=FetchRequest.ACTIVE).exists()
+
+
+def author_pending(author):
+    """Whether the ORCID profile of author is still to come from the queue (#380)."""
+    return author.fetch_requests.filter(status__in=FetchRequest.ACTIVE).exists()

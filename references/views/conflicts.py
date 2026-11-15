@@ -4,9 +4,9 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from ..models import MetadataConflict
+from ..models import FetchRequest, MetadataConflict
 from ..services.corrections import conflicts
-from ..services.imports import published_versions
+from ..services.imports import fetch_queue, published_versions
 from ..services.imports.importer import import_publication
 from ..services.imports.orcid_merge import merge_same_orcid
 from .pagination import page_of
@@ -84,6 +84,19 @@ def resolve_conflict_view(request, pk):
 def accept_published_version(request, conflict):
     """The preprint becomes its published version (#227), imported with its references."""
     arxiv_doi = conflict.current_value
+    if fetch_queue.worker_alive():
+        fetch_queue.enqueue_action(
+            FetchRequest.Action.PUBLISHED_VERSION,
+            request.user,
+            publication=conflict.publication,
+            identifier=conflict.proposed_value,
+        )
+        messages.success(
+            request,
+            f"Remplacement de la prépublication {arxiv_doi} par sa version publiée en file "
+            "de récupération.",
+        )
+        return redirect("conflict_list")
     pub = published_versions.accept_published_version(conflict, request.user)
     if pub is None:
         messages.error(request, "Crossref n'a pas répondu : rien n'a changé, réessayez plus tard.")

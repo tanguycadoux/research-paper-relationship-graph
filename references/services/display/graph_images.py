@@ -26,12 +26,21 @@ from django.db import close_old_connections, connection
 from django.db.models import Max
 from django.utils import formats, timezone
 
-from ...models import Author, AuthorPublication, CitedReference, GraphImage, Publication
+from ...models import (
+    Author,
+    AuthorPublication,
+    CitedReference,
+    FetchRequest,
+    GraphImage,
+    Publication,
+)
+from ..imports import fetch_queue
 from . import wording
 from .author_graph import LARGE_COLLABORATION, all_authors_graph
 from .graph import base_graph
 
 Kind = GraphImage.Kind
+Action = FetchRequest.Action
 Status = GraphImage.Status
 
 # Beyond this many nodes, a graph is offered as an image rather than drawn in the page.
@@ -94,12 +103,15 @@ def request_image(kind, user):
     image.requested_by = user if user.is_authenticated else None
     image.error = ""
     image.save()
-    run_in_background(generate, kind)
+    if fetch_queue.worker_alive():
+        fetch_queue.enqueue_action(Action.GRAPH_IMAGE, user, identifier=kind)
+    else:
+        run_in_background(generate, kind)
     return True
 
 
 def run_in_background(function, *args):
-    """A thread for now: the queue of #246 will take it over."""
+    """Without a worker of the queue (#380): a thread of the server."""
     threading.Thread(target=in_own_connection, args=(function, *args), daemon=True).start()
 
 
@@ -112,7 +124,7 @@ def in_own_connection(function, *args):
 
 
 def generate(kind):
-    """Compute the image of the graph and keep it; keep the error otherwise."""
+    """Compute the image of the graph and keep it; keep the error otherwise. Return it."""
     image = GraphImage.objects.get(kind=kind)
     try:
         current = signature(kind)
@@ -127,6 +139,7 @@ def generate(kind):
         image.error = f"{type(error).__name__} : {error}"
     image.finished_at = timezone.now()
     image.save()
+    return image
 
 
 def render_svg(graph, kind, when):

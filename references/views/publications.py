@@ -8,10 +8,11 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import PublicationForm
-from ..models import CitedReference, Publication, UserPublication
+from ..models import CitedReference, FetchRequest, Publication, UserPublication
 from ..services.corpus import tags
 from ..services.corrections.identification import is_to_identify
 from ..services.corrections.publication_edits import (
+    forget_fetched,
     identifier_changed,
     record_manual_edits,
     refetch_after_identifier_change,
@@ -205,7 +206,18 @@ class PublicationUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         record_manual_edits(form.instance, form.changed_data)
         response = super().form_valid(form)
-        if identifier_changed(form.changed_data):
+        if identifier_changed(form.changed_data) and self.object.doi and fetch_queue.worker_alive():
+            # Dropping what was fetched is quick; fetching the new DOI waits in the queue.
+            forget_fetched(self.object)
+            fetch_queue.enqueue(
+                self.object, self.request.user, with_references=self.object.parse_references
+            )
+            messages.success(
+                self.request,
+                f"Identifiant modifié : les données de « {self.object} » sont en file de "
+                "récupération.",
+            )
+        elif identifier_changed(form.changed_data):
             imported = refetch_after_identifier_change(self.object)
             # A preprint DOI may lead to its published version, already in the base (#227).
             self.object = imported or self.object
@@ -261,6 +273,9 @@ def trigger_import_publication(request, pk):
     Crossref for a publication whose data was already fetched.
     """
     pub = get_object_or_404(Publication, pk=pk)
+    message = f"Rafraîchissement des métadonnées de « {pub} » en file de récupération."
+    if queued(request, FetchRequest.Action.REFRESH, pub, message):
+        return redirect("publication_detail", pk=pk)
     if imported := import_publication(pub, with_references=pub.parse_references, force_fetch=True):
         pub = imported
         messages.success(request, f"Métadonnées rafraîchies pour « {pub} ».")
@@ -277,6 +292,9 @@ def import_publication_references(request, pk):
     to the user's corpus: its references join the shared base (#23).
     """
     pub = get_object_or_404(Publication, pk=pk)
+    action = FetchRequest.Action.IMPORT_WITH_REFERENCES
+    if queued(request, action, pub, f"Références de « {pub} » en file de récupération."):
+        return redirect("publication_detail", pk=pk)
     if imported := import_publication(pub, with_references=True):
         pub = imported
         count = pub.cited_references.count()
@@ -291,6 +309,10 @@ def import_publication_references(request, pk):
 def fetch_incoming_citations(request, pk):
     """Ask OpenAlex for the works that cite a publication (#163)."""
     pub = get_object_or_404(Publication, pk=pk)
+    action = FetchRequest.Action.INCOMING_CITATIONS
+    message = f"Recherche des publications qui citent « {pub} » en file de récupération."
+    if queued(request, action, pub, message):
+        return redirect(reverse("publication_detail", args=[pk]) + "#incoming-title")
     try:
         citations = incoming_citations.fetch(pub)
     except incoming_citations.IncomingCitationsError as error:
@@ -299,3 +321,15 @@ def fetch_incoming_citations(request, pk):
         citing = wording.count(citations.total, "publication qui cite", "publications qui citent")
         messages.success(request, f"OpenAlex recense {citing} « {pub} ».")
     return redirect(reverse("publication_detail", args=[pub.pk]) + "#incoming-title")
+
+
+def queued(request, action, pub, message):
+    """
+    With a worker, put the action in the queue and say so (#380); False without one: the
+    view does the work itself.
+    """
+    if not fetch_queue.worker_alive():
+        return False
+    fetch_queue.enqueue_action(action, request.user, publication=pub)
+    messages.success(request, message)
+    return True

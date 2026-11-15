@@ -345,8 +345,9 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
 `GraphImage`, une ligne par graphe).
 
 - **Calcul** : un utilisateur connecté le lance (`POST /graph/image/<kind>/generate/`) ; il
-  tourne dans un thread (en attendant la file d'attente de #246). Un calcul « en cours »
-  depuis plus de 5 minutes est considéré comme mort avec son thread et peut être relancé.
+  passe par la file des récupérations quand un worker tourne (`fetch_worker`, #380), sinon
+  dans un thread du serveur. Un calcul « en cours » depuis plus de 5 minutes est considéré
+  comme mort et peut être relancé (une demande déjà en file n'est pas dédoublée).
   Pendant le calcul, `static/js/graph_image.js` interroge l'état toutes les 2 s
   (`/graph/image/<kind>/status/`) et recharge la page une fois l'image prête.
 - **Disposition** : igraph (dépendance du projet), Fruchterman-Reingold, **composante par

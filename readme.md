@@ -126,7 +126,10 @@ serveur : `python manage.py tailwind build`. Ses sources sont dans `assets/css/s
 
 Ajouter une publication ou importer un fichier interroge les sources externes (Crossref,
 OpenAlex, ORCID…), ce qui peut prendre plusieurs secondes par publication. Avec le worker,
-la page répond tout de suite et la récupération se fait en arrière-plan :
+la page répond tout de suite et la récupération se fait en arrière-plan ; de même pour les
+autres gestes longs : statut « à lire » quitté, « Rafraîchir les métadonnées », changement
+de DOI, import des références, citants OpenAlex, version publiée acceptée, profil ORCID,
+image d'un grand graphe :
 
 ```bash
 python manage.py dev           # tailwind runserver et le worker, dans un seul terminal

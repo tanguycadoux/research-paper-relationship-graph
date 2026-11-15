@@ -113,7 +113,7 @@
             </div>
             <script src="{% static 'js/toasts.js' %}" defer></script>
         {% endif %}
-        {% if fetch_progress.active or fetch_pending_publication %}
+        {% if fetch_progress.active or fetch_pending_publication or fetch_pending_author %}
             <script src="{% static 'js/fetch_progress.js' %}" defer></script>
         {% endif %}
     </body>
