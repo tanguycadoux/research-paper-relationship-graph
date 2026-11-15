@@ -32,3 +32,6 @@ media/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Journal of the API requests (#395)
+logs/

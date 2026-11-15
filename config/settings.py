@@ -62,6 +62,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    # After the authentication: the journal of the API requests names the user (#395).
+    "references.middleware.ApiLogContextMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
@@ -174,9 +176,29 @@ TEST_RUNNER = "config.test_runner.NoNetworkTestRunner"
 
 # Logging
 
+# The journal of the requests to the external APIs (#395): one JSON line per request,
+# what asked for it and how long it took; summary by `python manage.py api_log`.
+# API_LOG_PATH="" turns it off.
+API_LOG_PATH = os.environ.get("API_LOG_PATH", str(BASE_DIR / "logs" / "api.log"))
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {"message": {"format": "%(message)s"}},
     "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "loggers": {"references": {"handlers": ["console"], "level": "INFO"}},
+    "loggers": {
+        "references": {"handlers": ["console"], "level": "INFO"},
+        # Not on the console: the line of references.services.sources.http says it already.
+        "references.api": {"handlers": [], "level": "WARNING", "propagate": False},
+    },
 }
+if API_LOG_PATH:
+    LOGGING["handlers"]["api_file"] = {
+        "class": "references.services.sources.api_log.ApiLogHandler",
+        "filename": API_LOG_PATH,
+        "maxBytes": 10 * 1024 * 1024,
+        "backupCount": 5,
+        "encoding": "utf-8",
+        "formatter": "message",
+    }
+    LOGGING["loggers"]["references.api"].update(handlers=["api_file"], level="INFO")

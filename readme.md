@@ -154,6 +154,24 @@ En développement (`DJANGO_DEBUG=1`), les réponses des sources externes sont ga
 (`pip install -r requirements-dev.txt`). Réimporter les mêmes publications ne les
 redemande donc pas.
 
+### Journal des appels aux sources
+
+Chaque requête aux sources externes (Crossref, DataCite, OpenAlex, ORCID, doi.org, arXiv,
+Open Library) est écrite dans `logs/api.log`, une ligne JSON par requête (`"event": "api"`) :
+source, objet, statut, durée, réponse du cache, taille, et ce qui l'a demandée (la page et
+l'utilisateur, la demande de la file, ou la commande). Chaque demande de la file traitée par
+le worker a aussi sa ligne (`"event": "file"`) : attente dans la file, durée, nombre de
+requêtes, références de la publication, résultat. Le fichier tourne à 10 Mo (5 anciens gardés) et
+n'est pas versionné. `API_LOG_PATH` change son chemin ; vide, il coupe le journal.
+
+```bash
+python manage.py api_log              # résumé : par source, par origine, demandes de la file, les plus lentes
+python manage.py api_log --hours 24   # sur les dernières 24 h
+```
+
+Les lignes se lisent aussi avec `jq`, par exemple les erreurs :
+`jq 'select(.status != 200 and .status != 404)' logs/api.log`.
+
 ## Commandes utiles
 
 ```bash

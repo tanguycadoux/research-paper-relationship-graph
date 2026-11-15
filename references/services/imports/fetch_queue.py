@@ -7,6 +7,7 @@ alone still works. What the worker does for each action: fetch_actions.py.
 """
 
 import logging
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -18,6 +19,8 @@ from django.utils.dateparse import parse_datetime
 
 from ...models import FetchRequest, FetchWorker
 from ..display.wording import count
+from ..sources import api_log
+from ..sources.api_log import api_context
 from ..sources.external_records import has_metadata
 from . import fetch_actions
 from .fetch_actions import FetchFailed
@@ -104,7 +107,29 @@ def claim_next():
 
 
 def process(request):
-    """Do a request, and keep its outcome: the publication imported, or the error."""
+    """
+    Do a request, keep its outcome (the publication imported, or the error), and write
+    it in the journal of the API requests (#395).
+    """
+    started = time.monotonic()
+    label = f"{request.action} {request.identifier}"
+    with api_context("file", label, request=request.pk) as counter:
+        pub = outcome(request)
+    request.refresh_from_db()
+    api_log.record_request(
+        request,
+        ms=(time.monotonic() - started) * 1000,
+        api_requests=counter.api_requests,
+        references=(
+            pub.cited_references.count()
+            if pub is not None and request.action in PUBLICATION_ACTIONS
+            else None
+        ),
+    )
+
+
+def outcome(request):
+    """Do a request and keep its outcome; return its publication when it is done."""
     try:
         pub = fetched(request)
     except FetchFailed as error:
@@ -114,6 +139,8 @@ def process(request):
         finish(request, Status.FAILED, error=f"{type(error).__name__} : {error}")
     else:
         finish(request, Status.DONE, publication=pub)
+        return pub
+    return None
 
 
 def fetched(request):

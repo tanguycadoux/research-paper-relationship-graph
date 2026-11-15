@@ -19,6 +19,8 @@ from functools import cache
 import requests
 from django.conf import settings
 
+from . import api_log
+
 logger = logging.getLogger(__name__)
 
 PROJECT_URL = "https://github.com/tanguycadoux/research-paper-relationship-graph"
@@ -84,7 +86,7 @@ def _get(url, params, headers, service, subject, contact, stream=False):
     """The 200 response of a GET request, retried as the limits allow, or None."""
     limits = _limits.get()
     for attempt in range(1, limits.attempts + 1):
-        response = _request(url, params, headers, service, subject, contact, stream)
+        response = _request(url, params, headers, service, subject, contact, stream, attempt)
         if response is not None and response.status_code == 200:
             return response
         if not _should_retry(response) or attempt == limits.attempts:
@@ -133,8 +135,9 @@ def clear_cache():
     return True
 
 
-def _request(url, params, headers, service, subject, contact, stream=False):
-    """Send one request. Return None on network error."""
+def _request(url, params, headers, service, subject, contact, stream=False, attempt=1):
+    """Send one request, written in the journal (#395). Return None on network error."""
+    started = time.monotonic()
     try:
         response = _get_session().get(
             url,
@@ -145,10 +148,21 @@ def _request(url, params, headers, service, subject, contact, stream=False):
         )
     except requests.RequestException as error:
         logger.warning("%s network error for %s: %s", service, subject, error)
+        api_log.record(
+            service, subject, url, params, None,
+            ms=elapsed(started), attempt=attempt, stream=stream, error=str(error),
+        )  # fmt: skip
         return None
+    api_log.record(
+        service, subject, url, params, response, ms=elapsed(started), attempt=attempt, stream=stream
+    )
     cached = " (cache)" if getattr(response, "from_cache", False) is True else ""
     logger.info("%s request for %s%s", service, subject, cached)
     return response
+
+
+def elapsed(started):
+    return (time.monotonic() - started) * 1000
 
 
 def _parse_json(response, service, subject):

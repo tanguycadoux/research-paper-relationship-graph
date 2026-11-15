@@ -45,6 +45,7 @@ references/          application principale
   admin.py           administration Django (seul endroit où l'on supprime une publication)
   forms.py           formulaires (publication, auteur, fusions, identification)
   urls.py            routes, au pluriel pour les collections (publications/, authors/…)
+  middleware.py      contexte des requêtes aux sources faites pour une page (journal)
   views/             vues fines, une par domaine
   context_processors.py  toast de la file des récupérations sur toutes les pages
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
@@ -60,6 +61,8 @@ references/          application principale
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
       http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
+      api_log.py     journal des requêtes (logs/api.log, une ligne JSON par requête, contexte)
+      api_log_summary.py  résumé du journal (commande api_log)
       crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
       datacite_api.py  client DataCite (DOI par DOI ou par lots, recherche par titre)
       openalex_api.py  client OpenAlex (DOI par DOI ou par lots, institutions, DOI d'une œuvre,
@@ -137,6 +140,7 @@ references/          application principale
     navigation.py    navigation principale (groupes, lien courant, compteurs, liens réservés
                      aux administrateurs)
   management/commands/
+    api_log.py       résumé du journal des requêtes aux sources externes
     fetch_worker.py  worker de la file des récupérations
     dev.py           développement : tailwind runserver et fetch_worker dans un seul terminal
     complete_affiliations.py  affiliations des publications déjà en base
