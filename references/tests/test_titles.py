@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -201,6 +203,9 @@ class ReadableTitleFieldTests(TestCase):
         user = get_user_model().objects.create_user("u", password="p")
         self.client.force_login(user)
         page = self.client.get(reverse("publication_detail", args=[pub.pk])).content.decode()
+        # Only the BibTeX entry of « Citer » keeps the LaTeX, which BibTeX reads (#286).
+        self.assertIn("Nb$_{3}$Sn", re.search(r'<pre id="citation-bibtex".*?</pre>', page, re.S)[0])
+        page = re.sub(r'<pre id="citation-bibtex".*?</pre>', "", page, flags=re.S)
         self.assertIn(self.READABLE, page)
         self.assertNotIn("$_{3}$", page)
         edit = self.client.get(reverse("publication_edit", args=[pub.pk])).content.decode()

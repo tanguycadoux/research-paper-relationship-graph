@@ -134,6 +134,7 @@ references/          application principale
       publication_table.py  annotations du tableau commun (premier auteur, badges)
       publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
                      résumé)
+      citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes

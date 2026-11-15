@@ -18,6 +18,10 @@
                 Les sources ne les réécrivent plus.
             </p>
         {% endif %}
+        {% if open_access %}
+            {# The open access version given by OpenAlex, or the arXiv PDF (#284). #}
+            <p class="font-medium">{% external_link open_access.url open_access.label %}</p>
+        {% endif %}
         {% if fetch_pending_publication %}
             <div data-fetch-pending-publication="{{ fetch_pending_publication }}"
                  data-fetch-progress="{% url 'fetch_progress' %}">
@@ -42,6 +46,7 @@
             {% endif %}
             {% url 'publication_graph' publication.pk as graph_url %}
             {% button "Graphe" url=graph_url variant="secondary" icon="hub" %}
+            {% include "references/_citation_panel.html" %}
             {% if user.is_authenticated %}
                 {% url 'publication_edit' publication.pk as edit_url %}
                 {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}

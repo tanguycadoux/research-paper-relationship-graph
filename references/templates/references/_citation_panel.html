@@ -1,0 +1,20 @@
+{% comment %}
+« Citer » and its panel (#286): the citation formatted in a few styles and the BibTeX
+entry, from the data of the base (services/display/citations.py). Context: citations.
+A popover: opened and closed without JavaScript; the script only adds « Copier ».
+{% endcomment %}
+{% load static ui %}
+{% button "Citer" type="button" variant="secondary" icon="format_quote" popovertarget="citation-panel" %}
+<div popover
+     id="citation-panel"
+     class="{% popover_panel_classes %} max-w-[calc(100vw-2rem)] min-w-[min(40rem,calc(100vw-2rem))] space-y-4 overflow-y-auto overscroll-contain max-h-[calc(100dvh-2rem)] supports-[position-area:bottom]:max-h-full">
+    <div class="flex items-center justify-between gap-2">
+        <h2 class="text-base font-semibold select-none">Citer cette publication</h2>
+        {% button "Fermer" type="button" variant="secondary" icon="close" icon_only=True popovertarget="citation-panel" %}
+    </div>
+    {% for citation in citations.styles %}
+        {% include "references/_citation_style.html" with id="citation-"|add:citation.slug label=citation.style %}
+    {% endfor %}
+    {% include "references/_citation_style.html" with id="citation-bibtex" label="BibTeX" bibtex=citations.bibtex %}
+</div>
+<script src="{% static 'js/copy_citation.js' %}" defer></script>
