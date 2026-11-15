@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
@@ -131,13 +131,31 @@ def incoming_citations_context(request, pub):
 class PublicationCreateView(LoginRequiredMixin, CreateView):
     model = Publication
     form_class = PublicationForm
-    success_url = reverse_lazy("publication_list")
 
     def form_valid(self, form):
+        """Then to the page of the publication, with what the sources gave (#272)."""
         response = super().form_valid(form)
-        if self.object.doi:
-            import_publication(self.object)
-        return response
+        if not self.object.doi:
+            messages.success(self.request, f"« {self.object} » a été ajoutée à la base.")
+            return response
+        imported = import_publication(self.object)
+        # A preprint DOI may lead to its published version, already in the base (#227).
+        self.object = imported or self.object
+        self.object.refresh_from_db()
+        if imported:
+            messages.success(
+                self.request, f"« {self.object} » a été ajoutée à la base, avec ses métadonnées."
+            )
+        else:
+            messages.warning(
+                self.request,
+                f"« {self.object} » a été ajoutée à la base, mais ses métadonnées n'ont pas pu "
+                "être récupérées (DOI inconnu des sources, ou service injoignable).",
+            )
+        return redirect(self.get_success_url())
+
+    def get_success_url(self):
+        return reverse("publication_detail", args=[self.object.pk])
 
 
 class PublicationUpdateView(LoginRequiredMixin, UpdateView):

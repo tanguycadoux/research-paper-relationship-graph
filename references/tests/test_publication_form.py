@@ -1,4 +1,5 @@
 from datetime import date
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -76,9 +77,47 @@ class PublicationIdentifierTests(TestCase):
         )
         self.assertEqual(Publication.objects.count(), 1)
 
+    def test_a_known_doi_has_only_its_own_error(self):
+        # Not also « Indiquez au moins un DOI… »: a DOI was given (#272).
+        form = PublicationForm({"doi": "10.1109/tasc.2023.1"})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.non_field_errors(), [])
+
     def test_labels_are_in_french(self):
         labels = [field.label for field in PublicationForm()]
         self.assertEqual(labels, ["DOI", "ISBN", "Titre", "Date de publication"])
+
+
+class PublicationCreationTests(TestCase):
+    """After the creation: the page of the publication, with a message (#272)."""
+
+    def setUp(self):
+        self.client.force_login(get_user_model().objects.create_user("alice"))
+
+    def create(self, **data):
+        return self.client.post(reverse("publication_create"), data, follow=True)
+
+    def test_without_doi(self):
+        response = self.create(title="Un livre")
+        pub = Publication.objects.get()
+        self.assertRedirects(response, reverse("publication_detail", args=[pub.pk]))
+        self.assertContains(response, "« Un livre » a été ajoutée à la base.")
+
+    @patch("references.views.publications.import_publication")
+    def test_with_a_doi_whose_metadata_is_retrieved(self, import_publication):
+        import_publication.side_effect = lambda pub: pub
+        response = self.create(doi="10.1000/new")
+        pub = Publication.objects.get()
+        import_publication.assert_called_once_with(pub)
+        self.assertRedirects(response, reverse("publication_detail", args=[pub.pk]))
+        self.assertContains(response, "a été ajoutée à la base, avec ses métadonnées.")
+
+    @patch("references.views.publications.import_publication", return_value=None)
+    def test_with_a_doi_the_sources_do_not_know(self, _import):
+        response = self.create(doi="10.1000/unknown")
+        pub = Publication.objects.get()
+        self.assertRedirects(response, reverse("publication_detail", args=[pub.pk]))
+        self.assertContains(response, "ses métadonnées n&#x27;ont pas pu être récupérées")
 
 
 class ListViewsTests(TestCase):
