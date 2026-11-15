@@ -38,7 +38,7 @@ class QueueOverview:
 def requests_with(status):
     return (
         FetchRequest.objects.filter(status=status)
-        .select_related("publication")
+        .select_related("publication", "author")
         .prefetch_related("requesters")
     )
 

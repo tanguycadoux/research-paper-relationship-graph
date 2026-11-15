@@ -7,7 +7,7 @@
     <table>
         <thead>
             <tr>
-                <th scope="col">Publication</th>
+                <th scope="col">Objet</th>
                 <th scope="col">Action</th>
                 <th scope="col">Demandeurs</th>
                 <th scope="col">Dates</th>
@@ -22,11 +22,21 @@
         <tbody>
             {% for fetch in requests %}
                 <tr>
-                    {# The identifier asked for, under the publication: kept if it is gone. #}
+                    {# What the request is about, and the identifier asked for: kept if it is gone. #}
                     <th scope="row" class="min-w-56 font-normal">
                         {% if fetch.publication %}
                             <a href="{% url 'publication_detail' fetch.publication.pk %}"
                                class="{% row_title_classes %}">{{ fetch.publication }}</a>
+                        {% elif fetch.author %}
+                            {# An ORCID profile (#380). #}
+                            <a href="{% url 'author_detail' fetch.author.pk %}"
+                               class="{% row_title_classes %}">{{ fetch.author }}</a>
+                        {% elif fetch.action == "graph_image" and fetch.identifier == "authors" %}
+                            <a href="{% url 'authors_graph' %}" class="{% row_title_classes %}">Graphe des auteurs</a>
+                        {% elif fetch.action == "graph_image" %}
+                            <a href="{% url 'base_graph' %}" class="{% row_title_classes %}">Graphe des publications</a>
+                        {% elif fetch.action == "orcid_profile" %}
+                            <span class="text-gray-500">(auteur disparu)</span>
                         {% else %}
                             <span class="text-gray-500">(publication disparue)</span>
                         {% endif %}

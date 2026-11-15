@@ -8,7 +8,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
-from references.models import FetchRequest, FetchWorker, Publication
+from references.models import Author, FetchRequest, FetchWorker, Publication
 from references.services.imports import fetch_admin, fetch_queue
 from references.tests.test_navigation import render_navigation
 
@@ -124,6 +124,22 @@ class FetchAdminPageTests(TestCase):
     def test_a_request_whose_publication_is_gone(self):
         FetchRequest.objects.filter(pk=self.failed.pk).update(publication=None)
         self.assertContains(self.client.get(URL), "(publication disparue)")
+
+    def test_requests_about_an_author_or_a_graph(self):
+        # #380: an ORCID profile, the image of a graph, have no publication.
+        author = Author.objects.create(last_name="Lovelace", orcid="0000-0001")
+        fetch_queue.enqueue_action(
+            Action.ORCID_PROFILE, self.admin, author=author, identifier=author.orcid
+        )
+        fetch_queue.enqueue_action(Action.GRAPH_IMAGE, self.admin, identifier="authors")
+        fetch_queue.enqueue_action(Action.GRAPH_IMAGE, self.admin, identifier="base")
+        response = self.client.get(URL)
+        self.assertContains(response, reverse("author_detail", args=[author.pk]))
+        self.assertContains(response, f'href="{reverse("authors_graph")}"')
+        self.assertContains(response, f'href="{reverse("base_graph")}"')
+        self.assertNotContains(response, "(publication disparue)")
+        FetchRequest.objects.filter(author=author).update(author=None)
+        self.assertContains(self.client.get(URL), "(auteur disparu)")
 
     def test_a_warning_when_requests_wait_without_a_worker(self):
         response = self.client.get(URL)
