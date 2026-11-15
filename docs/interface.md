@@ -48,6 +48,16 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   l'entrée a des tags ou un statut de lecture, que le retrait efface : le bouton ouvre alors
   une confirmation en popover, et le message dit ce qui a été perdu (#280). `corpus_ids`
   rend ces entrées en une requête (`CorpusIds.with_tags`, `with_status`).
+- **Actions groupées** (`_bulk_actions.html`, `views/corpus_bulk.py`,
+  `services/corpus/bulk.py`, #287) : dans « Mon corpus », une case par ligne et, au-dessus
+  du tableau, une barre pour ajouter un tag, changer le statut de lecture ou retirer du
+  corpus (confirmation en popover) les publications cochées. Les cases appartiennent au
+  formulaire de la barre par l'attribut `form=` (chaque ligne contient déjà le formulaire
+  de son statut). Le serveur refuse tout, sans rien changer, si rien n'est coché ou si une
+  publication cochée n'est pas dans le corpus de l'utilisateur. Quitter « à lire » importe
+  les bibliographies comme pour une seule publication (par la file avec un worker).
+  `static/js/bulk_actions.js` compte les cases cochées, montre la case « Tout cocher » et
+  désactive les boutons tant que rien n'est coché ; sans lui, la barre fonctionne.
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce
