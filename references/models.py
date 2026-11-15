@@ -512,3 +512,36 @@ class IncomingCitations(models.Model):
 
     def __str__(self):
         return f"{self.publication} – {count(self.total, 'citation')} selon OpenAlex"
+
+
+class GraphImage(models.Model):
+    """
+    The full image of a graph too large to be drawn in the page (#328): computed in the
+    background, kept as SVG with the summary of the base it was drawn from.
+    """
+
+    class Kind(models.TextChoices):
+        AUTHORS = "authors", "Graphe des auteurs"
+        BASE = "base", "Graphe de la base"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "En cours"
+        DONE = "done", "Prête"
+        FAILED = "failed", "Échec"
+
+    kind = models.CharField(max_length=20, choices=Kind.choices, unique=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    requested_at = models.DateTimeField()
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    finished_at = models.DateTimeField(null=True, blank=True)
+    # The summary of the base when the image was requested: another one means it is old.
+    signature = models.CharField(max_length=200, blank=True)
+    nodes = models.PositiveIntegerField(default=0)
+    edges = models.PositiveIntegerField(default=0)
+    svg = models.TextField(blank=True)
+    error = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.get_kind_display()} ({self.get_status_display().lower()})"
