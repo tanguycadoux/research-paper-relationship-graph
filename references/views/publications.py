@@ -80,7 +80,7 @@ class PublicationDetailView(DetailView):
             context["reading_statuses"] = UserPublication.ReadingStatus.choices
             context["entry_tags"] = entry.tags.all()
             context["note_form"] = NoteForm(instance=entry)
-            context["known_tags"] = sorted(tags.known_paths(self.request.user), key=str.casefold)
+            context["known_tags"] = tags.suggested_paths(self.request.user)
 
         context["cited_references"] = pub.cited_references.select_related("target")
         # Only publications whose bibliography was imported (those of a corpus) can cite it.
@@ -130,6 +130,7 @@ def bulk_actions_context(request, cited_references):
         "references_checkable": any(ref.target_id for ref in cited_references),
         "reading_statuses": UserPublication.ReadingStatus.choices,
         "tag_max_length": tags.MAX_LENGTH,
+        "bulk_tags": tags.suggested_paths(request.user),
     }
 
 

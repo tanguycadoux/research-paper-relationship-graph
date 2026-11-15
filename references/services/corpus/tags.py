@@ -44,6 +44,11 @@ def known_paths(user, excluded=()):
     return {path for name in names for path in ancestors_and_self(name)}
 
 
+def suggested_paths(user):
+    """The paths a tag field suggests (a datalist): every known one, in alphabetical order."""
+    return sorted(known_paths(user), key=str.casefold)
+
+
 def canonical_path(user, raw, excluded=()):
     """
     The cleaned path of raw, each level known (but from the excluded tags) written as

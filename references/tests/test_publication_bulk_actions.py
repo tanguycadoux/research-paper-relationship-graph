@@ -66,6 +66,15 @@ class PublicationBulkActionsTests(TestCase):
         self.assertContains(response, reverse("publication_bulk", args=[self.pub.pk]), count=2)
         self.assertContains(response, "js/bulk_actions.js")
 
+    def test_each_tag_field_suggests_the_users_tags(self):
+        Tag.objects.create(user=self.alice, name="Projet/Groupe")
+        response = self.page()
+        for form_id in ("references-actions", "cited-by-actions"):
+            with self.subTest(form_id=form_id):
+                self.assertContains(response, f'list="{form_id}-known-tags"')
+                self.assertContains(response, f'<datalist id="{form_id}-known-tags">')
+        self.assertContains(response, '<option value="Projet/Groupe"></option>', count=2)
+
     def test_only_identified_references_have_a_checkbox(self):
         response = self.page()
         self.assertContains(response, 'form="references-actions"', count=2)

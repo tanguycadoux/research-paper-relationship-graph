@@ -6,7 +6,8 @@ One button per action (name="action"), removal confirmed in a popover. Several b
 share a page: every id derives from form_id. static/js/bulk_actions.js counts the rows
 checked, checks them all and disables the buttons while none is; without it, the server
 says when nothing is checked.
-Context: form_id, reading_statuses, tag_max_length; with action, the URL the form is
+Context: form_id, reading_statuses, tag_max_length, bulk_tags (the user's tags, suggested
+as the tag is typed); with action, the URL the form is
 sent to (else « Mon corpus »'s); with next, the page to go back to (else this one); with
 add, a button « Ajouter à mon corpus », which gives the tag and status chosen too.
 {% endcomment %}
@@ -30,7 +31,12 @@ add, a button « Ajouter à mon corpus », which gives the tag and status chosen
                name="name"
                maxlength="{{ tag_max_length }}"
                placeholder="Projet/Groupe"
+               list="{{ form_id }}-known-tags"
+               autocomplete="off"
                class="w-40 min-w-0 py-1">
+        <datalist id="{{ form_id }}-known-tags">
+            {% for path in bulk_tags %}<option value="{{ path }}"></option>{% endfor %}
+        </datalist>
         {% button "Ajouter le tag" variant="secondary" icon="new_label" name="action" value="tag" %}
     </div>
     <div class="flex items-center gap-1">

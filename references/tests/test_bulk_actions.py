@@ -50,6 +50,17 @@ class BulkActionsTests(TestCase):
         self.assertContains(response, 'name="action" value="status"')
         self.assertContains(response, 'name="action" value="remove"')
 
+    def test_the_tag_field_suggests_the_users_tags(self):
+        Tag.objects.create(user=self.alice, name="Projet/Groupe")
+        Tag.objects.create(user=self.bob, name="Secret")
+        response = self.client.get(reverse("corpus"))
+        self.assertContains(response, 'list="bulk-actions-known-tags"')
+        self.assertContains(response, '<datalist id="bulk-actions-known-tags">')
+        # The parents are suggested too; never another user's tags.
+        self.assertContains(response, '<option value="Projet"></option>')
+        self.assertContains(response, '<option value="Projet/Groupe"></option>')
+        self.assertNotContains(response, "Secret")
+
     def test_checked_publications_are_tagged(self):
         response = self.act("tag", [self.first, self.second], name="Projet/Groupe")
         self.assertEqual(self.tag_names(self.first), ["Projet/Groupe"])

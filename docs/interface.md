@@ -70,7 +70,9 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   publication cochée n'est pas dans le corpus de l'utilisateur. Quitter « à lire » importe
   les bibliographies comme pour une seule publication (par la file avec un worker).
   `static/js/bulk_actions.js` compte les cases cochées, montre la case « Tout cocher » et
-  désactive les boutons tant que rien n'est coché ; sans lui, la barre fonctionne.
+  désactive les boutons tant que rien n'est coché ; sans lui, la barre fonctionne. Le
+  champ du tag propose, par une `<datalist>` (`tags.suggested_paths`), les tags de
+  l'utilisateur et leurs parents, comme le champ de tag de la fiche.
   Sur la fiche d'une publication (#408), connecté, les listes « Références » et « Cité
   par » ont chacune leur barre (`form_id` distinct : `references-actions`,
   `cited-by-actions`), envoyée à `publication_bulk`, avec en plus « Ajouter à mon
