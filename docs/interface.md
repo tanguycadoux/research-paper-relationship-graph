@@ -27,7 +27,11 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   « Publications », le nombre se lisait comme une taille de corpus. Une requête par compteur, sans cache, pour qu'un compteur soit juste aussitôt
   après l'action ; rien n'est affiché à zéro. Les doublons probables n'ont pas de
   compteur : des suggestions, nombreuses (55), pas des tâches. **Notifications** : les messages Django s'affichent en
-  toasts (`static/js/toasts.js`).
+  toasts (`static/js/toasts.js`). **Boutons occupés** (`static/js/busy.js`, #339) : à
+  l'envoi d'un formulaire POST, ses boutons sont désactivés (après la lecture du bouton
+  cliqué, dont la valeur compte : « à lire ») et celui qui a été cliqué remplace son icône
+  par une animation ; ils se réactivent au retour par l'historique. Sans JavaScript, rien
+  ne change.
 - **Ajouter une publication** (`_add_publication.html`, #277) : un seul composant, sur
   l'accueil, « Mon corpus » et « Publications » : DOI, ISBN ou arXiv, « Ajouter à mon corpus »
   (avec la bibliographie) ou « Ajouter à lire » (sans, #234) ; retour à la page du

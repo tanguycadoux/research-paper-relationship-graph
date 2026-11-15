@@ -55,6 +55,14 @@ class PageSmokeTests(TestCase):
         self.assertContains(response, 'rel="icon" type="image/svg+xml" href="/static/favicon.svg"')
         self.assertTrue((settings.BASE_DIR / "static" / "favicon.svg").is_file())
 
+    def test_every_page_loads_the_busy_buttons(self):
+        # #339: a form sent to the sources disables its buttons and shows a spinner.
+        response = self.client.get(reverse("index"))
+        self.assertContains(response, 'src="/static/js/busy.js" defer')
+        script = (settings.BASE_DIR / "static" / "js" / "busy.js").read_text()
+        self.assertIn('form.method.toLowerCase() !== "post"', script)
+        self.assertIn("setTimeout", script)  # after the clicked button's value is read
+
     def test_pages_for_logged_in_user(self):
         self.client.force_login(self.user)
         self.assert_pages_render(
