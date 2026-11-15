@@ -82,7 +82,7 @@
                             {% for pub in publications %}
                                 <tr>
                                     <td>
-                                        <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                                        <a class="{% row_title_classes %}" href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
                                         {% if pub.in_corpus %}
                                             {% badge "déjà dans mon corpus" icon="bookmarks" %}
                                             {% for tag in pub.my_tags %}

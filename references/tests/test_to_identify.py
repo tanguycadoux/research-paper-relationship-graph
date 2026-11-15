@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from references.models import CitedReference, Publication, UserPublication
 from references.services.corrections.identification import with_references_to_identify
+from references.templatetags.ui import BUTTON_VARIANTS
 
 
 class ReferencesToIdentifyTests(TestCase):
@@ -43,7 +44,14 @@ class ReferencesToIdentifyTests(TestCase):
         self.assertEqual(response.context["references_to_identify"], 2)
         self.assertContains(response, "2 références sur 3")
         self.assertContains(response, "ne sont reliées")
-        self.assertContains(response, 'class="bg-amber-50"', count=2)
+        self.assertContains(response, "border-amber-400", count=2)
+
+    def test_one_full_button_and_discreet_row_buttons(self):
+        # #282: « Identifier les 2 références en série », the rows a secondary icon button.
+        self.client.force_login(get_user_model().objects.create_user("zoe"))
+        response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
+        self.assertContains(response, "Identifier les 2 références en série")
+        self.assertNotContains(response, BUTTON_VARIANTS["warning"])
 
     def test_summary_when_everything_is_linked(self):
         response = self.client.get(reverse("publication_detail", args=[self.cited.pk]))

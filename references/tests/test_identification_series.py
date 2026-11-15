@@ -37,12 +37,12 @@ class IdentificationSeriesTests(TestCase):
 
     def test_detail_page_starts_at_the_first_reference_to_identify(self):
         response = self.client.get(self.detail_url())
-        self.assertContains(response, "Identifier en série")
+        self.assertContains(response, "?serie=1")
         self.assertContains(response, self.url("reference_identify", 1))
 
     def test_no_series_without_reference_to_identify(self):
         CitedReference.objects.filter(position__gt=0).update(unidentifiable=True)
-        self.assertNotContains(self.client.get(self.detail_url()), "Identifier en série")
+        self.assertNotContains(self.client.get(self.detail_url()), "?serie=1")
 
     def test_progress_and_controls(self):
         response = self.client.get(self.url("reference_identify", 2))

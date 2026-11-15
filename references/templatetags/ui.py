@@ -464,6 +464,17 @@ def popover_panel_classes():
     return POPOVER_PANEL_CLASSES
 
 
+# The title of a row in a table: the colour of the text, blue on hover. Blue links are
+# kept for the actions and the secondary links: a dense table was a wall of blue (#282).
+ROW_TITLE_CLASSES = "text-gray-900 hover:text-blue-700"
+
+
+@register.simple_tag
+def row_title_classes():
+    """{% row_title_classes %}: the classes of the link that names a row of a table."""
+    return ROW_TITLE_CLASSES
+
+
 @register.simple_tag
 def glass_classes():
     """{% glass_classes %}: the frosted glass of what floats over the content."""

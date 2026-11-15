@@ -39,7 +39,7 @@ always beside the reading status: it stays on the page of each publication.
             {% for pub in publications %}
                 <tr>
                     <td>
-                        <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                        <a class="{% row_title_classes %}" href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
                         {% if pub.metadata_status == "missing" %}
                             {% badge "métadonnées à récupérer" icon="refresh" %}
                         {% elif pub.metadata_status == "unknown" %}
