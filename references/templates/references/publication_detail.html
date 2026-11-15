@@ -87,11 +87,20 @@
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {# Left column (two thirds), then right column #}
         <div class="space-y-6 lg:col-span-2">
-            {% card title="Auteurs" %}
+            <section aria-labelledby="authors-title">
+            {% card %}
+                <h2 id="authors-title" class="mb-2 text-base font-semibold">
+                    Auteurs
+                    {% if authors_hidden %}<span class="font-normal text-gray-500">({{ author_total }})</span>{% endif %}
+                </h2>
                 {# As in an article: numbered affiliations, listed once below (#155) #}
                 {% if authors.authors %}
                     <ol class="text-sm leading-relaxed">
                         {% for author in authors.authors %}
+                            {% if authors_hidden and forloop.counter == authors_shown|add:1 %}
+                                {# The long list folded: the first authors, then the last (#269). #}
+                                <li class="inline text-gray-500">… et {{ authors_hidden }} autres,</li>
+                            {% endif %}
                             <li class="inline whitespace-nowrap">
                                 {% spaceless %}
                                     <a href="{% url 'author_detail' author.slot.author.pk %}">{{ author.slot.author }}</a>
@@ -104,6 +113,11 @@
                     </ol>
                 {% else %}
                     <p class="text-sm text-gray-500">Aucun auteur connu.</p>
+                {% endif %}
+                {% if authors_hidden %}
+                    <p class="mt-2 text-sm">
+                        <a href="{{ all_authors_url }}">Afficher les {{ author_total }} auteurs et leurs affiliations</a>
+                    </p>
                 {% endif %}
                 {% if uncertain_author_order and authors.authors|length > 1 %}
                     {# JACoW's order at DataCite may differ from the article's (#250). #}
@@ -128,6 +142,7 @@
                     </ol>
                 {% endif %}
             {% endcard %}
+            </section>
 
             {% if abstract %}
                 {% card title="Résumé" %}
@@ -203,7 +218,16 @@
                     {% if details.funders %}
                         <div>
                             <dt class="text-gray-500">Financement</dt>
-                            {% for funder in details.funders %}<dd>{{ funder }}</dd>{% endfor %}
+                            {% for funder in details.funders|slice:":10" %}<dd>{{ funder }}</dd>{% endfor %}
+                            {% if details.funders|length > 10 %}
+                                {# Some articles list forty funders (#269). #}
+                                <dd>
+                                    <details>
+                                        <summary class="cursor-pointer text-blue-700">et {{ details.funders|length|add:-10 }} autres</summary>
+                                        {% for funder in details.funders|slice:"10:" %}<p>{{ funder }}</p>{% endfor %}
+                                    </details>
+                                </dd>
+                            {% endif %}
                         </div>
                     {% endif %}
                     {% if details.licenses %}
@@ -302,7 +326,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for ref in cited_references %}
+                    {% for ref in shown_references %}
                         <tr>
                             <th scope="row" class="border-l-4 font-normal text-gray-500 {% if not ref.target and not ref.unidentifiable %}border-amber-400{% else %}border-transparent{% endif %}">{{ ref.position|add:1 }}</th>
                             <td>
@@ -339,6 +363,12 @@
                 </tbody>
             </table>
         {% endcard %}
+        {% if references_hidden %}
+            <p class="mt-3 text-sm">
+                <a href="{{ all_references_url }}">Afficher les {{ cited_references|length }} références</a>
+                <span class="text-gray-600">(les {{ references_hidden }} dernières sont repliées)</span>
+            </p>
+        {% endif %}
     </section>
 
     <section aria-labelledby="cited-by-title" class="mt-8">
