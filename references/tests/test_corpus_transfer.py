@@ -131,7 +131,7 @@ class ImportViewTests(TestCase):
     def test_report_is_shown(self, fetch, fetch_works):
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         response = self.post(json.dumps(export_of({"doi": "10.1000/known"})).encode())
-        self.assertContains(response, "1 publication(s) ajoutée(s), 0 déjà dans votre corpus")
+        self.assertContains(response, "1 publication ajoutée, 0 déjà dans votre corpus")
 
     def test_invalid_file_is_reported(self, fetch, fetch_works):
         self.assertContains(self.post(b"{ pas du json"), "pas un JSON valide")

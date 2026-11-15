@@ -16,6 +16,7 @@ from ..services.corpus.corpus_transfer import (
     import_corpus,
     import_entries,
 )
+from ..services.display.wording import count
 
 MAX_IMPORT_SIZE = 1024 * 1024
 
@@ -92,7 +93,7 @@ def decoded(content):
 def report_import(request, report):
     messages.success(
         request,
-        f"Import terminé : {len(report.added)} publication(s) ajoutée(s), "
+        f"Import terminé : {count(len(report.added), 'publication ajoutée')}, "
         f"{len(report.already_there)} déjà dans votre corpus.",
     )
     if report.without_metadata:
@@ -103,13 +104,13 @@ def report_import(request, report):
     if report.ignored:
         messages.warning(
             request,
-            f"{len(report.ignored)} entrée(s) ignorée(s), sans DOI, identifiant arXiv ni "
+            f"{count(len(report.ignored), 'entrée ignorée')}, sans DOI, identifiant arXiv ni "
             f"ISBN valide : {listed(report.ignored)}.",
         )
     if report.unregistered:
         messages.warning(
             request,
-            f"{len(report.unregistered)} entrée(s) ignorée(s), dont le DOI n'est enregistré "
+            f"{count(len(report.unregistered), 'entrée ignorée')}, dont le DOI n'est enregistré "
             "nulle part (les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des "
             f"DOI) : {listed(report.unregistered)}.",
         )
@@ -120,4 +121,4 @@ def listed(titles, limit=10):
         f"« {title} »" if title else "une entrée sans titre" for title in titles[:limit]
     )
     rest = len(titles) - limit
-    return f"{names} et {rest} autre(s)" if rest > 0 else names
+    return f"{names} et {count(rest, 'autre')}" if rest > 0 else names

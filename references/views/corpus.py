@@ -12,7 +12,7 @@ from ..services.corpus.entries import (
     find_or_create,
     with_reading_status,
 )
-from ..services.display import filters
+from ..services.display import filters, wording
 from ..services.display.publication_table import for_publication_table
 from ..services.display.sorting import CORPUS
 from ..services.identifiers.arxiv import typed_doi
@@ -140,7 +140,8 @@ def set_reading_status(request, pk):
     elif imported:
         count = imported.cited_references.count()
         messages.success(
-            request, f"{report} Sa bibliographie a été importée : {count} référence(s)."
+            request,
+            f"{report} Sa bibliographie a été importée : {wording.count(count, 'référence')}.",
         )
     else:
         messages.success(request, report)
@@ -230,9 +231,8 @@ def rename_tag(request):
     except tags.InvalidTag as error:
         messages.error(request, str(error))
     else:
-        messages.success(
-            request, f"Tag « {tags.label(path)} » renommé : {count} publication(s) concernée(s)."
-        )
+        concerned = wording.count(count, "publication concernée")
+        messages.success(request, f"Tag « {tags.label(path)} » renommé : {concerned}.")
     return redirect("tag_list")
 
 
@@ -245,9 +245,10 @@ def delete_tag(request):
     except tags.InvalidTag as error:
         messages.error(request, str(error))
     else:
+        publications = wording.count(count, "publication")
         messages.success(
             request,
-            f"Tag « {tags.label(path)} » supprimé : retiré de {count} publication(s), "
+            f"Tag « {tags.label(path)} » supprimé : retiré de {publications}, "
             "qui restent dans votre corpus.",
         )
     return redirect("tag_list")
