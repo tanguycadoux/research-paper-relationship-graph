@@ -18,6 +18,7 @@ from django.utils.dateparse import parse_datetime
 
 from ...models import FetchRequest, FetchWorker
 from ..display.wording import count
+from ..sources.api_log import api_context
 from ..sources.external_records import has_metadata
 from . import fetch_actions
 from .fetch_actions import FetchFailed
@@ -105,8 +106,10 @@ def claim_next():
 
 def process(request):
     """Do a request, and keep its outcome: the publication imported, or the error."""
+    label = f"{request.action} {request.identifier}"
     try:
-        pub = fetched(request)
+        with api_context("file", label, request=request.pk):
+            pub = fetched(request)
     except FetchFailed as error:
         finish(request, Status.FAILED, error=str(error))
     except Exception as error:  # the error is kept with the request; the worker goes on
