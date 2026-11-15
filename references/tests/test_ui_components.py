@@ -8,9 +8,9 @@ from django.test import SimpleTestCase
 
 from references.services.display import icons
 from references.templatetags.ui import (
-    ALERT_VARIANTS,
     BADGE_VARIANTS,
     BUTTON_VARIANTS,
+    TOAST_VARIANTS,
 )
 
 
@@ -165,7 +165,7 @@ class OtherComponentsTests(SimpleTestCase):
                     "{% message_toast m %}", m=Mock(level_tag=tag, __str__=lambda s: "Fait")
                 )
                 self.assertIn(f'role="{role}"', html)
-                self.assertIn(ALERT_VARIANTS[variant], html)
+                self.assertIn(TOAST_VARIANTS[variant], html)
                 self.assertEqual("data-toast-autohide" in html, autohide)
                 self.assertIn("Fait", html)
 

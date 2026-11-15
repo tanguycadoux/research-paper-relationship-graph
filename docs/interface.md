@@ -11,12 +11,14 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   `alert`, `card`, `icon`, `external_link`, `pagination`, `column_header`,
   `filter_summary` ; les panneaux `popover` partagent leurs classes
   (`popover_panel_classes`). **Verre dépoli** (`glass_classes`, #202) : ce qui flotte
-  au-dessus du contenu (infobulle de survol du graphe, et à l'avenir un panneau flottant,
-  un menu ou une barre qui reste au-dessus de ce qui défile) a un fond blanc translucide
+  au-dessus du contenu (infobulle de survol du graphe, panneaux `popover`, menus de la
+  navigation sur petit écran, et à l'avenir une barre qui reste au-dessus de ce qui
+  défile) a un fond blanc translucide
   qui floute ce qu'il recouvre, une bordure claire, des coins arrondis et une ombre douce :
   le contenu reste deviné dessous. Les classes sont définies une seule fois
   (`GLASS_CLASSES`, `{% glass_classes %}`) ; l'élément ajoute sa taille, ses marges et son
-  texte. Pas pour une surface posée dans la page (carte, tableau, panneau du graphe), qui
+  texte. Les toasts gardent la teinte de leur variante, translucide, sur le même flou
+  (`TOAST_VARIANTS`, #333). Pas pour une surface posée dans la page (carte, tableau, panneau du graphe), qui
   reste blanche et opaque. **Navigation** décrite dans
   `templatetags/navigation.py`, avec des **compteurs** de ce qui attend une action
   (#152, `services/display/pending.py`) : références à identifier dans son corpus, conflits
