@@ -78,8 +78,7 @@
                     {% endif %}
                     <div class="flex gap-2">
                         {% button "Fusionner" icon="merge" %}
-                        {% url 'author_merge_select' as cancel_url %}
-                        {% button "Annuler" url=cancel_url variant="secondary" %}
+                        {% button "Annuler" url=back_url variant="secondary" %}
                     </div>
                 </form>
             {% endcard %}

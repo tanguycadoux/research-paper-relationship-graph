@@ -91,7 +91,8 @@ class AuthorMergeTests(AuthorViewsTestCase):
 
     def test_merge_of_coauthors_of_the_same_publication(self):
         response = self.merge()
-        self.assertRedirects(response, reverse("author_detail", args=[self.ada.pk]))
+        # Without a page to come back to, the page that chooses the authors (#388).
+        self.assertRedirects(response, reverse("author_merge_select"))
         self.assertEqual(Author.objects.count(), 1)
         self.assertEqual(
             [slot.author for slot in self.pub.authorpublication_set.all()], [self.ada, self.ada]
