@@ -19,6 +19,11 @@
             {% if user.is_authenticated %}
                 {% url 'author_edit' author.pk as edit_url %}
                 {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}
+                {# Merge with another author: the selection starts with this one (#271). #}
+                {% url 'author_merge_select' as merge_url %}
+                {% with pk=author.pk|stringformat:"d" %}
+                    {% button "Fusionner avec…" url=merge_url|add:"?selected="|add:pk variant="secondary" icon="merge" %}
+                {% endwith %}
             {% endif %}
         </div>
     </header>

@@ -20,4 +20,5 @@ class AuthorMergeSelectFormTests(TestCase):
         Author.objects.create(first_name="Ada", last_name="Lovelace", orcid="0000-0001")
         self.client.force_login(get_user_model().objects.create_user("alice"))
         response = self.client.get(reverse("author_merge_select"))
-        self.assertContains(response, "Ada Lovelace (ORCID : 0000-0001)")
+        self.assertContains(response, "Ada Lovelace")
+        self.assertContains(response, "0000-0001")

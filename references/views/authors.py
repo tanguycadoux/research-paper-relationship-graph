@@ -12,11 +12,12 @@ from ..models import Author, Publication
 from ..services.corrections import author_distinctions, author_duplicates, author_merge
 from ..services.display import filters
 from ..services.display.publication_table import corpus_ids, for_publication_table
+from ..services.display.search import parse, search_authors
 from ..services.display.sorting import AUTHORS
 from ..services.imports.orcid_merge import merge_same_orcid
 from ..services.imports.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.imports.organizations import organization_groups
-from .pagination import PageMixin
+from .pagination import PageMixin, page_of
 
 
 class AuthorListView(PageMixin, ListView):
@@ -103,15 +104,59 @@ def report_shared_orcid(request, author):
 
 @login_required
 def author_merge_select_view(request):
+    """
+    Choose the authors to merge (#271): a search (name or ORCID) in pages of 50, and the
+    authors chosen kept on top, in the URL (?selected=3,8), so that the choice survives
+    the search and the pages. Nothing changes before the confirmation. A POST (the
+    probable duplicates, with their boxes) goes to the confirmation at once.
+    """
     if request.method == "POST":
         form = AuthorMergeSelectForm(request.POST)
         if form.is_valid():
             ids = [a.id for a in form.cleaned_data["authors"]]
             return redirect("author_merge_confirm", ids=",".join(map(str, ids)))
-    else:
-        form = AuthorMergeSelectForm()
+        messages.error(request, "Veuillez sélectionner au moins deux auteurs.")
+    text = request.GET.get("q", "").strip()
+    selected = authors_from_ids(request.GET.get("selected", ""))
+    selected_ids = [author.pk for author in selected]
+    found = search_authors(parse(text)) if text else Author.objects.all()
+    found = (
+        found.exclude(pk__in=selected_ids)
+        .annotate(publication_count=Count("publications", distinct=True))
+        .order_by("last_name", "first_name", "pk")
+    )
+    page = page_of(request, found, MERGE_PAGE_SIZE)
+    for author in page.object_list:
+        author.add_url = selection_url(request, [*selected_ids, author.pk])
+    for author in selected:
+        author.remove_url = selection_url(request, [pk for pk in selected_ids if pk != author.pk])
+    context = {
+        "q": text,
+        "selected": selected,
+        "selected_ids": ",".join(map(str, selected_ids)),
+        "page_obj": page,
+        "authors": page.object_list,
+        "confirm_url": (
+            reverse("author_merge_confirm", args=[",".join(map(str, selected_ids))])
+            if len(selected) >= 2
+            else ""
+        ),
+    }
+    return render(request, "references/authors_merge_select.html", context)
 
-    return render(request, "references/authors_merge_select.html", {"form": form})
+
+MERGE_PAGE_SIZE = 50
+
+
+def selection_url(request, ids):
+    """The same page with another selection: the search kept, back to its first page."""
+    query = request.GET.copy()
+    query.pop("page", None)
+    if ids:
+        query["selected"] = ",".join(map(str, ids))
+    else:
+        query.pop("selected", None)
+    return f"?{query.urlencode()}"
 
 
 def authors_from_ids(ids):
