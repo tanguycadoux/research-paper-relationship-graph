@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from ...models import Author, OrcidRecord
 from ..corrections.conflicts import Kind, close_obsolete, report_conflict
-from ..identifiers.names import name_parts
+from ..identifiers.names import name_parts, readable_case
 from ..sources.external_records import Source
 from ..sources.orcid_api import fetch_orcid_names
 
@@ -106,8 +106,3 @@ def abbreviates(short, long):
         part == whole or (len(part) == 1 and whole.startswith(part))
         for part, whole in zip(short_parts, long_parts, strict=True)
     )
-
-
-def readable_case(name):
-    """« ezio » or « CORREIA MACHADO » -> « Ezio », « Correia Machado »."""
-    return name.title() if name.islower() or name.isupper() else name

@@ -59,3 +59,8 @@ def same_words_up_to_initials(first, second):
 def is_initial_of(part, word):
     short, long = sorted((part, word), key=len)
     return len(short) == 1 and long.startswith(short)
+
+
+def readable_case(name):
+    """« ezio » or « CORREIA MACHADO » -> « Ezio », « Correia Machado »."""
+    return name.title() if name.islower() or name.isupper() else name

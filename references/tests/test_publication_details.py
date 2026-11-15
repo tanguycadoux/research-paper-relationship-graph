@@ -255,6 +255,38 @@ class ReferenceLabelTests(SimpleTestCase):
         raw = {"key": "r3", "author": "Arp", "year": "1977", "article-title": "Stresses"}
         self.assertEqual(self.label(raw), "Arp (1977). Stresses")
 
+    def test_an_article_to_appear_has_no_year(self):
+        # Crossref gives « 0 » to an article to appear, and the name in lower case (#344).
+        raw = {
+            "key": "r15",
+            "author": "bordini",
+            "year": "0",
+            "article-title": "Electrical performance of the Nb3Sn conductor",
+            "journal-title": "IEEE Trans Appl Supercond",
+        }
+        self.assertEqual(
+            self.label(raw),
+            "Bordini. Electrical performance of the Nb3Sn conductor. IEEE Trans Appl Supercond",
+        )
+
+    def test_a_name_in_lower_case(self):
+        raw = {"key": "r16", "author": "izquierdo bermudez", "year": "2015"}
+        self.assertEqual(self.label(raw), "Izquierdo Bermudez (2015)")
+        raw = {"key": "r17", "author": "van der Laan", "year": "2015"}
+        self.assertEqual(self.label(raw), "van der Laan (2015)")  # mixed case: kept
+
+    def test_the_year_has_four_digits(self):
+        for given, year in (("0", None), ("2015", 2015), ("2015a", 2015), ("", None), (" ", None)):
+            with self.subTest(year=given):
+                self.assertEqual(CitedReference(raw={"year": given}).year, year)
+        self.assertIsNone(CitedReference(raw={}).year)
+
+    def test_the_form_of_identification_is_not_given_the_year_zero(self):
+        from references.views.cited_references import initial_values
+
+        ref = CitedReference(raw={"year": "0", "article-title": "To appear"})
+        self.assertIsNone(initial_values(ref).get("year"))
+
     def test_never_the_technical_key(self):
         self.assertEqual(
             self.label({"key": "2024020419552444200_r1"}), "Référence sans description"

@@ -6,6 +6,7 @@ from django.utils.formats import date_format
 from .services.display.wording import count
 from .services.identifiers.doi import normalize_doi
 from .services.identifiers.isbn import normalize_isbn
+from .services.identifiers.names import readable_case
 from .services.imports.titles import readable_title
 
 
@@ -375,6 +376,15 @@ class CitedReference(models.Model):
             return str(self.target)
         return self.unstructured or self.structured_description() or "Référence sans description"
 
+    @property
+    def year(self):
+        """
+        The year Crossref gives for the cited work, if it has four digits: an article « to
+        appear » is given the year « 0 » (#344).
+        """
+        year = str(self.raw.get("year", "")).strip()[:4]
+        return int(year) if len(year) == 4 and year.isdigit() else None
+
     def structured_description(self):
         """'Author (year). Title. Journal volume, p. page' from the Crossref fields."""
         raw = self.raw
@@ -382,8 +392,9 @@ class CitedReference(models.Model):
         source = " ".join(filter(None, [raw.get("journal-title"), raw.get("volume")]))
         if raw.get("first-page"):
             source = ", ".join(filter(None, [source, f"p. {raw['first-page']}"]))
-        year = f"({raw['year']})" if raw.get("year") else ""
-        author = raw.get("author", "")
+        year = f"({self.year})" if self.year else ""
+        # Some publishers give it all in lower case: « izquierdo bermudez » (#344).
+        author = readable_case(raw.get("author", "").strip())
         if author:
             return ". ".join(filter(None, [f"{author} {year}".strip(), title, source]))
         return " ".join(filter(None, [". ".join(filter(None, [title, source])), year]))

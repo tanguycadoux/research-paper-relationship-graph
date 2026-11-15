@@ -136,5 +136,4 @@ def suggested_title(ref):
 
 
 def suggested_year(ref):
-    year = str(ref.raw.get("year", ""))[:4]
-    return int(year) if year.isdigit() else None
+    return ref.year
