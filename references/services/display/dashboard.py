@@ -56,12 +56,24 @@ def next_to_read(entries, size=4):
     return [*reading[:size], *to_read[:size]][:size]
 
 
+# The colour of each status in the reading bar of the home page: darker as it advances.
+READING_COLORS = {"to_read": "bg-blue-300", "reading": "bg-blue-500", "read": "bg-blue-800"}
+
+
 def reading_figures(entries):
-    """Each reading status, with its filter value in my references and its count."""
+    """
+    Each reading status, with its filter value in my corpus, its count and its colour
+    in the reading bar of the home page (#278).
+    """
     counts = dict(entries.values_list("reading_status").annotate(Count("pk")).order_by())
     statuses = [*UserPublication.ReadingStatus.choices, ("", "Sans statut")]
     return [
-        {"filter": status or "none", "label": label, "count": counts.get(status, 0)}
+        {
+            "filter": status or "none",
+            "label": label,
+            "count": counts.get(status, 0),
+            "color": READING_COLORS.get(status, "bg-gray-300"),
+        }
         for status, label in statuses
     ]
 
