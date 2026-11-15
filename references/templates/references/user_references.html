@@ -25,16 +25,29 @@
     {# The cards go under the table below xl: beside it, the reading status column does not fit. #}
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section aria-labelledby="corpus-title" class="xl:col-span-2">
-            <h2 id="corpus-title" class="mb-3">
-                Publications
-                <span class="font-normal text-gray-500">
-                    {% if active_filters %}
-                        ({{ page_obj.paginator.count }} sur {{ corpus_count }})
-                    {% else %}
-                        ({{ corpus_count }})
-                    {% endif %}
-                </span>
-            </h2>
+            <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 id="corpus-title">
+                    Publications
+                    <span class="font-normal text-gray-500">
+                        {% if active_filters %}
+                            ({{ page_obj.paginator.count }} sur {{ corpus_count }})
+                        {% else %}
+                            ({{ corpus_count }})
+                        {% endif %}
+                    </span>
+                </h2>
+                {# The sort by date of addition has no column: the table is narrow enough (#281). #}
+                {% if corpus_count %}
+                    <p class="text-sm">
+                        {% if latest_first.on %}
+                            <span class="text-gray-600">Dernières ajoutées d'abord ·</span>
+                            <a href="{{ latest_first.url }}">trier par année</a>
+                        {% else %}
+                            <a href="{{ latest_first.url }}">Dernières ajoutées d'abord</a>
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
             {% if publications or active_filters %}
                 {% filter_summary %}
                 {% include "references/_publication_table.html" with caption="Publications de mon corpus" reading_column=True %}

@@ -185,9 +185,25 @@ def my_references(request):
         "active_tag": active_filters.values.get("tag"),
         "reading_statuses": UserPublication.ReadingStatus.choices,
         "corpus_count": pubs.count(),
+        "latest_first": latest_first(request, sort),
         "not_exportable": pubs.filter(doi="", isbn="").count(),
     }
     return render(request, "references/user_references.html", context)
+
+
+def latest_first(request, sort):
+    """
+    The sort by date of addition, which has no column (#281): whether it is on, and the
+    URL that turns it on (or back to the default sort), with the other parameters.
+    """
+    query = request.GET.copy()
+    query.pop("page", None)
+    on = sort.column == "added"
+    if on:
+        query.pop("sort", None)
+    else:
+        query["sort"] = "-added"
+    return {"on": on, "url": f"?{query.urlencode()}"}
 
 
 @login_required

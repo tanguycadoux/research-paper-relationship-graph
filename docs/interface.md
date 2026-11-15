@@ -53,7 +53,9 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   ne montre que les lignes affichées et les liens Précédente et Suivante.
 - **Tri par colonne** (#115, `services/display/sorting.py`) : `?sort=year`, `?sort=-year`,
   côté serveur et avant la pagination, donc sur toute la liste. Publications par titre,
-  premier auteur (nom de famille) ou année ; auteurs par nom ou prénom. Les noms et les
+  premier auteur (nom de famille) ou année ; « Mon corpus » aussi par statut de lecture et
+  par date d'ajout (`?sort=-added`, #281 : sans colonne, un lien « Dernières ajoutées
+  d'abord » au-dessus du tableau) ; auteurs par nom ou prénom. Les noms et les
   titres sont comparés sans casse ni accents (`normalized()`), les publications sans
   date ou sans auteur restent à la fin dans les deux sens, et les égalités sont toujours
   départagées dans le même ordre, jusqu'à l'identifiant. `{% column_header %}` fait de

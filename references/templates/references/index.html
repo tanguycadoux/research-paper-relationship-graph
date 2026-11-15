@@ -45,7 +45,10 @@
                                 </li>
                             {% endfor %}
                         </ul>
-                        <h3 class="mb-1 text-sm font-medium text-gray-600">Derniers ajouts</h3>
+                        <div class="mb-1 flex items-baseline justify-between gap-3">
+                            <h3 class="text-sm font-medium text-gray-600">Derniers ajouts</h3>
+                            <a href="{% url 'corpus' %}?sort=-added" class="text-sm">Tous, par date d'ajout</a>
+                        </div>
                         {# One line each: a long title is cut, the full one is on its page. #}
                         <ul class="divide-y divide-gray-100 text-sm">
                             {% for entry in corpus.latest %}
