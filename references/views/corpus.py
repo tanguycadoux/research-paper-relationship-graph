@@ -14,7 +14,6 @@ from ..services.corpus.entries import (
     find_or_create,
     queue_identified,
     queue_reading_status,
-    with_reading_status,
 )
 from ..services.display import filters, wording
 from ..services.display.publication_table import for_publication_table
@@ -214,10 +213,9 @@ def reading_status_report(entry, status):
 def my_references(request):
     pubs = Publication.objects.filter(userpublication__user=request.user)
     sort = CORPUS.read(request.GET.get("sort"))
-    corpus_filters = filters.corpus_filters(request.user)
-    active_filters = corpus_filters.read(request.GET)
-    listed = with_reading_status(pubs, request.user)
-    shown = for_publication_table(corpus_filters.apply(listed, active_filters))
+    selection = filters.filtered_corpus(request.user, request.GET)
+    active_filters = selection.active
+    shown = for_publication_table(selection.publications)
     page = page_of(request, CORPUS.apply(shown, sort))
     publications = list(page.object_list)
     tags_by_publication = tags.tags_by_publication(request.user, publications)
@@ -228,7 +226,7 @@ def my_references(request):
         "page_obj": page,
         "sorting": CORPUS,
         "sort": sort,
-        "filters": corpus_filters,
+        "filters": selection.filters,
         "active_filters": active_filters,
         "tag_tree": tags.tag_tree(request.user),
         "active_tag": active_filters.values.get("tag"),
@@ -238,9 +236,37 @@ def my_references(request):
         "corpus_count": pubs.count(),
         "latest_first": latest_first(request, sort),
         "import_report": import_reports.last(request.session),
-        "not_exportable": pubs.filter(doi="", isbn="").count(),
+        "exports": export_buttons(selection, page.paginator.count),
     }
     return render(request, "references/user_references.html", context)
+
+
+def export_buttons(selection, shown):
+    """
+    The export buttons of « Mon corpus » (#285): the whole corpus without a filter, else
+    the publications shown, on every page, which their label says.
+    """
+    filtered = bool(selection.active)
+    scope = export_scope(shown) if filtered else ""
+    query = f"?{selection.query}" if filtered else ""
+    return {
+        "filtered": filtered,
+        "empty": filtered and not shown,
+        "json_label": f"JSON{scope}" if filtered else "JSON (réimportable)",
+        "bibtex_label": f"BibTeX{scope}",
+        "json_url": reverse("corpus_export_json") + query,
+        "bibtex_url": reverse("corpus_export_bibtex") + query,
+        "not_exportable": selection.publications.filter(doi="", isbn="").count(),
+    }
+
+
+def export_scope(shown):
+    """« des 12 publications affichées », after JSON or BibTeX."""
+    if not shown:
+        return " : aucune publication affichée"
+    if shown == 1:
+        return " de la publication affichée"
+    return f" des {shown} publications affichées"
 
 
 def latest_first(request, sort):

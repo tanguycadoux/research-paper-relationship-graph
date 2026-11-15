@@ -9,9 +9,11 @@ import re
 from dataclasses import dataclass, field
 
 from django.db.models import Exists, F, OuterRef, Q
+from django.utils.http import urlencode
 
-from ...models import CitedReference, UserPublication
+from ...models import CitedReference, Publication, UserPublication
 from ..corpus import tags
+from ..corpus.entries import with_reading_status
 from .search import Normalized, author_named, contains
 
 YEAR = re.compile(r"^\d{4}$")
@@ -236,6 +238,41 @@ def corpus_filters(user):
             "to_identify": ("Références", ToIdentifyFilter()),
         }
     )
+
+
+@dataclass
+class CorpusSelection:
+    """The publications of a corpus that the filters of « Mon corpus » keep (#285)."""
+
+    filters: Filters
+    active: ActiveFilters
+    publications: object  # a queryset, annotated with the reading status
+    # The URL parameters of the active filters, without the sort and the page.
+    query: str = ""
+
+
+def filtered_corpus(user, data):
+    """
+    The corpus of user filtered as the URL parameters data say, on every page: the table
+    of « Mon corpus » and its exports read it alike, so that an export holds the
+    publications shown.
+    """
+    columns = corpus_filters(user)
+    active = columns.read(data)
+    listed = with_reading_status(Publication.objects.filter(userpublication__user=user), user)
+    return CorpusSelection(
+        columns, active, columns.apply(listed, active), filter_query(columns, active, data)
+    )
+
+
+def filter_query(columns, active, data):
+    params = {
+        param: data[param]
+        for column in active.values
+        for param in columns.columns[column][1].params
+        if data.get(param, "").strip()
+    }
+    return urlencode(params)
 
 
 AUTHORS = Filters(
