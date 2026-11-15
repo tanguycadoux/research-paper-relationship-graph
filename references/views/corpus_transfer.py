@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from ..models import UserPublication
+from ..services.corpus import import_reports
 from ..services.corpus.bibliography_files import file_entries
 from ..services.corpus.corpus_transfer import (
     InvalidExport,
@@ -91,34 +92,20 @@ def decoded(content):
 
 
 def report_import(request, report):
-    messages.success(
-        request,
-        f"Import terminé : {count(len(report.added), 'publication ajoutée')}, "
-        f"{len(report.already_there)} déjà dans votre corpus.",
-    )
-    if report.without_metadata:
-        names = ", ".join(f"« {pub} »" for pub in report.without_metadata)
-        messages.warning(
-            request, f"Ajoutées sans métadonnées (source inconnue ou injoignable) : {names}."
-        )
-    if report.ignored:
-        messages.warning(
-            request,
-            f"{count(len(report.ignored), 'entrée ignorée')}, sans DOI, identifiant arXiv ni "
-            f"ISBN valide : {listed(report.ignored)}.",
-        )
-    if report.unregistered:
-        messages.warning(
-            request,
-            f"{count(len(report.unregistered), 'entrée ignorée')}, dont le DOI n'est enregistré "
-            "nulle part (les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des "
-            f"DOI) : {listed(report.unregistered)}.",
-        )
+    """
+    One short toast; the details stay at the top of « Mon corpus » until the report is
+    closed (#330).
+    """
+    import_reports.remember(request.session, report)
+    ignored = len(report.ignored) + len(report.unregistered)
+    summary = f"Import terminé : {count(len(report.added), 'publication ajoutée')}"
+    if ignored:
+        summary += f", {count(ignored, 'entrée ignorée')}"
+    messages.success(request, f"{summary}. Le rapport est en haut de la page.")
 
 
-def listed(titles, limit=10):
-    names = ", ".join(
-        f"« {title} »" if title else "une entrée sans titre" for title in titles[:limit]
-    )
-    rest = len(titles) - limit
-    return f"{names} et {count(rest, 'autre')}" if rest > 0 else names
+@login_required
+@require_POST
+def close_import_report(request):
+    import_reports.forget(request.session)
+    return redirect("corpus")

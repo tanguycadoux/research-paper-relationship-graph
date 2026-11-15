@@ -5,7 +5,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from ..models import Publication, Tag, UserPublication
-from ..services.corpus import tags
+from ..services.corpus import import_reports, tags
 from ..services.corpus.entries import (
     add_identified,
     change_reading_status,
@@ -186,6 +186,7 @@ def my_references(request):
         "reading_statuses": UserPublication.ReadingStatus.choices,
         "corpus_count": pubs.count(),
         "latest_first": latest_first(request, sort),
+        "import_report": import_reports.last(request.session),
         "not_exportable": pubs.filter(doi="", isbn="").count(),
     }
     return render(request, "references/user_references.html", context)

@@ -119,6 +119,11 @@ urlpatterns = [
     path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
     path("corpus/import/", corpus_transfer.import_file, name="corpus_import"),
     path(
+        "corpus/import/report/close/",
+        corpus_transfer.close_import_report,
+        name="corpus_import_report_close",
+    ),
+    path(
         "corpus/add/",
         corpus.add_publication_to_user_refs_by_identifier,
         name="corpus_add_by_identifier",

@@ -31,6 +31,10 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   (avec la bibliographie) ou « Ajouter à lire » (sans, #234) ; retour à la page du
   formulaire. Une publication sans identifiant se saisit à la main
   (`/publications/new/`), dans la base seulement.
+- **Rapport d'import** (`_import_report.html`, `services/corpus/import_reports.py`, #330) :
+  après l'import d'un fichier, un seul toast court ; le détail (publications ajoutées avec
+  leur lien, déjà présentes, sans métadonnées, entrées ignorées et pourquoi, 20 par liste)
+  est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture.
 - **Retirer du corpus** (`_corpus_remove_form.html`, tableaux et fiche) : immédiat, sauf si
   l'entrée a des tags ou un statut de lecture, que le retrait efface : le bouton ouvre alors
   une confirmation en popover, et le message dit ce qui a été perdu (#280). `corpus_ids`

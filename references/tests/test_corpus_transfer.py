@@ -131,7 +131,16 @@ class ImportViewTests(TestCase):
     def test_report_is_shown(self, fetch, fetch_works):
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         response = self.post(json.dumps(export_of({"doi": "10.1000/known"})).encode())
-        self.assertContains(response, "1 publication ajoutée, 0 déjà dans votre corpus")
+        # One short toast, and the report at the top of the corpus until it is closed (#330).
+        self.assertContains(response, "Import terminé : 1 publication ajoutée.")
+        self.assertContains(response, "Dernier import")
+        report = response.context["import_report"]
+        self.assertEqual((report["added"]["count"], report["already_there"]), (1, 0))
+        self.assertContains(response, f'href="{reverse("corpus")}?sort=-added"')
+        # Still there after a reload, gone once closed.
+        self.assertContains(self.client.get(reverse("corpus")), "Dernier import")
+        response = self.client.post(reverse("corpus_import_report_close"), follow=True)
+        self.assertNotContains(response, "Dernier import")
 
     def test_invalid_file_is_reported(self, fetch, fetch_works):
         self.assertContains(self.post(b"{ pas du json"), "pas un JSON valide")

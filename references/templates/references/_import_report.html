@@ -1,0 +1,86 @@
+{% comment %}
+The report of the last import of a file (#330), at the top of my corpus until it is
+closed. Context: import_report (services/corpus/import_reports.last).
+{% endcomment %}
+{% load ui %}
+<section aria-labelledby="import-report-title" class="mb-6">
+    {% card %}
+        <div class="mb-3 flex items-start justify-between gap-3">
+            <h2 id="import-report-title" class="min-w-0 text-base font-semibold">
+                Dernier import
+                <span class="font-normal text-gray-500">· {{ import_report.at|date:"j F à H:i" }}</span>
+            </h2>
+            <form method="post" action="{% url 'corpus_import_report_close' %}">
+                {% csrf_token %}
+                {% button "Fermer le rapport" variant="secondary" icon="close" icon_only=True %}
+            </form>
+        </div>
+        <div class="space-y-3 text-sm">
+            <div>
+                <p>
+                    <strong>{{ import_report.added.count }}</strong> publication{{ import_report.added.count|pluralize }} ajoutée{{ import_report.added.count|pluralize }},
+                    {{ import_report.already_there }} déjà dans votre corpus.
+                    {% if import_report.added.count %}
+                        <a href="{% url 'corpus' %}?sort=-added">Les voir dans le tableau</a>
+                    {% endif %}
+                </p>
+                {% if import_report.added.items %}
+                    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                        {% for pub in import_report.added.items %}
+                            <li>
+                                <a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a>
+                            </li>
+                        {% endfor %}
+                        {% if import_report.added.rest %}
+                            <li class="text-gray-600">et {{ import_report.added.rest }} autre{{ import_report.added.rest|pluralize }}</li>
+                        {% endif %}
+                    </ul>
+                {% endif %}
+            </div>
+            {% if import_report.without_metadata.count %}
+                <div>
+                    <p class="text-amber-900">
+                        Ajoutée{{ import_report.without_metadata.count|pluralize }} sans métadonnées (source inconnue ou injoignable) :
+                    </p>
+                    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                        {% for pub in import_report.without_metadata.items %}
+                            <li>
+                                <a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a>
+                            </li>
+                        {% endfor %}
+                        {% if import_report.without_metadata.rest %}
+                            <li class="text-gray-600">et {{ import_report.without_metadata.rest }} autre{{ import_report.without_metadata.rest|pluralize }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+            {% if import_report.ignored.count %}
+                <div>
+                    <p class="text-amber-900">
+                        {{ import_report.ignored.count }} entrée{{ import_report.ignored.count|pluralize }} ignorée{{ import_report.ignored.count|pluralize }}, sans DOI, identifiant arXiv ni ISBN valide :
+                    </p>
+                    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                        {% for title in import_report.ignored.items %}<li>{{ title }}</li>{% endfor %}
+                        {% if import_report.ignored.rest %}
+                            <li class="text-gray-600">et {{ import_report.ignored.rest }} autre{{ import_report.ignored.rest|pluralize }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+            {% if import_report.unregistered.count %}
+                <div>
+                    <p class="text-amber-900">
+                        {{ import_report.unregistered.count }} entrée{{ import_report.unregistered.count|pluralize }} ignorée{{ import_report.unregistered.count|pluralize }}, dont le DOI n'est enregistré nulle part
+                        (les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des DOI) :
+                    </p>
+                    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                        {% for title in import_report.unregistered.items %}<li>{{ title }}</li>{% endfor %}
+                        {% if import_report.unregistered.rest %}
+                            <li class="text-gray-600">et {{ import_report.unregistered.rest }} autre{{ import_report.unregistered.rest|pluralize }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
+    {% endcard %}
+</section>

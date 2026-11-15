@@ -22,6 +22,10 @@
         </div>
     </header>
 
+    {% if import_report %}
+        {% include "references/_import_report.html" %}
+    {% endif %}
+
     {# The cards go under the table below xl: beside it, the reading status column does not fit. #}
     <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <section aria-labelledby="corpus-title" class="xl:col-span-2">
