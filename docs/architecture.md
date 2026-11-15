@@ -57,6 +57,7 @@ references/          application principale
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),
+    author_suggestions.py (auteurs de la base suggérés pendant la frappe, JSON),
     fetch_admin.py (page « File des récupérations », réservée aux administrateurs)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
@@ -108,6 +109,7 @@ references/          application principale
     corrections/     corrections de la base commune
       identification.py  identification manuelle des références, « non identifiable », série
       candidates.py  publications candidates d'une référence (Crossref, DataCite, base)
+      typed_authors.py  auteurs saisis d'une publication sans identifiant (lignes, suggestions, premier auteur cité)
       publication_merge.py  fusion d'une publication sans identifiant dans une autre
       publication_moves.py  report des entrées de corpus d'une publication vers une autre
       publication_edits.py  corrections de « Modifier » : titre et date protégés, nouvel identifiant
@@ -169,6 +171,7 @@ static/
   js/fetch_progress.js  avancement de la file (toast), fiche rechargée une fois sa demande faite
   js/navigation.js   menus de la navigation sur petit écran
   js/search.js       raccourci Ctrl+K vers la barre de recherche
+  js/identify_authors.js  liste des auteurs de « Sans identifiant » (suggestions, ordre)
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
   vendor/cytoscape/  Cytoscape.js embarqué
 tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)

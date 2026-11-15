@@ -62,6 +62,23 @@ l'ACM Digital Library ressemblent à des DOI sans en être. La requête est évi
 publication de la base, avec métadonnées, porte ce DOI ; si doi.org ne répond pas, le DOI
 est accepté.
 
+**Sans identifiant, avec ses auteurs** (`typed_authors.py`, #259) : en plus du titre et de
+l'année, la publication créée reçoit ses auteurs, dans l'ordre de signature. Le
+formulaire envoie un texte, un auteur par ligne : « Nom, Prénom » pour un nouvel auteur
+(prénom facultatif), « #42 » pour l'auteur 42 de la base. Sans JavaScript, c'est un
+champ texte ; `identify_authors.js` le remplace par une liste (monter, descendre,
+retirer) et un champ de recherche, et remplit le texte à chaque changement. Les
+suggestions viennent de la base seule (nom ou ORCID, comme la recherche), par
+`authors/suggestions/?q=` : utilisateurs connectés, à partir de 2 caractères, après une
+pause de frappe, 10 au plus, les auteurs aux plus nombreuses publications d'abord. Un
+nouvel auteur est créé tel quel, sans rapprochement : un homonyme passera par
+« Doublons probables ». Un auteur de la base n'est jamais modifié ; le nom publié de
+chaque signature est le nom saisi, ou celui de l'auteur choisi. Une ligne mal formée,
+un auteur inexistant ou choisi deux fois sont refusés, et rien n'est créé. Le premier
+auteur cité par la référence (`raw["author"]`, souvent un nom seul ou précédé
+d'initiales) est proposé, à confirmer, avec les auteurs de la base de même nom (accents
+et casse ignorés, initiale du prénom concordante).
+
 **En série** (#242) : « Identifier en série », sur la fiche, enchaîne les références à
 identifier de la publication, par position. Après chaque décision, la page passe à la
 suivante au lieu de revenir à la fiche ; « Passer » la laisse à identifier, et

@@ -3,6 +3,7 @@ from django.views.generic import RedirectView
 
 from .views import (
     author_graphs,
+    author_suggestions,
     authors,
     cited_references,
     conflicts,
@@ -97,6 +98,12 @@ urlpatterns = [
         "publications/<int:pk>/references/<int:position>/identify/",
         cited_references.identify_reference,
         name="reference_identify",
+    ),
+    # Authors of the base suggested while typing, in « Sans identifiant » (#259)
+    path(
+        "authors/suggestions/",
+        author_suggestions.author_suggestions,
+        name="author_suggestions",
     ),
     path(
         "publications/<int:pk>/references/<int:position>/candidate/",
