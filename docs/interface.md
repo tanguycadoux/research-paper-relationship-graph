@@ -92,10 +92,14 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   (une icône vers `/search/` sous `md`) ; l'accueil et la page de recherche ont la leur,
   plus grande, avec l'aide de la syntaxe. Ctrl+K (⌘K sur Mac) y place le curseur, ou
   ouvre la page de recherche quand aucune barre n'est affichée (`static/js/search.js`).
-- **Accueil** (#151, `services/display/dashboard.py`) : connecté, un tableau de bord (mon corpus
-  et ses dernières publications ajoutées, « À faire » avec les références à identifier,
-  les conflits ouverts et les doublons probables, base commune) ; visiteur, une
-  présentation et les chiffres de la base. Nombre de requêtes constant.
+- **Accueil** (#151, #278, `services/display/dashboard.py`) : connecté, « Bonjour » et la
+  taille du corpus, le formulaire d'ajout en tête (#277), puis un tableau de bord : mon
+  corpus (statuts de lecture, derniers ajouts sur une ligne avec leur statut), « À faire »
+  en phrases avec un verbe (identifier des références, trancher des conflits, examiner des
+  auteurs en double), « À lire ensuite » (en cours, puis « à lire » les plus anciennes) ;
+  pour tous, la base commune : ses chiffres, des liens vers ses pages et les publications
+  ajoutées récemment à un corpus (pas les références importées en masse). La recherche est
+  celle de l'en-tête, comme ailleurs. Nombre de requêtes constant.
 - **Mise en page fluide** (#150), la même sur tous les écrans : aucune page ne déborde
   horizontalement de 390 à 1400 px. Sur petit écran, chaque groupe de la navigation
   devient un menu (#207 : `<details name>` natifs, ouverts au toucher ou au clic, un seul
