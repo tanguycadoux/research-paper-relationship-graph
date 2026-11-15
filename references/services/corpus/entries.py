@@ -72,9 +72,12 @@ def find_or_create(doi="", isbn=""):
 
 def with_reading_status(publications, user):
     """
-    Annotate publications with reading_status, the one the user chose ("" without),
-    from a subquery: filtering on userpublication__ again would join the entries of
-    every user.
+    Annotate publications with reading_status, the one the user chose ("" without), and
+    added_at, when they entered the corpus (#281), from subqueries: filtering on
+    userpublication__ again would join the entries of every user.
     """
     entries = UserPublication.objects.filter(user=user, publication=OuterRef("pk"))
-    return publications.annotate(reading_status=Subquery(entries.values("reading_status")[:1]))
+    return publications.annotate(
+        reading_status=Subquery(entries.values("reading_status")[:1]),
+        added_at=Subquery(entries.values("added_at")[:1]),
+    )

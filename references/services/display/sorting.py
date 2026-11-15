@@ -85,9 +85,15 @@ def reading_rank():
     return Case(*(When(reading_status=status, then=rank) for rank, status in enumerate(statuses)))
 
 
-# My references: the reading status, annotated by corpus.with_reading_status (#164).
+# My corpus: the reading status and the date of the addition, annotated by
+# corpus.with_reading_status (#164, #281).
 CORPUS = Sorting(
-    columns=PUBLICATIONS.columns | {"status": Column(reading_rank())},
+    columns=PUBLICATIONS.columns
+    | {
+        "status": Column(reading_rank()),
+        # No column: « Dernières ajoutées d'abord » above the table sets it (#281).
+        "added": Column(F("added_at"), descending_first=True),
+    },
     ties=PUBLICATIONS.ties,
     default=PUBLICATIONS.default,
 )
