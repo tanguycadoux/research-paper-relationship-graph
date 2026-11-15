@@ -88,6 +88,17 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Plus récente")
         self.assertContains(response, "Base commune")
 
+    def test_the_reading_bar_has_one_part_per_status_in_use(self):
+        UserPublication.objects.filter(publication=self.older).update(
+            reading_status=UserPublication.ReadingStatus.READ
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("index"))
+        # One read, one without status; no part for the statuses at zero.
+        self.assertContains(response, 'class="bg-blue-800" style="flex-grow: 1"')
+        self.assertContains(response, 'class="bg-gray-300" style="flex-grow: 1"')
+        self.assertNotContains(response, 'class="bg-blue-300" style=')
+
     def test_nothing_to_do_is_a_muted_count(self):
         # No open conflict: a 0 aligned with the other counts, without drawing the eye.
         self.client.force_login(self.user)

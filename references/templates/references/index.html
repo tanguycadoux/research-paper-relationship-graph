@@ -37,9 +37,24 @@
                     </div>
                     {% if corpus.count %}
                         <h3 class="sr-only">Lecture</h3>
-                        <ul class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        {% comment %}
+                            The reading bar: one part per status, as wide as its count. The width
+                            is computed, hence the style attribute: Tailwind first, not only.
+                            Screen readers have the list below, with the same figures.
+                        {% endcomment %}
+                        <div class="flex h-2.5 gap-0.5 overflow-hidden rounded-full bg-gray-100"
+                             aria-hidden="true">
                             {% for status in corpus.reading %}
-                                <li>
+                                {# djlint:off H021 #}
+                                {% if status.count %}<span class="{{ status.color }}" style="flex-grow: {{ status.count }}"></span>{% endif %}
+                                {# djlint:on #}
+                            {% endfor %}
+                        </div>
+                        <ul class="mt-2 mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                            {% for status in corpus.reading %}
+                                <li class="flex items-center gap-1.5">
+                                    <span class="size-2.5 shrink-0 rounded-full {{ status.color }}"
+                                          aria-hidden="true"></span>
                                     <a href="{% url 'corpus' %}?status={{ status.filter }}">{{ status.label }}</a>
                                     <span class="text-gray-500">({{ status.count }})</span>
                                 </li>
