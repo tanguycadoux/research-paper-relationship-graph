@@ -53,7 +53,7 @@ references/          application principale
     cited_references.py (identification d'une référence, en série),
     publication_merge.py (« Cette publication est en fait… »),
     corpus_transfer.py (export et import du corpus),
-    corpus_bulk.py (actions groupées de « Mon corpus »),
+    corpus_bulk.py (actions groupées de « Mon corpus » et des listes d'une fiche),
     search.py (recherche), pagination.py (listes par pages),
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
@@ -122,7 +122,7 @@ references/          application principale
       entries.py     ajout au corpus par DOI (ou arXiv) ou ISBN, statut de lecture
       tags.py        tags hiérarchiques du corpus (« Projet A/Groupe A »), arbre, filtre,
                      renommage et suppression, publications d'un tag (contexte)
-      bulk.py        actions groupées sur les publications cochées : tag, statut, retrait
+      bulk.py        actions groupées sur les publications cochées : ajout, tag, statut, retrait
       corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
       bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
     discovery/       découverte d'articles

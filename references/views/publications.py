@@ -80,7 +80,7 @@ class PublicationDetailView(DetailView):
             context["reading_statuses"] = UserPublication.ReadingStatus.choices
             context["entry_tags"] = entry.tags.all()
             context["note_form"] = NoteForm(instance=entry)
-            context["known_tags"] = sorted(tags.known_paths(self.request.user), key=str.casefold)
+            context["known_tags"] = tags.suggested_paths(self.request.user)
 
         context["cited_references"] = pub.cited_references.select_related("target")
         # Only publications whose bibliography was imported (those of a corpus) can cite it.
@@ -115,7 +115,23 @@ class PublicationDetailView(DetailView):
         )
         context |= description_context(pub)
         context.update(long_lists_context(self.request, pub, context["cited_references"]))
+        context |= bulk_actions_context(self.request, context["cited_references"])
         return context
+
+
+def bulk_actions_context(request, cited_references):
+    """
+    The bars of bulk actions of the references and « Cité par » (#408), for a user
+    signed in: only identified references can be checked, so their bar needs one.
+    """
+    if not request.user.is_authenticated:
+        return {}
+    return {
+        "references_checkable": any(ref.target_id for ref in cited_references),
+        "reading_statuses": UserPublication.ReadingStatus.choices,
+        "tag_max_length": tags.MAX_LENGTH,
+        "bulk_tags": tags.suggested_paths(request.user),
+    }
 
 
 def description_context(pub):

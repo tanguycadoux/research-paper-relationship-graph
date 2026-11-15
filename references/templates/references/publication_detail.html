@@ -1,7 +1,13 @@
 {% extends "references/base.html" %}
-{% load ui %}
+{% load static ui %}
 
 {% block title %}{{ publication }} · {% endblock title %}
+
+{% block head %}
+    {% if user.is_authenticated %}
+        <script src="{% static 'js/bulk_actions.js' %}" defer></script>
+    {% endif %}
+{% endblock head %}
 
 {% block content %}
     <header class="mb-8 space-y-3">
@@ -340,11 +346,26 @@
                 {% endif %}
             </p>
         {% endif %}
+        {# Bulk actions on the identified references (#408), back to this list. #}
+        {% if references_checkable %}
+            {% url 'publication_bulk' publication.pk as bulk_url %}
+            {% include "references/_bulk_actions.html" with form_id="references-actions" action=bulk_url next=request.get_full_path|add:"#references-title" add=True %}
+        {% endif %}
         {% card flush=True %}
             <table>
                 <thead>
                     <tr>
                         <th scope="col" class="border-l-4 border-transparent">N°</th>
+                        {% if references_checkable %}
+                            {# Check them all: shown by static/js/bulk_actions.js, useless without it. #}
+                            <th scope="col" class="w-px px-0">
+                                <span class="sr-only">Sélection</span>
+                                <input type="checkbox"
+                                       aria-label="Tout cocher"
+                                       hidden
+                                       data-bulk-all="references-actions">
+                            </th>
+                        {% endif %}
                         <th scope="col">Référence</th>
                         <th scope="col">Année</th>
                         {% if user.is_authenticated %}
@@ -358,6 +379,19 @@
                     {% for ref in shown_references %}
                         <tr id="reference-{{ ref.position|add:1 }}">
                             <th scope="row" class="border-l-4 font-normal text-gray-500 {% if not ref.target and not ref.unidentifiable %}border-amber-400{% else %}border-transparent{% endif %}">{{ ref.position|add:1 }}</th>
+                            {% if references_checkable %}
+                                {# Only an identified reference: a publication to act on. #}
+                                <td class="px-0">
+                                    {% if ref.target %}
+                                        <input type="checkbox"
+                                               name="publication"
+                                               value="{{ ref.target.pk }}"
+                                               form="references-actions"
+                                               aria-label="Cocher « {{ ref.target }} »"
+                                               data-bulk-row>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
                             <td>
                                 {% if ref.target %}
                                     <a class="{% row_title_classes %}" href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
@@ -409,7 +443,8 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="4" class="text-gray-500">Aucune référence connue.</td>
+                            <td colspan="{% if user.is_authenticated %}4{% else %}3{% endif %}"
+                                class="text-gray-500">Aucune référence connue.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -436,7 +471,14 @@
             {% endif %}
         </p>
         {% if citing_publications %}
-            {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" corpus_actions=user.is_authenticated %}
+            {% if user.is_authenticated %}
+                {# Bulk actions on the publications citing it (#408), back to this list. #}
+                {% url 'publication_bulk' publication.pk as bulk_url %}
+                {% include "references/_bulk_actions.html" with form_id="cited-by-actions" action=bulk_url next=request.get_full_path|add:"#cited-by-title" add=True %}
+                {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" corpus_actions=True bulk_form="cited-by-actions" %}
+            {% else %}
+                {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" %}
+            {% endif %}
         {% else %}
             <p class="text-sm text-gray-600">Aucune publication de la base ne la cite.</p>
         {% endif %}

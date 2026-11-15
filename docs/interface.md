@@ -80,7 +80,21 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   publication cochée n'est pas dans le corpus de l'utilisateur. Quitter « à lire » importe
   les bibliographies comme pour une seule publication (par la file avec un worker).
   `static/js/bulk_actions.js` compte les cases cochées, montre la case « Tout cocher » et
-  désactive les boutons tant que rien n'est coché ; sans lui, la barre fonctionne.
+  désactive les boutons tant que rien n'est coché ; sans lui, la barre fonctionne. Le
+  champ du tag propose, par une `<datalist>` (`tags.suggested_paths`), les tags de
+  l'utilisateur et leurs parents, comme le champ de tag de la fiche.
+  Sur la fiche d'une publication (#408), connecté, les listes « Références » et « Cité
+  par » ont chacune leur barre (`form_id` distinct : `references-actions`,
+  `cited-by-actions`), envoyée à `publication_bulk`, avec en plus « Ajouter à mon
+  corpus », qui donne aussi le tag et le statut choisis. Seules les références
+  identifiées ont une case, y compris dans la partie dépliée (`?references=toutes`). Le
+  mélange de publications dans et hors du corpus y étant normal, l'ajout compte à part
+  celles qui y étaient déjà (elles reçoivent le tag, gardent leur statut), et les autres
+  actions laissent de côté celles qui n'y sont pas, en le disant ; rien n'est fait si
+  aucune n'y est. Seules les publications que ces listes montrent sont prises en compte.
+  Retour à la liste par `next` (`#references-title` ou `#cited-by-title`), vérifié par
+  `url_has_allowed_host_and_scheme`. Le message d'un retrait groupé dit ce qui est perdu
+  (« avec 2 tags, 1 statut de lecture et 1 note »).
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce
