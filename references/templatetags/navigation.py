@@ -4,7 +4,8 @@ the one whose URL is the longest prefix of the page path: « Publications » on 
 publication, « Combiner des auteurs » on a merge confirmation. Some links count what
 waits for an action (#152): « Conflits, 2 en attente »; the references to identify have
 their own link, « À identifier », which filters the corpus (#276). Below md, each group
-is a menu (#207); from md, the groups follow each other in a sidebar.
+is a menu (#207); from md, the groups follow each other in a sidebar. Some links are
+for the administrators only (STAFF_ONLY): « File des récupérations » (#382).
 """
 
 from urllib.parse import parse_qsl
@@ -45,9 +46,12 @@ NAVIGATION = [
             ("Combiner des auteurs", "author_merge_select", "merge"),
             ("Doublons probables", "author_duplicates", "difference"),
             ("Conflits", "conflict_list", "report"),
+            ("File des récupérations", "fetch_queue_admin", "admin_panel_settings"),
         ],
     ),
 ]
+# Links shown to the administrators only (user.is_staff), by URL name (#382).
+STAFF_ONLY = {"fetch_queue_admin"}
 # Below sm, the menus are named shorter, so that the three fit in 390 px without
 # scrolling (#331): « Corrections » was cut at the right edge, with its counter.
 SHORT_TITLES = {"Mon corpus": "Corpus", "Base commune": "Base"}
@@ -84,7 +88,7 @@ def main_navigation(context):
     user, request = context["user"], context["request"]
     authenticated = user.is_authenticated
     groups = [
-        (title, [navigation_link(entry, user) for entry in links])
+        (title, [navigation_link(entry, user) for entry in links if shown(entry, user)])
         for title, private, links in NAVIGATION
         if authenticated or not private
     ]
@@ -96,6 +100,10 @@ def main_navigation(context):
     )
     here = current if current and "?" in current else request.path
     return {"groups": [navigation_group(title, links, current, here) for title, links in groups]}
+
+
+def shown(entry, user):
+    return entry[1] not in STAFF_ONLY or user.is_staff
 
 
 def navigation_link(entry, user):

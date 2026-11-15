@@ -1,0 +1,86 @@
+{% load ui %}
+{% comment %}
+    The requests of one state of the queue (#382). section: pending, running, done or
+    failed; the pending ones can be cancelled, the failed ones retried.
+{% endcomment %}
+{% card flush=True %}
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Objet</th>
+                <th scope="col">Action</th>
+                <th scope="col">Demandeurs</th>
+                <th scope="col">Dates</th>
+                {% if section == "failed" %}<th scope="col">Erreur</th>{% endif %}
+                {% if section == "pending" or section == "failed" %}
+                    <th scope="col">
+                        <span class="sr-only">Actions</span>
+                    </th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for fetch in requests %}
+                <tr>
+                    {# What the request is about, and the identifier asked for: kept if it is gone. #}
+                    <th scope="row" class="min-w-56 font-normal">
+                        {% if fetch.publication %}
+                            <a href="{% url 'publication_detail' fetch.publication.pk %}"
+                               class="{% row_title_classes %}">{{ fetch.publication }}</a>
+                        {% elif fetch.author %}
+                            {# An ORCID profile (#380). #}
+                            <a href="{% url 'author_detail' fetch.author.pk %}"
+                               class="{% row_title_classes %}">{{ fetch.author }}</a>
+                        {% elif fetch.action == "graph_image" and fetch.identifier == "authors" %}
+                            <a href="{% url 'authors_graph' %}" class="{% row_title_classes %}">Graphe des auteurs</a>
+                        {% elif fetch.action == "graph_image" %}
+                            <a href="{% url 'base_graph' %}" class="{% row_title_classes %}">Graphe des publications</a>
+                        {% elif fetch.action == "orcid_profile" %}
+                            <span class="text-gray-500">(auteur disparu)</span>
+                        {% else %}
+                            <span class="text-gray-500">(publication disparue)</span>
+                        {% endif %}
+                        <span class="block text-sm break-all text-gray-500">{{ fetch.identifier }}</span>
+                    </th>
+                    <td>{{ fetch.get_action_display }}</td>
+                    <td>
+                        {% for requester in fetch.requesters.all %}
+                            {{ requester.username }}{% if not forloop.last %},{% endif %}
+                        {% empty %}
+                            <span class="text-gray-500">—</span>
+                        {% endfor %}
+                    </td>
+                    <td class="text-sm whitespace-nowrap text-gray-600">
+                        Demandée <time datetime="{{ fetch.requested_at|date:'c' }}">{{ fetch.requested_at|date:"j M Y, H:i:s" }}</time>
+                        {% if fetch.started_at %}
+                            <br>
+                            Commencée <time datetime="{{ fetch.started_at|date:'c' }}">{{ fetch.started_at|date:"j M Y, H:i:s" }}</time>
+                        {% endif %}
+                        {% if fetch.finished_at %}
+                            <br>
+                            Terminée <time datetime="{{ fetch.finished_at|date:'c' }}">{{ fetch.finished_at|date:"j M Y, H:i:s" }}</time>
+                        {% endif %}
+                    </td>
+                    {% if section == "failed" %}
+                        <td class="min-w-48 text-sm text-red-800">{{ fetch.error|default:"(sans message)" }}</td>
+                    {% endif %}
+                    {% if section == "pending" %}
+                        <td>
+                            <form method="post" action="{% url 'fetch_request_cancel' fetch.pk %}">
+                                {% csrf_token %}
+                                {% button "Annuler" variant="danger-light" icon="close" %}
+                            </form>
+                        </td>
+                    {% elif section == "failed" %}
+                        <td>
+                            <form method="post" action="{% url 'fetch_request_retry' fetch.pk %}">
+                                {% csrf_token %}
+                                {% button "Relancer" variant="secondary" icon="refresh" %}
+                            </form>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endcard %}
