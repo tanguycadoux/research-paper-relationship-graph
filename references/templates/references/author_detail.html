@@ -33,6 +33,13 @@
             {# Names from the grouped search at import (#220); works on demand only (#59) #}
             <section aria-labelledby="author-orcid-title">
                 <h2 id="author-orcid-title" class="mb-3">Profil ORCID</h2>
+                {% if fetch_pending_author %}
+                    <div class="mb-3"
+                         data-fetch-pending-author="{{ fetch_pending_author }}"
+                         data-fetch-progress="{% url 'fetch_progress' %}">
+                        {% alert "Profil ORCID en cours de récupération : la page se complétera d'elle-même." %}
+                    </div>
+                {% endif %}
                 {% card %}
                     {% if orcid_profile.unknown %}
                         <p class="text-sm text-gray-600">ORCID ne connaît pas cet identifiant, ou le garde privé.</p>

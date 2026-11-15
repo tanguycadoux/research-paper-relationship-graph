@@ -14,12 +14,14 @@ def fetch_progress(request):
     """
     data = {"active": False, "text": ""}
     reloads = False
-    publication = request.GET.get("publication", "")
-    if publication.isdigit():
-        data["publication_pending"] = FetchRequest.objects.filter(
-            publication_id=int(publication), status__in=FetchRequest.ACTIVE
-        ).exists()
-        reloads = not data["publication_pending"]
+    # The page of a publication or of an author whose data is still to come (#379, #380).
+    for target in ("publication", "author"):
+        pk = request.GET.get(target, "")
+        if pk.isdigit():
+            data[f"{target}_pending"] = FetchRequest.objects.filter(
+                **{f"{target}_id": int(pk)}, status__in=FetchRequest.ACTIVE
+            ).exists()
+            reloads = not data[f"{target}_pending"]
     since = parse_datetime(request.GET.get("since", "")) or fetch_queue.followed_batch(
         request.session
     )

@@ -11,6 +11,7 @@ from ..services.corpus.entries import (
     change_reading_status,
     find_or_create,
     queue_identified,
+    queue_reading_status,
     with_reading_status,
 )
 from ..services.display import filters, wording
@@ -159,9 +160,15 @@ def set_reading_status(request, pk):
     if status and status not in UserPublication.ReadingStatus.values:
         messages.error(request, "Statut de lecture inconnu.")
         return redirect_back(request, pk)
+    if fetch_queue.worker_alive():
+        queued = queue_reading_status(entry, status)
+        report = reading_status_report(entry, status)
+        if queued:
+            report += " Sa bibliographie est en file de récupération."
+        messages.success(request, report)
+        return redirect_back(request, pk)
     imported = change_reading_status(entry, status)
-    label = entry.get_reading_status_display().lower() if status else "aucun"
-    report = f"Statut de lecture de « {entry.publication} » : {label}."
+    report = reading_status_report(entry, status)
     if imported is None:
         messages.warning(
             request, f"{report} Sa bibliographie n'a pas pu être récupérée (service injoignable ?)."
@@ -175,6 +182,11 @@ def set_reading_status(request, pk):
     else:
         messages.success(request, report)
     return redirect_back(request, imported.pk if imported else pk)
+
+
+def reading_status_report(entry, status):
+    label = entry.get_reading_status_display().lower() if status else "aucun"
+    return f"Statut de lecture de « {entry.publication} » : {label}."
 
 
 @login_required

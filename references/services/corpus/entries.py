@@ -61,12 +61,31 @@ def change_reading_status(entry, status):
     or None if its metadata could not be retrieved; False when nothing was imported
     (a book without DOI has no bibliography in the sources).
     """
-    leaves_to_read = entry.reading_status == TO_READ and status != TO_READ
+    imports = imports_bibliography(entry, status)
     entry.reading_status = status
     entry.save(update_fields=["reading_status"])
-    if not leaves_to_read or not entry.publication.doi:
+    if not imports:
         return False
     return import_publication(entry.publication, with_references=True)
+
+
+def queue_reading_status(entry, status):
+    """
+    change_reading_status with the import left to the queue (#380): return the
+    FetchRequest, or None when nothing is imported.
+    """
+    imports = imports_bibliography(entry, status)
+    entry.reading_status = status
+    entry.save(update_fields=["reading_status"])
+    if not imports:
+        return None
+    return fetch_queue.enqueue(entry.publication, entry.user, with_references=True)
+
+
+def imports_bibliography(entry, status):
+    """Leaving « à lire » imports the bibliography (#234), of a publication with a DOI."""
+    leaves_to_read = entry.reading_status == TO_READ and status != TO_READ
+    return leaves_to_read and bool(entry.publication.doi)
 
 
 def find_or_create(doi="", isbn="", *, queued=False):
