@@ -75,8 +75,10 @@ references/          application principale
       names.py       normalisation et comparaison des noms de personnes
     imports/         import et analyse
       importer.py    orchestration : récupération puis analyse
-      fetch_queue.py  file des récupérations (ajout, import de fichier) traitée par fetch_worker,
-                     repli synchrone sans worker ; avancement des demandes d'un utilisateur (toast)
+      fetch_queue.py  file des récupérations (ajout, import de fichier, autres gestes longs)
+                     traitée par fetch_worker, repli synchrone sans worker ; avancement des
+                     demandes d'un utilisateur (toast)
+      fetch_actions.py  ce que le worker fait pour chaque action de la file
       parser.py      réponse de la source vers les modèles
       titles.py      titres : nettoyage (entités HTML, balisage JATS), forme lisible du LaTeX
       latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication

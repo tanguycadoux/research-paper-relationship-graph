@@ -48,14 +48,19 @@ def refetch_after_identifier_change(pub):
     one. Return the publication imported (the published version of a preprint DOI,
     maybe), or None if no metadata could be retrieved.
     """
+    forget_fetched(pub)
+    if pub.doi:
+        return import_publication(pub, with_references=pub.parse_references)
+    if pub.isbn:
+        return pub if import_book_metadata(pub) else None
+    return None
+
+
+def forget_fetched(pub):
+    """What was fetched for the former identifier: answers, author slots, bibliography."""
     with transaction.atomic():
         author_ids = list(pub.authors.values_list("pk", flat=True))
         pub.external_records.all().delete()
         pub.cited_references.all().delete()
         pub.authorpublication_set.all().delete()
         Author.objects.filter(pk__in=author_ids, publications__isnull=True).delete()
-    if pub.doi:
-        return import_publication(pub, with_references=pub.parse_references)
-    if pub.isbn:
-        return pub if import_book_metadata(pub) else None
-    return None

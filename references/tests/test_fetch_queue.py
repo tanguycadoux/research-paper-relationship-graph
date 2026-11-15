@@ -17,7 +17,7 @@ from references.models import (
     Publication,
     UserPublication,
 )
-from references.services.imports import fetch_queue
+from references.services.imports import fetch_actions, fetch_queue
 from references.tests.helpers import with_crossref, with_openlibrary, without_other_sources
 from references.tests.test_corpus_transfer import export_of
 from references.tests.test_importer import with_mocked_crossref
@@ -137,7 +137,7 @@ class WorkerTests(TestCase):
         next_one = fetch_queue.enqueue(
             Publication.objects.create(doi="10.1000/source"), self.user, with_references=False
         )
-        real = fetch_queue.import_publication
+        real = fetch_actions.import_publication
 
         def import_publication(pub, **kwargs):
             if pub.doi == "10.1000/broken":
@@ -145,7 +145,7 @@ class WorkerTests(TestCase):
             return real(pub, **kwargs)
 
         with (
-            patch.object(fetch_queue, "import_publication", side_effect=import_publication),
+            patch.object(fetch_actions, "import_publication", side_effect=import_publication),
             self.assertLogs("references.services.imports.fetch_queue", "ERROR"),
         ):
             run_worker()
@@ -184,7 +184,7 @@ class QueuedBookTests(TestCase):
         placeholder = Publication.objects.create(isbn=BOOK_ISBN)
         UserPublication.objects.create(user=self.user, publication=placeholder)
         request = fetch_queue.enqueue(placeholder, self.user, with_references=False)
-        with patch.object(fetch_queue, "import_publication", side_effect=lambda pub, **_: pub):
+        with patch.object(fetch_actions, "import_publication", side_effect=lambda pub, **_: pub):
             run_worker()
         request.refresh_from_db()
         holder.refresh_from_db()

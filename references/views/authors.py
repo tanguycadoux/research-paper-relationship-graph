@@ -9,12 +9,13 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
-from ..models import Author, Publication
+from ..models import Author, FetchRequest, Publication
 from ..services.corrections import author_distinctions, author_duplicates, author_merge
 from ..services.display import filters
 from ..services.display.publication_table import corpus_ids, for_publication_table
 from ..services.display.search import parse, search_authors
 from ..services.display.sorting import AUTHORS
+from ..services.imports import fetch_queue
 from ..services.imports.orcid_merge import merge_same_orcid
 from ..services.imports.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.imports.organizations import organization_groups
@@ -56,6 +57,9 @@ class AuthorDetailView(DetailView):
         context["organization_groups"] = organization_groups(self.object)
         context["merges"] = self.object.merges.select_related("merged_by")
         context["orcid_profile"] = orcid_profile(self.object)
+        # Its ORCID profile still to come from the queue: said, and reloaded once there (#380).
+        if self.request.user.is_authenticated and fetch_queue.author_pending(self.object):
+            context["fetch_pending_author"] = self.object.pk
         return context
 
 
@@ -66,6 +70,11 @@ def author_orcid_refresh_view(request, pk):
     author = get_object_or_404(Author, pk=pk)
     if not author.orcid:
         messages.error(request, "Cet auteur n'a pas d'ORCID.")
+    elif fetch_queue.worker_alive():
+        fetch_queue.enqueue_action(
+            FetchRequest.Action.ORCID_PROFILE, request.user, author=author, identifier=author.orcid
+        )
+        messages.success(request, "Profil ORCID en file de récupération.")
     elif refresh_orcid_record(author):
         messages.success(request, "Profil ORCID mis à jour.")
     else:

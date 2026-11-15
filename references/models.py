@@ -550,13 +550,19 @@ class GraphImage(models.Model):
 class FetchRequest(models.Model):
     """
     A retrieval from the external sources waiting for the fetch_worker command (#378),
-    so that the page that asked for it answers at once. One active request per
-    publication and action: a second requester joins the same row.
+    so that the page that asked for it answers at once; also the other long actions
+    (#380). One active request per identifier and action: a second requester joins the
+    same row.
     """
 
     class Action(models.TextChoices):
         IMPORT = "import", "Importer"
         IMPORT_WITH_REFERENCES = "import_with_references", "Importer avec la bibliographie"
+        REFRESH = "refresh", "Rafraîchir les métadonnées"
+        INCOMING_CITATIONS = "incoming_citations", "Chercher les publications qui la citent"
+        PUBLISHED_VERSION = "published_version", "Remplacer par la version publiée"
+        ORCID_PROFILE = "orcid_profile", "Profil ORCID"
+        GRAPH_IMAGE = "graph_image", "Image d'un grand graphe"
 
     class Status(models.TextChoices):
         PENDING = "pending", "En attente"
@@ -571,7 +577,12 @@ class FetchRequest(models.Model):
     publication = models.ForeignKey(
         Publication, null=True, on_delete=models.SET_NULL, related_name="fetch_requests"
     )
-    # The DOI or ISBN asked for, kept when the publication changes.
+    # The author of an ORCID profile (#380).
+    author = models.ForeignKey(
+        Author, null=True, blank=True, on_delete=models.SET_NULL, related_name="fetch_requests"
+    )
+    # What the request is about, kept when the publication changes: the DOI or ISBN, the
+    # DOI of a published version, the ORCID, the kind of graph.
     identifier = models.CharField(max_length=255)
     action = models.CharField(max_length=30, choices=Action.choices)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
@@ -585,7 +596,7 @@ class FetchRequest(models.Model):
         ordering = ["requested_at", "pk"]
         constraints = [
             models.UniqueConstraint(
-                fields=["publication", "action"],
+                fields=["identifier", "action"],
                 condition=models.Q(status__in=["pending", "running"]),
                 name="one_active_fetch_request",
             )
