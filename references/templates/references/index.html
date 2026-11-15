@@ -1,40 +1,43 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{# The page has its own bar. #}
-{% block header_search %}{% endblock header_search %}
-{% block header_search_link %}{% endblock header_search_link %}
-
 {% block content %}
-    <header class="mb-6">
-        <h1>Gestionnaire de références</h1>
-        <p class="mt-2 text-gray-600">
-            Constituez votre corpus d'articles et explorez les relations de citation entre eux.
-        </p>
-    </header>
-
-    <div class="mb-6">{% include "references/_search_form.html" with field_id="home-search" %}</div>
-
     {% url 'publication_list' as publications_url %}
     {% url 'author_list' as authors_url %}
     {% url 'base_graph' as base_graph_url %}
     {% if user.is_authenticated %}
+        <header class="mb-6">
+            <h1>Bonjour, {{ user.username }}</h1>
+            <p class="mt-2 text-gray-600">
+                {{ corpus.count }} publication{{ corpus.count|pluralize }} dans votre corpus,
+                {{ base.publications }} dans la base commune.
+            </p>
+        </header>
+
         {# The main gesture first (#277). #}
         <div class="mb-6">
             {% card title="Ajouter une publication" %}
                 {% include "references/_add_publication.html" with field_id="home-identifier" %}
             {% endcard %}
         </div>
-        {# Dashboard (#151): my corpus, what waits for an action, the common base. #}
+
+        {# Dashboard (#151, #278): my corpus, what waits for an action, what to read next. #}
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <section aria-labelledby="corpus-title" class="lg:col-span-2">
                 {% card %}
-                    <h2 id="corpus-title" class="mb-2 text-base font-semibold">
-                        Mon corpus <span class="font-normal text-gray-500">({{ corpus.count }})</span>
-                    </h2>
+                    <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <h2 id="corpus-title" class="text-base font-semibold">
+                            Mon corpus <span class="font-normal text-gray-500">({{ corpus.count }})</span>
+                        </h2>
+                        <p class="flex flex-wrap gap-x-3 text-sm">
+                            <a href="{% url 'corpus' %}">Publications</a>
+                            <a href="{% url 'corpus_suggestions' %}">Suggestions</a>
+                            <a href="{% url 'corpus_graph' %}">Mon graphe</a>
+                        </p>
+                    </div>
                     {% if corpus.count %}
                         <h3 class="sr-only">Lecture</h3>
-                        <ul class="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        <ul class="mb-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                             {% for status in corpus.reading %}
                                 <li>
                                     <a href="{% url 'corpus' %}?status={{ status.filter }}">{{ status.label }}</a>
@@ -42,83 +45,121 @@
                                 </li>
                             {% endfor %}
                         </ul>
-                    {% endif %}
-                    {% if corpus.latest %}
-                        <p class="text-sm text-gray-600">Dernières publications ajoutées :</p>
-                        <ul class="mt-1 mb-4 space-y-1 text-sm">
-                            {% for pub in corpus.latest %}
-                                <li>
-                                    <a href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
-                                    {% if pub.publication_date %}
-                                        <span class="text-gray-500">· {{ pub.publication_date|date:"Y" }}</span>
-                                    {% endif %}
+                        <h3 class="mb-1 text-sm font-medium text-gray-600">Derniers ajouts</h3>
+                        {# One line each: a long title is cut, the full one is on its page. #}
+                        <ul class="divide-y divide-gray-100 text-sm">
+                            {% for entry in corpus.latest %}
+                                <li class="flex items-baseline justify-between gap-3 py-1.5">
+                                    <a href="{% url 'publication_detail' entry.publication.pk %}"
+                                       class="min-w-0 truncate text-gray-900"
+                                       title="{{ entry.publication }}">{{ entry.publication }}</a>
+                                    <span class="flex shrink-0 items-baseline gap-2 text-gray-500">
+                                        {% if entry.reading_status %}{% badge entry.get_reading_status_display %}{% endif %}
+                                        {{ entry.publication.publication_date|date:"Y" }}
+                                    </span>
                                 </li>
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="mb-4 text-sm text-gray-600">
+                        <p class="text-sm text-gray-600">
                             Votre corpus est vide : ajoutez une première publication par son DOI, son ISBN ou son identifiant arXiv, ci-dessus.
                         </p>
                     {% endif %}
-                    <div class="flex flex-wrap gap-2">
-                        {% url 'corpus' as corpus_url %}
-                        {% url 'corpus_graph' as corpus_graph_url %}
-                        {% button "Mon corpus" url=corpus_url variant="secondary" icon="bookmarks" %}
-                        {% button "Mon graphe" url=corpus_graph_url variant="secondary" icon="hub" %}
-                    </div>
                 {% endcard %}
             </section>
 
-            <section aria-labelledby="to-do-title">
-                {% card %}
-                    <h2 id="to-do-title" class="mb-2 text-base font-semibold">À faire</h2>
-                    <ul class="space-y-2 text-sm">
-                        <li class="flex items-baseline justify-between gap-3">
-                            <a href="{% url 'corpus' %}?to_identify=1">Références à identifier</a>
-                            {% include "references/_to_do_count.html" with count=to_do.to_identify %}
-                        </li>
-                        <li class="flex items-baseline justify-between gap-3">
-                            <a href="{% url 'conflict_list' %}">Conflits ouverts</a>
-                            {% include "references/_to_do_count.html" with count=to_do.conflicts %}
-                        </li>
-                        <li class="flex items-baseline justify-between gap-3">
-                            <a href="{% url 'author_duplicates' %}">Doublons probables</a>
-                            {% include "references/_to_do_count.html" with count=to_do.duplicates %}
-                        </li>
-                    </ul>
-                {% endcard %}
-            </section>
+            <div class="space-y-6">
+                <section aria-labelledby="to-do-title">
+                    {% card %}
+                        <h2 id="to-do-title" class="mb-2 text-base font-semibold">À faire</h2>
+                        {# A verb: each row says what the click starts. #}
+                        <ul class="space-y-2 text-sm">
+                            <li class="flex items-baseline justify-between gap-3">
+                                <a href="{% url 'corpus' %}?to_identify=1">Identifier des références de mon corpus</a>
+                                {% include "references/_to_do_count.html" with count=to_do.to_identify %}
+                            </li>
+                            <li class="flex items-baseline justify-between gap-3">
+                                <a href="{% url 'conflict_list' %}">Trancher des conflits entre sources</a>
+                                {% include "references/_to_do_count.html" with count=to_do.conflicts %}
+                            </li>
+                            <li class="flex items-baseline justify-between gap-3">
+                                <a href="{% url 'author_duplicates' %}">Examiner des auteurs en double</a>
+                                {% include "references/_to_do_count.html" with count=to_do.duplicates %}
+                            </li>
+                        </ul>
+                    {% endcard %}
+                </section>
+
+                {% if corpus.next_to_read %}
+                    <section aria-labelledby="next-title">
+                        {% card %}
+                            <h2 id="next-title" class="mb-2 text-base font-semibold">À lire ensuite</h2>
+                            <ul class="space-y-2 text-sm">
+                                {% for entry in corpus.next_to_read %}
+                                    <li>
+                                        <a href="{% url 'publication_detail' entry.publication.pk %}"
+                                           class="line-clamp-2 text-gray-900">{{ entry.publication }}</a>
+                                        <span class="text-xs text-gray-600">
+                                            {{ entry.get_reading_status_display }} · ajoutée le {{ entry.added_at|date:"j F Y" }}
+                                        </span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endcard %}
+                    </section>
+                {% endif %}
+            </div>
         </div>
     {% else %}
-        <div class="flex flex-wrap gap-2">
-            {% button "Parcourir les publications" url=publications_url icon="article" %}
-            {% button "Graphe de la base" url=base_graph_url variant="secondary" icon="hub" %}
-        </div>
+        <header class="mb-6">
+            <h1>Gestionnaire de références</h1>
+            <p class="mt-2 text-gray-600">
+                Constituez votre corpus d'articles et explorez les relations de citation entre eux.
+            </p>
+        </header>
     {% endif %}
 
-    {# The common base, for everyone. #}
+    {# The common base, for everyone: its size, and what was added to a corpus lately. #}
     <section aria-labelledby="base-title" class="mt-6">
         {% card %}
-            <h2 id="base-title" class="mb-3 text-base font-semibold">Base commune</h2>
-            {# Figures at the bottom of their column: a label may wrap on a small screen. #}
-            <dl class="mb-4 grid grid-cols-3 gap-4">
-                <div class="flex flex-col">
-                    <dt class="text-sm text-gray-600">Publications</dt>
-                    <dd class="mt-auto text-2xl font-semibold">{{ base.publications }}</dd>
-                </div>
-                <div class="flex flex-col">
-                    <dt class="text-sm text-gray-600">Auteurs</dt>
-                    <dd class="mt-auto text-2xl font-semibold">{{ base.authors }}</dd>
-                </div>
-                <div class="flex flex-col">
-                    <dt class="text-sm text-gray-600">Citations identifiées</dt>
-                    <dd class="mt-auto text-2xl font-semibold">{{ base.citations }}</dd>
-                </div>
-            </dl>
-            <div class="flex flex-wrap gap-2">
-                {% button "Publications" url=publications_url variant="secondary" icon="article" %}
-                {% button "Auteurs" url=authors_url variant="secondary" icon="group" %}
-                {% button "Graphe" url=base_graph_url variant="secondary" icon="hub" %}
+            <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 id="base-title" class="text-base font-semibold">Base commune</h2>
+                <p class="flex flex-wrap gap-x-3 text-sm">
+                    <a href="{{ publications_url }}">Publications</a>
+                    <a href="{{ authors_url }}">Auteurs</a>
+                    <a href="{{ base_graph_url }}">Graphe</a>
+                </p>
+            </div>
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <dl class="grid grid-cols-3 gap-4 lg:grid-cols-1 lg:gap-2">
+                    <div class="flex flex-col lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2">
+                        <dt class="text-sm text-gray-600">publications</dt>
+                        <dd class="mt-auto text-2xl font-semibold lg:mt-0">{{ base.publications }}</dd>
+                    </div>
+                    <div class="flex flex-col lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2">
+                        <dt class="text-sm text-gray-600">auteurs</dt>
+                        <dd class="mt-auto text-2xl font-semibold lg:mt-0">{{ base.authors }}</dd>
+                    </div>
+                    <div class="flex flex-col lg:flex-row-reverse lg:items-baseline lg:justify-end lg:gap-2">
+                        <dt class="text-sm text-gray-600">citations identifiées</dt>
+                        <dd class="mt-auto text-2xl font-semibold lg:mt-0">{{ base.citations }}</dd>
+                    </div>
+                </dl>
+                {% if base.latest %}
+                    <div class="lg:col-span-2">
+                        <h3 class="mb-1 text-sm font-medium text-gray-600">Ajoutées récemment à un corpus</h3>
+                        <ul class="divide-y divide-gray-100 text-sm">
+                            {% for pub in base.latest %}
+                                <li class="flex items-baseline justify-between gap-3 py-1.5">
+                                    <a href="{% url 'publication_detail' pub.pk %}"
+                                       class="min-w-0 truncate text-gray-900"
+                                       title="{{ pub }}">{{ pub }}</a>
+                                    <span class="shrink-0 text-gray-500">{{ pub.publication_date|date:"Y" }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
             </div>
         {% endcard %}
     </section>

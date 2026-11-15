@@ -168,10 +168,14 @@ class SearchPageTests(TestCase):
         self.assertContains(response, 'aria-keyshortcuts="Control+K Meta+K"')
         self.assertContains(response, "js/search.js")
 
-    def test_pages_with_their_own_bar_have_none_in_the_header(self):
-        for name, field in (("search", "search-q"), ("index", "home-search")):
-            with self.subTest(name=name):
-                response = self.client.get(reverse(name))
-                self.assertContains(response, f'id="{field}"')
-                self.assertNotContains(response, 'id="site-search"')
-                self.assertNotContains(response, "data-search-link")
+    def test_the_search_page_has_its_own_bar_and_none_in_the_header(self):
+        response = self.client.get(reverse("search"))
+        self.assertContains(response, 'id="search-q"')
+        self.assertNotContains(response, 'id="site-search"')
+        self.assertNotContains(response, "data-search-link")
+
+    def test_the_home_page_uses_the_bar_of_the_header(self):
+        # Its own bar was the only exception (#278).
+        response = self.client.get(reverse("index"))
+        self.assertContains(response, 'id="site-search"')
+        self.assertNotContains(response, 'id="home-search"')

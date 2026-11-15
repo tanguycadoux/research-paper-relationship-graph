@@ -26,14 +26,32 @@ class DashboardTests(TestCase):
         Author.objects.create(first_name="A.", last_name="Lovelace")
 
     def test_base_figures(self):
+        figures = dashboard.base_figures()
         self.assertEqual(
-            dashboard.base_figures(), {"publications": 3, "authors": 2, "citations": 1}
+            (figures["publications"], figures["authors"], figures["citations"]), (3, 2, 1)
         )
+
+    def test_the_base_shows_what_was_added_to_a_corpus_lately(self):
+        # Not « Citée », which entered the base as a cited reference (#278).
+        self.assertEqual(dashboard.base_figures()["latest"], [self.newer, self.older])
 
     def test_corpus_latest_first(self):
         figures = dashboard.corpus_figures(self.user)
         self.assertEqual(figures["count"], 2)
-        self.assertEqual(figures["latest"], [self.newer, self.older])
+        self.assertEqual(
+            [entry.publication for entry in figures["latest"]], [self.newer, self.older]
+        )
+
+    def test_next_to_read(self):
+        reading, to_read = (
+            UserPublication.ReadingStatus.READING,
+            UserPublication.ReadingStatus.TO_READ,
+        )
+        UserPublication.objects.filter(publication=self.older).update(reading_status=to_read)
+        UserPublication.objects.filter(publication=self.newer).update(reading_status=reading)
+        entries = dashboard.corpus_figures(self.user)["next_to_read"]
+        # Being read first, then to read.
+        self.assertEqual([entry.publication for entry in entries], [self.newer, self.older])
 
     def test_to_do(self):
         MetadataConflict.objects.create(
@@ -82,3 +100,6 @@ class DashboardTests(TestCase):
         self.assertNotContains(response, "À faire")
         self.assertContains(response, "Base commune")
         self.assertContains(response, reverse("base_graph"))
+        # One link to each page of the base in the page, not two rows of buttons (#278);
+        # the navigation has the two others (small screens, sidebar).
+        self.assertContains(response, f'href="{reverse("base_graph")}"', count=3)

@@ -3,7 +3,7 @@ The figures of the home page (#151): a constant number of queries, whatever the 
 of the base or of the corpus.
 """
 
-from django.db.models import Count
+from django.db.models import Count, Max
 
 from ...models import Author, CitedReference, Publication, UserPublication
 from ..corrections import author_duplicates
@@ -13,29 +13,47 @@ LATEST_COUNT = 5
 
 
 def base_figures():
+    """
+    The size of the base, and the publications added last to a corpus (#278): those that
+    entered the base as cited references, by hundreds, would hide them.
+    """
+    latest = (
+        Publication.objects.annotate(last_added=Max("userpublication__added_at"))
+        .filter(last_added__isnull=False)
+        .order_by("-last_added", "-pk")[:LATEST_COUNT]
+    )
     return {
         "publications": Publication.objects.count(),
         "authors": Author.objects.count(),
         "citations": CitedReference.objects.filter(target__isnull=False).count(),
+        "latest": list(latest),
     }
 
 
 def corpus_figures(user):
     """
-    The size of the corpus, its latest publications, the most recent first, and the
-    number of publications in each reading status.
+    The size of the corpus, its latest entries (the publication and its reading status),
+    the most recent first, the number of publications in each reading status, and what
+    to read next.
     """
-    entries = user.userpublication_set
+    entries = user.userpublication_set.select_related("publication")
     return {
         "count": entries.count(),
         "reading": reading_figures(entries),
-        "latest": [
-            entry.publication
-            for entry in entries.select_related("publication").order_by("-added_at", "-pk")[
-                :LATEST_COUNT
-            ]
-        ],
+        "latest": list(entries.order_by("-added_at", "-pk")[:LATEST_COUNT]),
+        "next_to_read": next_to_read(entries),
     }
+
+
+def next_to_read(entries, size=4):
+    """
+    What to read next (#278): the publications being read, the latest first, then those
+    to read, the oldest first: they have waited longest.
+    """
+    statuses = UserPublication.ReadingStatus
+    reading = entries.filter(reading_status=statuses.READING).order_by("-added_at", "-pk")
+    to_read = entries.filter(reading_status=statuses.TO_READ).order_by("added_at", "pk")
+    return [*reading[:size], *to_read[:size]][:size]
 
 
 def reading_figures(entries):
