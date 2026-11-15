@@ -1,0 +1,31 @@
+{% comment %}
+The one way to add a publication (#277), the same on the home page, « Mon corpus »
+and « Publications »: by its DOI, ISBN or arXiv identifier, into my corpus (with its
+bibliography) or to read (without it, until the status changes, #234). A publication
+without identifier, into the base only, is typed by hand on its own page. Context:
+field_id, unique in the page; after the addition, back to the page holding the form.
+{% endcomment %}
+{% load ui %}
+<form method="post" action="{% url 'corpus_add_by_identifier' %}" class="space-y-2">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label for="{{ field_id }}" class="sr-only">DOI, ISBN ou identifiant arXiv</label>
+    <div class="flex flex-wrap gap-2">
+        <input type="text"
+               id="{{ field_id }}"
+               name="identifier"
+               placeholder="10.xxxx/…, 978-… ou arXiv:…"
+               aria-describedby="{{ field_id }}-help"
+               class="min-w-0 flex-1 basis-56"
+               required>
+        <div class="flex flex-wrap gap-2">
+            {% button "Ajouter à mon corpus" icon="add" %}
+            {% button "Ajouter à lire" variant="secondary" icon="bookmark_add" name="status" value="to_read" %}
+        </div>
+    </div>
+    <p id="{{ field_id }}-help" class="text-sm text-gray-600">
+        « À lire » : sans sa bibliographie, importée quand vous changerez son statut.
+        Sans identifiant ? <a href="{% url 'publication_create' %}">Saisir à la main</a>, dans la base seulement.
+        Plusieurs ? <a href="{% url 'corpus' %}#import">Importer un fichier</a>.
+    </p>
+</form>
