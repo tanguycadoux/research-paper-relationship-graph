@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -46,12 +48,35 @@ class ReferencesToIdentifyTests(TestCase):
         self.assertContains(response, "ne sont reliées")
         self.assertContains(response, "border-amber-400", count=2)
 
-    def test_one_full_button_and_discreet_row_buttons(self):
-        # #282: « Identifier les 2 références en série », the rows a secondary icon button.
+    def test_one_full_button_and_amber_row_buttons(self):
+        # #282: « Identifier les 2 références en série »; the rows to identify an amber icon
+        # button, as their line and badge (#384), the others a secondary one.
         self.client.force_login(get_user_model().objects.create_user("zoe"))
         response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
         self.assertContains(response, "Identifier les 2 références en série")
-        self.assertNotContains(response, BUTTON_VARIANTS["warning"])
+        self.assertContains(response, BUTTON_VARIANTS["warning"], count=2)
+
+    def test_corpus_actions_on_identified_references(self):
+        # #385: the buttons of the publication tables, for a reference that has a target.
+        zoe = get_user_model().objects.create_user("zoe")
+        self.client.force_login(zoe)
+        url = reverse("publication_detail", args=[self.pub.pk])
+        add_url = reverse("corpus_add", args=[self.cited.pk])
+        response = self.client.get(url)
+        self.assertContains(response, f'action="{add_url}"', count=1)
+        self.assertContains(response, f'value="{url}#reference-1"')
+        self.assertContains(response, "Ajouter à mon corpus, à lire")
+        UserPublication.objects.create(user=zoe, publication=self.cited)
+        response = self.client.get(url)
+        self.assertNotContains(response, f'action="{add_url}"')
+        self.assertContains(response, f'action="{reverse("corpus_remove", args=[self.cited.pk])}"')
+
+    def test_adding_a_reference_comes_back_to_its_line(self):
+        self.client.force_login(get_user_model().objects.create_user("zoe"))
+        back = reverse("publication_detail", args=[self.pub.pk]) + "#reference-1"
+        with patch("references.views.corpus.add_identified", return_value=self.cited):
+            response = self.client.post(reverse("corpus_add", args=[self.cited.pk]), {"next": back})
+        self.assertRedirects(response, back, fetch_redirect_response=False)
 
     def test_summary_when_everything_is_linked(self):
         response = self.client.get(reverse("publication_detail", args=[self.cited.pk]))
