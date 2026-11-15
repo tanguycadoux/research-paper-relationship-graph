@@ -77,7 +77,7 @@ class UnidentifiableViewTests(IdentificationTestCase):
         response = self.client.post(self.url(1), follow=True)
         self.assertContains(response, "déclarée non identifiable")
         # Only the reference left to identify stays highlighted.
-        self.assertContains(response, 'class="bg-amber-50"', count=1)
+        self.assertContains(response, "border-amber-400", count=1)
         self.assertEqual(response.context["references_to_identify"], 1)
         self.assertEqual(response.context["references_unidentifiable"], 1)
 

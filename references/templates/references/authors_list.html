@@ -27,7 +27,7 @@
                     {% for author in authors %}
                         <tr>
                             <th scope="row" class="font-normal">
-                                <a href="{% url 'author_detail' author.pk %}">{{ author.last_name|default:"(sans nom)" }}</a>
+                                <a class="{% row_title_classes %}" href="{% url 'author_detail' author.pk %}">{{ author.last_name|default:"(sans nom)" }}</a>
                             </th>
                             <td>{{ author.first_name }}</td>
                             <td class="text-gray-600">{{ author.orcid }}</td>

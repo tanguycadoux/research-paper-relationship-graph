@@ -277,14 +277,21 @@
         {% if user.is_authenticated and first_to_identify %}
             <p class="mb-3">
                 {% url 'reference_identify' publication.pk first_to_identify.position as series_url %}
-                {% button "Identifier en série" url=series_url|add:"?serie=1" icon="playlist_play" %}
+                {# The one full button of the block: it says what it starts, and how many (#282). #}
+                {% if references_to_identify == 1 %}
+                    {% button "Identifier la référence" url=series_url|add:"?serie=1" icon="playlist_play" %}
+                {% else %}
+                    {% with count=references_to_identify|stringformat:"d" %}
+                        {% button "Identifier les "|add:count|add:" références en série" url=series_url|add:"?serie=1" icon="playlist_play" %}
+                    {% endwith %}
+                {% endif %}
             </p>
         {% endif %}
         {% card flush=True %}
             <table>
                 <thead>
                     <tr>
-                        <th scope="col">N°</th>
+                        <th scope="col" class="border-l-4 border-transparent">N°</th>
                         <th scope="col">Référence</th>
                         <th scope="col">Année</th>
                         {% if user.is_authenticated %}
@@ -296,11 +303,11 @@
                 </thead>
                 <tbody>
                     {% for ref in cited_references %}
-                        <tr {% if not ref.target and not ref.unidentifiable %}class="bg-amber-50"{% endif %}>
-                            <th scope="row" class="font-normal text-gray-500">{{ ref.position|add:1 }}</th>
+                        <tr>
+                            <th scope="row" class="border-l-4 font-normal text-gray-500 {% if not ref.target and not ref.unidentifiable %}border-amber-400{% else %}border-transparent{% endif %}">{{ ref.position|add:1 }}</th>
                             <td>
                                 {% if ref.target %}
-                                    <a href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
+                                    <a class="{% row_title_classes %}" href="{% url 'publication_detail' ref.target.pk %}">{{ ref.target }}</a>
                                 {% else %}
                                     <span class="text-gray-700">{{ ref.label }}</span>
                                 {% endif %}
@@ -319,7 +326,7 @@
                                     {% if ref.target or ref.unidentifiable %}
                                         {% button "Corriger" url=identify_url variant="secondary" icon="edit" icon_only=True %}
                                     {% else %}
-                                        {% button "Identifier" url=identify_url variant="warning" %}
+                                        {% button "Identifier" url=identify_url variant="secondary" icon="search" icon_only=True %}
                                     {% endif %}
                                 </td>
                             {% endif %}
@@ -409,7 +416,7 @@
                                     <tr>
                                         <td>
                                             {% if work.publication %}
-                                                <a href="{% url 'publication_detail' work.publication.pk %}">{{ work.title }}</a>
+                                                <a class="{% row_title_classes %}" href="{% url 'publication_detail' work.publication.pk %}">{{ work.title }}</a>
                                                 {% if work.in_corpus %}
                                                     {% badge "dans mon corpus" icon="bookmarks" %}
                                                 {% endif %}
