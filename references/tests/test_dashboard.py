@@ -112,5 +112,5 @@ class DashboardTests(TestCase):
         self.assertContains(response, "Base commune")
         self.assertContains(response, reverse("base_graph"))
         # One link to each page of the base in the page, not two rows of buttons (#278);
-        # the navigation has the two others (small screens, sidebar).
-        self.assertContains(response, f'href="{reverse("base_graph")}"', count=3)
+        # the graph has no menu entry any more: it is reached from « Publications ».
+        self.assertContains(response, f'href="{reverse("base_graph")}"', count=1)

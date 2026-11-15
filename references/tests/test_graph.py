@@ -431,3 +431,17 @@ class GraphViewTests(TestCase):
         self.assertContains(response, '<input type="hidden" name="vue" value="reseau">', html=True)
         self.assertContains(response, 'data-graph-export="graphe-corpus-tag-projet-reseau"')
         self.assertNotContains(self.corpus_page(tag="Projet"), 'type="hidden" name="vue"')
+
+
+class BaseGraphPlaceTests(TestCase):
+    """The graph of the base under « Publications », as that of the authors (#391)."""
+
+    def test_reached_from_the_list_of_publications(self):
+        response = self.client.get(reverse("publication_list"))
+        self.assertContains(response, f'href="{reverse("base_graph")}"')
+        self.assertContains(response, "Graphe des publications")
+        self.assertEqual(reverse("base_graph"), "/publications/graph/")
+
+    def test_former_address_redirects(self):
+        response = self.client.get("/graph/")
+        self.assertRedirects(response, reverse("base_graph"), status_code=301)

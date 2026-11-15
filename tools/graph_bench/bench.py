@@ -271,7 +271,7 @@ def main():
             )
         if args.synthetic:
             # Any page of the application serves its modules and Cytoscape.
-            load(tools, args.server + (args.page[0] if args.page else "/graph/"))
+            load(tools, args.server + (args.page[0] if args.page else "/publications/graph/"))
             for count in args.synthetic:
                 options = {
                     "graph": {"nodes": count, "components": 4, "undated": 0.02, "seed": 7},

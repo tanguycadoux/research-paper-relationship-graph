@@ -4,8 +4,11 @@
 {% block title %}Publications · {% endblock title %}
 
 {% block content %}
-    <header class="mb-6">
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1>Publications</h1>
+        {# The graph of the base: reached from here, as the graph of the authors from theirs. #}
+        {% url 'base_graph' as graph_url %}
+        {% button "Graphe des publications" url=graph_url variant="secondary" icon="hub" %}
     </header>
 
     {% if user.is_authenticated %}
