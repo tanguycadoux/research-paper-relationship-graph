@@ -327,7 +327,7 @@
                 </thead>
                 <tbody>
                     {% for ref in shown_references %}
-                        <tr>
+                        <tr id="reference-{{ ref.position|add:1 }}">
                             <th scope="row" class="border-l-4 font-normal text-gray-500 {% if not ref.target and not ref.unidentifiable %}border-amber-400{% else %}border-transparent{% endif %}">{{ ref.position|add:1 }}</th>
                             <td>
                                 {% if ref.target %}
@@ -345,13 +345,35 @@
                             </td>
                             <td class="text-gray-500">{{ ref.target.publication_date|date:"Y" }}</td>
                             {% if user.is_authenticated %}
-                                <td class="text-right">
-                                    {% url 'reference_identify' publication.pk ref.position as identify_url %}
-                                    {% if ref.target or ref.unidentifiable %}
-                                        {% button "Corriger" url=identify_url variant="secondary" icon="edit" icon_only=True %}
-                                    {% else %}
-                                        {% button "Identifier" url=identify_url variant="secondary" icon="search" icon_only=True %}
-                                    {% endif %}
+                                <td>
+                                    <div class="flex justify-end gap-1">
+                                        {% url 'reference_identify' publication.pk ref.position as identify_url %}
+                                        {% if ref.target or ref.unidentifiable %}
+                                            {% button "Corriger" url=identify_url variant="secondary" icon="edit" icon_only=True %}
+                                        {% else %}
+                                            {# Amber, as the line and its badge: it waits for an identification (#384). #}
+                                            {% button "Identifier" url=identify_url variant="warning-light" icon="search" icon_only=True %}
+                                        {% endif %}
+                                        {% if ref.target %}
+                                            {# The corpus actions of the publication tables, « + » or « − » last (#385). #}
+                                            {% with number=ref.position|add:1|stringformat:"d" %}
+                                                {% with back=request.get_full_path|add:"#reference-"|add:number %}
+                                                    {% if ref.target.pk in user_pub_ids %}
+                                                        {% include "references/_corpus_remove_form.html" with pub=ref.target icon_only=True next=back %}
+                                                    {% else %}
+                                                        <form method="post"
+                                                              action="{% url 'corpus_add' ref.target.pk %}"
+                                                              class="flex gap-1">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="next" value="{{ back }}">
+                                                            {% button "Ajouter à mon corpus, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+                                                            {% button "Ajouter à mon corpus" variant="success-light" icon="add" icon_only=True %}
+                                                        </form>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    </div>
                                 </td>
                             {% endif %}
                         </tr>
