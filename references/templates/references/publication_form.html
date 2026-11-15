@@ -24,7 +24,11 @@
     {% card %}
         <form method="post" class="space-y-4">
             {% csrf_token %}
-            {{ form.as_div }}
+            {% form_errors form %}
+            {% field form.doi %}
+            {% field form.isbn %}
+            {% field form.title rows=3 %}
+            {% field form.publication_date %}
             <div class="flex gap-2">
                 {% button view.object.pk|yesno:"Enregistrer,Ajouter à la base" %}
                 {% if view.object.pk %}
