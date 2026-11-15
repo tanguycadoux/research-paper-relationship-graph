@@ -337,7 +337,7 @@ class ProgressTests(TestCase):
         self.assertEqual(state.publications, {mine.publication_id})
         self.assertEqual(
             fetch_queue.progress_text(state),
-            "0 publication récupérée sur 1 · 2 demandes avant les vôtres.",
+            "Récupération de « 10.1000/mine »… 2 demandes avant la vôtre.",
         )
 
     def test_a_joined_request_is_not_ahead(self):
@@ -425,16 +425,16 @@ class BatchOutcomeTests(TestCase):
     def test_the_next_page_says_it_once(self):
         self.finish()
         response = self.client.get(reverse("corpus"))
-        self.assertContains(response, "Récupération terminée : 1 publication récupérée.")
+        self.assertContains(response, "« 10.1000/a » récupérée.")
         self.assertContains(response, "data-toast-autohide")
         self.assertNotContains(response, "fetch_progress.js")
-        self.assertNotContains(self.client.get(reverse("corpus")), "Récupération terminée")
+        self.assertNotContains(self.client.get(reverse("corpus")), "récupérée.")
 
     def test_not_again_once_the_toast_said_it(self):
         self.finish()
         data = self.client.get(reverse("fetch_progress")).json()
-        self.assertEqual(data["text"], "Récupération terminée : 1 publication récupérée.")
-        self.assertNotContains(self.client.get(reverse("corpus")), "Récupération terminée")
+        self.assertEqual(data["text"], "« 10.1000/a » récupérée.")
+        self.assertNotContains(self.client.get(reverse("corpus")), "récupérée.")
 
     def test_the_page_that_reloads_says_it(self):
         self.finish()
@@ -442,7 +442,7 @@ class BatchOutcomeTests(TestCase):
         data = self.client.get(reverse("fetch_progress"), {"publication": pk}).json()
         self.assertFalse(data["publication_pending"])
         response = self.client.get(reverse("publication_detail", args=[pk]))
-        self.assertContains(response, "Récupération terminée")
+        self.assertContains(response, "« 10.1000/a » récupérée.")
 
     def test_the_pending_page_does_not_offer_to_refresh(self):
         response = self.client.get(
@@ -450,3 +450,46 @@ class BatchOutcomeTests(TestCase):
         )
         self.assertContains(response, "Données en cours de récupération")
         self.assertNotContains(response, "pas encore été récupérées")
+
+
+class SingleRequestTextTests(TestCase):
+    """A batch of one request says what it does, not « 1 publication » (#380)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.alice = get_user_model().objects.create_user("alice")
+        cls.pub = Publication.objects.create(doi="10.1000/a", title="Article")
+
+    def text(self):
+        return fetch_queue.progress_text(fetch_queue.progress(self.alice, since=self.since))
+
+    def setUp(self):
+        self.request = fetch_queue.enqueue(self.pub, self.alice, with_references=True)
+        self.since = fetch_queue.progress(self.alice).start
+
+    def test_its_bibliography_while_it_waits(self):
+        self.assertEqual(self.text(), "Récupération de « Article » et de sa bibliographie…")
+
+    def test_the_references_it_brought(self):
+        for position in range(3):
+            CitedReference.objects.create(source=self.pub, position=position)
+        FetchRequest.objects.update(status=Status.DONE)
+        self.assertEqual(self.text(), "« Article » récupérée avec sa bibliographie : 3 références.")
+
+    def test_its_error(self):
+        FetchRequest.objects.update(status=Status.FAILED, error="Crossref injoignable.")
+        self.assertEqual(
+            self.text(), "Échec de la récupération de « Article » : Crossref injoignable."
+        )
+
+    def test_a_refresh(self):
+        FetchRequest.objects.all().delete()
+        fetch_queue.enqueue_action(Action.REFRESH, self.alice, publication=self.pub)
+        self.since = None
+        self.assertEqual(self.text(), "Rafraîchissement des métadonnées de « Article »…")
+
+    def test_several_requests_are_counted(self):
+        fetch_queue.enqueue(
+            Publication.objects.create(doi="10.1000/b"), self.alice, with_references=True
+        )
+        self.assertEqual(self.text(), "0 publication récupérée sur 2.")

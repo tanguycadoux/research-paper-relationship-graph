@@ -147,6 +147,8 @@ class Progress:
     active: bool
     # Publications whose request is still pending or running.
     publications: set = field(default_factory=set)
+    # The request when the batch has only one: the toast says what it does (#380).
+    single: FetchRequest | None = None
 
 
 def progress(user, since=None):
@@ -164,15 +166,18 @@ def progress(user, since=None):
         return None
     # The batch followed keeps its start while its first requests are done.
     start = min(filter(None, (first and first.requested_at, since)))
-    statuses = Counter(mine.filter(requested_at__gte=start).values_list("status", flat=True))
+    batch = mine.filter(requested_at__gte=start)
+    statuses = Counter(batch.values_list("status", flat=True))
+    total = sum(statuses.values())
     return Progress(
         start=start,
-        total=sum(statuses.values()),
+        total=total,
         done=statuses[Status.DONE],
         failed=statuses[Status.FAILED],
         ahead=requests_ahead(first, user) if first else 0,
         active=first is not None,
         publications=set(active.values_list("publication_id", flat=True)),
+        single=batch.select_related("publication").first() if total == 1 else None,
     )
 
 
@@ -197,6 +202,8 @@ def requests_ahead(request, user):
 
 def progress_text(state):
     """« 3 publications récupérées sur 12 · 2 demandes avant les vôtres »."""
+    if state.single is not None:
+        return single_text(state.single, state.ahead if state.active else 0)
     if not state.active:
         text = f"Récupération terminée : {count(state.done, 'publication récupérée')}"
     else:
@@ -206,6 +213,37 @@ def progress_text(state):
     if state.active and state.ahead:
         text += f" · {count(state.ahead, 'demande')} avant les vôtres"
     return text + "."
+
+
+# What a single request does, while it waits or runs, and once it is done (#380): one
+# request is one publication, but with its bibliography it brings many references.
+SINGLE_ACTIVE = {
+    Action.IMPORT: "Récupération de « {pub} »…",
+    Action.IMPORT_WITH_REFERENCES: "Récupération de « {pub} » et de sa bibliographie…",
+    Action.REFRESH: "Rafraîchissement des métadonnées de « {pub} »…",
+    Action.PUBLISHED_VERSION: "Remplacement de « {pub} » par sa version publiée…",
+}
+SINGLE_DONE = {
+    Action.IMPORT: "« {pub} » récupérée.",
+    Action.IMPORT_WITH_REFERENCES: "« {pub} » récupérée avec sa bibliographie : {references}.",
+    Action.REFRESH: "Métadonnées de « {pub} » rafraîchies.",
+    Action.PUBLISHED_VERSION: "La prépublication est remplacée par « {pub} ».",
+}
+
+
+def single_text(request, ahead):
+    """The toast of a batch of one request: what it does, not « 1 publication »."""
+    pub = request.publication
+    name = str(pub) if pub is not None else request.identifier
+    if request.status == Status.FAILED:
+        return f"Échec de la récupération de « {name} » : {request.error}"
+    if request.status == Status.DONE:
+        references = count(pub.cited_references.count(), "référence") if pub else ""
+        return SINGLE_DONE[request.action].format(pub=name, references=references)
+    text = SINGLE_ACTIVE[request.action].format(pub=name)
+    if ahead:
+        text += f" {count(ahead, 'demande')} avant la vôtre."
+    return text
 
 
 SESSION_KEY = "fetch_batch"
