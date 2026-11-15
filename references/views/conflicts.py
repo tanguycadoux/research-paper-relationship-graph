@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -8,21 +9,52 @@ from ..services.corrections import conflicts
 from ..services.imports import published_versions
 from ..services.imports.importer import import_publication
 from ..services.imports.orcid_merge import merge_same_orcid
+from .pagination import page_of
 
 RECENT_DECISIONS = 20
 
 
+# Each type of conflict once, with its explanation (#335): it was repeated under
+# every conflict of its type.
+GROUP_SIZE = 25
+
+
 @login_required
 def conflicts_view(request):
+    """
+    The open conflicts, one section per type, 25 at most in each; ?type= shows one
+    type alone, in pages of 25.
+    """
     related = ("publication", "author", "resolved_by")
-    open_conflicts = list(
-        MetadataConflict.objects.filter(status=conflicts.Status.OPEN).select_related(*related)
-    )
-    for conflict in open_conflicts:
-        if conflict.kind == conflicts.Kind.ORCID_NAME:
-            conflict.names = conflicts.compare_names(conflict)
+    open_conflicts = MetadataConflict.objects.filter(status=conflicts.Status.OPEN)
+    counts = dict(open_conflicts.values_list("kind").annotate(Count("pk")).order_by())
+    kind = request.GET.get("type")
+    alone = kind if kind in counts else None
+    groups = []
+    for value, label in conflicts.Kind.choices:
+        if value not in counts or (alone and value != alone):
+            continue
+        listed = (
+            open_conflicts.filter(kind=value).select_related(*related).order_by("detected_at", "pk")
+        )
+        page = page_of(request, listed, GROUP_SIZE) if alone else None
+        items = list(page.object_list if page else listed[:GROUP_SIZE])
+        for conflict in items:
+            if conflict.kind == conflicts.Kind.ORCID_NAME:
+                conflict.names = conflicts.compare_names(conflict)
+        groups.append(
+            {
+                "kind": value,
+                "label": label,
+                "count": counts[value],
+                "conflicts": items,
+                "page": page,
+            }
+        )
     context = {
-        "open_conflicts": open_conflicts,
+        "groups": groups,
+        "open_count": sum(counts.values()),
+        "alone": alone,
         "recent_decisions": MetadataConflict.objects.exclude(status=conflicts.Status.OPEN)
         .select_related(*related)
         .order_by("-resolved_at")[:RECENT_DECISIONS],
