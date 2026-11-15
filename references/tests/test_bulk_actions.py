@@ -108,7 +108,8 @@ class BulkActionsTests(TestCase):
         remaining = UserPublication.objects.filter(user=self.alice)
         self.assertEqual([e.publication for e in remaining], [self.other])
         self.assertFalse(Tag.objects.filter(user=self.alice, name="Seul").exists())
-        self.assertContains(response, "2 publications retirées de votre corpus.")
+        # What is lost is said (#408).
+        self.assertContains(response, "2 publications retirées de votre corpus, avec 1 tag.")
         # The publications stay in the database: only the entries go.
         self.assertTrue(Publication.objects.filter(pk=self.first.pk).exists())
 

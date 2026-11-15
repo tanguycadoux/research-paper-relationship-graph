@@ -86,6 +86,11 @@ urlpatterns = [
         name="publication_import_references",
     ),
     path(
+        "publications/<int:pk>/bulk/",
+        corpus_bulk.publication_bulk_action,
+        name="publication_bulk",
+    ),
+    path(
         "publications/<int:pk>/merge/",
         publication_merge.merge_publication,
         name="publication_merge",

@@ -8,7 +8,7 @@ active_filters (services/display/filters.py), headers that filter it, and a row 
 nothing matches; with reading_column (my references, publications annotated by
 corpus.with_reading_status, and with my_tags), a column to set the reading status
 (reading_statuses) and the tags under each title; with bulk_form (the id of the form of
-_bulk_actions.html, #287), a first column of checkboxes that belong to that form.
+_bulk_actions.html, #287, #408), a first column of checkboxes that belong to that form.
 The identifier is hidden below xl, where the content is too narrow for it (#150), and
 always beside the reading status: it stays on the page of each publication.
 {% endcomment %}
@@ -28,7 +28,7 @@ always beside the reading status: it stays on the page of each publication.
                     {# Check them all: shown by static/js/bulk_actions.js, useless without it. #}
                     <th scope="col" class="w-px pr-0">
                         <span class="sr-only">Sélection</span>
-                        <input type="checkbox" aria-label="Tout cocher" hidden data-bulk-all>
+                        <input type="checkbox" aria-label="Tout cocher" hidden data-bulk-all="{{ bulk_form }}">
                     </th>
                 {% endif %}
                 {% column_header "Titre" "title" %}
@@ -137,7 +137,7 @@ always beside the reading status: it stays on the page of each publication.
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="{% if bulk_form %}5{% elif reading_column %}4{% elif hide_authors %}{% if corpus_actions %}4{% else %}3{% endif %}{% elif corpus_actions %}5{% else %}4{% endif %}"
+                    <td colspan="{% if bulk_form and reading_column %}5{% elif bulk_form %}6{% elif reading_column %}4{% elif hide_authors %}{% if corpus_actions %}4{% else %}3{% endif %}{% elif corpus_actions %}5{% else %}4{% endif %}"
                         class="text-gray-600">Aucune publication ne correspond aux filtres.</td>
                 </tr>
             {% endfor %}
