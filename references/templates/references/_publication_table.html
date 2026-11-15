@@ -12,6 +12,12 @@ The identifier is hidden below xl, where the content is too narrow for it (#150)
 always beside the reading status: it stays on the page of each publication.
 {% endcomment %}
 {% load ui %}
+{# Below sm, the author and year columns are hidden: their sort is here (#334). #}
+{% if hide_authors %}
+    {% sort_links "year:Année,title:Titre" %}
+{% else %}
+    {% sort_links "year:Année,title:Titre,author:Premier auteur" %}
+{% endif %}
 {% card flush=True %}
     <table>
         <caption class="sr-only">{{ caption }}</caption>
@@ -19,12 +25,12 @@ always beside the reading status: it stays on the page of each publication.
             <tr>
                 {% column_header "Titre" "title" %}
                 {% if not hide_authors %}
-                    {% column_header "Auteurs" "author" %}
+                    {% column_header "Auteurs" "author" classes="hidden sm:table-cell" %}
                 {% endif %}
                 {% if not reading_column %}
                     {% column_header "Identifiant" "identifier" classes="hidden xl:table-cell" %}
                 {% endif %}
-                {% column_header "Année" "year" %}
+                {% column_header "Année" "year" classes="hidden sm:table-cell" %}
                 {% if reading_column %}
                     {% column_header "Lecture" "status" %}
                 {% endif %}
@@ -40,6 +46,14 @@ always beside the reading status: it stays on the page of each publication.
                 <tr>
                     <td>
                         <a class="{% row_title_classes %}" href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
+                        {# Below sm, the hidden columns in one grey line under the title (#334). #}
+                        <span class="block text-sm text-gray-600 sm:hidden">
+                            {% if pub.first_author and not hide_authors %}
+                                {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                                {% if pub.publication_date %}·{% endif %}
+                            {% endif %}
+                            {{ pub.publication_date|date:"Y" }}
+                        </span>
                         {% if pub.metadata_status == "missing" %}
                             {% badge "métadonnées à récupérer" icon="refresh" %}
                         {% elif pub.metadata_status == "unknown" %}
@@ -64,7 +78,7 @@ always beside the reading status: it stays on the page of each publication.
                         {% endif %}
                     </td>
                     {% if not hide_authors %}
-                        <td class="text-gray-600">
+                        <td class="hidden text-gray-600 sm:table-cell">
                             {% if pub.first_author %}
                                 {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
                             {% endif %}
@@ -79,7 +93,7 @@ always beside the reading status: it stays on the page of each publication.
                             {% endif %}
                         </td>
                     {% endif %}
-                    <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
+                    <td class="hidden whitespace-nowrap text-gray-600 sm:table-cell">{{ pub.publication_date|date:"Y" }}</td>
                     {% if reading_column %}
                         <td>
                             {% include "references/_reading_status_form.html" with status=pub.reading_status label_hidden=True %}

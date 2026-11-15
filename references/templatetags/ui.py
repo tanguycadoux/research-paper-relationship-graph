@@ -400,6 +400,38 @@ def column_header(context, label, column, classes=""):
     }
 
 
+@register.inclusion_tag("components/sort_links.html", takes_context=True)
+def sort_links(context, columns):
+    """
+    {% sort_links "title:Titre,year:Année" %} above a table, below sm only (#334): the
+    columns it hides there can still sort it. Each link sorts by its column, or reverses
+    the sort; nothing without sorting in the context.
+    """
+    request, sorting, sort = context["request"], context.get("sorting"), context.get("sort")
+    if not sorting:
+        return {"links": []}
+    links = []
+    for item in columns.split(","):
+        column, label = item.split(":", 1)
+        if column not in sorting.columns:
+            continue
+        query = request.GET.copy()
+        query.pop("page", None)
+        query["sort"] = sorting.next_sort(sort, column).param
+        current = sort.column == column
+        links.append(
+            {
+                "label": label,
+                "url": f"?{query.urlencode()}",
+                "current": current,
+                "arrow": ("arrow_downward" if sort.descending else "arrow_upward")
+                if current
+                else "",
+            }
+        )
+    return {"links": links}
+
+
 @register.inclusion_tag("components/filter_summary.html", takes_context=True)
 def filter_summary(context):
     """

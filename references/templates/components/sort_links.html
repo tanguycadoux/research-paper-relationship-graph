@@ -1,0 +1,17 @@
+{% load ui %}
+{% if links %}
+    <p class="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm select-none sm:hidden">
+        <span class="text-gray-600">Trier par</span>
+        {% for link in links %}
+            <a href="{{ link.url }}"
+               class="inline-flex items-center gap-0.5 {% if link.current %}font-semibold{% endif %}"
+               {% if link.current %}aria-current="true"{% endif %}>
+                {{ link.label }}
+                {% if link.arrow %}
+                    {% icon link.arrow class="size-4 shrink-0" %}
+                    <span class="sr-only">{% if link.arrow == "arrow_downward" %}(décroissant){% else %}(croissant){% endif %}</span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </p>
+{% endif %}
