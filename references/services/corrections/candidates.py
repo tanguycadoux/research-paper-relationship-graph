@@ -57,6 +57,7 @@ class Candidate:
     kind: str = ""
     publication: Publication | None = None  # already in the base
     closeness: float = 0  # of the titles, see title_closeness
+    coverage: float = 0  # share of the words searched found in the title (#309)
     year_found: bool | None = None  # None: a year is missing on one side
     author_found: bool | None = None
 
@@ -178,11 +179,16 @@ def cited_year(ref):
 
 def local_candidates(ref):
     """Publications of the base whose title holds the two longest words of the cited title."""
-    words = sorted(title_words(cited_title(ref)), key=len, reverse=True)[:2]
+    return publications_titled(cited_title(ref), exclude=ref.source_id)
+
+
+def publications_titled(title, exclude=None):
+    """Candidates of the base whose title holds the two longest words of title."""
+    words = sorted(title_words(title), key=len, reverse=True)[:2]
     if not words:
         return []
     publications = Publication.objects.alias(_title=Normalized(F("readable_title"))).exclude(
-        pk=ref.source_id
+        pk=exclude
     )
     for word in words:
         publications = publications.filter(contains("_title", word))
@@ -207,7 +213,30 @@ def select(ref, candidates):
     The candidates whose title is close to the cited one and whose year does not
     contradict it, closest first, without duplicates nor the publication already linked.
     """
-    text, title, year = search_text(ref), cited_title(ref), cited_year(ref)
+    return select_likely(
+        candidates, search_text(ref), cited_title(ref), cited_year(ref), linked=ref.target_id
+    )
+
+
+def select_likely(
+    candidates,
+    text,
+    title,
+    year,
+    *,
+    linked=None,
+    author_text=None,
+    fragment=False,
+    limit=MAX_CANDIDATES,
+):
+    """
+    select for a text: title and year searched, the whole text for the authors. Without
+    author_text, the first author is looked for in text; author_text "" (a title typed
+    without its author, #309) checks no author. fragment: the title may be a part of the
+    one searched (typed by the user, #309), not the whole of it: the candidates that hold
+    most of its words come first, in the order of the sources.
+    """
+    author_text = text if author_text is None else author_text
     in_base = publications_by_doi(c.doi for c in candidates if c.publication is None)
     selected, seen = [], set()
     for candidate in candidates:
@@ -216,13 +245,19 @@ def select(ref, candidates):
             continue
         seen.add(key)
         candidate.publication = candidate.publication or in_base.get(candidate.doi)
-        if candidate.publication is not None and candidate.publication.pk == ref.target_id:
+        if candidate.publication is not None and candidate.publication.pk == linked:
             continue
-        check(candidate, text, title, year)
+        check(candidate, text, title, year, author_text, fragment)
         if is_likely(candidate):
             selected.append(candidate)
-    selected.sort(key=lambda candidate: candidate.closeness, reverse=True)
-    return selected[:MAX_CANDIDATES]
+    if fragment:
+        # The words typed found first, the same title before the others, then the order
+        # of the sources: a closeness would put the shorter titles first, and a fragment
+        # is close to none.
+        selected.sort(key=lambda c: (round(c.coverage, 1), c.same_title), reverse=True)
+    else:
+        selected.sort(key=lambda candidate: candidate.closeness, reverse=True)
+    return selected[:limit]
 
 
 def is_likely(candidate):
@@ -242,21 +277,24 @@ def publications_by_doi(dois):
     return by_doi
 
 
-def check(candidate, text, title, year):
-    candidate.closeness = title_closeness(candidate.title, text, title)
+def check(candidate, text, title, year, author_text, fragment=False):
+    candidate.closeness = title_closeness(candidate.title, text, title, fragment)
+    searched = significant_words(title)
+    if searched:
+        candidate.coverage = len(searched & significant_words(candidate.title)) / len(searched)
     if year and candidate.year:
         candidate.year_found = abs(candidate.year - year) <= 1
-    if candidate.authors and candidate.authors[0]:
-        candidate.author_found = normalize(candidate.authors[0]) in normalize(text)
+    if author_text and candidate.authors and candidate.authors[0]:
+        candidate.author_found = normalize(candidate.authors[0]) in normalize(author_text)
 
 
-def title_closeness(candidate_title, text, title):
+def title_closeness(candidate_title, text, title, fragment=False):
     """
     How close the candidate title is to the cited one, from 0 (not the same work) to 1.
     Most words of the shorter title are in the other, which is at most twice as long (a
     subtitle added); a longer title is another work that shares its topic. When the
     cited title could not be told apart from the authors, the candidate title must be
-    found in the whole text.
+    found in the whole text. A fragment typed by the user (#309) may be much shorter.
     """
     words = significant_words(candidate_title)
     if len(words) < 2:
@@ -268,6 +306,8 @@ def title_closeness(candidate_title, text, title):
     if shared / min(len(words), len(cited)) < TITLE_OVERLAP:
         return 0
     closeness = shared / max(len(words), len(cited))
+    if fragment and len(cited) <= len(words):
+        return closeness
     return closeness if closeness >= MIN_CLOSENESS else 0
 
 

@@ -44,12 +44,12 @@ def fetch_crossref_by_isbn(isbn):
     return _as_single_work(items[0]) if items else None
 
 
-def search_crossref(text):
+def search_crossref(text, rows=SEARCH_ROWS):
     """
     The works closest to the text of a cited reference (query.bibliographic), best
     first; None if the request failed. Only the fields shown as candidates are asked.
     """
-    params = {"query.bibliographic": text, "rows": SEARCH_ROWS, "select": SEARCH_FIELDS}
+    params = {"query.bibliographic": text, "rows": rows, "select": SEARCH_FIELDS}
     data = _get_json("", params, "bibliographic search")
     return data["message"]["items"] if data else None
 
