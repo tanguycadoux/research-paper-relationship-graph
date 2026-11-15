@@ -131,6 +131,49 @@ class ReadableTitleTests(SimpleTestCase):
                 self.assertEqual(readable_title(title), title)
 
 
+class TitleMarkupLeftTests(SimpleTestCase):
+    """Markup left after #264 (#345)."""
+
+    def test_each_formula_on_its_own(self):
+        self.assertEqual(
+            readable_title(
+                r"$J_{C}(B,T,\varepsilon)$ Parameterization for the ITER ${\rm Nb}_{3}{\rm Sn}$ "
+                "Production"
+            ),
+            r"$J_{C}(B,T,\varepsilon)$ Parameterization for the ITER Nb₃Sn Production",
+        )
+        self.assertEqual(
+            readable_title(r"A $\sqrt{x}$ formula with $\beta$"), r"A $\sqrt{x}$ formula with β"
+        )
+
+    def test_commands_without_their_backslash_and_spaces_dropped(self):
+        self.assertEqual(
+            readable_title("a 90 mm$hboxNb_3hboxSn$Model Quadrupole"),
+            "a 90 mm Nb₃Sn Model Quadrupole",
+        )
+        self.assertEqual(
+            readable_title("Installation of the LHC Low-$beta$Triplets"),
+            "Installation of the LHC Low-β Triplets",
+        )
+
+    def test_a_subscript_stays_inside_its_word(self):
+        self.assertEqual(readable_title(r"La$_{2-x}$Sr$_x$CuO$_4$ films"), "La₂₋ₓSrₓCuO₄ films")
+        self.assertEqual(readable_title(r"LARP Nb$_{3}$Sn Quadrupole"), "LARP Nb₃Sn Quadrupole")
+
+    def test_old_ieee_markup(self):
+        self.assertEqual(
+            readable_title("the MQXA series of LHC low-/spl beta/ insertion quadrupoles"),
+            "the MQXA series of LHC low-β insertion quadrupoles",
+        )
+        self.assertEqual(readable_title("YBa/sub 2/Cu/sub 3/O/sub 7/ tapes"), "YBa₂Cu₃O₇ tapes")
+        self.assertEqual(readable_title("Fields of 10/sup 3/ T"), "Fields of 10³ T")
+
+    def test_a_greek_word_outside_a_formula_is_text(self):
+        self.assertEqual(
+            readable_title(r"The beta function at $10^{3}$ T"), "The beta function at 10³ T"
+        )
+
+
 class ReadableTitleFieldTests(TestCase):
     TITLE = r"Mechanical Performance of the LARP Nb$_{3}$Sn Quadrupole Magnet LQS01"
     READABLE = "Mechanical Performance of the LARP Nb₃Sn Quadrupole Magnet LQS01"
@@ -185,3 +228,23 @@ class ReadableTitlesMigrationTests(TestCase):
         )
         pub.refresh_from_db()
         self.assertEqual(pub.readable_title, "Nb₃Sn magnets")
+
+
+class ReadableTitlesAgainMigrationTests(TestCase):
+    """Migration 0034 (#345): the readable titles computed again."""
+
+    def test_readable_titles_are_computed_again(self):
+        from importlib import import_module
+
+        from django.apps import apps
+
+        pub = Publication.objects.create(title="a 90 mm$hboxNb_3hboxSn$Model Quadrupole")
+        plain = Publication.objects.create(title="Deep learning")
+        Publication.objects.update(readable_title="old")
+        import_module("references.migrations.0034_readable_titles_again").refill_readable_titles(
+            apps, None
+        )
+        pub.refresh_from_db()
+        plain.refresh_from_db()
+        self.assertEqual(pub.readable_title, "a 90 mm Nb₃Sn Model Quadrupole")
+        self.assertEqual(plain.readable_title, "old")  # not touched: no markup
