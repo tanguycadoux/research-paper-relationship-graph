@@ -322,9 +322,9 @@ GLASS_CLASSES = (
     "ring-1 ring-gray-900/5 backdrop-blur-md backdrop-saturate-150"
 )
 
+# A popover floats over the content: frosted glass (#333).
 POPOVER_PANEL_CLASSES = (
-    "w-64 rounded-lg border border-gray-200 bg-white p-3 text-left text-sm font-normal "
-    "text-gray-900 shadow-lg select-text "
+    f"{GLASS_CLASSES} w-64 p-3 text-left text-sm font-normal text-gray-900 select-text "
     "supports-[position-area:bottom]:inset-auto supports-[position-area:bottom]:m-1 "
     "[position-area:bottom_span-right] [position-try-fallbacks:flip-inline]"
 )
@@ -428,7 +428,20 @@ def filter_summary(context):
     }
 
 
-TOAST_CLASSES = "pointer-events-auto shadow-lg"
+# A toast floats over the content too: the tint of its variant, translucent, on frosted
+# glass (#333). Opaque enough for its text to stay legible over a dark content.
+TOAST_BASE = "flex items-start gap-2 rounded-lg border p-3 text-sm"
+TOAST_VARIANTS = {
+    "primary": "border-blue-200/80 bg-blue-50/80 text-blue-900",
+    "secondary": "border-white/70 bg-white/75 text-gray-900",
+    "danger": "border-red-200/80 bg-red-50/85 text-red-900",
+    "warning": "border-amber-200/80 bg-amber-50/85 text-amber-900",
+    "success": "border-green-200/80 bg-green-50/80 text-green-900",
+}
+TOAST_CLASSES = (
+    "pointer-events-auto shadow-lg shadow-gray-900/10 ring-1 ring-gray-900/5 "
+    "backdrop-blur-md backdrop-saturate-150"
+)
 # Successes and information fade out (static/js/toasts.js); warnings and errors stay.
 AUTOHIDE_VARIANTS = {"primary", "secondary", "success"}
 
@@ -440,7 +453,7 @@ def message_toast(message):
     context = alert(message, variant)
     return {
         **context,
-        "classes": f"{context['classes']} {TOAST_CLASSES}",
+        "classes": f"{TOAST_BASE} {TOAST_VARIANTS[variant]} {TOAST_CLASSES}",
         "autohide": variant in AUTOHIDE_VARIANTS,
     }
 
