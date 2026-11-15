@@ -186,10 +186,10 @@ class ImportBibliographyFileViewTests(TestCase):
             "@misc{c, year = {2020}}\n"
         )
         response = self.post("zotero.bib", content.encode())
-        self.assertContains(response, "1 publication(s) ajoutée(s), 0 déjà dans votre corpus")
+        self.assertContains(response, "1 publication ajoutée, 0 déjà dans votre corpus")
         self.assertContains(
             response,
-            "2 entrée(s) ignorée(s), sans DOI, identifiant arXiv ni ISBN valide : "
+            "2 entrées ignorées, sans DOI, identifiant arXiv ni ISBN valide : "
             "« Rapport interne », une entrée sans titre.",
         )
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=pub).exists())
@@ -197,8 +197,8 @@ class ImportBibliographyFileViewTests(TestCase):
     def test_ris_file_in_latin1(self, fetch, fetch_works):
         content = "TY  - JOUR\nTI  - Étude\nDO  - 10.1000/known\nER  - \n".encode("latin-1")
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
-        self.assertContains(self.post("export.ris", content), "1 publication(s) ajoutée(s)")
+        self.assertContains(self.post("export.ris", content), "1 publication ajoutée")
 
     def test_long_list_of_ignored_entries_is_cut(self, fetch, fetch_works):
         content = "".join(f"@misc{{k{i}, title = {{Titre {i}}}}}\n" for i in range(12))
-        self.assertContains(self.post("long.bib", content.encode()), "« Titre 9 » et 2 autre(s).")
+        self.assertContains(self.post("long.bib", content.encode()), "« Titre 9 » et 2 autres.")

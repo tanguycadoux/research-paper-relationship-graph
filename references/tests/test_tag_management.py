@@ -122,7 +122,7 @@ class RenameTagTests(TagsTestCase):
         response = self.client.post(
             reverse("tag_rename"), {"path": "Projet B", "name": "ASTERICS"}, follow=True
         )
-        self.assertContains(response, "Tag « Projet B » renommé : 1 publication(s) concernée(s).")
+        self.assertContains(response, "Tag « Projet B » renommé : 1 publication concernée.")
         self.assertContains(response, 'value="ASTERICS/Groupe"')
         response = self.client.post(reverse("tag_rename"), {"path": "Z", "name": "Y"}, follow=True)
         self.assertContains(response, "Le tag « Z » n&#x27;existe plus.")
@@ -140,7 +140,7 @@ class DeleteTagTests(TagsTestCase):
     def test_delete_view(self):
         tags.tag_entry(self.entries[0], "A/B")
         response = self.client.post(reverse("tag_delete"), {"path": "A"}, follow=True)
-        self.assertContains(response, "Tag « A » supprimé : retiré de 1 publication(s)")
+        self.assertContains(response, "Tag « A » supprimé : retiré de 1 publication")
         response = self.client.post(reverse("tag_delete"), {"path": "A"}, follow=True)
         self.assertContains(response, "n&#x27;existe plus")
 

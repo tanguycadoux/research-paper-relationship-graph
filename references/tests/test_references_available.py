@@ -88,7 +88,7 @@ class ImportReferencesViewTests(TestCase):
         self.assertRedirects(response, reverse("publication_detail", args=[self.pub.pk]))
         self.assertEqual(CitedReference.objects.filter(source=self.pub).count(), 2)
         self.assertFalse(UserPublication.objects.exists())
-        self.assertContains(response, "2 référence(s) importée(s)")
+        self.assertContains(response, "2 références importées")
         fetch.assert_not_called()  # the publication's own answer is already stored
 
     def test_post_only_and_login_required(self, fetch, fetch_works):

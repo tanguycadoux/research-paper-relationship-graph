@@ -17,12 +17,16 @@
                 {% if target.doi %}(DOI {{ target.doi }}){% elif target.isbn %}(ISBN {{ target.isbn }}){% endif %}.
             </p>
             <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-700">
-                <li>{{ summary.citations }} citation(s) pointeront vers cette publication ;</li>
-                <li>{{ summary.corpus_entries }} entrée(s) de corpus seront reportées ;</li>
+                <li>
+                    {{ summary.citations }} citation{{ summary.citations|pluralize }} pointer{{ summary.citations|pluralize:"a,ont" }} vers cette publication ;
+                </li>
+                <li>
+                    {{ summary.corpus_entries }} entrée{{ summary.corpus_entries|pluralize }} de corpus ser{{ summary.corpus_entries|pluralize:"a,ont" }} reportée{{ summary.corpus_entries|pluralize }} ;
+                </li>
                 {% if summary.own_references or summary.authors %}
                     <li>
-                        seront perdus : {{ summary.own_references }} référence(s) et
-                        {{ summary.authors }} auteur(s) propres à la publication fusionnée ;
+                        seront perdus : {{ summary.own_references }} référence{{ summary.own_references|pluralize }} et
+                        {{ summary.authors }} auteur{{ summary.authors|pluralize }} propre{{ summary.authors|pluralize }} à la publication fusionnée ;
                     </li>
                 {% endif %}
                 <li>la publication sans identifiant sera supprimée.</li>

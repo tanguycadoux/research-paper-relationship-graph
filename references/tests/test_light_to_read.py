@@ -109,7 +109,7 @@ class LightToReadTests(TestCase):
         CitedReference.objects.create(source=self.pub, position=0, unstructured="Réf.")
         url = reverse("corpus_reading_status", args=[self.pub.pk])
         response = self.client.post(url, {"status": "reading"}, follow=True)
-        self.assertContains(response, "Sa bibliographie a été importée : 1 référence(s).")
+        self.assertContains(response, "Sa bibliographie a été importée : 1 référence.")
 
     def test_status_change_reports_a_failed_import(self, import_publication):
         import_publication.side_effect = None

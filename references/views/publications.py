@@ -18,7 +18,7 @@ from ..services.corrections.publication_edits import (
     restore_source_values,
 )
 from ..services.discovery import incoming_citations
-from ..services.display import filters
+from ..services.display import filters, wording
 from ..services.display.publication_details import crossref_details, publication_abstract
 from ..services.display.publication_table import (
     corpus_ids,
@@ -222,7 +222,7 @@ def import_publication_references(request, pk):
     if imported := import_publication(pub, with_references=True):
         pub = imported
         count = pub.cited_references.count()
-        messages.success(request, f"{count} référence(s) importée(s) pour « {pub} ».")
+        messages.success(request, f"{wording.count(count, 'référence importée')} pour « {pub} ».")
     else:
         messages.error(request, f"Impossible de récupérer les métadonnées de « {pub} ».")
     return redirect("publication_detail", pk=pub.pk)
@@ -238,8 +238,6 @@ def fetch_incoming_citations(request, pk):
     except incoming_citations.IncomingCitationsError as error:
         messages.error(request, str(error))
     else:
-        messages.success(
-            request,
-            f"OpenAlex recense {citations.total} publication(s) qui citent « {pub} ».",
-        )
+        citing = wording.count(citations.total, "publication qui cite", "publications qui citent")
+        messages.success(request, f"OpenAlex recense {citing} « {pub} ».")
     return redirect(reverse("publication_detail", args=[pub.pk]) + "#incoming-title")

@@ -3,6 +3,7 @@ from django.db import models, transaction
 from django.db.models.functions import Lower
 from django.utils.formats import date_format
 
+from .services.display.wording import count
 from .services.identifiers.doi import normalize_doi
 from .services.identifiers.isbn import normalize_isbn
 from .services.imports.titles import readable_title
@@ -510,4 +511,4 @@ class IncomingCitations(models.Model):
     fetched_at = models.DateTimeField()
 
     def __str__(self):
-        return f"{self.publication} – {self.total} citation(s) selon OpenAlex"
+        return f"{self.publication} – {count(self.total, 'citation')} selon OpenAlex"
