@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -47,6 +48,12 @@ class PageSmokeTests(TestCase):
                 ("register", []),
             ]
         )
+
+    def test_every_page_declares_the_site_icon(self):
+        # Without it, browsers ask for /favicon.ico, a 404 on each first visit (#347).
+        response = self.client.get(reverse("index"))
+        self.assertContains(response, 'rel="icon" type="image/svg+xml" href="/static/favicon.svg"')
+        self.assertTrue((settings.BASE_DIR / "static" / "favicon.svg").is_file())
 
     def test_pages_for_logged_in_user(self):
         self.client.force_login(self.user)
