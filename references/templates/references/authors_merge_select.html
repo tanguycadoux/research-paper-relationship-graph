@@ -6,27 +6,99 @@
 {% block content %}
     <header class="mb-6">
         <h1>Combiner des auteurs</h1>
-        <p class="mt-1 text-gray-600">Sélectionnez au moins deux auteurs à fusionner en un seul.</p>
+        <p class="mt-2 max-w-3xl text-gray-600">
+            Cherchez les auteurs à fusionner par leur nom ou leur ORCID et ajoutez-les à la sélection :
+            elle reste en haut pendant la recherche. Rien n'est fusionné avant la confirmation.
+        </p>
     </header>
 
-    <form method="post" class="space-y-4">
-        {% csrf_token %}
-        {% if form.errors %}
-            {% alert "Veuillez sélectionner au moins deux auteurs." variant="danger" %}
-        {% endif %}
-        {% card flush=True %}
-            <fieldset>
-                <legend class="sr-only">Auteurs</legend>
-                <ul class="divide-y divide-gray-100 text-sm">
-                    {% for subwidget in form.authors %}
-                        <li class="flex items-center gap-3 px-4 py-2">
-                            {{ subwidget.tag }}
-                            <label for="{{ subwidget.id_for_label }}" class="mb-0 font-normal">{{ subwidget.choice_label }}</label>
+    {# The choice, on top (#271): from two authors, the confirmation. #}
+    <section aria-labelledby="selection-title" class="mb-6">
+        {% card %}
+            <h2 id="selection-title" class="mb-2 text-base font-semibold">
+                Sélection <span class="font-normal text-gray-500">({{ selected|length }})</span>
+            </h2>
+            {% if selected %}
+                <ul class="mb-3 divide-y divide-gray-100 text-sm">
+                    {% for author in selected %}
+                        <li class="flex items-center justify-between gap-3 py-1.5">
+                            <span>
+                                <a class="{% row_title_classes %}" href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
+                                <span class="text-gray-600">
+                                    {% if author.orcid %}· <span class="whitespace-nowrap">ORCID {{ author.orcid }}</span>{% endif %}
+                                    · {{ author.publication_count }} publication{{ author.publication_count|pluralize }}
+                                </span>
+                            </span>
+                            {% button "Retirer de la sélection" url=author.remove_url variant="secondary" icon="remove" icon_only=True %}
                         </li>
                     {% endfor %}
                 </ul>
-            </fieldset>
+            {% else %}
+                <p class="mb-3 text-sm text-gray-600">Aucun auteur choisi.</p>
+            {% endif %}
+            {% if confirm_url %}
+                {% button "Continuer vers la fusion" url=confirm_url icon="merge" %}
+            {% else %}
+                {# Stays in place, disabled, until two authors are chosen. #}
+                {% button "Continuer vers la fusion" icon="merge" type="button" disabled=True %}
+                <p class="mt-1 text-sm text-gray-600">Choisissez au moins deux auteurs.</p>
+            {% endif %}
         {% endcard %}
-        {% button "Continuer" icon="merge" %}
-    </form>
+    </section>
+
+    <section aria-labelledby="found-title">
+        <form method="get" role="search" class="mb-3 flex flex-wrap gap-2">
+            {% if selected_ids %}<input type="hidden" name="selected" value="{{ selected_ids }}">{% endif %}
+            <label for="merge-q" class="sr-only">Nom ou ORCID</label>
+            <input type="search"
+                   id="merge-q"
+                   name="q"
+                   value="{{ q }}"
+                   placeholder="Nom ou ORCID"
+                   class="min-w-0 flex-1 basis-56">
+            {% button "Chercher" icon="search" %}
+        </form>
+        <h2 id="found-title" class="mb-3">
+            {% if q %}
+                Auteurs trouvés
+            {% else %}
+                Tous les auteurs
+            {% endif %}
+            <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
+        </h2>
+        {% if authors %}
+            {% card flush=True %}
+                <table>
+                    <caption class="sr-only">Auteurs à ajouter à la sélection</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Nom</th>
+                            <th scope="col" class="hidden sm:table-cell">ORCID</th>
+                            <th scope="col">Publications</th>
+                            <th scope="col">
+                                <span class="sr-only">Sélection</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for author in authors %}
+                            <tr>
+                                <td>
+                                    <a class="{% row_title_classes %}" href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
+                                </td>
+                                <td class="hidden text-gray-600 sm:table-cell">{{ author.orcid }}</td>
+                                <td class="text-gray-600">{{ author.publication_count }}</td>
+                                <td class="text-right">
+                                    {% button "Ajouter à la sélection" url=author.add_url variant="secondary" icon="add" icon_only=True %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endcard %}
+            {% pagination page_obj %}
+        {% else %}
+            <p class="text-gray-600">Aucun auteur ne correspond.</p>
+        {% endif %}
+    </section>
 {% endblock content %}

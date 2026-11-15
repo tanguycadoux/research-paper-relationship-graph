@@ -145,7 +145,7 @@ def external_link(url, label, **attrs):
     )
 
 
-BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value", "popovertarget")
+BUTTON_ONLY_ATTRIBUTES = ("type", "formaction", "name", "value", "popovertarget", "disabled")
 
 
 def button_shape(icon, icon_only, compact):
@@ -161,7 +161,8 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, compact
     """
     A button, or a link styled as a button when it has a url: <a> navigates,
     <button> acts. type (submit by default), formaction, name and value only
-    make sense on a <button>, as popovertarget (the id of the popover it opens).
+    make sense on a <button>, as popovertarget (the id of the popover it opens) and
+    disabled.
     compact: only the icon on a small screen, the label still read by screen readers.
     """
     if not label:
@@ -198,6 +199,8 @@ def button(label, url="", variant="primary", icon=None, icon_only=False, compact
         "name": attrs.get("name", ""),
         "value": attrs.get("value", ""),
         "popovertarget": attrs.get("popovertarget", ""),
+        # A control that is useless for now stays in place, disabled (CONTRIBUTING).
+        "disabled": bool(attrs.get("disabled")),
     }
 
 
