@@ -54,7 +54,7 @@ class ReferencesToIdentifyTests(TestCase):
         self.client.force_login(get_user_model().objects.create_user("zoe"))
         response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))
         self.assertContains(response, "Identifier les 2 références en série")
-        self.assertContains(response, BUTTON_VARIANTS["warning"], count=2)
+        self.assertContains(response, BUTTON_VARIANTS["warning-light"], count=2)
 
     def test_corpus_actions_on_identified_references(self):
         # #385: the buttons of the publication tables, for a reference that has a target.

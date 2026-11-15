@@ -69,6 +69,11 @@ BUTTON_VARIANTS = {
     "danger-light": (
         "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 focus-visible:outline-red-600"
     ),
+    # Same family, for a row action that waits for the user (« Identifier », #384).
+    "warning-light": (
+        "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 "
+        "focus-visible:outline-amber-600"
+    ),
 }
 BADGE_BASE = (
     "inline-flex select-none items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
