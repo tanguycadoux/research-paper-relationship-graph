@@ -122,6 +122,22 @@ modification d'un template. Au premier lancement, il télécharge le CLI de Tail
 (`static/css/tailwind.css`) n'est pas versionnée ; pour la construire une seule fois, sans
 serveur : `python manage.py tailwind build`. Ses sources sont dans `assets/css/source.css`.
 
+### File des récupérations
+
+Ajouter une publication ou importer un fichier interroge les sources externes (Crossref,
+OpenAlex, ORCID…), ce qui peut prendre plusieurs secondes par publication. Avec le worker,
+la page répond tout de suite et la récupération se fait en arrière-plan :
+
+```bash
+python manage.py dev           # tailwind runserver et le worker, dans un seul terminal
+python manage.py fetch_worker  # ou le worker seul, dans un second terminal
+```
+
+`dev` accepte les arguments de `runserver` (`python manage.py dev 8001`) et relance le
+worker quand le code change. Sans worker signalé depuis 30 s, les pages font la
+récupération elles-mêmes, comme avant : `tailwind runserver` seul fonctionne toujours. Une
+demande mise en file pendant que le worker est arrêté attend son prochain lancement.
+
 La base `db.sqlite3` est locale et n'est pas versionnée.
 Pour récupérer ses données sur une autre machine, il faut la copier à la main.
 

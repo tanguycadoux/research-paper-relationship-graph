@@ -74,6 +74,8 @@ references/          application principale
       names.py       normalisation et comparaison des noms de personnes
     imports/         import et analyse
       importer.py    orchestration : récupération puis analyse
+      fetch_queue.py  file des récupérations (ajout, import de fichier) traitée par fetch_worker,
+                     repli synchrone sans worker
       parser.py      réponse de la source vers les modèles
       titles.py      titres : nettoyage (entités HTML, balisage JATS), forme lisible du LaTeX
       latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
@@ -127,6 +129,8 @@ references/          application principale
                      pagination, column_header, filter_summary, popover_panel_classes
     navigation.py    navigation principale (groupes, lien courant, compteurs)
   management/commands/
+    fetch_worker.py  worker de la file des récupérations
+    dev.py           développement : tailwind runserver et fetch_worker dans un seul terminal
     complete_affiliations.py  affiliations des publications déjà en base
     complete_orcid_names.py  noms des auteurs déjà en base complétés depuis ORCID
     merge_same_orcid.py  fusion des auteurs déjà en base qui ont le même ORCID
@@ -208,5 +212,7 @@ erDiagram
 | `Organization` | Une organisation de recherche (nom, ROR, identifiant OpenAlex, pays), issue des institutions d'OpenAlex, avec tous ses ancêtres (`ancestors`) selon la lignée OpenAlex. |
 | `MetadataConflict` | Une valeur d'une source qui contredit une valeur connue, sur une publication ou un auteur : type, valeur retenue, valeur proposée, source, ce que la page affiche de la proposition (`details`), décision (ouvert, existant gardé, proposée retenue, vu), qui et quand. Signalé une seule fois. Détails dans [corrections.md](corrections.md#conflits). |
 | `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi), et ses tags. |
+| `FetchRequest` | Une récupération auprès des sources laissée au worker (#378) : publication, identifiant demandé (DOI ou ISBN, gardé si la publication disparaît dans une fusion), action (importer, avec ou sans la bibliographie), état (en attente, en cours, faite, échouée), demandeurs, dates et erreur. Une seule demande active par publication et par action : un second demandeur rejoint la ligne existante. |
+| `FetchWorker` | La dernière date à laquelle `fetch_worker` s'est signalé (toutes les 10 s, même pendant un long import). Sans signe depuis 30 s, les pages font la récupération elles-mêmes. |
 | `Tag` | Un tag d'un utilisateur, hiérarchique : son nom est un chemin, « Projet A/Groupe A », dont les parents existent implicitement. Unique par utilisateur, casse ignorée ; un tag qui ne classe plus aucune publication est oublié. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |

@@ -92,6 +92,14 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        # WAL: the fetch_worker command and the web server write without blocking each
+        # other (#378); IMMEDIATE: a transaction takes the write lock at once, and waits
+        # for it, rather than failing when it upgrades from reading.
+        "OPTIONS": {
+            "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+            "transaction_mode": "IMMEDIATE",
+            "timeout": 20,
+        },
     }
 }
 

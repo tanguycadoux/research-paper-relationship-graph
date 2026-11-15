@@ -19,6 +19,7 @@ def remember(session, report):
         "without_metadata": shortened([(pub.pk, str(pub)) for pub in report.without_metadata]),
         "ignored": shortened(report.ignored),
         "unregistered": shortened(report.unregistered),
+        "queued": shortened([(pub.pk, str(pub)) for pub in report.queued]),
     }
 
 
@@ -38,6 +39,8 @@ def last(session):
         "without_metadata": publications(data["without_metadata"]),
         "ignored": titles(data["ignored"]),
         "unregistered": titles(data["unregistered"]),
+        # Absent from the reports kept before #378.
+        "queued": publications(data.get("queued", {"items": [], "count": 0})),
     }
 
 

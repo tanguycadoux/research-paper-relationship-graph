@@ -37,6 +37,23 @@ closed. Context: import_report (services/corpus/import_reports.last).
                     </ul>
                 {% endif %}
             </div>
+            {% if import_report.queued.count %}
+                <div>
+                    <p>
+                        <strong>{{ import_report.queued.count }}</strong> publication{{ import_report.queued.count|pluralize }} en file de récupération : ajoutée{{ import_report.queued.count|pluralize }} à votre corpus, leurs données arrivent en arrière-plan.
+                    </p>
+                    <ul class="mt-1 list-disc space-y-0.5 pl-5">
+                        {% for pub in import_report.queued.items %}
+                            <li>
+                                <a href="{% url 'publication_detail' pub.pk %}">{{ pub.title }}</a>
+                            </li>
+                        {% endfor %}
+                        {% if import_report.queued.rest %}
+                            <li class="text-gray-600">et {{ import_report.queued.rest }} autre{{ import_report.queued.rest|pluralize }}</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endif %}
             {% if import_report.without_metadata.count %}
                 <div>
                     <p class="text-amber-900">
