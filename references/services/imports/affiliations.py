@@ -11,7 +11,7 @@ from django.db import transaction
 
 from ...models import AuthorPublication
 from ..corrections.conflicts import Kind, close_obsolete, names_summary, report_conflict
-from ..identifiers.names import same_person_name
+from ..identifiers.names import same_name_but_middle_initials, same_person_name
 from ..sources.external_records import Source
 from .orcid_completion import complete_orcids
 from .organizations import openalex_id, organizations_for
@@ -37,6 +37,12 @@ def attach_affiliations(pub):
         # An empty list contradicts nothing (#265): there is just nothing to attach.
         close_obsolete(Kind.AUTHORS_MISMATCH, publication=pub)
         return False
+    slots, authorships = without_collectives(slots, authorships)
+    if not slots:
+        # Only a consortium at Crossref (« The Human Microbiome Project Consortium »),
+        # its members at OpenAlex: no person to compare, nothing to attach (#317).
+        close_obsolete(Kind.AUTHORS_MISMATCH, publication=pub)
+        return False
     slots = compared_slots(slots, authorships)
     if not authorships_match(slots, authorships):
         logger.warning("OpenAlex authors do not match the published ones for %s", pub)
@@ -46,6 +52,27 @@ def attach_affiliations(pub):
     link_slots(slots, authorships)
     complete_orcids(slots, authorships)
     return True
+
+
+def without_collectives(slots, authorships):
+    """
+    The slots and authorships of people only. Crossref lists collaborations, consortia
+    and offices among the authors, without given name (« The LIGO Scientific
+    Collaboration », « US Department of Energy »), often where OpenAlex has none: one
+    of them shifted every position after it (#317). The authorships that bear the name
+    of such a slot go too (OpenAlex sometimes keeps the office).
+    """
+    collectives = [slot for slot in slots if not slot.published_given_name.strip()]
+    people = [slot for slot in slots if slot.published_given_name.strip()]
+    names = [published_name(slot) for slot in collectives]
+    kept = [
+        authorship
+        for authorship in authorships
+        if not any(
+            same_person_name(name, authorship.get("raw_author_name") or "") for name in names
+        )
+    ]
+    return people, kept
 
 
 def compared_slots(slots, authorships):
@@ -71,10 +98,19 @@ def report_authors_mismatch(pub, slots, authorships):
 
 
 def authorships_match(slots, authorships):
-    """Same number of authors, and the same published name at each position."""
+    """
+    Same number of authors, and the same published name at each position, up to a
+    middle initial written on one side only (#317).
+    """
     return len(slots) == len(authorships) and all(
-        same_person_name(published_name(slot), authorship.get("raw_author_name") or "")
+        same_name(published_name(slot), authorship.get("raw_author_name") or "")
         for slot, authorship in zip(slots, authorships, strict=True)
+    )
+
+
+def same_name(published, openalex):
+    return same_person_name(published, openalex) or same_name_but_middle_initials(
+        published, openalex
     )
 
 

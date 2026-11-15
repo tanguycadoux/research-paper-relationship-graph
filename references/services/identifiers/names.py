@@ -22,6 +22,21 @@ def same_person_name(first, second):
     return sorted(name_parts(first)) == sorted(name_parts(second))
 
 
+def same_name_but_middle_initials(first, second):
+    """
+    The same whole words, one of them with initials the other lacks: 'Hannah R. Meredith'
+    and 'Hannah Meredith', 'G. van der Werf' and 'G. R. van der Werf' (#317). Never two
+    different initials: 'J. Smith' and 'A. Smith' are not the same person.
+    """
+    left, right = name_parts(first), name_parts(second)
+    words = sorted(part for part in left if len(part) > 1)
+    if not words or words != sorted(part for part in right if len(part) > 1):
+        return False
+    initials = [sorted(part for part in parts if len(part) == 1) for parts in (left, right)]
+    fewer, more = sorted(initials, key=len)
+    return all(fewer.count(initial) <= more.count(initial) for initial in fewer)
+
+
 def same_words_up_to_initials(first, second):
     """
     Same words in any order, an initial standing for a whole word: 'E. Fernandez Mora'

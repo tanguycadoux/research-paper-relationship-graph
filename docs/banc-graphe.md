@@ -88,7 +88,7 @@ Partie de la base de développement (76 publications, 85 citations), en 464 s :
 - 31 publications sans date ; 11 publications de plus de 100 auteurs (LIGO surtout :
   1 012, 964, 945…), qui font l'essentiel des 9 507 auteurs (#292).
 - Restent ouverts : 22 conflits « Auteurs différents » (24 avertissements « OpenAlex
-  authors do not match » à l'import, malgré #265 : à examiner), 33 « Nom différent selon
+  authors do not match » à l'import, malgré #265 ; 3 après #317, de vraies différences), 33 « Nom différent selon
   ORCID », 17 « ORCID différent », 5 versions publiées proposées. 1 214 références sur
   3 776 restent à identifier.
 
