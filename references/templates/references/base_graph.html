@@ -1,6 +1,6 @@
 {% extends "references/base.html" %}
 
-{% block title %}Graphe des publications · {% endblock title %}
+{% block title %}Graphe des publications · Base commune · {% endblock title %}
 
 {% load static %}
 {% block head %}
@@ -12,12 +12,14 @@
 
 {% block content %}
     <header class="mb-6">
-        <p class="text-sm text-gray-500">
-            <a href="{% url 'publication_list' %}">Publications</a>
-        </p>
-        <h1 class="mt-1">Graphe des publications</h1>
-        <p class="mt-1 text-gray-600">Toutes les publications de la base commune et leurs citations.</p>
+        <h1>Base commune</h1>
     </header>
+    {# The page it is reached from, above its title (#417). #}
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'publication_list' %}">Publications</a>
+    </p>
+    <h2 class="mt-1">Graphe des publications</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">Toutes les publications de la base commune et leurs citations.</p>
 
     {% if large_graph %}
         {% include "references/_graph_image.html" %}

@@ -1,21 +1,22 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}File des récupérations · {% endblock title %}
+{% block title %}File des récupérations · Corrections · {% endblock title %}
 
 {% block content %}
     <header class="mb-6">
-        <h1>File des récupérations</h1>
-        <p class="mt-2 max-w-3xl text-gray-600">
-            Les demandes aux sources externes que la commande <code>fetch_worker</code> traite une à
-            une. Une demande échouée garde son erreur et peut être relancée ; une demande en
-            attente peut être annulée. Page réservée aux administrateurs.
-        </p>
+        <h1>Corrections</h1>
     </header>
+    <h2>File des récupérations</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Les demandes aux sources externes que la commande <code>fetch_worker</code> traite une à
+        une. Une demande échouée garde son erreur et peut être relancée ; une demande en
+        attente peut être annulée. Page réservée aux administrateurs.
+    </p>
 
     <div class="space-y-8">
         <section aria-labelledby="worker-title" class="space-y-3">
-            <h2 id="worker-title">Worker</h2>
+            <h3 id="worker-title">Worker</h3>
             <p class="flex flex-wrap items-center gap-2 text-sm text-gray-600">
                 {% if queue.worker_alive %}
                     {% badge "Actif" variant="success" icon="check_circle" %}
@@ -37,9 +38,9 @@
         </section>
 
         <section aria-labelledby="pending-title" class="space-y-3">
-            <h2 id="pending-title">
+            <h3 id="pending-title">
                 En attente <span class="font-normal text-gray-500">({{ queue.pending|length }})</span>
-            </h2>
+            </h3>
             {% if queue.pending %}
                 <ul class="flex flex-wrap gap-2" aria-label="En attente par action">
                     {% for waiting in queue.pending_by_action %}
@@ -53,9 +54,9 @@
         </section>
 
         <section aria-labelledby="running-title" class="space-y-3">
-            <h2 id="running-title">
+            <h3 id="running-title">
                 En cours <span class="font-normal text-gray-500">({{ queue.running|length }})</span>
-            </h2>
+            </h3>
             {% if queue.running %}
                 {% include "references/_fetch_requests.html" with requests=queue.running section="running" %}
             {% else %}
@@ -64,7 +65,7 @@
         </section>
 
         <section aria-labelledby="failed-title" class="space-y-3">
-            <h2 id="failed-title">Échouées</h2>
+            <h3 id="failed-title">Échouées</h3>
             {% if queue.failed %}
                 <p class="text-sm text-gray-600">Les {{ recent }} plus récentes au plus.</p>
                 {% include "references/_fetch_requests.html" with requests=queue.failed section="failed" %}
@@ -74,7 +75,7 @@
         </section>
 
         <section aria-labelledby="done-title" class="space-y-3">
-            <h2 id="done-title">Faites récemment</h2>
+            <h3 id="done-title">Faites récemment</h3>
             {% if queue.done %}
                 <p class="text-sm text-gray-600">Les {{ recent }} plus récentes au plus.</p>
                 {% include "references/_fetch_requests.html" with requests=queue.done section="done" %}

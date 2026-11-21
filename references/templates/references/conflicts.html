@@ -1,23 +1,24 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}Conflits · {% endblock title %}
+{% block title %}Conflits · Corrections · {% endblock title %}
 
 {% block content %}
     <header class="mb-6">
-        <h1>Conflits</h1>
-        <p class="mt-2 max-w-3xl text-gray-600">
-            Valeurs d'une source qui contredisent une valeur déjà connue. La valeur connue
-            est conservée tant que personne n'a tranché ; les décisions valent pour tous.
-        </p>
+        <h1>Corrections</h1>
     </header>
+    <h2>Conflits</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Valeurs d'une source qui contredisent une valeur déjà connue. La valeur connue
+        est conservée tant que personne n'a tranché ; les décisions valent pour tous.
+    </p>
 
     <div class="space-y-8">
         <section aria-labelledby="open-conflicts-title" class="space-y-6">
             <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <h2 id="open-conflicts-title">
+                <h3 id="open-conflicts-title">
                     À trancher <span class="font-normal text-gray-500">({{ open_count }})</span>
-                </h2>
+                </h3>
                 {% if alone %}
                     <a href="{% url 'conflict_list' %}" class="text-sm">Tous les types</a>
                 {% endif %}
@@ -26,9 +27,9 @@
                 {# One section per type, its explanation once (#335). #}
                 <section aria-labelledby="kind-{{ group.kind }}-title">
                     <div class="mb-3">
-                        <h3 id="kind-{{ group.kind }}-title" class="text-base font-semibold">
+                        <h4 id="kind-{{ group.kind }}-title" class="text-base font-semibold">
                             {{ group.label }} <span class="font-normal text-gray-500">({{ group.count }})</span>
-                        </h3>
+                        </h4>
                         <p class="mt-1 max-w-3xl text-sm text-gray-600">
                             {% if group.kind == "shared_orcid" %}
                                 Un ORCID désigne une seule personne, mais ces auteurs ont été déclarés distincts : ils ne sont pas fusionnés.
@@ -53,13 +54,13 @@
                         {% for conflict in group.conflicts %}
                             <article aria-labelledby="conflict-{{ conflict.pk }}-title"
                                      class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                                <h3 id="conflict-{{ conflict.pk }}-title" class="mb-3 text-base font-semibold">
+                                <h4 id="conflict-{{ conflict.pk }}-title" class="mb-3 text-base font-semibold">
                                     {% if conflict.publication %}
                                         <a href="{% url 'publication_detail' conflict.publication.pk %}">{{ conflict.publication }}</a>
                                     {% else %}
                                         <a href="{% url 'author_detail' conflict.author.pk %}">{{ conflict.author }}</a>
                                     {% endif %}
-                                </h3>
+                                </h4>
                                 {% if conflict.names %}
                                     <table class="mb-3 w-auto">
                                         <thead class="bg-white">
@@ -159,7 +160,7 @@
 
         {% if recent_decisions %}
             <section aria-labelledby="recent-decisions-title">
-                <h2 id="recent-decisions-title" class="mb-3">Décisions récentes</h2>
+                <h3 id="recent-decisions-title" class="mb-3">Décisions récentes</h3>
                 <ul class="space-y-1 text-sm text-gray-700">
                     {% for conflict in recent_decisions %}
                         <li>

@@ -1,22 +1,21 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}Mes tags · {% endblock title %}
+{% block title %}Tags · Mon corpus · {% endblock title %}
 
 {% block content %}
-    <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-            <h1>Mes tags</h1>
-            <p class="mt-2 max-w-3xl text-gray-600">
-                Renommer un tag renomme aussi ses sous-tags ; vers un nom que vous avez déjà, les
-                deux tags fusionnent. « / » déplace un tag dans l'arbre : « Projet B » renommé
-                « ASTERICS/Projet B » passe sous « ASTERICS ». Supprimer un tag retire seulement le
-                classement : les publications restent dans votre corpus.
-            </p>
-        </div>
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1>Mon corpus</h1>
         {% url 'corpus' as corpus_url %}
-        {% button "Mon corpus" url=corpus_url variant="secondary" icon="bookmarks" %}
+        {% button "Publications" url=corpus_url variant="secondary" icon="bookmarks" %}
     </header>
+    <h2>Tags</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Renommer un tag renomme aussi ses sous-tags ; vers un nom que vous avez déjà, les
+        deux tags fusionnent. « / » déplace un tag dans l'arbre : « Projet B » renommé
+        « ASTERICS/Projet B » passe sous « ASTERICS ». Supprimer un tag retire seulement le
+        classement : les publications restent dans votre corpus.
+    </p>
 
     {% if tag_tree %}
         {% card flush=True %}

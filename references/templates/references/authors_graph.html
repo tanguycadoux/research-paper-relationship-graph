@@ -1,6 +1,6 @@
 {% extends "references/base.html" %}
 
-{% block title %}Graphe des auteurs · {% endblock title %}
+{% block title %}Graphe des auteurs · Base commune · {% endblock title %}
 
 {% load static %}
 {% block head %}
@@ -12,12 +12,14 @@
 
 {% block content %}
     <header class="mb-6">
-        <p class="text-sm text-gray-500">
-            <a href="{% url 'author_list' %}">Auteurs</a>
-        </p>
-        <h1 class="mt-1">Graphe des auteurs</h1>
-        <p class="mt-1 text-gray-600">Tous les auteurs de la base commune, reliés par les publications qu'ils signent ensemble.</p>
+        <h1>Base commune</h1>
     </header>
+    {# The page it is reached from, above its title (#417). #}
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'author_list' %}">Auteurs</a>
+    </p>
+    <h2 class="mt-1">Graphe des auteurs</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">Tous les auteurs de la base commune, reliés par les publications qu'ils signent ensemble.</p>
 
     {% if large_graph %}
         {% include "references/_graph_image.html" %}

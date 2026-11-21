@@ -1,24 +1,25 @@
 {% extends "references/base.html" %}
 {% load ui %}
-{% block title %}Doublons probables · {% endblock title %}
+{% block title %}Doublons probables · Corrections · {% endblock title %}
 {% block content %}
     <header class="mb-6">
-        <h1>
-            Doublons probables
-            {% if page_obj.paginator.count %}
-                <span class="font-normal text-gray-500">({{ page_obj.paginator.count }} groupe{{ page_obj.paginator.count|pluralize }})</span>
-            {% endif %}
-        </h1>
-        <p class="mt-2 max-w-3xl text-gray-600">
-            Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
-            Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
-            auteurs à écarter, puis passez à la fusion, ou indiquez que les auteurs cochés
-            sont des personnes différentes : ils ne seront plus proposés ensemble.
-        </p>
+        <h1>Corrections</h1>
     </header>
+    <h2>
+        Doublons probables
+        {% if page_obj.paginator.count %}
+            <span class="font-normal text-gray-500">({{ page_obj.paginator.count }} groupe{{ page_obj.paginator.count|pluralize_fr }})</span>
+        {% endif %}
+    </h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Auteurs au même nom de famille et aux prénoms compatibles (« A. » et « Ada »).
+        Deux auteurs aux ORCID différents ne sont jamais proposés ensemble. Décochez les
+        auteurs à écarter, puis passez à la fusion, ou indiquez que les auteurs cochés
+        sont des personnes différentes : ils ne seront plus proposés ensemble.
+    </p>
     <div class="space-y-6">
         {% for group in groups %}
-            {% card title=group.0.last_name %}
+            {% card title=group.0.last_name level=3 %}
                 <form method="post"
                       action="{% url 'author_merge_select' %}"
                       class="space-y-3">

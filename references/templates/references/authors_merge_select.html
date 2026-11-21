@@ -1,23 +1,24 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}Combiner des auteurs · {% endblock title %}
+{% block title %}Combiner des auteurs · Corrections · {% endblock title %}
 
 {% block content %}
     <header class="mb-6">
-        <h1>Combiner des auteurs</h1>
-        <p class="mt-2 max-w-3xl text-gray-600">
-            Cherchez les auteurs à fusionner par leur nom ou leur ORCID et ajoutez-les à la sélection :
-            elle reste en haut pendant la recherche. Rien n'est fusionné avant la confirmation.
-        </p>
+        <h1>Corrections</h1>
     </header>
+    <h2>Combiner des auteurs</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Cherchez les auteurs à fusionner par leur nom ou leur ORCID et ajoutez-les à la sélection :
+        elle reste en haut pendant la recherche. Rien n'est fusionné avant la confirmation.
+    </p>
 
     {# The choice, on top (#271): from two authors, the confirmation. #}
     <section aria-labelledby="selection-title" class="mb-6">
         {% card %}
-            <h2 id="selection-title" class="mb-2 text-base font-semibold">
+            <h3 id="selection-title" class="mb-2">
                 Sélection <span class="font-normal text-gray-500">({{ selected|length }})</span>
-            </h2>
+            </h3>
             {% if selected %}
                 <ul class="mb-3 divide-y divide-gray-100 text-sm">
                     {% for author in selected %}
@@ -58,14 +59,14 @@
                    class="min-w-0 flex-1 basis-56">
             {% button "Chercher" icon="search" %}
         </form>
-        <h2 id="found-title" class="mb-3">
+        <h3 id="found-title" class="mb-3">
             {% if q %}
                 Auteurs trouvés
             {% else %}
                 Tous les auteurs
             {% endif %}
             <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
-        </h2>
+        </h3>
         {% if authors %}
             {% card flush=True %}
                 <table>

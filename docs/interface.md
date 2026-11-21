@@ -40,6 +40,26 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   cliqué, dont la valeur compte : « à lire ») et celui qui a été cliqué remplace son icône
   par une animation ; ils se réactivent au retour par l'historique. Sans JavaScript, rien
   ne change.
+- **Titres de page** (#417) : le `<h1>` d'une page du menu est son groupe de la
+  navigation, le `<h2>` qui le suit est la page, sur le modèle de « Mon corpus »
+  (« Mon corpus », puis « Publications (26) ») : « Corrections », puis « Conflits » ;
+  « Base commune », puis « Auteurs (1 204) ». Le `<h2>` porte son compteur en gris et, à
+  droite sur la même ligne, une action de la page s'il y en a une ; le paragraphe
+  d'explication est dessous ; les sections de la page descendent d'un niveau (`<h3>`,
+  `{% card title=… level=3 %}`, puis `<h4>`), dont le style par défaut est dans la couche
+  `base`. Les pages atteintes depuis le menu prennent le groupe de leur page d'origine,
+  dont le lien reste au-dessus de leur `<h2>` : « Tags » (Mon corpus), « Graphe des
+  publications », « Graphe des auteurs », « Chercher par titre », « Saisir une
+  publication à la main » (Base commune), « Fusionner 3 auteurs » (Corrections). Le
+  `<title>` suit : « Conflits · Corrections · Gestionnaire de références ». Les boutons
+  d'en-tête restent à droite du `<h1>` : ce sont des liens vers d'autres pages du groupe
+  (« Suggestions » et « Mon graphe » sur « Mon corpus », avec le tag choisi ;
+  « Publications » pour revenir de « Suggestions » ou « Tags » ; « Graphe des
+  publications », « Graphe des auteurs »). Gardent leur propre `<h1>`, avec leur fil :
+  les fiches d'une publication et d'un auteur, leurs graphes et leurs modifications,
+  l'identification d'une référence, la recherche, l'accueil. `test_page_titles.py`
+  vérifie pour chaque page du menu un seul `<h1>`, égal au groupe, le `<h2>` de la page,
+  aucun saut de niveau et le `<title>`.
 - **Ajouter une publication** (`_add_publication.html`, #277) : un seul composant, sur
   l'accueil, « Mon corpus » et « Publications » : DOI, ISBN ou arXiv, « Ajouter à mon corpus »
   (avec la bibliographie) ou « Ajouter à lire » (sans, #234) ; retour à la page du
