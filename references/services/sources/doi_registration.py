@@ -5,7 +5,7 @@ or added, they left empty publications in the base (#240).
 """
 
 from ...models import Publication
-from .http import get_json
+from .http import get_json, in_batches
 
 # DOIs per request: /ra/ takes them separated by commas, in the URL.
 BATCH_SIZE = 20
@@ -13,23 +13,24 @@ BATCH_SIZE = 20
 
 def registered_dois(dois):
     """{doi: True, False, or None when doi.org cannot answer}, BATCH_SIZE per request."""
-    answers = {}
-    for start in range(0, len(dois), BATCH_SIZE):
-        batch = dois[start : start + BATCH_SIZE]
-        data = get_json(
-            f"https://doi.org/ra/{','.join(batch)}",
-            service="doi.org",
-            subject=f"{len(batch)} DOI" if len(batch) > 1 else batch[0],
-        )
-        known = {}
-        if isinstance(data, list):
-            known = {
-                str(item.get("DOI", "")).lower(): "RA" in item
-                for item in data
-                if isinstance(item, dict)
-            }
-        answers |= {doi: known.get(doi) for doi in batch}
-    return answers
+    return in_batches(dois, BATCH_SIZE, _registered_batch)
+
+
+def _registered_batch(batch):
+    """One /ra/ request; a failed one answers None for each DOI of the batch."""
+    data = get_json(
+        f"https://doi.org/ra/{','.join(batch)}",
+        service="doi.org",
+        subject=f"{len(batch)} DOI" if len(batch) > 1 else batch[0],
+    )
+    known = {}
+    if isinstance(data, list):
+        known = {
+            str(item.get("DOI", "")).lower(): "RA" in item
+            for item in data
+            if isinstance(item, dict)
+        }
+    return {doi: known.get(doi) for doi in batch}
 
 
 def unregistered_dois(dois):

@@ -182,6 +182,13 @@ de nouvelles tentatives et la même journalisation. Le client Crossref s'identif
 clients respectent `Retry-After` sur les erreurs 429, retentent les 5xx et les erreurs
 réseau, et ne retentent jamais une 404 ni une 403.
 
+**Requêtes par lots** (#294). Les clients qui demandent plusieurs DOI, institutions ou
+ORCID à la fois (Crossref, DataCite, OpenAlex, ORCID, doi.org) découpent la liste par
+`http.in_batches(items, taille, requête_d_un_lot)`, qui fusionne les réponses dans l'ordre ;
+chaque client n'écrit que la requête d'un lot (`_fetch_batch`…) et dit ce que donne un lot
+en échec : absent du résultat, sauf pour doi.org, qui répond `None` (« sans réponse ») pour
+chacun de ses DOI.
+
 **Attente limitée dans une page** (#172). L'import est synchrone : pendant qu'une page
 charge, une source en panne n'est retentée qu'une fois, et l'on abandonne si elle demande
 d'attendre plus de 5 s (l'utilisateur pourra réessayer). Les commandes

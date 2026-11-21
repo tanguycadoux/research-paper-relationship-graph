@@ -62,7 +62,8 @@ references/          application principale
     fetch_admin.py (page « File des récupérations », réservée aux administrateurs)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
-      http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
+      http.py        requêtes communes (session, nouvelles tentatives, découpe par lots,
+                     cache de développement)
       api_log.py     journal des requêtes (logs/api.log, une ligne JSON par requête, contexte)
       api_log_summary.py  résumé du journal (commande api_log)
       crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
