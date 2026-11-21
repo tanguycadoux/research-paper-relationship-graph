@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, FetchRequest, Publication, Tag, UserPublication
-from references.views.publications import REFERENCES_SHOWN
+from references.services.display.publication_page import REFERENCES_SHOWN
 
 READ = UserPublication.ReadingStatus.READ
 TO_READ = UserPublication.ReadingStatus.TO_READ

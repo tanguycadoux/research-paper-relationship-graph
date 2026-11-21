@@ -1,0 +1,43 @@
+{% comment %}
+The table of the publications that cite it according to OpenAlex (#163).
+{% endcomment %}
+{% load ui %}
+{% card flush=True %}
+    <table>
+        <caption class="sr-only">Publications qui la citent selon OpenAlex</caption>
+        {% include "references/_cited_by_table_head.html" with corpus_column=user.is_authenticated %}
+        <tbody>
+            {% for work in citing_works %}
+                <tr>
+                    <td>
+                        {% if work.publication %}
+                            <a class="{% row_title_classes %}" href="{% url 'publication_detail' work.publication.pk %}">{{ work.title }}</a>
+                            {% if work.in_corpus %}
+                                {% badge "dans mon corpus" icon="bookmarks" %}
+                            {% endif %}
+                        {% elif work.doi %}
+                            {% external_link "https://doi.org/"|add:work.doi work.title %}
+                        {% else %}
+                            {% external_link "https://openalex.org/"|add:work.openalex work.title %}
+                        {% endif %}
+                    </td>
+                    <td class="text-gray-600">
+                        {% include "references/_first_author.html" with pub=work %}
+                    </td>
+                    <td class="whitespace-nowrap text-gray-600">{{ work.year|default_if_none:"" }}</td>
+                    <td class="text-right text-gray-600">{{ work.cited_by }}</td>
+                    {% if user.is_authenticated %}
+                        <td class="text-right">
+                            {% if work.doi and not work.in_corpus %}
+                                {# By the DOI: the publication is created only now. #}
+                                {% with back=request.get_full_path|add:"#incoming-title" %}
+                                    {% include "references/_corpus_add_form.html" with by_identifier=work.doi next=back %}
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endcard %}

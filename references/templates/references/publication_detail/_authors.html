@@ -1,0 +1,60 @@
+{% comment %}
+The authors, with their numbered affiliations (#155), the long list folded (#269).
+{% endcomment %}
+{% load ui %}
+<section aria-labelledby="authors-title">
+{% card %}
+    <h2 id="authors-title" class="mb-2 text-base font-semibold">
+        Auteurs
+        {% if authors_hidden %}<span class="font-normal text-gray-500">({{ author_total }})</span>{% endif %}
+    </h2>
+    {# As in an article: numbered affiliations, listed once below (#155) #}
+    {% if authors.authors %}
+        <ol class="text-sm leading-relaxed">
+            {% for author in authors.authors %}
+                {% if authors_hidden and forloop.counter == authors_shown|add:1 %}
+                    {# The long list folded: the first authors, then the last (#269). #}
+                    <li class="inline text-gray-500">… et {{ authors_hidden }} autres,</li>
+                {% endif %}
+                <li class="inline whitespace-nowrap">
+                    {% spaceless %}
+                        <a href="{% url 'author_detail' author.slot.author.pk %}">{{ author.slot.author }}</a>
+                        {% if author.numbers %}
+                            <sup>{% for number in author.numbers %}<a href="#affiliation-{{ number }}" aria-label="affiliation {{ number }}">{{ number }}</a>{% if not forloop.last %},{% endif %}{% endfor %}</sup>
+                        {% endif %}
+                    {% endspaceless %}{% if not forloop.last %},{% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <p class="text-sm text-gray-500">Aucun auteur connu.</p>
+    {% endif %}
+    {% if authors_hidden %}
+        <p class="mt-2 text-sm">
+            <a href="{{ all_authors_url }}">Afficher les {{ author_total }} auteurs et leurs affiliations</a>
+        </p>
+    {% endif %}
+    {% if uncertain_author_order and authors.authors|length > 1 %}
+        {# JACoW's order at DataCite may differ from the article's (#250). #}
+        <p class="mt-3 text-xs text-gray-500">
+            Ordre des auteurs incertain : pour les actes JACoW, l'ordre déposé chez DataCite peut différer
+            de celui de l'article, où l'auteur principal vient en premier.
+            {% external_link "https://doi.org/"|add:publication.doi "La page JACoW de l'article fait foi" %}.
+        </p>
+    {% endif %}
+    {% if authors.affiliations %}
+        <h3 class="mt-4 mb-1 text-sm font-medium text-gray-500">Affiliations</h3>
+        <ol class="list-decimal space-y-0.5 pl-5 text-sm text-gray-600">
+            {% for organization in authors.affiliations %}
+                <li id="affiliation-{{ forloop.counter }}">
+                    {% if organization.ror %}
+                        {% external_link "https://ror.org/"|add:organization.ror organization %}
+                    {% else %}
+                        {{ organization }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% endif %}
+{% endcard %}
+</section>

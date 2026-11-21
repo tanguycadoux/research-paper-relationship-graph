@@ -1,6 +1,6 @@
 # Icônes Material Symbols
 
-Icônes affichées par `{% icon %}` (`references/templatetags/ui.py`), en SVG inline.
+Icônes affichées par `{% icon %}` (`references/templatetags/ui/icons.py`), en SVG inline.
 
 - Source : dépôt officiel `google/material-design-icons`, dossier `symbols/web/`
   (style Outlined, 24 px), téléchargées par `python manage.py add_icon <nom>`.

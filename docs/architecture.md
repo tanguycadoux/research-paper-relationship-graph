@@ -55,6 +55,7 @@ references/          application principale
     corpus_transfer.py (export et import du corpus),
     corpus_bulk.py (actions groupées de « Mon corpus » et des listes d'une fiche),
     search.py (recherche), pagination.py (listes par pages),
+    redirects.py (retour vers la page du formulaire, champ `next`, ou une page de repli),
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),
@@ -62,7 +63,8 @@ references/          application principale
     fetch_admin.py (page « File des récupérations », réservée aux administrateurs)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
-      http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
+      http.py        requêtes communes (session, nouvelles tentatives, découpe par lots,
+                     cache de développement)
       api_log.py     journal des requêtes (logs/api.log, une ligne JSON par requête, contexte)
       api_log_summary.py  résumé du journal (commande api_log)
       crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
@@ -136,6 +138,8 @@ references/          application principale
       publication_table.py  annotations du tableau commun (premier auteur, badges)
       publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
                      résumé)
+      publication_page.py  contexte de la fiche publication, section par section (entrée du
+                     corpus, références, « Cité par », listes longues repliées, actions groupées)
       citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
@@ -143,8 +147,15 @@ references/          application principale
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
-    ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
-                     pagination, column_header, filter_summary, popover_panel_classes
+    ui/              composants d'interface, une seule bibliothèque ({% load ui %}) :
+      library.py     la bibliothèque, où chaque module inscrit ses balises
+      components.py  button, badge, alert, card
+      icons.py       icon, external_link
+      glass.py       verre dépoli : glass_classes, popover_panel_classes, notifications (toasts)
+      tables.py      pagination, column_header (tri et filtre), sort_links, filter_summary,
+                     row_title_classes
+      forms.py       field, form_errors
+      text.py        filtre pluralize_fr
     navigation.py    navigation principale (groupes, lien courant, compteurs, liens réservés
                      aux administrateurs)
   management/commands/
@@ -162,8 +173,14 @@ references/          application principale
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphes, en modules ES : communs à tous (graph pour la mise en place, card pour la carte et la sélection, viewport, focus, stretch, export, hover, style), graphe des citations (main, scale, layout, network, axis, band, selection), graphe des auteurs (coauthors, coauthor_selection)
-  templates/references/  pages et gabarits partiels (_publication_table, _graph_frame, cadre commun des graphes, étendu par _citation_graph et _author_graph…)
-  templates/components/  gabarits des composants de ui.py
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph et _author_graph…)
+    publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
+                     _authors, _abstract, _note, _information, _references, _cited_by,
+                     _incoming_citations…), assemblées par publication_detail.html
+    _corpus_add_form, _corpus_column_header, _cited_by_table_head, _first_author,
+    _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
+                     les suggestions, « Mon corpus » et la fiche (#296)
+  templates/components/  gabarits des composants de ui/
   tests/
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
 assets/css/source.css  source Tailwind (styles de base des éléments, couleurs du graphe)

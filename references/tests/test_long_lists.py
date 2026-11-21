@@ -8,7 +8,7 @@ from references.models import (
     Organization,
     Publication,
 )
-from references.views.publications import AUTHORS_SHOWN, REFERENCES_SHOWN
+from references.services.display.publication_page import AUTHORS_SHOWN, REFERENCES_SHOWN
 
 
 class LongListsTests(TestCase):

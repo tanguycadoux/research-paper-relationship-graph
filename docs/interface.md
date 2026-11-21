@@ -7,7 +7,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
 
 - **Tailwind**, compilé par django-tailwind-cli depuis `assets/css/source.css`, sans Node.
   Les styles par défaut des éléments sont définis une fois dans la couche `base`.
-- **Composants** en template tags (`references/templatetags/ui.py`) : `button`, `badge`,
+- **Composants** en template tags (`references/templatetags/ui/`) : `button`, `badge`,
   `alert`, `card`, `icon`, `external_link`, `pagination`, `column_header`,
   `filter_summary` ; les panneaux `popover` partagent leurs classes
   (`popover_panel_classes`). **Verre dépoli** (`glass_classes`, #202) : ce qui flotte
