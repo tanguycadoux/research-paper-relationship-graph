@@ -7,7 +7,7 @@ from django.urls import reverse
 from references.models import IncomingCitations, Publication, UserPublication
 from references.services.discovery import incoming_citations
 from references.services.sources.external_records import Source, store_record
-from references.tests.helpers import without_doi_org, without_other_sources
+from references.tests.sources import simulated_sources
 
 
 def work(number, year, cited_by, doi="", authors=("Ada Lovelace",)):
@@ -33,19 +33,6 @@ RECENT = work(2, 2025, 0)
 BOTH = work(3, 2024, 10, doi="10.1000/connu")
 
 
-def openalex(answers):
-    """Mock the list of citing works: {sort: (total, works)}, None for a failure."""
-    calls = []
-
-    def fetch(work_id, sort, count):
-        calls.append((work_id, sort, count))
-        return answers.get(sort)
-
-    return patch(
-        "references.services.discovery.incoming_citations.fetch_citing_works", new=fetch
-    ), calls
-
-
 class IncomingCitationsTests(TestCase):
     """Works citing a publication according to OpenAlex, on demand (#163)."""
 
@@ -59,19 +46,22 @@ class IncomingCitationsTests(TestCase):
     def setUp(self):
         self.client.force_login(self.alice)
 
-    def fetch(self, answers):
-        mock, calls = openalex(answers)
-        with mock:
+    def fetch(self, citing, **sources):
+        """Ask OpenAlex for the works citing W99 (citing: [works] or (total, [works]))."""
+        with simulated_sources(openalex_citing={"W99": citing}, **sources) as openalex:
             response = self.client.post(
                 reverse("publication_incoming_citations", args=[self.pub.pk])
             )
+        calls = [
+            (r.keys[0], r.params["sort"], int(r.params["per-page"])) for r in openalex.requests
+        ]
         return response, calls
 
     def page(self, **params):
         return self.client.get(reverse("publication_detail", args=[self.pub.pk]), params)
 
     def test_most_cited_only_when_they_are_all_of_them(self):
-        response, calls = self.fetch({incoming_citations.MOST_CITED: (2, [OLD_AND_CITED, RECENT])})
+        response, calls = self.fetch([OLD_AND_CITED, RECENT])
         self.assertRedirects(
             response,
             reverse("publication_detail", args=[self.pub.pk]) + "#incoming-title",
@@ -83,12 +73,7 @@ class IncomingCitationsTests(TestCase):
         self.assertEqual([w["openalex"] for w in citations.works], ["W1", "W2"])
 
     def test_most_recent_too_beyond_one_page_without_duplicates(self):
-        _, calls = self.fetch(
-            {
-                incoming_citations.MOST_CITED: (300, [OLD_AND_CITED, BOTH]),
-                incoming_citations.MOST_RECENT: (300, [RECENT, BOTH]),
-            }
-        )
+        _, calls = self.fetch((300, [OLD_AND_CITED, RECENT, BOTH]))
         self.assertEqual(len(calls), 2)
         citations = IncomingCitations.objects.get(publication=self.pub)
         self.assertEqual(citations.total, 300)
@@ -111,17 +96,14 @@ class IncomingCitationsTests(TestCase):
         )
 
     def test_nothing_stored_when_openalex_fails(self):
-        response, _ = self.fetch({})
+        response, _ = self.fetch([], unreachable=["openalex"])
         self.assertFalse(IncomingCitations.objects.exists())
         response = self.client.get(response.url)
         self.assertContains(response, "OpenAlex n&#x27;a pas répondu")
 
     def test_publication_unknown_to_openalex(self):
         pub = Publication.objects.create(doi="10.1000/inconnu")
-        with patch(
-            "references.services.discovery.incoming_citations.fetch_openalex_work",
-            return_value=None,
-        ):
+        with simulated_sources():
             response = self.client.post(
                 reverse("publication_incoming_citations", args=[pub.pk]), follow=True
             )
@@ -129,21 +111,14 @@ class IncomingCitationsTests(TestCase):
 
     def test_work_id_asked_by_doi_without_record(self):
         pub = Publication.objects.create(doi="10.1000/sans-fiche")
-        with patch(
-            "references.services.discovery.incoming_citations.fetch_openalex_work",
-            return_value={"id": "https://openalex.org/W7"},
-        ) as lookup:
+        work = {"id": "https://openalex.org/W7", "doi": "https://doi.org/10.1000/sans-fiche"}
+        with simulated_sources(openalex=[work]) as sources:
             self.assertEqual(incoming_citations.openalex_id(pub), "W7")
-        lookup.assert_called_once_with("10.1000/sans-fiche")
+        self.assertEqual(sources.single("openalex"), ["10.1000/sans-fiche"])
 
     def test_page_orders_and_links_the_works(self):
         UserPublication.objects.create(user=self.alice, publication=self.known)
-        self.fetch(
-            {
-                incoming_citations.MOST_CITED: (300, [OLD_AND_CITED, BOTH]),
-                incoming_citations.MOST_RECENT: (300, [RECENT]),
-            }
-        )
+        self.fetch((300, [OLD_AND_CITED, RECENT, BOTH]))
         response = self.page()
         works = response.context["citing_works"]
         self.assertEqual([w["openalex"] for w in works], ["W1", "W3", "W2"])
@@ -167,11 +142,11 @@ class IncomingCitationsTests(TestCase):
 
     def test_fetching_needs_a_login(self):
         self.client.logout()
-        response, calls = self.fetch({})
+        response, calls = self.fetch([])
         self.assertEqual(response.status_code, 302)
         self.assertEqual(calls, [])
 
-    @without_other_sources
+    @simulated_sources()
     def test_adding_a_citing_work_comes_back_to_the_page(self):
         url = reverse("publication_detail", args=[self.pub.pk]) + "#incoming-title"
         with patch("references.views.corpus.add_identified", return_value=None):
@@ -182,7 +157,7 @@ class IncomingCitationsTests(TestCase):
         self.assertRedirects(response, url, fetch_redirect_response=False)
         self.assertTrue(Publication.objects.filter(doi="10.1000/cite").exists())
 
-    @without_doi_org
+    @simulated_sources()
     def test_corpus_form_still_goes_back_to_the_corpus(self):
         response = self.client.post(reverse("corpus_add_by_identifier"), {"identifier": "x"})
         self.assertRedirects(response, reverse("corpus"))

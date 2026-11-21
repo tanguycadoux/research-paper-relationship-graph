@@ -1,5 +1,4 @@
 import importlib
-from unittest.mock import patch
 
 from django.apps import apps
 from django.db import IntegrityError, connection
@@ -8,7 +7,8 @@ from django.test.utils import CaptureQueriesContext
 
 from references.models import Author, AuthorPublication, CitedReference, Publication
 from references.services.imports.parser import parse_publication
-from references.tests.helpers import with_crossref, without_other_sources
+from references.tests.helpers import with_crossref
+from references.tests.sources import simulated_sources
 
 
 def crossref_message(authors=(), references=()):
@@ -29,8 +29,7 @@ REF_WITH_DOI = {"key": "ref1", "DOI": "10.1000/ABC", "article-title": "Cited art
 REF_WITHOUT_DOI = {"key": "ref2", "unstructured": "Smith J. Some book. 1999."}
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources()
 class ParsePublicationTests(TestCase):
     def make_publication(self, json_data):
         pub = Publication.objects.create(title="")
@@ -38,14 +37,14 @@ class ParsePublicationTests(TestCase):
         parse_publication(pub)
         return pub
 
-    def test_title_and_date(self, _fetch):
+    def test_title_and_date(self):
         pub = self.make_publication(crossref_message())
         pub.refresh_from_db()
         self.assertEqual(pub.title, "Un article")
         self.assertEqual(str(pub.publication_date), "2020-05-01")
         self.assertEqual(pub.publication_date_precision, Publication.DatePrecision.MONTH)
 
-    def test_date_precision_follows_the_source(self, _fetch):
+    def test_date_precision_follows_the_source(self):
         """#147: a missing month or day is stored as 1, but not shown."""
         cases = [([2020], "year", "2020"), ([2020, 5, 3], "day", "3 mai 2020")]
         for parts, precision, shown in cases:
@@ -57,34 +56,34 @@ class ParsePublicationTests(TestCase):
                 self.assertEqual(pub.publication_date_precision, precision)
                 self.assertEqual(pub.formatted_publication_date, shown)
 
-    def test_published_names_are_kept(self, _fetch):
+    def test_published_names_are_kept(self):
         pub = self.make_publication(crossref_message(authors=[ADA, TURING]))
         slots = list(pub.authorpublication_set.all())
         self.assertEqual([s.published_family_name for s in slots], ["Lovelace", "Turing"])
         self.assertEqual(slots[1].published_orcid, "0000-0001-2345-6789")
 
-    def test_reference_with_doi_is_resolved(self, _fetch):
+    def test_reference_with_doi_is_resolved(self):
         pub = self.make_publication(crossref_message(references=[REF_WITH_DOI]))
         ref = CitedReference.objects.get(source=pub)
         self.assertEqual(ref.doi, "10.1000/abc")
         self.assertEqual(ref.target.doi, "10.1000/abc")
         self.assertEqual(ref.target.title, "Cited article")
 
-    def test_reference_without_doi_creates_no_publication(self, _fetch):
+    def test_reference_without_doi_creates_no_publication(self):
         pub = self.make_publication(crossref_message(references=[REF_WITHOUT_DOI]))
         ref = CitedReference.objects.get(source=pub)
         self.assertIsNone(ref.target)
         self.assertEqual(ref.label, "Smith J. Some book. 1999.")
         self.assertEqual(Publication.objects.count(), 1)
 
-    def test_reparse_does_not_duplicate(self, _fetch):
+    def test_reparse_does_not_duplicate(self):
         json_data = crossref_message(references=[REF_WITH_DOI, REF_WITHOUT_DOI])
         pub = self.make_publication(json_data)
         parse_publication(pub)
         self.assertEqual(CitedReference.objects.filter(source=pub).count(), 2)
         self.assertEqual(Publication.objects.count(), 2)
 
-    def test_merge_survives_reparse(self, _fetch):
+    def test_merge_survives_reparse(self):
         pub = self.make_publication(crossref_message(authors=[ADA, ADA_INITIAL]))
         ada, ada_initial = (slot.author for slot in pub.authorpublication_set.all())
         ada.merge_with([ada_initial])
@@ -95,7 +94,7 @@ class ParsePublicationTests(TestCase):
         self.assertEqual(Author.objects.count(), 1)
         self.assertEqual(other.authorpublication_set.get().author, ada)
 
-    def test_orcid_identifies_the_author(self, _fetch):
+    def test_orcid_identifies_the_author(self):
         self.make_publication(crossref_message(authors=[TURING]))
         renamed = dict(TURING, given="A. M.")
         self.make_publication(crossref_message(authors=[renamed]))
@@ -106,7 +105,7 @@ class PublicationConstraintTests(TestCase):
     def test_doi_is_unique_when_set(self):
         Publication.objects.create(title="A")
         Publication.objects.create(title="B")
-        with patch("references.services.imports.importer.fetch_crossref_json", return_value=None):
+        with simulated_sources():
             Publication.objects.create(doi="10.1000/abc")
             with self.assertRaises(IntegrityError):
                 Publication.objects.create(doi="https://doi.org/10.1000/ABC")
@@ -148,8 +147,7 @@ def numbered(numbers, prefix="ref"):
 IEEE_ORDER = [4, 3, 10, 6, 11, 5, 8, 12, 7, 2, 9, 1]
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources()
 class ReferenceOrderTests(TestCase):
     """#258: IEEE deposits its bibliographies out of order, the keys keep the numbers."""
 
@@ -162,13 +160,13 @@ class ReferenceOrderTests(TestCase):
     def keys(self, pub):
         return list(CitedReference.objects.filter(source=pub).values_list("key", flat=True))
 
-    def test_numbered_keys_are_sorted(self, _fetch):
+    def test_numbered_keys_are_sorted(self):
         pub = self.make_publication(numbered(IEEE_ORDER))
         self.assertEqual(self.keys(pub), [f"ref{n}" for n in range(1, 13)])
         first = CitedReference.objects.get(source=pub, position=0)
         self.assertEqual(first.unstructured, "Reference 1")
 
-    def test_other_keys_keep_the_order_received(self, _fetch):
+    def test_other_keys_keep_the_order_received(self):
         cases = {
             "mixed keys": [*numbered([2, 1]), {"key": "bib3"}],
             "duplicate number": numbered([2, 1, 2]),
@@ -180,7 +178,7 @@ class ReferenceOrderTests(TestCase):
                 pub = self.make_publication(refs)
                 self.assertEqual(self.keys(pub), [ref.get("key", "") for ref in refs])
 
-    def test_manual_decision_follows_its_reference(self, _fetch):
+    def test_manual_decision_follows_its_reference(self):
         pub = self.make_publication(numbered(IEEE_ORDER))
         CitedReference.objects.filter(source=pub, key="ref3").update(
             unidentifiable=True, resolved_manually=True

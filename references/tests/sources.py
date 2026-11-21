@@ -127,7 +127,8 @@ class simulated_sources:  # noqa: N801 (used like patch)
         found by each DOI of its locations (work_dois).
     crossref_searches, datacite_searches: {text: [items]} for query.bibliographic
         and the DataCite title search (the words of the title).
-    openalex_citing: {work id: [works]} for the works citing an OpenAlex work.
+    openalex_citing: {work id: [works]} for the works citing an OpenAlex work, or
+        {work id: (total, [works])} when OpenAlex counts more; sorted as asked.
     institutions: the OpenAlex institutions, a list.
     orcid_records: {orcid: record}; orcid_names: {orcid: expanded-search entry}.
     eprints: {arXiv id: bytes}; openlibrary: {isbn: search document}.
@@ -274,14 +275,13 @@ class simulated_sources:  # noqa: N801 (used like patch)
         received = Request(service, request.url, path, params)
         if service is None or request.method != "GET":
             return self._unsimulated(request)
-        if service in self.unreachable:
-            self.requests.append(received)
-            return Answer(503, b"Service Unavailable")
         route = getattr(self, "_" + service.replace(".", "_"))
         answer = route(received)
         if answer is None:
             return self._unsimulated(request)
         self.requests.append(received)
+        if service in self.unreachable:
+            return Answer(503, b"Service Unavailable")
         return answer
 
     def _unsimulated(self, request):
@@ -357,9 +357,13 @@ class simulated_sources:  # noqa: N801 (used like patch)
         if request.path == "/works" and filter_.startswith("cites:"):
             work_id = filter_.removeprefix("cites:")
             request.kind, request.keys = "citing", [work_id]
-            works = self.openalex_citing.get(work_id, [])
+            citing = self.openalex_citing.get(work_id, [])
+            total, works = citing if isinstance(citing, tuple) else (len(citing), citing)
+            if "sort" in params:
+                key, _, order = params["sort"].partition(":")
+                works = sorted(works, key=lambda work: work.get(key) or 0, reverse=order == "desc")
             count = int(params.get("per-page", 25))
-            return _json({"meta": {"count": len(works)}, "results": works[:count]})
+            return _json({"meta": {"count": total}, "results": works[:count]})
         if request.path == "/institutions" and filter_.startswith("openalex:"):
             ids = filter_.removeprefix("openalex:").split("|")
             request.kind, request.keys = "institutions", ids

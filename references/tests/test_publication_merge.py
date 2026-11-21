@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -12,7 +10,8 @@ from references.services.corrections.publication_merge import (
     merge_summary,
 )
 from references.services.imports.parser import parse_publication
-from references.tests.helpers import with_crossref, without_other_sources
+from references.tests.helpers import with_crossref
+from references.tests.sources import simulated_sources
 
 BOOK_REF = {"key": "ref1", "unstructured": "Goodfellow et al. Deep Learning. 2016."}
 
@@ -69,22 +68,24 @@ class MergeServiceTests(MergeTestCase):
             merge_publication(self.duplicate, self.duplicate, self.user)
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+NO_SOURCE = simulated_sources()
+
+
+@NO_SOURCE
 class FindMergeTargetTests(MergeTestCase):
-    def test_by_existing_doi_without_calling_crossref(self, fetch):
+    def test_by_existing_doi_without_calling_crossref(self):
         article = with_crossref(Publication.objects.create(doi="10.1000/x"), {"message": {}})
         self.assertEqual(find_merge_target("https://doi.org/10.1000/X"), article)
-        fetch.assert_not_called()
+        self.assertEqual(NO_SOURCE.requests, [])
 
-    def test_by_isbn(self, _fetch):
+    def test_by_isbn(self):
         self.assertEqual(find_merge_target("978-0-262-03561-3"), self.book)
 
-    def test_by_publication_url(self, _fetch):
+    def test_by_publication_url(self):
         url = f"http://127.0.0.1:8000/publications/{self.book.pk}/"
         self.assertEqual(find_merge_target(url), self.book)
 
-    def test_nothing_found(self, _fetch):
+    def test_nothing_found(self):
         self.assertIsNone(find_merge_target("n'importe quoi"))
 
 
@@ -123,11 +124,10 @@ class MergeViewTests(MergeTestCase):
         self.assertNotContains(self.client.get(book_detail), self.url(self.book))
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json")
 class FindMergeTargetImportTests(TestCase):
-    def test_unknown_doi_is_imported(self, fetch):
-        fetch.return_value = {"message": {"title": ["Nouvel article"]}}
-        target = find_merge_target("10.1000/new")
+    def test_unknown_doi_is_imported(self):
+        answer = {"message": {"title": ["Nouvel article"]}}
+        with simulated_sources(crossref={"10.1000/new": answer}) as sources:
+            target = find_merge_target("10.1000/new")
         self.assertEqual(target.title, "Nouvel article")
-        fetch.assert_called_once_with("10.1000/new")
+        self.assertEqual(sources.single("crossref"), ["10.1000/new"])
