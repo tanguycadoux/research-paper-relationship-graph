@@ -185,3 +185,14 @@ def card(content, title="", level=2, flush=False):
     if not title:
         return format_html('<div class="{}">{}</div>', classes, content)
     return format_html('<section class="{}">{}{}</section>', classes, heading, content)
+
+
+# The indentation of a tag in a tree of tags (#296), by its depth: up to three levels,
+# one more when the tree is nested under a first item (« Tout le corpus »).
+TAG_INDENTS = ("", "pl-4", "pl-8", "pl-12", "pl-16")
+
+
+@register.simple_tag
+def tag_indent(depth, nested=False):
+    """{% tag_indent item.depth %}: the padding class of a tag of depth depth."""
+    return TAG_INDENTS[min(depth, 3) + bool(nested)]
