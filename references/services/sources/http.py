@@ -60,6 +60,18 @@ def get_json(url, *, params=None, headers=None, service, subject, contact=""):
     return None if response is None else _parse_json(response, service, subject)
 
 
+def in_batches(items, size, fetch_batch):
+    """
+    Call fetch_batch on successive slices of at most size items, in order, and merge
+    the dictionaries it returns (#294). A batch whose request failed returns what its
+    client decides, usually {}: its items are then absent from the result.
+    """
+    merged = {}
+    for start in range(0, len(items), size):
+        merged |= fetch_batch(items[start : start + size])
+    return merged
+
+
 def get_bytes(url, *, service, subject, max_bytes):
     """
     Return the body of a GET request (a file), or None if it cannot be retrieved or

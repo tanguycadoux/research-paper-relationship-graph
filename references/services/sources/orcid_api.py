@@ -35,10 +35,7 @@ def fetch_orcid_names(orcids):
     Return {orcid: entry or None}: None when ORCID does not know the ORCID (or keeps
     it private). ORCIDs of a batch whose request failed are absent from the result.
     """
-    names = {}
-    for start in range(0, len(orcids), BATCH_SIZE):
-        names.update(_search_batch(orcids[start : start + BATCH_SIZE]))
-    return names
+    return http.in_batches(orcids, BATCH_SIZE, _search_batch)
 
 
 def _search_batch(orcids):

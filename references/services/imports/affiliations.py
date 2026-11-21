@@ -14,7 +14,7 @@ from ..corrections.conflicts import Kind, close_obsolete, names_summary, report_
 from ..identifiers.names import same_name_but_middle_initials, same_person_name
 from ..sources.external_records import Source
 from .orcid_completion import complete_orcids
-from .organizations import openalex_id, organizations_for
+from .organizations import institution_openalex_id, organizations_for
 
 logger = logging.getLogger(__name__)
 
@@ -125,8 +125,10 @@ def link_slots(slots, authorships):
     links = AuthorPublication.organizations.through
     links.objects.filter(authorpublication__in=slots).delete()
     links.objects.bulk_create(
-        links(authorpublication=slot, organization=organizations[openalex_id(institution)])
+        links(
+            authorpublication=slot, organization=organizations[institution_openalex_id(institution)]
+        )
         for slot, group in zip(slots, institutions, strict=True)
-        for institution in {openalex_id(i): i for i in group}.values()
-        if openalex_id(institution) in organizations
+        for institution in {institution_openalex_id(i): i for i in group}.values()
+        if institution_openalex_id(institution) in organizations
     )

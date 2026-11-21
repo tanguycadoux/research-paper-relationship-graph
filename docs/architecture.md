@@ -55,6 +55,7 @@ references/          application principale
     corpus_transfer.py (export et import du corpus),
     corpus_bulk.py (actions groupées de « Mon corpus » et des listes d'une fiche),
     search.py (recherche), pagination.py (listes par pages),
+    redirects.py (retour vers la page du formulaire, champ `next`, ou une page de repli),
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),
@@ -62,7 +63,8 @@ references/          application principale
     fetch_admin.py (page « File des récupérations », réservée aux administrateurs)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
-      http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
+      http.py        requêtes communes (session, nouvelles tentatives, découpe par lots,
+                     cache de développement)
       api_log.py     journal des requêtes (logs/api.log, une ligne JSON par requête, contexte)
       api_log_summary.py  résumé du journal (commande api_log)
       crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)

@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme, urlencode
+from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, UpdateView
 
@@ -20,6 +20,7 @@ from ..services.imports.orcid_merge import merge_same_orcid
 from ..services.imports.orcid_profile import orcid_profile, refresh_orcid_record
 from ..services.imports.organizations import organization_groups
 from .pagination import PageMixin, page_of
+from .redirects import safe_next
 
 
 class AuthorListView(PageMixin, ListView):
@@ -174,12 +175,6 @@ def search_url(request):
 
 def with_next(url, next_url):
     return f"{url}?{urlencode({'next': next_url})}"
-
-
-def safe_next(request, next_url):
-    """next_url if it is a page of this site, else ""."""
-    allowed = url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()})
-    return next_url if next_url and allowed else ""
 
 
 def selection_url(request, ids):
