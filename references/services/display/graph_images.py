@@ -134,7 +134,8 @@ def generate(kind):
         image.nodes = len(graph["nodes"])
         image.edges = len(graph["edges"])
         image.status = Status.DONE
-    except Exception as error:  # noqa: BLE001: whatever fails, the page must say so.
+    # Whatever fails, the page must say so.
+    except Exception as error:  # noqa: BLE001
         image.status = Status.FAILED
         image.error = f"{type(error).__name__} : {error}"
     image.finished_at = timezone.now()
