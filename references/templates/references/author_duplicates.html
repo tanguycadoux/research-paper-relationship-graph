@@ -18,6 +18,28 @@
         sont des personnes différentes : ils ne seront plus proposés ensemble.
     </p>
     <div class="space-y-6">
+        {# The safe groups, merged in one go after a summary (#374). #}
+        {% card title=safe_title level=3 %}
+            <p class="mb-3 max-w-3xl text-sm text-gray-600">
+                Mêmes noms à la ponctuation, à la casse et aux accents près, pas d'ORCID
+                différents ni d'auteurs déclarés différents, et des auteurs liés par un
+                coauteur ou une tutelle commune. Ces groupes restent aussi dans la liste
+                ci-dessous ; un récapitulatif précède la fusion.
+            </p>
+            {% if safe_groups %}
+                <ul class="mb-4 max-h-64 overflow-y-auto rounded border border-gray-200 px-3 py-2 text-sm"
+                    tabindex="0"
+                    aria-label="Groupes sûrs">
+                    {% for group in safe_groups %}<li>{{ group|join:" · " }}</li>{% endfor %}
+                </ul>
+                {% url 'author_duplicates_merge' as merge_url %}
+                {% button safe_merge_label url=merge_url icon="merge" %}
+            {% else %}
+                <p class="mb-4 text-sm text-gray-500">Aucun groupe sûr.</p>
+                {# Stays in place, disabled, when there is nothing to merge. #}
+                {% button safe_merge_label icon="merge" type="button" disabled=True %}
+            {% endif %}
+        {% endcard %}
         {% for group in groups %}
             {% card title=group.0.last_name level=3 %}
                 <form method="post"

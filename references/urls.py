@@ -141,6 +141,11 @@ urlpatterns = [
     path("authors/merge/", authors.author_merge_select_view, name="author_merge_select"),
     path("authors/duplicates/", authors.author_duplicates_view, name="author_duplicates"),
     path(
+        "authors/duplicates/merge/",
+        authors.author_duplicates_merge_view,
+        name="author_duplicates_merge",
+    ),
+    path(
         "authors/duplicates/dismiss/",
         authors.author_duplicates_dismiss_view,
         name="author_duplicates_dismiss",
