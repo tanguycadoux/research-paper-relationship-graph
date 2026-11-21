@@ -1,5 +1,4 @@
 import datetime
-from unittest.mock import patch
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
@@ -16,6 +15,7 @@ from references.services.imports.organizations import organization_groups
 from references.services.imports.parser import parse_publication
 from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
+from references.tests.sources import simulated_sources
 
 LPSC = {
     "id": "https://openalex.org/I4210141222",
@@ -119,11 +119,9 @@ class AttachAffiliationsTests(TestCase):
         with_crossref(cited, {"message": {"title": ["Cited"], "author": [THUILLIER]}})
         parse_publication(cited)
         CitedReference.objects.create(source=source, target=cited, position=0)
-        work = {"authorships": [authorship("Thomas Thuillier", LPSC)]}
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_works",
-            return_value={"10.1000/cited": work},
-        ):
+        work = {"doi": "https://doi.org/10.1000/cited"}
+        work["authorships"] = [authorship("Thomas Thuillier", LPSC)]
+        with simulated_sources(openalex=[work]):
             complete_cited_with_openalex(source)
         self.assertEqual(self.organizations(cited), [[LPSC["display_name"]]])
 
@@ -193,11 +191,9 @@ class OpenAlexAuthorListsTests(TestCase):
         with_crossref(cited, {"message": {"title": ["Cited"], "author": []}})
         parse_publication(cited)
         CitedReference.objects.create(source=source, target=cited, position=0)
-        work = {"authorships": [authorship("Thomas Thuillier", LPSC)]}
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_works",
-            return_value={"10.1000/cited": work},
-        ):
+        work = {"doi": "https://doi.org/10.1000/cited"}
+        work["authorships"] = [authorship("Thomas Thuillier", LPSC)]
+        with simulated_sources(openalex=[work]):
             complete_cited_with_openalex(source)
         self.assertEqual(
             [str(slot.author) for slot in cited.authorpublication_set.all()], ["Thomas Thuillier"]
@@ -249,16 +245,14 @@ def names(organizations):
 class OrganizationHierarchyTests(TestCase):
     def test_unknown_ancestors_are_fetched_in_one_batch_before_parsing(self):
         pub = Publication.objects.create(doi="10.1000/a", title="A")
-        work = {"authorships": [authorship("Thomas Thuillier", IRFU, CEA_SACLAY)]}
-        with (
-            patch("references.services.imports.enrichment.fetch_openalex_work", return_value=work),
-            patch(
-                "references.services.imports.enrichment.fetch_openalex_institutions",
-                return_value={"I2738703131": CEA, "I4210113668": DRF, "I277688954": UPSACLAY},
-            ) as fetch_institutions,
-        ):
+        work = {"doi": "https://doi.org/10.1000/a"}
+        work["authorships"] = [authorship("Thomas Thuillier", IRFU, CEA_SACLAY)]
+        with simulated_sources(openalex=[work], institutions=[CEA, DRF, UPSACLAY]) as sources:
             complete_with_openalex(pub)
-        fetch_institutions.assert_called_once_with(["I2738703131", "I277688954", "I4210113668"])
+        self.assertEqual(
+            sources.batches("openalex", "institutions"),
+            [["I2738703131", "I277688954", "I4210113668"]],
+        )
         with_crossref(pub, {"message": {"title": ["A"], "author": [THUILLIER]}})
         parse_publication(pub)
         irfu = Organization.objects.get(openalex_id="I4210165232")
@@ -274,12 +268,9 @@ class OrganizationHierarchyTests(TestCase):
         # The DRF is only an ancestor of IRFU; the CEA above it is named in the work
         # and not created yet: it was a top-level organization on the author page.
         work = {"authorships": [authorship("Thomas Thuillier", IRFU, CEA)]}
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_institutions",
-            return_value={"I4210113668": DRF},
-        ) as fetch:
+        with simulated_sources(institutions=[DRF]) as sources:
             complete_ancestors([work])
-        fetch.assert_called_once_with(["I4210113668"])
+        self.assertEqual(sources.batches("openalex", "institutions"), [["I4210113668"]])
         self.assertEqual(
             names(Organization.objects.get(openalex_id="I4210113668").ancestors.all()),
             [CEA["display_name"]],
@@ -287,9 +278,9 @@ class OrganizationHierarchyTests(TestCase):
 
     def test_known_ancestors_are_not_fetched_again(self):
         publication("A", [THUILLIER], [authorship("Thomas Thuillier", CEA, DRF)])
-        with patch("references.services.imports.enrichment.fetch_openalex_institutions") as fetch:
+        with simulated_sources() as sources:
             complete_ancestors([{"authorships": [authorship("x", IRFU)]}])
-        fetch.assert_not_called()
+        self.assertEqual(sources.requests, [])
 
 
 class OrganizationGroupsTests(TestCase):

@@ -9,6 +9,7 @@ from references.services.imports.enrichment import (
 )
 from references.services.sources.external_records import Source
 from references.services.sources.openalex_api import fetch_openalex_work, fetch_openalex_works
+from references.tests.sources import simulated_sources
 
 WORK = {"doi": "https://doi.org/10.1038/NATURE14539", "authorships": []}
 
@@ -51,30 +52,32 @@ class OpenalexApiTests(SimpleTestCase):
         self.assertEqual(works, {})
 
 
-@patch("references.services.imports.enrichment.fetch_openalex_work", return_value=WORK)
+OPENALEX = simulated_sources(openalex=[WORK])
+
+
+@OPENALEX
 class CompleteWithOpenalexTests(TestCase):
-    def test_work_is_stored_and_not_fetched_again(self, fetch):
+    def test_work_is_stored_and_not_fetched_again(self):
         pub = Publication.objects.create(doi="10.1038/nature14539")
         complete_with_openalex(pub)
         complete_with_openalex(pub)
-        fetch.assert_called_once_with("10.1038/nature14539")
+        self.assertEqual(OPENALEX.single("openalex"), ["10.1038/nature14539"])
         self.assertEqual(pub.external_records.get(source=Source.OPENALEX).data, WORK)
 
-    def test_refresh_fetches_again(self, fetch):
+    def test_refresh_fetches_again(self):
         pub = Publication.objects.create(doi="10.1038/nature14539")
         complete_with_openalex(pub)
         complete_with_openalex(pub, force_fetch=True)
-        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(len(OPENALEX.single("openalex")), 2)
 
-    def test_unknown_or_failed_is_not_stored(self, fetch):
-        fetch.return_value = None
+    def test_unknown_or_failed_is_not_stored(self):
         pub = Publication.objects.create(doi="10.1000/ghost")
         complete_with_openalex(pub)
         self.assertFalse(pub.external_records.exists())
 
-    def test_publication_without_doi(self, fetch):
+    def test_publication_without_doi(self):
         complete_with_openalex(Publication.objects.create(title="Sans DOI"))
-        fetch.assert_not_called()
+        self.assertEqual(OPENALEX.requests, [])
 
 
 class CompleteCitedWithOpenalexTests(TestCase):
@@ -85,17 +88,9 @@ class CompleteCitedWithOpenalexTests(TestCase):
             CitedReference.objects.create(source=self.source, target=target, position=position)
 
     def complete(self):
-        calls = []
-
-        def fetch_works(dois):
-            calls.append(sorted(dois))
-            return {doi: WORK if doi == "10.1038/nature14539" else None for doi in dois}
-
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_works", side_effect=fetch_works
-        ):
+        with OPENALEX:
             complete_cited_with_openalex(self.source)
-        return calls
+        return [sorted(batch) for batch in OPENALEX.batches("openalex")]
 
     def test_one_batch_for_the_cited_dois(self):
         self.assertEqual(self.complete(), [["10.1000/ghost", "10.1038/nature14539"]])

@@ -1,6 +1,5 @@
 from copy import deepcopy
 from io import StringIO
-from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -13,6 +12,7 @@ from references.services.imports.written_identifiers import (
 )
 from references.services.sources.external_records import Source, has_record
 from references.tests.helpers import with_crossref
+from references.tests.sources import active_sources, simulated_sources
 from references.tests.test_candidates import JACOW, JACOW_DOI, JACOW_RECORD, datacite_record
 
 # Bibliography of « Deep learning » (10.1038/nature14539), as Crossref gives it (#266).
@@ -66,8 +66,7 @@ def declaring_its_version(record, doi):
     return record
 
 
-@patch("references.services.imports.preprints.fetch_crossref_works", return_value={})
-@patch("references.services.imports.written_identifiers.fetch_datacite_works")
+@simulated_sources()
 class WrittenArxivIdentifierTests(TestCase):
     def setUp(self):
         self.source = Publication.objects.create(doi="10.1038/nature14539")
@@ -80,15 +79,15 @@ class WrittenArxivIdentifierTests(TestCase):
     def ref(self, key):
         return CitedReference.objects.get(source=self.source, key=key)
 
-    def test_written_forms(self, _works, _crossref):
+    def test_written_forms(self):
         self.assertEqual(written_doi(self.ref("szegedy")), SZEGEDY_DOI)
         self.assertEqual(written_doi(self.ref("he")), HE_DOI)
         self.assertEqual(written_doi(self.ref("maldacena")), MALDACENA_DOI)
         self.assertEqual(written_doi(self.ref("wilson")), "")
         self.assertEqual(written_doi(self.ref(JACOW["key"])), JACOW_DOI)
 
-    def test_linked_once_datacite_confirms(self, works, _crossref):
-        works.return_value = RECORDS | {JACOW_DOI: JACOW_RECORD}
+    def test_linked_once_datacite_confirms(self):
+        active_sources().add(datacite=RECORDS | {JACOW_DOI: JACOW_RECORD})
         report = link_written_identifiers(self.source)
         self.assertEqual((report.found, report.linked, report.replaced), (4, 4, 0))
         target = self.ref("szegedy").target
@@ -98,44 +97,47 @@ class WrittenArxivIdentifierTests(TestCase):
         self.assertEqual(self.ref("maldacena").target.doi, MALDACENA_DOI)
         self.assertIsNone(self.ref("wilson").target)
 
-    def test_one_datacite_request_for_jacow_and_arxiv(self, works, _crossref):
-        works.return_value = {}
+    def test_one_datacite_request_for_jacow_and_arxiv(self):
         link_written_identifiers(self.source)
-        works.assert_called_once_with(sorted([SZEGEDY_DOI, HE_DOI, MALDACENA_DOI, JACOW_DOI]))
+        self.assertEqual(
+            active_sources().batches("datacite"),
+            [sorted([SZEGEDY_DOI, HE_DOI, MALDACENA_DOI, JACOW_DOI])],
+        )
 
-    def test_unknown_to_datacite_creates_nothing(self, works, _crossref):
-        works.return_value = dict.fromkeys(RECORDS)
+    def test_unknown_to_datacite_creates_nothing(self):
         count = Publication.objects.count()
         self.assertEqual(link_written_identifiers(self.source).linked, 0)
         self.assertEqual(Publication.objects.count(), count)
 
-    def test_other_title_creates_nothing(self, works, _crossref):
-        works.return_value = {SZEGEDY_DOI: datacite_record(SZEGEDY_DOI, "Another work", "X", 2014)}
+    def test_other_title_creates_nothing(self):
+        other = datacite_record(SZEGEDY_DOI, "Another work", "X", 2014)
+        active_sources().add(datacite={SZEGEDY_DOI: other})
         count = Publication.objects.count()
         link_written_identifiers(self.source)
         self.assertIsNone(self.ref("szegedy").target)
         self.assertEqual(Publication.objects.count(), count)
 
-    def test_known_preprint_linked_without_request(self, works, _crossref):
+    def test_known_preprint_linked_without_request(self):
         published = Publication.objects.create(
             doi=PUBLISHED_DOI, preprint_doi=SZEGEDY_DOI, title="Going deeper with convolutions"
         )
-        works.return_value = {}
         link_written_identifiers(self.source)
         self.assertEqual(self.ref("szegedy").target, published)
-        self.assertNotIn(SZEGEDY_DOI, works.call_args.args[0])
+        self.assertNotIn(SZEGEDY_DOI, active_sources().asked("datacite"))
 
-    def test_preprint_replaced_by_its_published_version(self, works, crossref):
-        works.return_value = {SZEGEDY_DOI: declaring_its_version(SZEGEDY_RECORD, PUBLISHED_DOI)}
-        crossref.return_value = {PUBLISHED_DOI: PUBLISHED}
+    def test_preprint_replaced_by_its_published_version(self):
+        active_sources().add(
+            datacite={SZEGEDY_DOI: declaring_its_version(SZEGEDY_RECORD, PUBLISHED_DOI)},
+            crossref={PUBLISHED_DOI: PUBLISHED},
+        )
         report = link_written_identifiers(self.source)
         self.assertEqual(report.replaced, 1)
         target = self.ref("szegedy").target
         self.assertEqual((target.doi, target.preprint_doi), (PUBLISHED_DOI, SZEGEDY_DOI))
         self.assertEqual(target.title, "Going deeper with convolutions")
 
-    def test_command_links_the_bibliographies_already_imported(self, works, _crossref):
-        works.return_value = RECORDS
+    def test_command_links_the_bibliographies_already_imported(self):
+        active_sources().add(datacite=RECORDS)
         out = StringIO()
         call_command("link_written_identifiers", stdout=out)
         self.assertIn("Références qui écrivent un identifiant : 4", out.getvalue())

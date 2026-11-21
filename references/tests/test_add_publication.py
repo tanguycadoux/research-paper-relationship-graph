@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import Publication
-from references.tests.helpers import without_doi_org
+from references.tests.sources import simulated_sources
 
 
 class AddPublicationTests(TestCase):
@@ -33,7 +33,7 @@ class AddPublicationTests(TestCase):
                 response = self.client.get(reverse(name))
                 self.assertNotContains(response, reverse("corpus_add_by_identifier"))
 
-    @without_doi_org
+    @simulated_sources()
     @patch("references.views.corpus.add_identified", side_effect=lambda user, pub, status: pub)
     def test_back_to_the_page_holding_the_form(self, _add):
         response = self.client.post(

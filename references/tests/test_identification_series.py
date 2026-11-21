@@ -3,11 +3,10 @@ from django.test import TestCase
 from django.urls import reverse
 
 from references.models import CitedReference, Publication
-from references.tests.helpers import without_candidate_search, without_other_sources
+from references.tests.sources import simulated_sources
 
 
-@without_candidate_search
-@without_other_sources
+@simulated_sources()
 class IdentificationSeriesTests(TestCase):
     """The references of a publication left to identify, one after the other (#242)."""
 

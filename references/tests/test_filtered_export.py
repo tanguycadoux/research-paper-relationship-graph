@@ -10,7 +10,8 @@ from django.urls import reverse
 from references.models import Publication, Tag, UserPublication
 from references.services.corpus import tags
 from references.services.corpus.corpus_transfer import import_corpus
-from references.tests.helpers import with_crossref, without_other_sources
+from references.tests.helpers import with_crossref
+from references.tests.sources import simulated_sources
 from references.views.pagination import PAGE_SIZE
 
 
@@ -96,7 +97,7 @@ class FilteredExportTests(TestCase):
         response = self.export(tag="Projet", sort="-added", page="2")
         self.assertEqual(exported_dois(response), ["10.1000/a", "10.1000/b"])
 
-    @without_other_sources
+    @simulated_sources()
     def test_a_filtered_export_imports_again(self):
         data = json.loads(self.export(tag="Projet").content)
         carol = get_user_model().objects.create_user("carol")

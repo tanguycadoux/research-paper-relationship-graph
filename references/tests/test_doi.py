@@ -1,12 +1,10 @@
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 from references.models import Publication, UserPublication
 from references.services.identifiers.doi import is_valid_doi, normalize_doi
-from references.tests.helpers import without_other_sources
+from references.tests.sources import simulated_sources
 
 
 class NormalizeDoiTests(SimpleTestCase):
@@ -40,25 +38,24 @@ class IsValidDoiTests(SimpleTestCase):
                 self.assertFalse(is_valid_doi(doi))
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources()
 class DoiPersistenceTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("alice")
         self.client.force_login(self.user)
 
-    def test_model_saves_normalized_doi(self, _fetch):
+    def test_model_saves_normalized_doi(self):
         pub = Publication.objects.create(doi="https://doi.org/10.1000/ABC")
         self.assertEqual(pub.doi, "10.1000/abc")
 
-    def test_add_by_doi_reuses_existing_publication(self, _fetch):
+    def test_add_by_doi_reuses_existing_publication(self):
         existing = Publication.objects.create(doi="10.1000/abc")
         url = reverse("corpus_add_by_identifier")
         self.client.post(url, {"identifier": "https://doi.org/10.1000/ABC"})
         self.assertEqual(Publication.objects.count(), 1)
         self.assertTrue(UserPublication.objects.filter(publication=existing).exists())
 
-    def test_add_by_doi_rejects_invalid_doi(self, _fetch):
+    def test_add_by_doi_rejects_invalid_doi(self):
         url = reverse("corpus_add_by_identifier")
         self.client.post(url, {"identifier": "not a doi"})
         self.assertFalse(Publication.objects.exists())

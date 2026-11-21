@@ -10,7 +10,7 @@ from references.services.corpus.corpus_transfer import (
     export_corpus,
     import_corpus,
 )
-from references.tests.helpers import without_doi_org
+from references.tests.sources import simulated_sources
 
 
 class PathTests(SimpleTestCase):
@@ -140,7 +140,7 @@ class TagTests(TestCase):
         self.assertNotContains(response, "known-tags")
 
 
-@without_doi_org
+@simulated_sources()
 class TagTransferTests(TestCase):
     @classmethod
     def setUpTestData(cls):

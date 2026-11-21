@@ -18,7 +18,7 @@ from references.models import (
 )
 from references.services.corpus.corpus_transfer import corpus_bibtex
 from references.services.corrections.candidates import local_candidates
-from references.tests.helpers import without_candidate_search
+from references.tests.sources import simulated_sources
 
 AUTHORS = 1100
 TITLE = "Observation of Gravitational Waves from a Binary Black Hole Merger"
@@ -63,7 +63,7 @@ class LargeAuthorListTests(TestCase):
         self.assertEqual(candidate.publication, self.pub)
         self.assertEqual(candidate.authors, ("Author0", "Author1", "Author2"))
 
-    @without_candidate_search
+    @simulated_sources()
     def test_pages_that_load_the_authors_of_the_publication(self):
         self.client.force_login(self.user)
         author = Author.objects.get(last_name="Author0")

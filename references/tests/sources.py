@@ -253,9 +253,12 @@ class simulated_sources:  # noqa: N801 (used like patch)
         """The DOIs (or ORCIDs) asked one at a time, in order."""
         return [request.keys[0] for request in self.to(service) if request.kind == "work"]
 
-    def batches(self, service):
-        """The DOIs (or ORCIDs, ids) of each grouped request, in order."""
-        return [request.keys for request in self.to(service) if request.kind == "batch"]
+    def batches(self, service, kind="batch"):
+        """
+        The DOIs (or ORCIDs) of each grouped request, in order; kind="institutions"
+        for the ids of the OpenAlex institutions.
+        """
+        return [request.keys for request in self.to(service) if request.kind == kind]
 
     def asked(self, service):
         """Every DOI (or key) asked to a service, alone or in a batch, in order."""
@@ -359,7 +362,7 @@ class simulated_sources:  # noqa: N801 (used like patch)
             return _json({"meta": {"count": len(works)}, "results": works[:count]})
         if request.path == "/institutions" and filter_.startswith("openalex:"):
             ids = filter_.removeprefix("openalex:").split("|")
-            request.kind, request.keys = "batch", ids
+            request.kind, request.keys = "institutions", ids
             found = [self.institutions[i] for i in ids if i in self.institutions]
             return _json({"meta": {"count": len(found)}, "results": found})
         return None
