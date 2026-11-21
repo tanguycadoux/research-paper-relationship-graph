@@ -10,7 +10,14 @@
     {% include "references/_graph_help.html" with help="coauthors" %}
 {% endblock help %}
 {% block controls %}
+    {# The graph of a corpus (#422): its two graphs, then its tags, as on « Mon graphe ». #}
+    {% if corpus_graphs %}
+        {% include "references/_corpus_graph_choice.html" %}
+    {% endif %}
     {% include "references/_author_graph_duplicates.html" %}
+    {% if tag_choices %}
+        {% include "references/_graph_tag_form.html" %}
+    {% endif %}
 {% endblock controls %}
 {# Filled by graph/coauthor_selection.js with the selected author. #}
 {% block card_label %}Auteur sélectionné{% endblock card_label %}
@@ -23,7 +30,9 @@
 {% endblock card_empty %}
 {% block card_title %}Auteur sélectionné{% endblock card_title %}
 {% block card_content %}
-    <p class="text-gray-600" data-card="publications"></p>
+    <p class="text-gray-600"
+       data-card="publications"
+       data-scope="{{ publications_scope }}"></p>
     <div class="grid gap-1">
         <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Dans ce graphe</p>
         <p>
@@ -50,6 +59,10 @@
               aria-hidden="true"></span>
         {% if author %}
             Coauteur
+        {% elif active_tag %}
+            Auteur du tag
+        {% elif corpus_graphs %}
+            Auteur du corpus
         {% else %}
             Auteur de la base
         {% endif %}
@@ -62,7 +75,7 @@
             Doublons probables regroupés ({{ graph.groups }})
         </li>
     {% endif %}
-    <li>Taille : nombre de publications dans la base</li>
+    <li>Taille : nombre de publications {{ publications_scope }}</li>
     <li>Épaisseur : force du coautorat</li>
     <li>
         Après un clic :
@@ -73,6 +86,15 @@
     <script type="module" src="{% static 'references/graph/coauthors.js' %}"></script>
 {% endblock script %}
 {% block empty %}
+    {# Without a graph, the choices of a corpus stay, to choose another tag or graph (#422). #}
+    {% if corpus_graphs %}
+        <div class="mb-3 grid max-w-sm gap-3 text-sm">
+            {% include "references/_corpus_graph_choice.html" %}
+            {% if tag_choices %}
+                {% include "references/_graph_tag_form.html" %}
+            {% endif %}
+        </div>
+    {% endif %}
     <p class="text-gray-600">Aucun coautorat : rien à afficher.</p>
     {% include "references/_author_graph_excluded.html" %}
 {% endblock empty %}

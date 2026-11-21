@@ -166,6 +166,12 @@ urlpatterns = [
     # Corpus of the current user
     path("corpus/", corpus.my_references, name="corpus"),
     path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
+    # Under « Mon graphe », which stays the current entry of the navigation (#422).
+    path(
+        "corpus/graph/authors/",
+        author_graphs.corpus_authors_graph_view,
+        name="corpus_authors_graph",
+    ),
     path("corpus/bulk/", corpus_bulk.bulk_action, name="corpus_bulk"),
     path("corpus/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
     path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
