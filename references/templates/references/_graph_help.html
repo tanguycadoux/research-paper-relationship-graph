@@ -1,0 +1,42 @@
+{% comment %}
+How to read and use a graph (#415), behind « ? » at the end of the commands of the panel:
+useful the first time, it no longer takes room under the legend. A popover in frosted
+glass, opened and closed without JavaScript. Context: help, "citations" or "coauthors".
+{% endcomment %}
+{% load ui %}
+<div class="ml-auto">
+    {% button "Aide du graphe" type="button" variant="secondary" icon="help" icon_only=True popovertarget="graph-help" %}
+</div>
+<div popover
+     id="graph-help"
+     class="{% popover_panel_classes %} max-w-[calc(100vw-2rem)] space-y-2 sm:w-80"
+     aria-labelledby="graph-help-title">
+    <div class="flex items-center justify-between gap-2">
+        <h2 id="graph-help-title" class="text-base font-semibold select-none">Lire le graphe</h2>
+        {% button "Fermer" type="button" variant="secondary" icon="close" icon_only=True popovertarget="graph-help" %}
+    </div>
+    {% if help == "coauthors" %}
+        <p>
+            Une publication de n auteurs compte <span class="whitespace-nowrap">1/(n − 1)</span> dans le lien de chaque paire de ses
+            auteurs : deux auteurs d'un article à deux sont plus liés que deux auteurs d'un
+            article à vingt. Plus un lien est fort, plus ses auteurs sont rapprochés.
+        </p>
+        <p>
+            Survolez un auteur pour voir son nom ; cliquez pour le sélectionner, double-cliquez
+            pour ouvrir sa fiche. Échap ou un clic dans le vide désélectionne.
+        </p>
+    {% else %}
+        <p>
+            {% if graph_layout.vue == "reseau" %}
+                Les articles qui se citent sont rapprochés ; la position ne suit pas la date.
+            {% else %}
+                Axe horizontal : date de publication ; les articles non datés sont dans la
+                bande du bas.
+            {% endif %}
+        </p>
+        <p>
+            Survolez un article pour voir son titre ; cliquez pour le sélectionner,
+            double-cliquez pour ouvrir sa fiche. Échap ou un clic dans le vide désélectionne.
+        </p>
+    {% endif %}
+</div>

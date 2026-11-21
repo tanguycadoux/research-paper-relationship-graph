@@ -157,6 +157,22 @@ class CitationGraphTests(TestCase):
         frame = html[html.index('id="citation-graph-axis"') : html.index("<aside")]
         self.assertNotIn("data-graph-export", frame)
 
+    def test_help_is_behind_a_button(self):
+        """
+        #415: the legend stays in the panel, the help is in a popover opened by « ? » at
+        the end of the commands, without JavaScript.
+        """
+        response = self.client.get(reverse("publication_graph", args=[self.cited.pk]))
+        html = response.content.decode()
+        self.assertContains(response, 'popovertarget="graph-help"', count=2)
+        self.assertContains(response, 'aria-label="Aide du graphe"')
+        # The help is written once, in the popover, which is in frosted glass.
+        popover = html[html.index('id="graph-help"') : html.index('id="citation-graph-card"')]
+        self.assertIn("backdrop-blur-md", popover)
+        self.assertIn("Survolez un article", popover)
+        self.assertIn("Axe horizontal : date de publication", popover)
+        self.assertEqual(html.count("Survolez"), 1)
+
     def test_publication_graph_contains_the_citing_publications(self):
         graph = publication_graph(self.cited)
         nodes = self.nodes_by_label(graph)
