@@ -1,18 +1,12 @@
 // Coauthorship graph (#222): the authors, linked by the publications they signed together
 // (services/display/author_graph.py), in the network view only (#195). Entry point,
-// loaded as an ES module after cytoscape.min.js (global `cytoscape`). The view, the
-// uniform zoom on a selection and the export are those of the citation graphs.
+// loaded as an ES module after cytoscape.min.js (global `cytoscape`). The frame, the
+// view, the uniform zoom on a selection and the export are those of every graph (graph.js).
 
 import { bindCoauthorSelection } from "./coauthor_selection.js";
-import { bindExport } from "./export.js";
-import { bindFocus } from "./focus.js";
-import { COSE } from "./network.js";
-import { makeStretch } from "./stretch.js";
-import { graphStyle } from "./style.js";
-import { bindViewport, rendererOptions } from "./viewport.js";
-
-// The time of the layout, under the name of the citation graphs (docs/banc-graphe.md).
-const LAYOUT_MEASURE = "citation-graph-layout";
+import { bindGraph, createGraph, graphFrame, LAYOUT_MEASURE } from "./graph.js";
+import { COSE, spiralPosition } from "./network.js";
+import { color, graphStyle } from "./style.js";
 
 // Diameter of a node on the screen: its area follows the number of publications.
 const MIN_SIZE = 14;
@@ -32,28 +26,15 @@ const SHORTEST_EDGE = 32;
 const SOFTEST_EDGE = 64;
 const STIFFEST_EDGE = 16;
 
-// Starting positions on a spiral (golden angle), as in network.js: the same graph is laid
-// out the same way at each visit, the author of the graph at its centre.
-const START_SPACING = 30;
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-
 const lerp = (a, b, t) => a + (b - a) * t;
 
-// A colour of the theme, shared with the legend (--color-graph-*, as in style.js).
-function color(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(`--color-graph-${name}`).trim();
-}
-
+// Starting positions on the spiral of the network view (network.js): the same graph is
+// laid out the same way at each visit, the author of the graph at its centre.
 function nodeElements(nodes) {
     const most = Math.max(1, ...nodes.map((n) => n.data.publications));
     return nodes.map((node, i) => {
-        const radius = START_SPACING * Math.sqrt(i);
-        const angle = i * GOLDEN_ANGLE;
         const size = lerp(MIN_SIZE, MAX_SIZE, Math.sqrt(node.data.publications / most));
-        return {
-            data: { ...node.data, size },
-            position: { x: radius * Math.cos(angle), y: radius * Math.sin(angle) },
-        };
+        return { data: { ...node.data, size }, position: spiralPosition(i) };
     });
 }
 
@@ -74,15 +55,14 @@ function edgeElements(edges) {
     });
 }
 
-// Edges as wide and as dark as their link is strong, on the screen whatever the zoom (#185); the
-// rules of style.js for the edges are repeated after it, since a later rule wins.
+// Edges as wide and as dark as their link is strong, on the screen whatever the zoom
+// (#185), the faded elements a little lighter than on the citation graphs; the links of a
+// selected author in the light shade of its colour.
 function coauthorStyle() {
     const width = (extra) => (edge) => (edge.data("width") + extra) / edge.cy().zoom();
+    const edges = { width: width(0), hoveredWidth: width(1), opacity: "data(opacity)", faded: 0.12 };
     return [
-        ...graphStyle(),
-        { selector: "edge", style: { width: width(0), opacity: "data(opacity)" } },
-        { selector: "edge.hovered", style: { width: width(1), opacity: 1 } },
-        { selector: ".faded", style: { opacity: 0.12 } },
+        ...graphStyle(edges),
         {
             selector: "edge.coauthor",
             style: { width: width(1), "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
@@ -101,29 +81,13 @@ function layOut(cy) {
 }
 
 function render() {
-    const container = document.getElementById("citation-graph");
-    const graph = JSON.parse(document.getElementById("citation-graph-data").textContent);
-    const nodes = nodeElements(graph.nodes);
-    const edges = edgeElements(graph.edges);
-    const cy = cytoscape({
-        container,
-        elements: [...nodes, ...edges],
-        style: coauthorStyle(),
-        layout: { name: "preset", fit: false },
-        autoungrabify: true,
-        autounselectify: true,
-        ...rendererOptions(nodes.length + edges.length),
-    });
+    const frame = graphFrame();
+    const nodes = nodeElements(frame.data.nodes);
+    const edges = edgeElements(frame.data.edges);
+    const cy = createGraph(frame.container, nodes, edges, coauthorStyle());
     layOut(cy);
     // Never stretched: the network keeps its distances (#195); the view needs it anyway.
-    const stretch = makeStretch(cy);
-    const showAllButton = document.querySelector("[data-graph-show-all] button");
-    const viewport = bindViewport(cy, container, showAllButton, stretch);
-    const card = document.getElementById("citation-graph-card");
-    bindCoauthorSelection(cy, card, bindFocus(cy, viewport, stretch, { uniform: true }));
-    const legend = document.getElementById("citation-graph-legend");
-    const page = { axis: null, band: null, legend };
-    bindExport(cy, page, document.querySelector("[data-graph-export]"), viewport);
+    bindGraph(cy, frame, { bindSelection: bindCoauthorSelection, uniform: true });
 }
 
 render();

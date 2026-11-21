@@ -254,14 +254,16 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   publication est sélectionnée, ou de `-zoom` si la vue n'est pas la vue d'ensemble. Pas
   de SVG : il demanderait une extension à embarquer.
 - **Modules ES natifs**, sans outil de construction (#174) : `main.js` (point d'entrée,
-  chargé avec `type="module"` après Cytoscape), `scale.js` (dates et échelle),
+  chargé avec `type="module"` après Cytoscape), `graph.js` (commun à tous les graphes :
+  éléments du cadre, création du graphe Cytoscape, puis vue, sélection et export),
+  `card.js` (commun aussi : carte de la sélection et gestes de la sélection), `scale.js` (dates et échelle),
   `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
   `export.js` (export PNG),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
   `network-worker.js` (la même dans un Web Worker, chargé comme module),
-  `axis.js` (axe des années), `selection.js` (sélection
-  et carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
+  `axis.js` (axe des années), `selection.js` (ce que sélectionne
+  un clic sur une publication et le remplissage de sa carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
   (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript pour l'instant : vérification dans Chrome headless.
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
@@ -320,7 +322,8 @@ dessin que les graphes de citations, en vue réseau seulement.
   `-zoom` comme les autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur
   sélectionné et ses coauteurs, les plus publiés d'abord.
 - **Modules** : `coauthors.js` (point d'entrée : tailles, épaisseurs, style, disposition)
-  et `coauthor_selection.js` ; `export.js` est partagé.
+  et `coauthor_selection.js` (ce que sélectionne un clic, la carte de l'auteur) ; le
+  reste est partagé (voir ci-dessous).
 - **Taille** (mesures du 14 novembre 2026, Chrome headless, 1 400 px) :
 
   | Graphe | Auteurs | Liens | JSON | Disposition | Page jusqu'à `DOMContentLoaded` |
@@ -339,6 +342,37 @@ dessin que les graphes de citations, en vue réseau seulement.
   4 000 (52 470 liens), **120 s pour les 9 507** (mesuré sans dessin, Cytoscape sans
   cadre) : la page serait bloquée deux minutes. **Limiter ce graphe sur une grande base
   reste à décider.**
+
+## Code commun à tous les graphes (#340)
+
+Les graphes de citations et de coauteurs partagent leur cadre, leur carte et leur
+sélection ; un nouveau graphe (mots-clés, auteurs du corpus) ne fournit que ses nœuds,
+sa disposition, son style et ce que dit sa carte.
+
+- **Gabarit** `_graph_frame.html`, étendu par `_citation_graph.html` et
+  `_author_graph.html` : la carte unique (cadre et panneau), l'infobulle, les commandes,
+  la carte de la sélection (titre, bouton « Désélectionner »), la légende, les données
+  (`citation-graph-data`) et Cytoscape. Chaque graphe remplit ses blocs : `graph_label`,
+  `frame_top` et `frame_overlays` (dans le cadre : l'axe, la bande « Non daté », l'attente
+  du réseau), `export_name`, `help`, `controls`, `card_label`, `card_empty`, `card_title`,
+  `card_content`, `legend`, `data`, `script` et `empty` (sans aucun lien). Les
+  identifiants restent ceux des graphes de citations (`citation-graph`,
+  `citation-graph-card`…), que lisent aussi les outils du banc.
+- **`graph.js`** : `graphFrame()` (les éléments du cadre et les données),
+  `createGraph(container, nodes, edges, style)` (positions données, pas de déplacement ni
+  de sélection native, options de rendu selon la taille), `bindGraph(cy, frame,
+  {bindSelection, uniform, bindAxes})` (vue, recentrage, sélection, export, puis la
+  marque `citation-graph-shown` du banc), et `LAYOUT_MEASURE`, le nom de la mesure de la
+  disposition.
+- **`card.js`** : `bindSelection(cy, card, focus, {selector, classes, select})` lie les
+  gestes communs (appui : sélection et recentrage ; double appui : la fiche ; Échap, clic
+  dans le vide ou « Désélectionner » : retour à la vue d'avant) et le survol (`hover.js`).
+  Le graphe ne donne que `select(node, card)`, qui pose ses classes, remplit la carte et
+  renvoie les nœuds à montrer ; `cardField(card, name)` lit un champ `[data-card=name]`.
+- **Style** : `graphStyle(edges)` reçoit la largeur des liens (au repos, survolés), leur
+  opacité et celle des éléments estompés ; le graphe ajoute après ses propres règles de
+  sélection. `color(name)` lit une couleur du thème. **Disposition** : `spiralPosition(i)`
+  (`network.js`), le départ en spirale de toute vue réseau.
 
 ## Grands graphes : une image calculée sur le serveur (#328)
 

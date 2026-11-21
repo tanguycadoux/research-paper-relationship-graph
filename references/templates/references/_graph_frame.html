@@ -1,0 +1,98 @@
+{% load static ui %}
+{% comment %}
+    The frame shared by every graph (#340), extended by _citation_graph.html and
+    _author_graph.html. One card (#291): the frame of the graph and, beside it, a panel that
+    is always there, separated by a border only. The panel is in a column on the right from
+    xl, under the frame below. It hides nothing of the graph, and nothing in it moves when a
+    node is selected: the commands first, then the controls of the context, then what the
+    graph shows (or the selected node) and the legend; the help is behind « ? » at the end
+    of the commands (#415). Below xl, the frame has its own height: a panel that grows never
+    resizes it (which would reset the view). From xl, the panel takes the height of the
+    frame and scrolls inside it: its content never makes the card taller.
+    The element ids (citation-graph, citation-graph-card…) are read by graph/graph.js and
+    the benchmark tools, whatever the graph.
+    Blocks: graph_label, frame_top and frame_overlays (in the frame), export_name, help,
+    controls, card_label, card_empty, card_title, card_content, legend, data, script, and
+    empty (without any edge).
+{% endcomment %}
+{% if graph.edges %}
+    <div class="grid min-h-96 grid-cols-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm xl:flex-1 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div class="relative flex h-[70vh] min-h-96 flex-col xl:h-auto">
+            {% block frame_top %}
+            {% endblock frame_top %}
+            <div id="citation-graph"
+                 class="flex-1"
+                 role="img"
+                 aria-label="{% block graph_label %}{% endblock graph_label %}"></div>
+            {% block frame_overlays %}
+            {% endblock frame_overlays %}
+            {# The label of the hovered node, placed by graph/hover.js (#202), in frosted glass over the graph. #}
+            <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs text-gray-900 select-none {% glass_classes %}"
+                 aria-hidden="true"
+                 data-graph-tooltip
+                 hidden></div>
+        </div>
+        <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
+            <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
+                   aria-label="Informations et commandes du graphe">
+                {# Back to the view on load (#196), and the displayed graph as a PNG image, under the given file name (#175). #}
+                <div class="flex items-start gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <div data-graph-show-all>
+                            {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
+                        </div>
+                        <div data-graph-export="{% block export_name %}{% endblock export_name %}">
+                            {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
+                        </div>
+                    </div>
+                    {% block help %}
+                    {% endblock help %}
+                </div>
+                {% block controls %}
+                {% endblock controls %}
+                {# Filled by graph/card.js with the selected node; otherwise what the graph shows. #}
+                <section id="citation-graph-card"
+                         aria-label="{% block card_label %}{% endblock card_label %}"
+                         aria-live="polite"
+                         class="grid gap-3 border-t border-gray-100 pt-3">
+                    <div class="grid gap-1" data-card-empty>
+                        {% block card_empty %}
+                        {% endblock card_empty %}
+                    </div>
+                    {# Blocks spaced by the grid gap: the title, then what the graph describes. #}
+                    <div class="grid gap-3" data-card-content hidden>
+                        <div class="flex items-start justify-between gap-2">
+                            <h2 class="text-base">
+                                <a href="#" data-card="title">{% block card_title %}{% endblock card_title %}</a>
+                            </h2>
+                            <div data-card-close>
+                                {% button "Désélectionner" variant="secondary" icon="close" icon_only=True type="button" %}
+                            </div>
+                        </div>
+                        {% block card_content %}
+                        {% endblock card_content %}
+                    </div>
+                </section>
+                <div class="grid gap-2 border-t border-gray-100 pt-3">
+                    {# Same colours as graph/style.js: the --color-graph-* theme variables (#139). #}
+                    {# Also drawn under the exported image (graph/export.js). #}
+                    <ul id="citation-graph-legend"
+                        class="grid gap-1 text-sm text-gray-700 select-none"
+                        aria-label="Légende du graphe">
+                        {% block legend %}
+                        {% endblock legend %}
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+    {{ graph|json_script:"citation-graph-data" }}
+    {% block data %}
+    {% endblock data %}
+    <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
+    {% block script %}
+    {% endblock script %}
+{% else %}
+    {% block empty %}
+    {% endblock empty %}
+{% endif %}
