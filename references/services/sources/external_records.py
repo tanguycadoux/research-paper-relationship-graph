@@ -32,6 +32,14 @@ def records_by_source(pub):
     return dict(pub.external_records.filter(data__isnull=False).values_list("source", "data"))
 
 
+def records_of(publications, source):
+    """{publication id: data} of the publications that source knows, in one query."""
+    records = ExternalRecord.objects.filter(
+        publication__in=publications, source=source, data__isnull=False
+    )
+    return dict(records.values_list("publication_id", "data"))
+
+
 # Metadata status of a publication with a DOI or an ISBN: never asked yet (a source
 # was unreachable during the import, for instance), or unknown to every source asked.
 METADATA_MISSING = "missing"
