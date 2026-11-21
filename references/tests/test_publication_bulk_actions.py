@@ -66,6 +66,26 @@ class PublicationBulkActionsTests(TestCase):
         self.assertContains(response, reverse("publication_bulk", args=[self.pub.pk]), count=2)
         self.assertContains(response, "js/bulk_actions.js")
 
+    def test_both_bars_fold_with_the_script(self):
+        # Folded by bulk_actions.js while nothing is checked; served unfolded (#410).
+        response = self.page()
+        self.assertContains(response, "data-bulk-collapsible=", count=2)
+        self.assertContains(response, "data-bulk-more", count=2)
+        self.assertNotContains(response, "data-bulk-folded ")
+        self.assertNotContains(response, "data-bulk-more hidden")
+
+    def test_the_help_is_in_the_part_folded(self):
+        response = self.page()
+        html = response.content.decode()
+        help_text = "« Ajouter à mon corpus » leur donne aussi"
+        self.assertEqual(html.count(help_text), 2)
+        for form_id in ("references-actions", "cited-by-actions"):
+            with self.subTest(form_id=form_id):
+                form = html[html.index(f'id="{form_id}"') :]
+                form = form[: form.index("</form>")]
+                more = form[form.index("data-bulk-more") : form.index(f'id="{form_id}-remove"')]
+                self.assertIn(help_text, more)
+
     def test_each_tag_field_suggests_the_users_tags(self):
         Tag.objects.create(user=self.alice, name="Projet/Groupe")
         response = self.page()

@@ -349,7 +349,7 @@
         {# Bulk actions on the identified references (#408), back to this list. #}
         {% if references_checkable %}
             {% url 'publication_bulk' publication.pk as bulk_url %}
-            {% include "references/_bulk_actions.html" with form_id="references-actions" action=bulk_url next=request.get_full_path|add:"#references-title" add=True %}
+            {% include "references/_bulk_actions.html" with form_id="references-actions" action=bulk_url next=request.get_full_path|add:"#references-title" add=True collapsed=True %}
         {% endif %}
         {% card flush=True %}
             <table>
@@ -474,7 +474,7 @@
             {% if user.is_authenticated %}
                 {# Bulk actions on the publications citing it (#408), back to this list. #}
                 {% url 'publication_bulk' publication.pk as bulk_url %}
-                {% include "references/_bulk_actions.html" with form_id="cited-by-actions" action=bulk_url next=request.get_full_path|add:"#cited-by-title" add=True %}
+                {% include "references/_bulk_actions.html" with form_id="cited-by-actions" action=bulk_url next=request.get_full_path|add:"#cited-by-title" add=True collapsed=True %}
                 {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" corpus_actions=True bulk_form="cited-by-actions" %}
             {% else %}
                 {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" %}

@@ -88,6 +88,24 @@ class ReadingStatusTests(TestCase):
         self.assertContains(response, "Statut de lecture de « Lue »")
         self.assertContains(response, '<option value="read" selected>Lu</option>', html=True)
 
+    def test_below_sm_the_status_is_under_the_title(self):
+        # #412: the column is hidden below sm, a second form is under the title.
+        response = self.client.get(reverse("corpus"))
+        html = response.content.decode()
+        compact = f'id="reading-status-{self.read.pk}-compact"'
+        self.assertContains(response, compact)
+        self.assertContains(response, f'for="reading-status-{self.read.pk}-compact"')
+        self.assertContains(response, f'id="reading-status-{self.read.pk}"', count=1)
+        self.assertLess(html.index(compact), html.index(f'id="reading-status-{self.read.pk}"'))
+        self.assertContains(response, '<td class="hidden sm:table-cell">', count=3)
+
+    def test_below_sm_the_status_still_sorts(self):
+        response = self.client.get(reverse("corpus"))
+        html = response.content.decode()
+        links = html.split('<span class="text-gray-600">Trier par</span>')[1].split("</p>")[0]
+        self.assertIn('href="?sort=status"', links)
+        self.assertIn("Lecture", links)
+
     def test_no_status_has_the_same_name_everywhere(self):
         # The menu, the filter and the dashboard: « Sans statut », never « Aucun » (#279).
         response = self.client.get(reverse("corpus"))

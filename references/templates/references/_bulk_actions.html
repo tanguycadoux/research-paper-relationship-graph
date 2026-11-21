@@ -9,53 +9,66 @@ says when nothing is checked.
 Context: form_id, reading_statuses, tag_max_length, bulk_tags (the user's tags, suggested
 as the tag is typed); with action, the URL the form is
 sent to (else « Mon corpus »'s); with next, the page to go back to (else this one); with
-add, a button « Ajouter à mon corpus », which gives the tag and status chosen too.
+add, a button « Ajouter à mon corpus », which gives the tag and status chosen too; with
+collapsed (#410), the script folds the bar into its first line while nothing is checked,
+and unfolds it for good at the first box checked (without it, the bar stays unfolded).
+The controls and the help are in data-bulk-more, the part folded.
 {% endcomment %}
 {% load ui %}
 <form method="post"
       action="{% if action %}{{ action }}{% else %}{% url 'corpus_bulk' %}{% endif %}"
       id="{{ form_id }}"
       aria-label="Actions sur les publications cochées"
-      class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm"
-      data-bulk-actions>
+      class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm data-bulk-folded:border-transparent data-bulk-folded:bg-transparent data-bulk-folded:px-0 data-bulk-folded:py-1"
+      data-bulk-actions
+      {% if collapsed %}data-bulk-collapsible="Cochez des publications pour les ajouter à votre corpus, leur donner un tag ou un statut."{% endif %}>
     {% csrf_token %}
     <input type="hidden"
            name="next"
            value="{% if next %}{{ next }}{% else %}{{ request.get_full_path }}{% endif %}">
-    <p class="w-full text-gray-600 select-none" data-bulk-count aria-live="polite">Pour les publications cochées :</p>
-    {# The tag first: Enter in its field sends this button, the first of the form. #}
-    <div class="flex min-w-0 items-center gap-1">
-        <label for="{{ form_id }}-tag" class="mb-0 mr-1">Tag</label>
-        <input type="text"
-               id="{{ form_id }}-tag"
-               name="name"
-               maxlength="{{ tag_max_length }}"
-               placeholder="Projet/Groupe"
-               list="{{ form_id }}-known-tags"
-               autocomplete="off"
-               class="w-40 min-w-0 py-1">
-        <datalist id="{{ form_id }}-known-tags">
-            {% for path in bulk_tags %}<option value="{{ path }}"></option>{% endfor %}
-        </datalist>
-        {% button "Ajouter le tag" variant="secondary" icon="new_label" name="action" value="tag" %}
-    </div>
-    <div class="flex items-center gap-1">
-        <label for="{{ form_id }}-status" class="mb-0 mr-1">Statut</label>
-        <select id="{{ form_id }}-status"
-                name="status"
-                class="w-auto py-1 pr-7 pl-2">
-            <option value="">Sans statut</option>
-            {% for value, choice_label in reading_statuses %}
-                <option value="{{ value }}">{{ choice_label }}</option>
-            {% endfor %}
-        </select>
-        {% button "Changer le statut" variant="secondary" icon="check_circle" name="action" value="status" %}
-    </div>
-    <div class="flex flex-wrap items-center gap-1">
+    <p class="w-full text-gray-600 select-none"
+       data-bulk-count
+       aria-live="polite">Pour les publications cochées :</p>
+    <div class="flex w-full flex-wrap items-center gap-x-4 gap-y-2"
+         data-bulk-more>
+        {# The tag first: Enter in its field sends this button, the first of the form. #}
+        <div class="flex min-w-0 items-center gap-1">
+            <label for="{{ form_id }}-tag" class="mb-0 mr-1">Tag</label>
+            <input type="text"
+                   id="{{ form_id }}-tag"
+                   name="name"
+                   maxlength="{{ tag_max_length }}"
+                   placeholder="Projet/Groupe"
+                   list="{{ form_id }}-known-tags"
+                   autocomplete="off"
+                   class="w-40 min-w-0 py-1">
+            <datalist id="{{ form_id }}-known-tags">
+                {% for path in bulk_tags %}<option value="{{ path }}"></option>{% endfor %}
+            </datalist>
+            {% button "Ajouter le tag" variant="secondary" icon="new_label" name="action" value="tag" %}
+        </div>
+        <div class="flex items-center gap-1">
+            <label for="{{ form_id }}-status" class="mb-0 mr-1">Statut</label>
+            <select id="{{ form_id }}-status" name="status" class="w-auto py-1 pr-7 pl-2">
+                <option value="">Sans statut</option>
+                {% for value, choice_label in reading_statuses %}
+                    <option value="{{ value }}">{{ choice_label }}</option>
+                {% endfor %}
+            </select>
+            {% button "Changer le statut" variant="secondary" icon="check_circle" name="action" value="status" %}
+        </div>
+        <div class="flex flex-wrap items-center gap-1">
+            {% if add %}
+                {% button "Ajouter à mon corpus" variant="success-light" icon="add" name="action" value="add" %}
+            {% endif %}
+            {% button "Retirer de mon corpus…" type="button" variant="danger-light" icon="remove" popovertarget=form_id|add:"-remove" %}
+        </div>
         {% if add %}
-            {% button "Ajouter à mon corpus" variant="success-light" icon="add" name="action" value="add" %}
+            <p class="w-full text-xs text-gray-500">
+                « Ajouter à mon corpus » leur donne aussi le tag et le statut choisis.
+                Les autres actions ne touchent que les publications cochées déjà dans votre corpus.
+            </p>
         {% endif %}
-        {% button "Retirer de mon corpus…" type="button" variant="danger-light" icon="remove" popovertarget=form_id|add:"-remove" %}
     </div>
     <div popover
          id="{{ form_id }}-remove"
@@ -66,10 +79,4 @@ add, a button « Ajouter à mon corpus », which gives the tag and status chosen
         </p>
         {% button "Retirer" variant="danger" icon="remove" name="action" value="remove" %}
     </div>
-    {% if add %}
-        <p class="w-full text-xs text-gray-500">
-            « Ajouter à mon corpus » leur donne aussi le tag et le statut choisis.
-            Les autres actions ne touchent que les publications cochées déjà dans votre corpus.
-        </p>
-    {% endif %}
 </form>

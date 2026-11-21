@@ -12,7 +12,8 @@ Context: id, label, and citation (a formatted style) or bibtex (the entry).
         </div>
     </div>
     {% if bibtex %}
-        <pre id="{{ id }}" class="overflow-x-auto rounded-md bg-white/70 p-2 text-xs">{{ bibtex }}</pre>
+        {# Wrapped to the panel (#413); copy_citation.js copies its text as it is. #}
+        <pre id="{{ id }}" class="rounded-md bg-white/70 p-2 text-xs whitespace-pre-wrap wrap-anywhere">{{ bibtex }}</pre>
     {% else %}
         <p id="{{ id }}" class="leading-relaxed">{{ citation.html }}</p>
     {% endif %}

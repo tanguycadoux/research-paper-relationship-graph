@@ -13,7 +13,7 @@ from django.utils import timezone
 from ...models import Publication, UserPublication
 from ..identifiers.doi import is_valid_doi, normalize_doi
 from ..sources.doi_registration import unregistered_dois
-from ..sources.external_records import Source, records_by_source
+from ..sources.external_records import Source, records_by_source, records_of
 from .entries import add_identified, find_or_create, queue_identified, with_reading_status
 from .tags import InvalidTag, tag_entry, tags_by_publication
 
@@ -207,13 +207,21 @@ def corpus_bibtex(user, selected=None):
     publications = exportable(corpus_publications(user, selected).with_author_slots())
     tags = tags_by_publication(user, publications)
     notes = notes_by_publication(user)
+    crossref = records_of(publications, Source.CROSSREF)
     return "\n".join(
-        bibtex_entry(pub, keys, tags[pub.pk], notes.get(pub.pk, "")) for pub in publications
+        bibtex_entry(pub, keys, tags[pub.pk], notes.get(pub.pk, ""), crossref.get(pub.pk) or {})
+        for pub in publications
     )
 
 
-def bibtex_entry(pub, keys, tags=(), note=""):
-    crossref = (records_by_source(pub).get(Source.CROSSREF) or {}).get("message", {})
+def bibtex_entry(pub, keys, tags=(), note="", crossref=None):
+    """
+    The BibTeX entry of pub. crossref is its Crossref record, loaded for the whole
+    export (#414); read here when not given, for the citation panel.
+    """
+    if crossref is None:
+        crossref = records_by_source(pub).get(Source.CROSSREF) or {}
+    crossref = crossref.get("message", {})
     entry_type = ENTRY_TYPES.get(crossref.get("type"), "book" if pub.isbn else "misc")
     fields = {
         "title": "{" + bibtex_escape(pub.title) + "}",

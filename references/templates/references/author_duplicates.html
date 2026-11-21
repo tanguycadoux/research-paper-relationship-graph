@@ -44,7 +44,7 @@
                                     <label for="duplicate-{{ author.pk }}" class="mb-0 font-normal">{{ author }}</label>
                                     {% if author.orcid %}<span class="text-gray-500">ORCID {{ author.orcid }}</span>{% endif %}
                                     <span class="text-gray-500">·
-                                        <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize }}</a>
+                                        <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize_fr }}</a>
                                     </span>
                                 </li>
                             {% endfor %}

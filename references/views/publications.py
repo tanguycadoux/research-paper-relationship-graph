@@ -1,8 +1,10 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
@@ -284,7 +286,10 @@ def restore_publication_sources(request, pk):
 
 @login_required
 def publication_metadata(request, pk):
-    """Raw answers of the external sources about a publication, as JSON."""
+    """
+    Raw answers of the external sources about a publication: a page that shows them
+    indented, wrapped to its width (#413), or the JSON itself with ?format=json.
+    """
     pub = get_object_or_404(Publication, pk=pk)
     records = {
         record.source: {"fetched_at": record.fetched_at.isoformat(), "data": record.data}
@@ -292,7 +297,17 @@ def publication_metadata(request, pk):
     }
     if not records:
         raise Http404(f"Aucune métadonnée récupérée pour la publication id={pk}")
-    return JsonResponse(records)
+    if request.GET.get("format") == "json":
+        return JsonResponse(records)
+    sources = [
+        {"source": source, "json": json.dumps(record, ensure_ascii=False, indent=2)}
+        for source, record in records.items()
+    ]
+    return render(
+        request,
+        "references/publication_metadata.html",
+        {"publication": pub, "sources": sources},
+    )
 
 
 @login_required

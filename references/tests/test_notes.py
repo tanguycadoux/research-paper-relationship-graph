@@ -121,6 +121,63 @@ class NoteSearchTests(NoteTestCase):
         self.assertContains(response, "<code>note:</code>")
 
 
+class FreeTextInNotesTests(NoteTestCase):
+    """Free text also looks in my notes, never in those of others (#416)."""
+
+    def search(self, text, user=None, **params):
+        if user:
+            self.client.force_login(user)
+        return self.client.get(reverse("search"), {"q": text, **params})
+
+    def found_in_note(self, response):
+        return {pub: pub.found_in_note for pub in response.context["publications"]}
+
+    def test_my_note_case_and_accents_ignored(self):
+        response = self.search("PULSE", self.alice)
+        self.assertEqual(self.found_in_note(response), {self.pub: True})
+        self.assertContains(response, "trouvée dans votre note")
+
+    def test_not_the_notes_of_others(self):
+        self.assertEqual(list(self.search("pulsé", self.bob).context["publications"]), [])
+        self.assertEqual(list(self.search("bob", self.alice).context["publications"]), [])
+
+    def test_visitor(self):
+        response = self.search("pulsé")
+        self.assertEqual(list(response.context["publications"]), [])
+        self.assertNotContains(response, "connectez-vous")
+
+    def test_found_by_title_and_note_once_without_badge(self):
+        self.entry.note = "Annotée avec soin"
+        self.entry.save()
+        response = self.search("annotee", self.alice)
+        self.assertEqual(self.found_in_note(response), {self.pub: False})
+        self.assertEqual(response.context["page_obj"].paginator.count, 1)
+        self.assertNotContains(response, "trouvée dans votre note")
+
+    def test_one_word_in_the_note_only(self):
+        # « annotée » is in the title, « aimant » in the note alone: the note was needed.
+        response = self.search("annotée aimant", self.alice)
+        self.assertEqual(self.found_in_note(response), {self.pub: True})
+
+    def test_help_under_the_bar(self):
+        self.assertContains(self.search("x"), "Cherche aussi dans vos notes.")
+
+    def test_sort_and_pages_unchanged(self):
+        for number in range(55):
+            pub = Publication.objects.create(doi=f"10.1000/p{number}", title=f"Étude {number:02}")
+            UserPublication.objects.create(
+                user=self.alice, publication=pub, note="aimant" if number % 2 else ""
+            )
+        response = self.search("etude", self.alice, sort="-title")
+        self.assertEqual(response.context["page_obj"].paginator.count, 55)
+        titles = [pub.title for pub in response.context["publications"]]
+        self.assertEqual(len(titles), 50)
+        self.assertEqual(titles, sorted(titles, reverse=True))
+        last = self.search("etude", self.alice, sort="-title", page=2).context["publications"]
+        self.assertEqual([pub.title for pub in last], [f"Étude {n:02}" for n in range(4, -1, -1)])
+        self.assertFalse(any(pub.found_in_note for pub in last))
+
+
 @without_doi_org
 class NoteTransferTests(NoteTestCase):
     """The note in the JSON export (version 3) and the BibTeX export."""
