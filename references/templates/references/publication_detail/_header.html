@@ -20,7 +20,21 @@ what the page warns about (metadata, published version).
     {% endif %}
     {% if open_access %}
         {# The open access version given by OpenAlex, or the arXiv PDF (#284). #}
-        <p class="font-medium">{% external_link open_access.url open_access.label %}</p>
+        <p class="font-medium">
+            {% external_link open_access.url open_access.label %}
+            {% with licence=open_access.licence %}
+                {% if licence %}
+                    {# The licence of this version, given by OpenAlex (#442). #}
+                    <span class="text-sm font-normal text-gray-600">·
+                        {% if licence.url %}
+                            {% external_link licence.url licence.label %}
+                        {% else %}
+                            {{ licence.label }}
+                        {% endif %}
+                    </span>
+                {% endif %}
+            {% endwith %}
+        </p>
     {% endif %}
     {% if fetch_pending_publication %}
         <div data-fetch-pending-publication="{{ fetch_pending_publication }}"
