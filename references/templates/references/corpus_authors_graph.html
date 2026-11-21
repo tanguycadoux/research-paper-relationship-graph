@@ -1,0 +1,20 @@
+{% extends "references/base.html" %}
+
+{% block title %}Graphe des auteurs · Mon corpus · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6">
+        <h1>Mon corpus</h1>
+    </header>
+    <h2>Graphe des auteurs</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        {% if active_tag %}
+            Les auteurs des publications du tag « {{ active_tag_label }} » (sous-tags compris), reliés par celles qu'ils signent ensemble.
+        {% else %}
+            Les auteurs des publications de mon corpus, reliés par celles qu'ils signent ensemble.
+        {% endif %}
+        Les publications seulement citées n'en font pas partie, ni les auteurs qui ne signent que des publications de plus de {{ large_collaboration }} auteurs.
+    </p>
+
+    {% include "references/_author_graph.html" %}
+{% endblock content %}

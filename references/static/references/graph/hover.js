@@ -53,7 +53,8 @@ function bindTooltip(cy, tooltip) {
         if (event.originalEvent?.buttons) {
             return;
         }
-        tooltip.textContent = event.target.data("label");
+        // A longer text when the graph gives one (the variants of gathered authors, #419).
+        tooltip.textContent = event.target.data("tooltip") ?? event.target.data("label");
         tooltip.hidden = false;
         place(tooltip, event.target, container);
     });

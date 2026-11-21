@@ -62,6 +62,15 @@ function drawBand(context, band, cy, top, width) {
     context.fillText(label.textContent, label.offsetLeft + 4, y + 4);
 }
 
+// The outline of a swatch (the gathered duplicates of a coauthorship graph, #419), or null.
+function swatchOutline(style) {
+    const width = parseFloat(style.outlineWidth);
+    if (style.outlineStyle === "none" || !width) {
+        return null;
+    }
+    return { width, offset: parseFloat(style.outlineOffset) || 0, color: style.outlineColor };
+}
+
 // Each item of the legend as a list of parts: texts, and the swatches (dots and lines)
 // with their size and colour.
 function legendItems(legend) {
@@ -76,9 +85,11 @@ function legendItems(legend) {
                 {
                     width: node.offsetWidth,
                     height: node.offsetHeight,
+                    before: parseFloat(style.marginLeft),
                     margin: parseFloat(style.marginRight),
                     color: style.backgroundColor,
                     round: style.borderRadius !== "0px",
+                    outline: swatchOutline(style),
                 },
             ];
         });
@@ -95,7 +106,31 @@ function legendItems(legend) {
 }
 
 function partWidth(context, part) {
-    return part.text ? context.measureText(part.text).width : part.width + part.margin;
+    if (part.text) {
+        return context.measureText(part.text).width;
+    }
+    return part.before + part.width + part.margin;
+}
+
+// A dot or a line of the legend, centred on the height middle, from x.
+function drawSwatch(context, part, x, middle) {
+    context.fillStyle = part.color;
+    context.beginPath();
+    if (part.round) {
+        context.arc(x + part.width / 2, middle, part.width / 2, 0, 2 * Math.PI);
+    } else {
+        context.rect(x, middle - part.height / 2, part.width, part.height);
+    }
+    context.fill();
+    const outline = part.outline;
+    if (outline && part.round) {
+        const radius = part.width / 2 + outline.offset + outline.width / 2;
+        context.strokeStyle = outline.color;
+        context.lineWidth = outline.width;
+        context.beginPath();
+        context.arc(x + part.width / 2, middle, radius, 0, 2 * Math.PI);
+        context.stroke();
+    }
 }
 
 // Items placed in rows as wide as the graph, like the wrapping list of the page.
@@ -126,14 +161,7 @@ function drawLegend(context, rows, style, top, lineHeight) {
                     context.fillStyle = style.color;
                     context.fillText(part.text, x, middle);
                 } else {
-                    context.fillStyle = part.color;
-                    context.beginPath();
-                    if (part.round) {
-                        context.arc(x + part.width / 2, middle, part.width / 2, 0, 2 * Math.PI);
-                    } else {
-                        context.rect(x, middle - part.height / 2, part.width, part.height);
-                    }
-                    context.fill();
+                    drawSwatch(context, part, x + part.before, middle);
                 }
                 x += partWidth(context, part);
             }

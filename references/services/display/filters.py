@@ -15,7 +15,7 @@ from ...models import CitedReference, Publication, UserPublication
 from ..corpus import tags
 from ..corpus.entries import with_reading_status
 from . import keyword_graph
-from .search import Normalized, author_named, contains
+from .search import Normalized, author_named, contains, noted
 
 YEAR = re.compile(r"^\d{4}$")
 
@@ -161,6 +161,39 @@ class TermFilter:
         return f"« {value} »"
 
 
+class NoteFilter:
+    """
+    My note (#443): ?note=aimant, the note contains the text (case and accents ignored,
+    as in the search), or ?has_note=1 / 0, with a note or without. No column: the field
+    above the table sets it.
+    """
+
+    kind = "note"
+    params = ("note", "has_note")
+
+    def __init__(self, user):
+        self.user = user
+
+    def read(self, data, errors):
+        text = data.get("note", "").strip()
+        if text:
+            return text
+        return {"1": True, "0": False}.get(data.get("has_note", ""))
+
+    def apply(self, queryset, value):
+        if isinstance(value, str):
+            return queryset.filter(noted(self.user, value))
+        with_note = UserPublication.objects.filter(
+            user=self.user, publication=OuterRef("pk")
+        ).exclude(note="")
+        return queryset.filter(Exists(with_note) if value else ~Exists(with_note))
+
+    def describe(self, value):
+        if isinstance(value, str):
+            return f"contient « {value} »"
+        return "renseignée" if value else "absente"
+
+
 @dataclass
 class ActiveFilters:
     values: dict = field(default_factory=dict)
@@ -249,7 +282,10 @@ CORPUS = Filters(
 
 
 def corpus_filters(user):
-    """My corpus: the columns of CORPUS, the tags of the user, the references to identify."""
+    """
+    My corpus: the columns of CORPUS, the tags of the user, the references to identify,
+    the notes of the user.
+    """
     return Filters(
         CORPUS.columns
         | {
@@ -257,6 +293,7 @@ def corpus_filters(user):
             "to_identify": ("Références", ToIdentifyFilter()),
             "keyword": ("Mot-clé", TermFilter(keyword_graph.KEYWORDS)),
             "topic": ("Thème", TermFilter(keyword_graph.TOPICS)),
+            "note": ("Note", NoteFilter(user)),
         }
     )
 

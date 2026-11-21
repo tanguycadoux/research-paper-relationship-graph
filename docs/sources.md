@@ -230,8 +230,8 @@ chose. On y trouve les institutions avec leur identifiant ROR, des ORCID absents
 Crossref, des identifiants d'auteurs et la date de mise en ligne, et un
 résumé pour la plupart des articles dont Crossref n'en donne pas (`abstract_inverted_index`,
 remis en texte sur la fiche, avec sa source, #157), et la meilleure version en accès libre
-(`best_oa_location` : le PDF, sinon la page qui le donne, et sa version), lien « Lire
-l'article » de la fiche (#284). Il n'ajoute aucun
+(`best_oa_location` : le PDF, sinon la page qui le donne, sa version et sa licence), lien
+« Lire l'article » de la fiche (#284, licence #442). Il n'ajoute aucun
 article : seuls ceux déjà importés (corpus et articles cités) sont complétés.
 
 - Un article : une requête unitaire (gratuite). Elle n'est enregistrée que si OpenAlex a

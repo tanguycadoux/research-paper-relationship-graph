@@ -1,0 +1,33 @@
+{% load ui %}
+{% comment %}
+    The authors gathered into the selected node (#419), filled by graph/coauthor_selection.js:
+    one line per variant with its publications. A logged-in user can check some of them and
+    go to the usual confirmation of a merge, or declare them different people
+    (AuthorDistinction, as on the page of probable duplicates), then come back here.
+{% endcomment %}
+<div class="grid gap-1" data-card-row="variants" hidden>
+    <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Doublons probables regroupés</p>
+    {% if user.is_authenticated %}
+        <form method="post"
+              action="{% url 'author_merge_select' %}"
+              class="grid gap-2"
+              data-card-variants-form>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <fieldset>
+                <legend class="sr-only">Auteurs regroupés</legend>
+                <ul class="grid gap-1" data-card="variants">
+                </ul>
+            </fieldset>
+            <div class="flex flex-wrap gap-2">
+                {% url 'authors_graph_distinct' as distinct_url %}
+                {% button "Ce ne sont pas les mêmes" variant="secondary" formaction=distinct_url %}
+                {% button "Fusionner pour de bon…" variant="secondary" icon="merge" %}
+            </div>
+        </form>
+    {% else %}
+        <ul class="grid gap-1" data-card="variants">
+        </ul>
+    {% endif %}
+    <p class="text-gray-500">Regroupés sur ce graphe seulement : la base n'est pas modifiée.</p>
+</div>

@@ -137,10 +137,20 @@ urlpatterns = [
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
     path("authors/<int:pk>/graph/", author_graphs.author_graph_view, name="author_graph"),
     path("authors/graph/", author_graphs.authors_graph_view, name="authors_graph"),
+    path(
+        "authors/graph/distinct/",
+        author_graphs.author_graph_distinct_view,
+        name="authors_graph_distinct",
+    ),
     path("authors/<int:pk>/edit/", authors.AuthorUpdateView.as_view(), name="author_edit"),
     path("authors/<int:pk>/orcid/", authors.author_orcid_refresh_view, name="author_orcid_refresh"),
     path("authors/merge/", authors.author_merge_select_view, name="author_merge_select"),
     path("authors/duplicates/", authors.author_duplicates_view, name="author_duplicates"),
+    path(
+        "authors/duplicates/merge/",
+        authors.author_duplicates_merge_view,
+        name="author_duplicates_merge",
+    ),
     path(
         "authors/duplicates/dismiss/",
         authors.author_duplicates_dismiss_view,
@@ -159,6 +169,12 @@ urlpatterns = [
     path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
     # The map of its keywords (#418)
     path("corpus/keywords/", keywords.corpus_keywords, name="corpus_keywords"),
+    # Under « Mon graphe », which stays the current entry of the navigation (#422).
+    path(
+        "corpus/graph/authors/",
+        author_graphs.corpus_authors_graph_view,
+        name="corpus_authors_graph",
+    ),
     path("corpus/bulk/", corpus_bulk.bulk_action, name="corpus_bulk"),
     path("corpus/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
     path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
