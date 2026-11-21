@@ -2,7 +2,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from ..forms import NoteForm
@@ -22,6 +21,7 @@ from ..services.identifiers.arxiv import typed_doi
 from ..services.imports import fetch_queue
 from ..services.sources.doi_registration import is_unregistered_doi, unregistered_message
 from .pagination import page_of
+from .redirects import redirect_to_next
 
 
 def requested_status(request):
@@ -84,20 +84,12 @@ def report_addition(request, pub, imported, status=""):
         )
 
 
-def redirect_back(request, pk):
-    """Go back to the page holding the button (the `next` field), or to the publication."""
-    next_url = request.POST.get("next", "")
-    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        return redirect(next_url)
-    return redirect("publication_detail", pk=pk)
-
-
 @login_required
 @require_POST
 def add_to_user_refs(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
     pub = add_and_report(request, pub, requested_status(request))
-    return redirect_back(request, pub.pk)
+    return redirect_to_next(request, "publication_detail", pk=pub.pk)
 
 
 @login_required
@@ -108,7 +100,7 @@ def add_publication_to_user_refs_by_identifier(request):
     doi = typed_doi(identifier)  # a DOI, or an arXiv identifier or link (#267)
     if doi and is_unregistered_doi(doi):
         messages.error(request, f"{unregistered_message(doi)} Rien n'a été ajouté.")
-        return back_or_corpus(request)
+        return redirect_to_next(request, "corpus")
     pub = find_or_create(doi=doi, isbn=identifier, queued=fetch_queue.worker_alive())
     if pub is None:
         messages.error(
@@ -117,17 +109,10 @@ def add_publication_to_user_refs_by_identifier(request):
             "arXiv (1706.03762, arxiv.org/abs/…) ou un ISBN valide (10 ou 13 chiffres, "
             "avec ou sans tirets).",
         )
-        return back_or_corpus(request)
+        return redirect_to_next(request, "corpus")
 
     add_and_report(request, pub, requested_status(request))
-    return back_or_corpus(request)
-
-
-def back_or_corpus(request):
-    next_url = request.POST.get("next", "")
-    if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        return redirect(next_url)
-    return redirect("corpus")
+    return redirect_to_next(request, "corpus")
 
 
 @login_required
@@ -139,7 +124,7 @@ def remove_from_user_refs(request, pk):
     UserPublication.objects.filter(user=request.user, publication=pub).delete()
     tags.forget_unused_tags(request.user)
     messages.success(request, f"« {pub} » a été retiré de votre corpus{lost}.")
-    return redirect_back(request, pk)
+    return redirect_to_next(request, "publication_detail", pk=pk)
 
 
 def removal_losses(entry):
@@ -165,14 +150,14 @@ def set_reading_status(request, pk):
     status = request.POST.get("status", "")
     if status and status not in UserPublication.ReadingStatus.values:
         messages.error(request, "Statut de lecture inconnu.")
-        return redirect_back(request, pk)
+        return redirect_to_next(request, "publication_detail", pk=pk)
     if fetch_queue.worker_alive():
         queued = queue_reading_status(entry, status)
         report = reading_status_report(entry, status)
         if queued:
             report += " Sa bibliographie est en file de récupération."
         messages.success(request, report)
-        return redirect_back(request, pk)
+        return redirect_to_next(request, "publication_detail", pk=pk)
     imported = change_reading_status(entry, status)
     report = reading_status_report(entry, status)
     if imported is None:
@@ -187,7 +172,7 @@ def set_reading_status(request, pk):
         )
     else:
         messages.success(request, report)
-    return redirect_back(request, imported.pk if imported else pk)
+    return redirect_to_next(request, "publication_detail", pk=imported.pk if imported else pk)
 
 
 @login_required
@@ -294,7 +279,7 @@ def tag_publication(request, pk):
         messages.error(request, str(error))
     else:
         report_tagging(request, entry, tagging)
-    return redirect_back(request, pk)
+    return redirect_to_next(request, "publication_detail", pk=pk)
 
 
 def report_tagging(request, entry, tagging):
@@ -321,7 +306,7 @@ def untag_publication(request, pk, tag_pk):
     tag = get_object_or_404(Tag, pk=tag_pk, user=request.user)
     tags.untag_entry(entry, tag)
     messages.success(request, f"Tag « {tag.label} » retiré de « {entry.publication} ».")
-    return redirect_back(request, pk)
+    return redirect_to_next(request, "publication_detail", pk=pk)
 
 
 @login_required

@@ -7,6 +7,7 @@ A joint unit can belong to several top-level organizations.
 from django.db.models import Q
 
 from ...models import AuthorPublication, Organization
+from ..sources.openalex_api import short_id
 
 
 def organizations_for(institutions):
@@ -15,7 +16,7 @@ def organizations_for(institutions):
     linking them to their known ancestors. An organization is recognized by its
     OpenAlex id or by its ROR (OpenAlex sometimes merges institutions).
     """
-    by_id = {openalex_id(i): i for i in institutions if openalex_id(i)}
+    by_id = {institution_openalex_id(i): i for i in institutions if institution_openalex_id(i)}
     rors = {ror_id(i) for i in by_id.values() if ror_id(i)}
     existing = Organization.objects.filter(Q(openalex_id__in=by_id) | Q(ror__in=rors))
     by_oid = {org.openalex_id: org for org in existing}
@@ -53,7 +54,7 @@ def link_ancestors(organizations, institutions_by_id):
 
 def missing_ancestor_ids(institutions, include_known=False):
     """Ancestors named in the lineages but neither given nor (by default) already known."""
-    given = {openalex_id(i) for i in institutions}
+    given = {institution_openalex_id(i) for i in institutions}
     wanted = {a for i in institutions for a in lineage_ids(i)} - given
     if include_known:
         return sorted(wanted)
@@ -67,7 +68,7 @@ def new_organization(institution):
     return Organization(
         name=institution.get("display_name") or "",
         ror=ror_id(institution),
-        openalex_id=openalex_id(institution),
+        openalex_id=institution_openalex_id(institution),
         country_code=institution.get("country_code") or "",
     )
 
@@ -78,16 +79,12 @@ def lineage_ids(institution):
 
 def ror_id(institution):
     """'https://ror.org/03f0apy98' -> '03f0apy98'."""
-    return short_id(institution.get("ror") or "")
+    return short_id(institution.get("ror"))
 
 
-def openalex_id(institution):
+def institution_openalex_id(institution):
     """'https://openalex.org/I4210141222' -> 'I4210141222'."""
-    return short_id(institution.get("id") or "")
-
-
-def short_id(url):
-    return url.rsplit("/", 1)[-1]
+    return short_id(institution.get("id"))
 
 
 def top_levels(organization):

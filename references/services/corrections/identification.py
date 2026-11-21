@@ -5,10 +5,10 @@ Manual identification of a cited reference: the user tells which publication it 
 import datetime
 
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.utils import timezone
 
-from ...models import Publication
+from ...models import Publication, to_identify_q
 from ..imports.books import find_or_import_book
 from ..imports.importer import import_publication
 from ..sources.external_records import has_metadata
@@ -21,25 +21,18 @@ def with_references_to_identify(publications):
     to no publication and not declared unidentifiable: one query for the whole list.
     """
     return publications.annotate(
-        to_identify=Count(
-            "cited_references",
-            filter=Q(
-                cited_references__target__isnull=True,
-                cited_references__unidentifiable=False,
-            ),
-        )
+        to_identify=Count("cited_references", filter=to_identify_q("cited_references__"))
     )
 
 
 def is_to_identify(ref):
-    return ref.target_id is None and not ref.unidentifiable
+    """For a reference already loaded: CitedReference.is_to_identify (#293)."""
+    return ref.is_to_identify
 
 
 def to_identify_in(publication):
     """The cited references of a publication left to identify, in bibliography order."""
-    return publication.cited_references.filter(target__isnull=True, unidentifiable=False).order_by(
-        "position"
-    )
+    return publication.cited_references.to_identify().order_by("position")
 
 
 def next_to_identify(ref):
