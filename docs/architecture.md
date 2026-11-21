@@ -29,7 +29,7 @@ le statut de lecture, les tags et les notes sont propres à chaque utilisateur.
 | [arxiv-jacow.md](arxiv-jacow.md) | Prépublications arXiv et actes JACoW : identifiants arXiv saisis, identifiants écrits dans les références, version publiée (déclarée ou selon OpenAlex), bibliographie tirée des sources LaTeX, ordre des auteurs JACoW |
 | [auteurs.md](auteurs.md) | Auteurs : affiliations (OpenAlex, hiérarchie des organisations), ORCID complétés depuis OpenAlex, noms et profil ORCID |
 | [corrections.md](corrections.md) | Identification des références (candidats, DOI vérifiés, série), corrections de publications et d'auteurs, fusions, doublons probables, conflits |
-| [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export ; graphe des auteurs (coautorat) |
+| [graphes.md](graphes.md) | Graphes de citations : données, disposition, style, vue, sélection, export ; graphe des auteurs (coautorat) ; carte des mots-clés |
 | [banc-graphe.md](banc-graphe.md) | Banc d'essai des graphes (#202) : base grossie de vraies publications, graphes synthétiques, mesures de la disposition et de l'affichage, limites et pistes d'optimisation |
 | [decouverte.md](decouverte.md) | Découverte d'articles : suggestions par co-citation, pour le corpus ou un tag ; citations entrantes selon OpenAlex |
 | [interface.md](interface.md) | Navigation, tableaux, pagination, tri, filtres, recherche, accueil, mise en page |
@@ -51,6 +51,7 @@ references/          application principale
   views/             vues fines, une par domaine
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
     author_graphs.py (graphe des auteurs, coautorat),
+    keywords.py (carte des mots-clés de « Mon corpus » ou d'un tag),
     graph_images.py (image d'un graphe trop grand pour la page : calcul, état, fichier),
     cited_references.py (identification d'une référence, en série),
     publication_merge.py (« Cette publication est en fait… »),
@@ -153,6 +154,8 @@ references/          application principale
       graph_variants.py  variantes d'un graphe choisies dans l'URL (frise ou réseau…)
       graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
+      keyword_graph.py  carte des mots-clés ou des thèmes d'OpenAlex d'un corpus (co-occurrence,
+                     seuil), et le filtre de « Mon corpus » sur un terme
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui/              composants d'interface, une seule bibliothèque ({% load ui %}) :
@@ -200,7 +203,10 @@ references/          application principale
     export_labels.js  placement des noms des nœuds sur l'image exportée
     coauthors.js     point d'entrée du graphe des auteurs (coautorat)
     coauthor_selection.js  sélection d'un auteur dans ce graphe
-  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph et _author_graph…)
+    keywords.js      point d'entrée de la carte des mots-clés (co-occurrence)
+    keyword_selection.js  sélection d'un mot-clé : ses publications, ses voisins les plus liés
+    keyword_labels.js  noms des mots-clés dessinés là où ils ne se chevauchent pas
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph…)
     publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
                      _authors, _abstract, _note, _information, _references, _cited_by,
                      _incoming_citations…), assemblées par publication_detail.html

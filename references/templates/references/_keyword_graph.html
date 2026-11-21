@@ -1,0 +1,71 @@
+{% extends "references/_graph_frame.html" %}
+{% load static ui %}
+{% comment %}
+    The map of the keywords or topics of a corpus (#418), in the network view only, in the
+    frame of every graph (_graph_frame.html), read by graph/keywords.js.
+{% endcomment %}
+{% block graph_label %}Graphe des {{ terms.plural }}{% endblock graph_label %}
+{% block export_name %}{{ graph_export }}{% endblock export_name %}
+{% block help %}
+    {% include "references/_graph_help.html" with help="keywords" %}
+{% endblock help %}
+{% block controls %}
+    {% include "references/_keyword_graph_controls.html" %}
+{% endblock controls %}
+{# Filled by graph/keyword_selection.js with the selected term. #}
+{% block card_label %}{{ terms.singular|capfirst }} sélectionné{% endblock card_label %}
+{% block card_empty %}
+    <p class="font-medium text-gray-900">
+        {{ graph.nodes|length }} {% if graph.nodes|length > 1 %}{{ terms.plural }}{% else %}{{ terms.singular }}{% endif %}, {{ graph.edges|length }} lien{{ graph.edges|length|pluralize_fr }}
+    </p>
+    <p class="text-gray-500">
+        Cliquez sur un {{ terms.singular }} pour lister ses publications ; double-cliquez pour les ouvrir dans « Mon corpus ».
+    </p>
+{% endblock card_empty %}
+{% block card_title %}{{ terms.singular|capfirst }} sélectionné{% endblock card_title %}
+{% block card_content %}
+    <p class="text-gray-500" data-card="detail"></p>
+    <p>
+        <a href="#" data-card="corpus"></a>
+    </p>
+    <div class="grid gap-1">
+        <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Publications</p>
+        <ol class="grid gap-1.5" data-card="publications">
+        </ol>
+    </div>
+    <div class="grid gap-1" data-card-row="strongest">
+        <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Le plus souvent avec</p>
+        <ol class="grid gap-1" data-card="strongest">
+        </ol>
+    </div>
+{% endblock card_content %}
+{% block legend %}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+              aria-hidden="true"></span>
+        {{ terms.singular|capfirst }} d'OpenAlex
+    </li>
+    <li>Taille : nombre de publications qui le portent</li>
+    <li>Épaisseur : nombre de publications qui portent les deux</li>
+    <li>
+        Après un clic :
+        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses liens
+    </li>
+{% endblock legend %}
+{% block script %}
+    <script type="module" src="{% static 'references/graph/keywords.js' %}"></script>
+{% endblock script %}
+{% block empty %}
+    <div class="grid max-w-md gap-4 rounded-lg border border-gray-200 bg-white p-3 text-sm shadow-sm">
+        <p class="text-gray-600">
+            {% if graph.nodes|length > 1 %}
+                Aucun lien entre les {{ graph.nodes|length }} {{ terms.plural }} gardés : baissez le seuil.
+            {% elif graph.nodes %}
+                Un seul {{ terms.singular }} gardé, « {{ graph.nodes.0.data.label }} » : baissez le seuil.
+            {% else %}
+                Aucun {{ terms.singular }} à afficher{% if minimum > 1 %} avec ce seuil{% endif %}.
+            {% endif %}
+        </p>
+        {% include "references/_keyword_graph_controls.html" %}
+    </div>
+{% endblock empty %}

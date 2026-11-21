@@ -1,0 +1,36 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Mots-clés · Mon corpus · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1>Mon corpus</h1>
+        {% url 'corpus' as corpus_url %}
+        {% if active_tag %}
+            {% with tag_query=active_tag|urlencode %}
+                {% button "Publications" url=corpus_url|add:"?tag="|add:tag_query variant="secondary" icon="bookmarks" %}
+            {% endwith %}
+        {% else %}
+            {% button "Publications" url=corpus_url variant="secondary" icon="bookmarks" %}
+        {% endif %}
+    </header>
+    <h2>Mots-clés</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Les {{ terms.plural }} que donne OpenAlex pour
+        {% if active_tag %}
+            les publications du tag « {{ active_tag_label }} » (sous-tags compris)
+        {% else %}
+            les publications de mon corpus
+        {% endif %}
+        : deux {{ terms.plural }} sont reliés quand une même publication les porte.
+        {% if terms.field == "topics" %}
+            Les thèmes sont une liste fixe d'OpenAlex, plus grossière, sans synonymes.
+        {% else %}
+            OpenAlex les tire du titre et du résumé : un même sujet peut avoir plusieurs noms.
+        {% endif %}
+    </p>
+
+    {% include "references/_keyword_graph.html" %}
+    {% include "references/_keyword_graph_left_out.html" %}
+{% endblock content %}

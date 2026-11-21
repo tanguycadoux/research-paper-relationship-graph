@@ -1,6 +1,6 @@
 # Graphes
 
-Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (coautorat) : données produites par le serveur, dessin et interactions dans le navigateur. Vue d'ensemble du projet : [architecture.md](architecture.md).
+Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coautorat) et la [carte des mots-clés](#carte-des-mots-clés-418) : données produites par le serveur, dessin et interactions dans le navigateur. Vue d'ensemble du projet : [architecture.md](architecture.md).
 
 **Décision : le serveur fournit les données, le navigateur dessine.**
 
@@ -348,6 +348,72 @@ dessin que les graphes de citations, en vue réseau seulement.
   4 000 (52 470 liens), **120 s pour les 9 507** (mesuré sans dessin, Cytoscape sans
   cadre) : la page serait bloquée deux minutes. **Limiter ce graphe sur une grande base
   reste à décider.**
+
+## Carte des mots-clés (#418)
+
+Une carte de co-occurrence à la manière de VOSviewer : les mots-clés (ou les thèmes)
+qu'OpenAlex donne pour les publications de « Mon corpus », ou d'un tag et de ses
+sous-tags, reliés par les publications qui les portent ensemble. En vue réseau seulement.
+
+- **Page** : `/corpus/keywords/` (`views/keywords.py`), entrée « Mots-clés » du groupe
+  « Mon corpus » de la navigation, et bouton « Mots-clés » de « Mon corpus » (avec le tag
+  filtré, s'il y en a un). Une page à part plutôt qu'un mode de « Mon graphe » : ses
+  nœuds ne sont pas des publications, et ses réglages (seuil, mots-clés ou thèmes) n'ont
+  pas de sens sur le graphe des citations.
+- **Données** (`services/display/keyword_graph.py`) : **aucune requête aux sources**. Les
+  champs `keywords` et `topics` des réponses OpenAlex déjà en base (`ExternalRecord.data`),
+  extraits par la base de données (`data__keywords`), sans charger les réponses entières.
+  Trois requêtes quelle que soit la taille du corpus : les termes, la taille du corpus,
+  les publications listées par les cartes. Un terme est nommé par son `display_name`.
+- **Mots-clés ou thèmes** (`?kind=keywords` par défaut, `?kind=topics`) : les mots-clés
+  sont tirés par OpenAlex du titre et du résumé, avec des synonymes (« HL-LHC »,
+  « High-Luminosity LHC ») laissés tels quels ; les thèmes viennent d'une liste fixe,
+  plus grossière, sans synonymes. La carte d'un thème donne aussi son domaine et son
+  sous-domaine.
+- **Nœuds** : la taille suit le nombre de publications du corpus qui portent le terme
+  (aire proportionnelle, 12 à 36 px à l'écran). **Liens** : un par paire de termes portés
+  par une même publication, d'autant plus épais (0,75 à 5 px), opaque, court et raide que
+  ces publications sont nombreuses (`shared`), en racine carrée comme le graphe des
+  auteurs. Disposition `cose` de la vue réseau, départ en spirale, le terme le plus porté
+  au centre.
+- **Seuil** (`?min=`, de 1 à 10) : seuls les termes portés par au moins *n* publications
+  sont gardés, et les liens ne relient que ceux-là. Chaque choix de la liste dit combien
+  de termes il garde. **2 par défaut** : sur la copie de la base de l'utilisateur
+  (corpus de 26 publications, 25 réponses OpenAlex, 21 novembre 2026), 88 des 117
+  mots-clés ne sont portés que par une publication ; ils ne relient aucune paire de
+  publications et faisaient 117 nœuds et 578 liens. Avec 2 : 29 mots-clés et 135 liens ;
+  avec 3 : 17 et 71. Thèmes : 12 et 22 liens avec 1, 6 et 11 avec 2.
+
+  | Seuil | 1 | 2 | 3 | 4 | 5 |
+  |---|---|---|---|---|---|
+  | Mots-clés (corpus, 26 publications) | 117 / 578 | 29 / 135 | 17 / 71 | 13 / 48 | 6 / 11 |
+  | Thèmes (corpus) | 12 / 22 | 6 / 11 | 6 / 11 | 5 / 8 | 4 / 6 |
+  | Mots-clés (toute la base, 192 publications) | 725 / 3 574 | 171 / 970 | 91 / 552 | — | 51 / 284 |
+  | Thèmes (toute la base) | 65 / 124 | 30 / 62 | 24 / 52 | — | 13 / 25 |
+
+  (termes / liens). Construction des données : 4,5 ms pour le corpus, 17 ms pour les
+  termes des 192 publications de la base ; disposition dans Chrome : 19 ms (29 mots-clés),
+  5 ms (6 thèmes).
+- **Noms** (`keyword_labels.js`) : comme sur VOSviewer, écrits sous les nœuds, le
+  terme sélectionné puis les plus portés d'abord, chacun seulement s'il ne chevauche aucun
+  nom déjà placé ; zoomer en fait tenir davantage. Ils sont replacés quand la vue ou la
+  sélection ne bouge plus (120 ms), jamais pendant une animation. L'image exportée les a
+  (c'est le canevas).
+- **Sélection** (`keyword_selection.js`) : un clic met en avant le terme, ses voisins et
+  leurs liens, et zoome sur eux. La carte liste ses publications (lien vers leur fiche,
+  les plus récentes d'abord), le lien « Ouvrir ses n publications dans « Mon corpus » »
+  et les cinq termes qui l'accompagnent le plus souvent (un clic les sélectionne). Un
+  double clic ouvre « Mon corpus » filtré sur le terme.
+- **Filtre de « Mon corpus »** : `?keyword=<nom>` ou `?topic=<nom>` (avec `?tag=` sur la
+  carte d'un tag), sans colonne : il est posé par la carte et se lit dans le résumé des
+  filtres actifs.
+- **Publications écartées** : sous le graphe, le nombre de publications sans réponse
+  OpenAlex (sans DOI, ou inconnues d'OpenAlex), et de celles dont la réponse n'a aucun
+  terme du type choisi.
+- **Export** : `graphe-mots-cles`, `graphe-themes`, suivis de `-tag-<tag>` sur la carte
+  d'un tag.
+- **Synonymes** : pas de regroupement pour l'instant (voir la PR de #418 pour la suite
+  proposée).
 
 ## Code commun à tous les graphes (#340)
 

@@ -1,7 +1,8 @@
 {% comment %}
 How to read and use a graph (#415), behind « ? » at the end of the commands of the panel:
 useful the first time, it no longer takes room under the legend. A popover in frosted
-glass, opened and closed without JavaScript. Context: help, "citations" or "coauthors".
+glass, opened and closed without JavaScript. Context: help, "citations", "coauthors" or
+"keywords".
 {% endcomment %}
 {% load ui %}
 <div class="ml-auto">
@@ -24,6 +25,17 @@ glass, opened and closed without JavaScript. Context: help, "citations" or "coau
         <p>
             Survolez un auteur pour voir son nom ; cliquez pour le sélectionner, double-cliquez
             pour ouvrir sa fiche. Échap ou un clic dans le vide désélectionne.
+        </p>
+    {% elif help == "keywords" %}
+        <p>
+            Deux {{ terms.plural }} sont reliés quand une même publication les porte ; plus
+            elles sont nombreuses, plus le lien est épais et plus ils sont rapprochés. Seuls
+            les noms des plus gros tiennent sans se chevaucher : zoomez pour lire les autres.
+        </p>
+        <p>
+            Survolez un {{ terms.singular }} pour voir son nom ; cliquez pour lister ses
+            publications, double-cliquez pour les ouvrir dans « Mon corpus ». Échap ou un clic
+            dans le vide désélectionne.
         </p>
     {% else %}
         <p>

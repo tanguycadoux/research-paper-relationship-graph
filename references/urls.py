@@ -15,6 +15,7 @@ from .views import (
     graph_images,
     graphs,
     home,
+    keywords,
     publication_merge,
     publications,
     search,
@@ -156,6 +157,8 @@ urlpatterns = [
     # Corpus of the current user
     path("corpus/", corpus.my_references, name="corpus"),
     path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
+    # The map of its keywords (#418)
+    path("corpus/keywords/", keywords.corpus_keywords, name="corpus_keywords"),
     path("corpus/bulk/", corpus_bulk.bulk_action, name="corpus_bulk"),
     path("corpus/export/json/", corpus_transfer.export_json, name="corpus_export_json"),
     path("corpus/export/bibtex/", corpus_transfer.export_bibtex, name="corpus_export_bibtex"),
