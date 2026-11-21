@@ -8,12 +8,13 @@
 const MIN_SIZE = 14;
 const MAX_SIZE = 32;
 
-function color(name) {
+// A colour of the theme, shared with the HTML legend.
+export function color(name) {
     return getComputedStyle(document.documentElement).getPropertyValue(`--color-graph-${name}`).trim();
 }
 
 // A length in pixels on the screen, whatever the zoom. Cytoscape evaluates it again when
-// the style is updated (keepScreenSize in main.js).
+// the style is updated (keepScreenSize in viewport.js).
 function onScreen(pixels) {
     return (element) => pixels / element.cy().zoom();
 }
@@ -28,7 +29,12 @@ export function nodeSizes(nodes) {
     return nodes.map((n) => MIN_SIZE + (MAX_SIZE - MIN_SIZE) * Math.sqrt(n.data.citedBy / most));
 }
 
-export function graphStyle() {
+// The edges of the citation graphs: all alike, on the screen whatever the zoom (#185).
+// faded: the opacity of what a selection leaves out, nodes and edges.
+const CITATION_EDGES = { width: onScreen(1.25), hoveredWidth: onScreen(2), opacity: 0.85, faded: 0.15 };
+
+// The nodes: their size, their colour by role, and their label when hovered.
+function nodeRules() {
     return [
         {
             selector: "node",
@@ -58,6 +64,11 @@ export function graphStyle() {
                 "z-index": 10,
             },
         },
+    ];
+}
+
+function edgeRules(edges) {
+    return [
         // Straight edges: a publication cites older ones, on its left. An edge cannot be
         // clicked or hovered (events: no) nor outlined: the selection goes through the nodes.
         {
@@ -65,19 +76,24 @@ export function graphStyle() {
             style: {
                 events: "no",
                 "overlay-opacity": 0,
-                width: onScreen(1.25),
+                width: edges.width,
                 "line-color": color("edge"),
-                opacity: 0.85,
+                opacity: edges.opacity,
                 "curve-style": "straight",
             },
         },
         {
             selector: "edge.hovered",
-            style: { width: onScreen(2), "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
+            style: { width: edges.hoveredWidth, "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
         },
+    ];
+}
+
+function selectionRules(edges) {
+    return [
         // Selection (#61): the publication, its references and the publications citing it,
         // each with the colour of its relation; edges in a lighter shade of their nodes.
-        { selector: ".faded", style: { opacity: 0.15 } },
+        { selector: ".faded", style: { opacity: edges.faded } },
         // The selected publication keeps a dark ring. The soft round halo only shows while
         // the node is pressed (:active), like Cytoscape's own, which is turned off above.
         { selector: "node.selected", style: { "border-width": onScreen(3), "border-color": "#0b0b0b" } },
@@ -101,4 +117,10 @@ export function graphStyle() {
             style: { width: onScreen(3), "line-color": color("citing-light"), opacity: 1, "z-index": 5 },
         },
     ];
+}
+
+// edges: their width, at rest and hovered, their opacity, and that of the faded elements;
+// another graph gives its own (coauthors.js), and adds the rules of its selection after.
+export function graphStyle(edges = CITATION_EDGES) {
+    return [...nodeRules(), ...edgeRules(edges), ...selectionRules(edges)];
 }

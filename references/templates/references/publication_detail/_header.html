@@ -1,0 +1,55 @@
+{% comment %}
+The header of the page of a publication: its venue and year, its title, the corrections
+made by hand, the open access version, the actions, the tags of the corpus entry and
+what the page warns about (metadata, published version).
+{% endcomment %}
+{% load ui %}
+<header class="mb-8 space-y-3">
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'publication_list' %}">Publications</a>
+        {% if publication.publication_date %}· {{ publication.publication_date|date:"Y" }}{% endif %}
+        {% if details.venue %}· {{ details.venue }}{% endif %}
+    </p>
+    <h1 class="text-2xl leading-tight font-semibold text-balance">{{ publication }}</h1>
+    {% if publication.title_edited or publication.date_edited %}
+        <p class="text-sm text-gray-600">
+            {% icon "edit" %} Corrigé à la main :
+            {% if publication.title_edited %}titre{% endif %}{% if publication.title_edited and publication.date_edited %}, {% endif %}{% if publication.date_edited %}date{% endif %}.
+            Les sources ne les réécrivent plus.
+        </p>
+    {% endif %}
+    {% if open_access %}
+        {# The open access version given by OpenAlex, or the arXiv PDF (#284). #}
+        <p class="font-medium">{% external_link open_access.url open_access.label %}</p>
+    {% endif %}
+    {% if fetch_pending_publication %}
+        <div data-fetch-pending-publication="{{ fetch_pending_publication }}"
+             data-fetch-progress="{% url 'fetch_progress' %}">
+            {% alert "Données en cours de récupération : la page se complétera d'elle-même." %}
+        </div>
+    {% endif %}
+    {% include "references/publication_detail/_actions.html" %}
+    {% if belongs_to_user %}
+        {% include "references/_entry_tags.html" %}
+    {% endif %}
+    {% if fetch_pending_publication %}
+        {# Already said above: the queue is fetching them (#379). #}
+    {% elif metadata_status == "missing" %}
+        {% if user.is_authenticated and publication.doi %}
+            {% alert "Les métadonnées de cette publication n'ont pas encore été récupérées : « Rafraîchir les métadonnées » interroge les sources." variant="warning" %}
+        {% else %}
+            {% alert "Les métadonnées de cette publication n'ont pas encore été récupérées." variant="warning" %}
+        {% endif %}
+    {% elif metadata_status == "unknown" %}
+        {% alert "Aucune des sources interrogées (Crossref, DataCite, Open Library…) ne connaît cette publication." %}
+    {% endif %}
+    {% if version_proposal %}
+        <div class="mt-3 space-y-2">
+            {% alert version_proposal %}
+            {% if user.is_authenticated %}
+                {% url 'conflict_list' as conflicts_url %}
+                {% button "Trancher dans « Conflits »" url=conflicts_url variant="secondary" %}
+            {% endif %}
+        </div>
+    {% endif %}
+</header>

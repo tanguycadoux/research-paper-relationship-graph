@@ -1,0 +1,49 @@
+{% comment %}
+The actions of the page of a publication, in its header: the corpus entry, the graph,
+« Citer », and the corrections for a signed-in user.
+{% endcomment %}
+{% load ui %}
+<div class="flex flex-wrap items-center gap-2">
+    {% if user.is_authenticated %}
+        {% if belongs_to_user %}
+            {% include "references/_corpus_remove_form.html" with pub=publication %}
+            {% include "references/_reading_status_form.html" with pub=publication status=reading_status %}
+        {% else %}
+            {# « À lire »: without its bibliography until the status changes (#234). #}
+            <form method="post"
+                  action="{% url 'corpus_add' publication.pk %}"
+                  class="flex flex-wrap gap-2">
+                {% csrf_token %}
+                {% button "Ajouter à mon corpus" variant="success-light" icon="add" %}
+                {% button "Ajouter à lire" variant="secondary" icon="bookmark_add" name="status" value="to_read" %}
+            </form>
+        {% endif %}
+    {% endif %}
+    {% url 'publication_graph' publication.pk as graph_url %}
+    {% button "Graphe" url=graph_url variant="secondary" icon="hub" %}
+    {% include "references/_citation_panel.html" %}
+    {% if user.is_authenticated %}
+        {% url 'publication_edit' publication.pk as edit_url %}
+        {% button "Modifier" url=edit_url variant="secondary" icon="edit" %}
+        {% if publication.doi %}
+            {# The refresh asks the DOI sources only #}
+            <form method="post" action="{% url 'publication_refresh' publication.pk %}">
+                {% csrf_token %}
+                {% button "Rafraîchir les métadonnées" variant="secondary" icon="refresh" %}
+            </form>
+        {% endif %}
+        {% if publication.title_edited or publication.date_edited %}
+            <form method="post"
+                  action="{% url 'publication_restore_sources' publication.pk %}">
+                {% csrf_token %}
+                {% button "Revenir aux valeurs des sources" variant="secondary" icon="undo" %}
+            </form>
+        {% endif %}
+        {% if not publication.doi and not publication.isbn %}
+            {% url 'publication_merge' publication.pk as merge_url %}
+            {% button "Cette publication est en fait…" url=merge_url variant="secondary" icon="merge" %}
+        {% endif %}
+    {% else %}
+        <p class="text-sm text-gray-600">Connectez-vous pour enregistrer cette publication.</p>
+    {% endif %}
+</div>

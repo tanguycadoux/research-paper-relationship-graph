@@ -1,0 +1,6 @@
+{% comment %}
+A tag of my corpus (#130) as a small link that filters by it. Context: tag; tag_page, the
+page it filters ("" for the current one).
+{% endcomment %}
+<a href="{{ tag_page }}?tag={{ tag.name|urlencode }}"
+   class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 no-underline hover:bg-gray-200">{{ tag.label }}</a>

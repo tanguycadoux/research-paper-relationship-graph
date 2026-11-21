@@ -13,7 +13,7 @@ from django.views.decorators.http import require_POST
 from ..models import Publication, UserPublication
 from ..services.corpus import bulk, tags
 from ..services.display.wording import count, suffix
-from .corpus import back_or_corpus, redirect_back
+from .redirects import redirect_to_next
 
 
 @login_required
@@ -21,7 +21,7 @@ from .corpus import back_or_corpus, redirect_back
 def bulk_action(request):
     """The bar of « Mon corpus »: all or nothing."""
     run_action(request, request.POST.getlist("publication"), partial=False)
-    return back_or_corpus(request)
+    return redirect_to_next(request, "corpus")
 
 
 @login_required
@@ -38,7 +38,7 @@ def publication_bulk_action(request, pk):
         add_checked(request, checked)
     else:
         run_action(request, checked, partial=True)
-    return redirect_back(request, pk)
+    return redirect_to_next(request, "publication_detail", pk=pk)
 
 
 def run_action(request, values, *, partial):

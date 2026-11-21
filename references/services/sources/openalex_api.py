@@ -24,13 +24,7 @@ def fetch_openalex_work(doi):
     """Return the OpenAlex work of a DOI, or None. Single lookups are free."""
     if not doi:
         return None
-    return http.get_json(
-        f"{OPENALEX_WORKS_URL}/doi:{doi}",
-        params=contact_params(),
-        service="OpenAlex",
-        subject=f"DOI {doi}",
-        contact=settings.CROSSREF_MAILTO,
-    )
+    return _get_json(f"{OPENALEX_WORKS_URL}/doi:{doi}", {}, f"DOI {doi}")
 
 
 def fetch_openalex_works(dois):
@@ -39,21 +33,12 @@ def fetch_openalex_works(dois):
     Return {doi: json or None}: None when OpenAlex answered without this DOI.
     DOIs of a batch whose request failed are absent from the result.
     """
-    works = {}
-    for start in range(0, len(dois), BATCH_SIZE):
-        works.update(_fetch_batch(dois[start : start + BATCH_SIZE]))
-    return works
+    return http.in_batches(dois, BATCH_SIZE, _fetch_batch)
 
 
 def _fetch_batch(dois):
-    params = {"filter": "doi:" + "|".join(dois), "per-page": len(dois)} | contact_params()
-    data = http.get_json(
-        OPENALEX_WORKS_URL,
-        params=params,
-        service="OpenAlex",
-        subject=f"batch of {len(dois)} DOIs",
-        contact=settings.CROSSREF_MAILTO,
-    )
+    params = {"filter": "doi:" + "|".join(dois), "per-page": len(dois)}
+    data = _get_json(OPENALEX_WORKS_URL, params, f"batch of {len(dois)} DOIs")
     if data is None:
         return {}
     found = {doi: work for work in data.get("results", []) for doi in work_dois(work)}
@@ -87,17 +72,16 @@ def fetch_citing_works(work_id, sort, count):
         "sort": sort,
         "per-page": count,
         "select": CITING_FIELDS,
-    } | contact_params()
-    data = http.get_json(
-        OPENALEX_WORKS_URL,
-        params=params,
-        service="OpenAlex",
-        subject=f"works citing {work_id}",
-        contact=settings.CROSSREF_MAILTO,
-    )
+    }
+    data = _get_json(OPENALEX_WORKS_URL, params, f"works citing {work_id}")
     if data is None:
         return None
     return (data.get("meta") or {}).get("count", 0), data.get("results") or []
+
+
+def short_id(url):
+    """'https://openalex.org/I4210141222' -> 'I4210141222' (a ROR link too); "" for None."""
+    return (url or "").rsplit("/", 1)[-1]
 
 
 def contact_params():
@@ -105,22 +89,28 @@ def contact_params():
     return {"mailto": mailto} if mailto else {}
 
 
+def _get_json(url, params, subject):
+    """One OpenAlex request, with the contact address when there is one."""
+    return http.get_json(
+        url,
+        params=params | contact_params(),
+        service="OpenAlex",
+        subject=subject,
+        contact=settings.CROSSREF_MAILTO,
+    )
+
+
 def fetch_openalex_institutions(ids):
     """
     Return {OpenAlex id: institution} for institution ids ('I2738703131'), one
     request per batch of BATCH_SIZE. Used for the ancestors of an institution.
     """
-    institutions = {}
-    for start in range(0, len(ids), BATCH_SIZE):
-        batch = ids[start : start + BATCH_SIZE]
-        data = http.get_json(
-            OPENALEX_INSTITUTIONS_URL,
-            params={"filter": "openalex:" + "|".join(batch), "per-page": len(batch)}
-            | contact_params(),
-            service="OpenAlex",
-            subject=f"batch of {len(batch)} institutions",
-            contact=settings.CROSSREF_MAILTO,
-        )
-        for institution in (data or {}).get("results", []):
-            institutions[institution["id"].rsplit("/", 1)[-1]] = institution
-    return institutions
+    return http.in_batches(ids, BATCH_SIZE, _institutions_batch)
+
+
+def _institutions_batch(ids):
+    params = {"filter": "openalex:" + "|".join(ids), "per-page": len(ids)}
+    data = _get_json(OPENALEX_INSTITUTIONS_URL, params, f"batch of {len(ids)} institutions")
+    return {
+        short_id(institution["id"]): institution for institution in (data or {}).get("results", [])
+    }

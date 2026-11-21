@@ -113,7 +113,7 @@ class IncomingCitationsTests(TestCase):
         pub = Publication.objects.create(doi="10.1000/sans-fiche")
         work = {"id": "https://openalex.org/W7", "doi": "https://doi.org/10.1000/sans-fiche"}
         with simulated_sources(openalex=[work]) as sources:
-            self.assertEqual(incoming_citations.openalex_id(pub), "W7")
+            self.assertEqual(incoming_citations.publication_openalex_id(pub), "W7")
         self.assertEqual(sources.single("openalex"), ["10.1000/sans-fiche"])
 
     def test_page_orders_and_links_the_works(self):

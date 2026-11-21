@@ -1,0 +1,13 @@
+{% comment %}
+The tags of tag_tree as items of a list (<li>) that the caller opens, each a filter
+(?tag=…) with its count of publications, the current one (active_tag) in bold. With
+nested, one level further in: under a first item (« Tout le corpus »).
+{% endcomment %}
+{% load ui %}
+{% for item in tag_tree %}
+    <li class="flex items-baseline justify-between gap-3 {% tag_indent item.depth nested=nested %}">
+        <a href="?tag={{ item.path|urlencode }}"
+           {% if item.path == active_tag %}aria-current="true" class="font-semibold"{% endif %}>{{ item.name }}</a>
+        <span class="text-gray-500">{{ item.count }}</span>
+    </li>
+{% endfor %}

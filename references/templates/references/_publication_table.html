@@ -47,9 +47,7 @@ the reading status is under the title, beside the authors and year (#412).
                     {% column_header "Lecture" "status" classes="hidden sm:table-cell" %}
                 {% endif %}
                 {% if corpus_actions %}
-                    <th scope="col">
-                        <span class="sr-only">Mon corpus</span>
-                    </th>
+                    {% include "references/_corpus_column_header.html" %}
                 {% endif %}
             </tr>
         </thead>
@@ -72,7 +70,7 @@ the reading status is under the title, beside the authors and year (#412).
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
                             <span class="text-sm text-gray-600">
                                 {% if pub.first_author and not hide_authors %}
-                                    {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                                    {% include "references/_first_author.html" %}
                                     {% if pub.publication_date %}·{% endif %}
                                 {% endif %}
                                 {{ pub.publication_date|date:"Y" }}
@@ -103,15 +101,14 @@ the reading status is under the title, beside the authors and year (#412).
                         {% if reading_column %}
                             {# My tags (#130), each a filter of the table #}
                             {% for tag in pub.my_tags %}
-                                <a href="?tag={{ tag.name|urlencode }}"
-                                   class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700 no-underline hover:bg-gray-200">{{ tag.label }}</a>
+                                {% include "references/_tag_link.html" with tag_page="" %}
                             {% endfor %}
                         {% endif %}
                     </td>
                     {% if not hide_authors %}
                         <td class="hidden text-gray-600 sm:table-cell">
                             {% if pub.first_author %}
-                                {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                                {% include "references/_first_author.html" %}
                             {% endif %}
                         </td>
                     {% endif %}
@@ -135,15 +132,7 @@ the reading status is under the title, beside the authors and year (#412).
                             {% if pub.id in user_pub_ids %}
                                 {% include "references/_corpus_remove_form.html" with icon_only=True next=request.get_full_path %}
                             {% else %}
-                                <form method="post"
-                                      action="{% url 'corpus_add' pub.pk %}"
-                                      class="flex justify-end gap-1">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    {# « + » last: aligned with « − » of the rows in the corpus. #}
-                                    {% button "Ajouter à mon corpus, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
-                                    {% button "Ajouter à mon corpus" variant="success-light" icon="add" icon_only=True %}
-                                </form>
+                                {% include "references/_corpus_add_form.html" with next=request.get_full_path %}
                             {% endif %}
                         </td>
                     {% endif %}
