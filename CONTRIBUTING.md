@@ -46,6 +46,7 @@ pip install -r requirements-dev.txt
 ruff check .
 ruff format .
 djlint --lint templates references/templates accounts/templates
+tools/check_js.sh                 # syntaxe du JavaScript, si Node est installé
 python manage.py test
 coverage run manage.py test && coverage report   # couverture, lignes non couvertes
 ```
@@ -69,4 +70,4 @@ Les templates suivent HTML5 : `lang="fr"`, balises sémantiques (`<header>`, `<n
 
 Les tests ne font aucun appel réseau : les sources externes sont simulées avec `unittest.mock`, là où elles sont appelées, souvent par les décorateurs de `references/tests/helpers.py` (`without_other_sources`, `without_candidate_search`, `without_doi_org`…). Le test runner (`config/test_runner.py`) fait échouer toute tentative de connexion, ce qui révèle un appel oublié, et désactive le cache HTTP de développement.
 
-La CI (GitHub Actions) lance `ruff check`, `ruff format --check`, `djlint --lint`, `python manage.py test` (avec la couverture) et la construction de la feuille Tailwind sur chaque pull request. Les tests y tournent avec `requirements.txt` seul, comme en production : ceux qui demandent une dépendance de développement (requests-cache) sont sautés.
+La CI (GitHub Actions) lance `ruff check`, `ruff format --check`, `djlint --lint`, `tools/check_js.sh` (`node --check` sur chaque fichier JavaScript, sans npm), `python manage.py test` (avec la couverture) et la construction de la feuille Tailwind sur chaque pull request. Les tests y tournent avec `requirements.txt` seul, comme en production : ceux qui demandent une dépendance de développement (requests-cache) sont sautés.

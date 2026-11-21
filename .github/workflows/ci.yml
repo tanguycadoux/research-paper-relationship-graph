@@ -18,6 +18,17 @@ jobs:
       - run: ruff format --check .
       - run: djlint --lint templates references/templates accounts/templates
 
+  # The JavaScript has no build step and no dependency (#174): Node only parses each
+  # file, without npm nor package.json (#341). A linter is discussed apart.
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: tools/check_js.sh
+
   tests:
     runs-on: ubuntu-latest
     steps:

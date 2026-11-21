@@ -259,13 +259,19 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   `card.js` (commun aussi : carte de la sélection et gestes de la sélection), `scale.js` (dates et échelle),
   `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
-  `export.js` (export PNG),
+  `export.js` (export PNG), `export_labels.js` (noms des nœuds sur l'image),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
   `network-worker.js` (la même dans un Web Worker, chargé comme module),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
   un clic sur une publication et le remplissage de sa carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
   (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
-  JavaScript pour l'instant : vérification dans Chrome headless.
+  JavaScript dans l'application : la CI vérifie seulement la syntaxe de chaque fichier
+  (`tools/check_js.sh`, `node --check`, sans npm, #341) ; le comportement se vérifie dans
+  Chrome headless (banc). Fonctions courtes, comme en Python : la vue
+  (`viewport.js`) sépare la vue d'ensemble et ses bornes (`makeWholeView`), le bouton
+  « Vue d'ensemble » (`bindShowAllButton`) et les tailles à l'écran (`keepScreenSize`) ;
+  le recentrage (`focus.js`) sépare l'animation (`makeMover`) de la sélection ; le style
+  est fait de trois groupes de règles (nœuds, liens, sélection).
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
   intégrité vérifiée, voir son README) : les graphes fonctionnent hors ligne, sans
   service tiers.
