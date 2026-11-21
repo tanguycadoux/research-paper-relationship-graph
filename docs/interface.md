@@ -113,6 +113,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
   que les jointures ne multiplient pas les décomptes.
+  Sous `sm`, les colonnes Auteurs et Année sont résumées sous le titre (#334) ; dans
+  « Mon corpus », la colonne Lecture aussi : la liste du statut est sous le titre, à côté
+  de ce résumé (#412). Le formulaire du statut est alors deux fois dans la ligne, l'un
+  masqué selon la largeur ; celui sous le titre a ses propres identifiants
+  (`id_suffix="-compact"`). Le tri par ces colonnes reste dans `{% sort_links %}` ; leurs
+  filtres actifs restent dans le résumé des filtres.
 - **Listes paginées** (#154, `views/pagination.py`) : les publications, « Mon
   corpus » et les auteurs par pages de 50. Les annotations du tableau ne sont
   calculées que pour la page, et le nombre de requêtes ne dépend pas de la taille de la
