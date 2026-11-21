@@ -1,0 +1,33 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Métadonnées brutes · {% endblock title %}
+
+{% block content %}
+    <header class="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+            <h1>Métadonnées brutes</h1>
+            <p class="mt-2 max-w-3xl text-gray-600">
+                Les réponses des sources pour
+                <a href="{% url 'publication_detail' publication.pk %}">{{ publication }}</a>,
+                telles qu'elles ont été enregistrées.
+            </p>
+        </div>
+        {% url 'publication_metadata' publication.pk as metadata_url %}
+        {% button "JSON" url=metadata_url|add:"?format=json" variant="secondary" icon="download" %}
+    </header>
+    {% comment %}
+        One card per source. The JSON wraps within the card, even inside a long string
+        (a URL, an abstract): it never widens the page at 390 px (#413).
+    {% endcomment %}
+    <div class="grid grid-cols-1 gap-6">
+        {% for item in sources %}
+            <section aria-labelledby="source-{{ item.source }}">
+                {% card %}
+                    <h2 id="source-{{ item.source }}" class="mb-2 text-base font-semibold">{{ item.source }}</h2>
+                    <pre class="text-xs whitespace-pre-wrap wrap-anywhere">{{ item.json }}</pre>
+                {% endcard %}
+            </section>
+        {% endfor %}
+    </div>
+{% endblock content %}
