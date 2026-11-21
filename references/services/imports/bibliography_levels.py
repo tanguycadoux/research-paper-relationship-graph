@@ -1,9 +1,10 @@
 """
 The levels of the bibliographies around a starting point (#431), read in the base
-without any request: level 1 is the bibliography of the start, level 2 those of the
-publications it cites, level 3 those of the publications these cite. A level is known
-exactly once the bibliographies of the level before are in the base; beyond, it is
-estimated by the average number of identified references of a bibliography.
+without any request: level 1 is the references of the start, level 2 the references of
+these references, level 3 theirs. Reaching level n takes the bibliographies of level n - 1
+(of the start for level 1). A level is known exactly once the bibliographies of the level
+before are in the base; beyond, it is estimated by the average number of identified
+references of a bibliography.
 
 The cost of a level is its imports: the publications whose bibliography is still to come
 from the sources. One costs about one request and 0.8 s through the queue, in batches
@@ -78,10 +79,13 @@ def average_references():
 @dataclass
 class Level:
     number: int
-    # The publications whose bibliography forms the level, and those still to fetch.
+    # The publications of the level (the references of the level before), and the
+    # bibliographies of the level before still to fetch to reach it.
     publications: int
     imports: int
+    # Whether imports, and publications, are known exactly rather than estimated.
     exact: bool
+    publications_exact: bool
 
 
 @dataclass
@@ -118,8 +122,9 @@ def duration_minutes(imports):
 
 def estimate(start_pks, depth=MAX_DEPTH):
     """
-    The levels 1 to depth from the publications start_pks. Each level counts its
-    publications and its imports exactly as long as the level before is in the base; the
+    The levels 1 to depth from the publications start_pks: the references of each level,
+    and the bibliographies to fetch to reach it. Each is exact as long as the level before
+    is in the base; the
     bibliographies still to fetch bring about average publications each, all assumed to
     be imported (an upper bound: some are already in the base).
     """
@@ -128,8 +133,9 @@ def estimate(start_pks, depth=MAX_DEPTH):
     levels = []
     for number in range(1, depth + 1):
         missing = to_import(members)
-        levels.append(Level(number, len(members) + guessed, len(missing) + guessed, not guessed))
-        guessed = round((len(missing) + guessed) * average)
+        imports, exact = len(missing) + guessed, not guessed
+        guessed = round(imports * average)
         members = set(cited_by(members - missing, visited))
         visited |= members
+        levels.append(Level(number, len(members) + guessed, imports, exact, not guessed))
     return Estimate(levels, average, settings.BIBLIOGRAPHY_REQUEST_LIMIT)

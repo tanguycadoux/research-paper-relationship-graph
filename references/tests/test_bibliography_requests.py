@@ -65,9 +65,13 @@ class BibliographyRequestTests(TestCase):
 
     def test_the_estimate_of_each_level(self):
         estimate = bibliography_levels.estimate([self.a.pk])
-        levels = [(lv.publications, lv.imports, lv.exact) for lv in estimate.levels]
-        # Level 1: A, in the base. Level 2: B and C, to fetch. Level 3: about 2 × 2.
-        self.assertEqual(levels, [(1, 0, True), (2, 2, True), (4, 4, False)])
+        levels = [
+            (lv.publications, lv.publications_exact, lv.imports, lv.exact) for lv in estimate.levels
+        ]
+        # Level 1: B and C, the references of A, whose bibliography is in the base.
+        # Level 2: about 2 × 2, once the bibliographies of B and C are fetched.
+        # Level 3: about 4 × 2, from the 4 bibliographies of level 2.
+        self.assertEqual(levels, [(2, True, 0, True), (4, False, 2, True), (8, False, 4, False)])
         self.assertEqual(estimate.average, 2)
         self.assertEqual(
             [(c["depth"], c["imports"], c["exact"]) for c in estimate.choices],

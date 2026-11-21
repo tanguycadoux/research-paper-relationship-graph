@@ -13,9 +13,10 @@
     </p>
     <h1 class="mt-1">Récupérer les bibliographies</h1>
     <p class="mt-1 mb-6 max-w-3xl text-gray-600">
-        Depuis {{ start_label }} : les bibliographies des publications citées (niveau 2), puis
-        celles des publications qu'elles citent (niveau 3). Les publications récupérées entrent
-        dans la base commune ; rien n'est ajouté à votre corpus.
+        Depuis {{ start_label }} : ses références (niveau 1), les références de ses références
+        (niveau 2), puis les leurs (niveau 3). Atteindre un niveau demande les bibliographies du
+        niveau précédent. Les publications récupérées entrent dans la base commune ; rien n'est
+        ajouté à votre corpus.
     </p>
 
     <div class="max-w-3xl space-y-8">
@@ -35,7 +36,7 @@
                         <tr>
                             <th scope="col">Niveau</th>
                             <th scope="col">Publications</th>
-                            <th scope="col">Bibliographies à récupérer</th>
+                            <th scope="col">Bibliographies à récupérer pour l'atteindre</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -45,16 +46,16 @@
                                     {{ level.number }}
                                     <span class="text-gray-500">
                                         {% if level.number == 1 %}
-                                            · le point de départ
+                                            · ses références
                                         {% elif level.number == 2 %}
-                                            · les publications qu'il cite
+                                            · les références de ses références
                                         {% else %}
-                                            · celles qu'elles citent
+                                            · les leurs
                                         {% endif %}
                                     </span>
                                 </th>
                                 <td>
-                                    {% if not level.exact %}≈{% endif %}
+                                    {% if not level.publications_exact %}≈{% endif %}
                                     {{ level.publications }}
                                 </td>
                                 <td>
