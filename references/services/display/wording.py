@@ -11,3 +11,13 @@ def count(number, singular, plural=None):
     else:
         words = singular
     return f"{number} {words}"
+
+
+def suffix(number, suffixes="s"):
+    """
+    The ending of a word agreed with number, as Django's pluralize but in French: 0 and
+    1 take the singular (#411). « s » or « nt » alone is the plural ending; « a,ont »
+    gives both.
+    """
+    singular, _, plural = suffixes.rpartition(",")
+    return plural if number > 1 else singular

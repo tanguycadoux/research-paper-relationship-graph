@@ -121,20 +121,17 @@ def decoded(content):
 
 def report_import(request, report):
     """
-    One short toast; the details stay at the top of « Mon corpus » until the report is
-    closed (#330).
+    One short sentence (#411): the details stay at the top of « Mon corpus » until the
+    report is closed (#330), and the queue has its own toast (#379).
     """
     import_reports.remember(request.session, report)
+    added = import_reports.added_count(report)
+    parts = [count(added, "publication ajoutée") if added else "aucune publication ajoutée"]
     ignored = len(report.ignored) + len(report.unregistered)
-    summary = f"Import terminé : {count(len(report.added), 'publication ajoutée')}"
-    if report.queued:
-        queued = count(len(report.queued), "publication")
-        summary = f"Import enregistré : {queued} en file de récupération"
-        if report.added:
-            summary += f", {count(len(report.added), 'publication ajoutée')}"
     if ignored:
-        summary += f", {count(ignored, 'entrée ignorée')}"
-    messages.success(request, f"{summary}. Le rapport est en haut de la page.")
+        parts.append(count(ignored, "entrée ignorée"))
+    summary = ", ".join(parts)
+    messages.success(request, f"Import terminé : {summary} ; le rapport est en haut de la page.")
 
 
 @login_required

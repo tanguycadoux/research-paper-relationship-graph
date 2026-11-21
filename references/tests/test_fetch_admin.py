@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
@@ -101,6 +101,19 @@ class FetchAdminPageTests(TestCase):
 
     def setUp(self):
         self.client.force_login(self.admin)
+
+    def test_short_french_dates(self):
+        moment = timezone.make_aware(datetime(2026, 11, 15, 22, 1, 4))
+        FetchRequest.objects.filter(pk=self.pending.pk).update(requested_at=moment)
+        worker_seen()
+        FetchWorker.objects.update(seen_at=moment)
+        response = self.client.get(URL)
+        # « 15 nov. 2026 à 22:01 », not « 15 Nov 2026, 22:01:04 » (#413).
+        self.assertContains(response, "Demandée le <time")
+        self.assertContains(
+            response, 'title="15 novembre 2026 à 22:01:04">15 nov. 2026 à 22:01</time>'
+        )
+        self.assertNotContains(response, "Nov 2026")
 
     def test_the_requests_of_each_state(self):
         response = self.client.get(URL)

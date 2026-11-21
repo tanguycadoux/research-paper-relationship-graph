@@ -3,8 +3,10 @@ Search of publications and authors (#153): one bar, free text and operators,
 
     auteur:Felice titre:"champ magnétique" année:2020..2024 doi:10.1109 note:aimant
 
-Free text looks in the titles, the author names and the identifiers; note: in the notes
-of the user's own corpus (#283), private. Comparisons ignore
+Free text looks in the titles, the author names, the identifiers and the notes of the
+user's own corpus (#283, #416), never in those of others; note: in those notes only.
+A publication that a free word finds in the note alone says so (found_in_note).
+Comparisons ignore
 case and accents through normalized(), an SQL function registered on every SQLite
 connection: SQLite's LIKE only folds ASCII, and has no unaccent.
 """
@@ -14,7 +16,18 @@ import shlex
 import unicodedata
 from dataclasses import dataclass, field
 
-from django.db.models import Exists, F, Func, OuterRef, Q, TextField, Value
+from django.db.models import (
+    BooleanField,
+    Case,
+    Exists,
+    F,
+    Func,
+    OuterRef,
+    Q,
+    TextField,
+    Value,
+    When,
+)
 from django.db.models.functions import Concat
 
 from ...models import Author, AuthorPublication, UserPublication
@@ -148,6 +161,38 @@ def noted(user, text):
     return Exists(entries.filter(contains("_note", text)))
 
 
+def term_found(term):
+    """Publications whose title, an author name or an identifier holds term."""
+    return (
+        contains("_title", term)
+        | author_named([term])
+        | contains("_doi", term)
+        | Q(isbn__contains=term.replace("-", ""))
+    )
+
+
+def filter_terms(publications, terms, user):
+    """
+    The publications holding every free word, in their fields or the note of user, and
+    found_in_note when one of the words is in that note only (#416).
+    """
+    if not terms:
+        return publications
+    if user is None or not user.is_authenticated:
+        for term in terms:
+            publications = publications.filter(term_found(term))
+        return publications
+    in_note_only = Q()
+    for term in terms:
+        publications = publications.filter(term_found(term) | noted(user, term))
+        in_note_only |= ~term_found(term) & noted(user, term)
+    return publications.annotate(
+        found_in_note=Case(
+            When(in_note_only, then=Value(True)), default=Value(False), output_field=BooleanField()
+        )
+    )
+
+
 def filter_publications(publications, query, user=None):
     """
     The publications matching every part of the query; the notes asked are those of
@@ -156,13 +201,7 @@ def filter_publications(publications, query, user=None):
     publications = publications.alias(
         _title=Normalized(F("readable_title")), _doi=Normalized(F("doi"))
     )
-    for term in query.terms:
-        publications = publications.filter(
-            contains("_title", term)
-            | author_named([term])
-            | contains("_doi", term)
-            | Q(isbn__contains=term.replace("-", ""))
-        )
+    publications = filter_terms(publications, query.terms, user)
     # A quoted title is a phrase: its words in that order.
     for title in query.titles:
         publications = publications.filter(contains("_title", title))

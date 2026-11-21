@@ -30,7 +30,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   (`author_duplicates.duplicate_count`, 78 ms pour 9 500 auteurs), gardé en cache sous une
   clé qui résume les auteurs (nombre, dernier, longueur des noms, ORCID, paires déclarées
   distinctes) : recompté seulement quand ils changent. **Notifications** : les messages Django s'affichent en
-  toasts (`static/js/toasts.js`). **Boutons occupés** (`static/js/busy.js`, #339) : à
+  toasts (`static/js/toasts.js`), d'une phrase ; à partir de `md`, en bas de la colonne de
+  navigation et de sa largeur, pour ne pas cacher les boutons des dernières lignes d'un
+  tableau ; en dessous, en bas de l'écran (#411). **Accords** : 0 et 1 prennent le
+  singulier, en Python avec `wording.count` (« 0 publication ajoutée ») et dans les
+  templates avec le filtre `pluralize_fr` de `{% load ui %}` (`|pluralize` de Django met 0
+  au pluriel). **Boutons occupés** (`static/js/busy.js`, #339) : à
   l'envoi d'un formulaire POST, ses boutons sont désactivés (après la lecture du bouton
   cliqué, dont la valeur compte : « à lire ») et celui qui a été cliqué remplace son icône
   par une animation ; ils se réactivent au retour par l'historique. Sans JavaScript, rien
@@ -63,7 +68,10 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
 - **Rapport d'import** (`_import_report.html`, `services/corpus/import_reports.py`, #330) :
   après l'import d'un fichier, un seul toast court ; le détail (publications ajoutées avec
   leur lien, déjà présentes, sans métadonnées, entrées ignorées et pourquoi, 20 par liste)
-  est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture.
+  est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture. Sa
+  première ligne compte toutes les publications ajoutées, celles en file de récupération
+  comprises (« 2 publications ajoutées à votre corpus ; leurs données arrivent en
+  arrière-plan »), et n'écrit pas de compte à zéro (#411).
 - **Exporter** (carte « Exporter et importer » de « Mon corpus », #285) : sans filtre, les
   boutons exportent tout le corpus (« JSON (réimportable) », « BibTeX ») ; avec des filtres
   (tag et ses sous-tags, colonnes, « à identifier »), ils exportent les publications
@@ -81,7 +89,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   `with_status`, `with_note`, sans lire le texte des notes).
 - **Note** (#283) : sur la fiche d'une publication de mon corpus, une carte « Ma note » en
   tête de la colonne de droite, un champ de texte libre enregistré par un bouton (vide, la
-  note est effacée). Privée : seul son auteur la voit. Cherchée par `note:` dans la
+  note est effacée). Privée : seul son auteur la voit. Cherchée par le texte libre et par `note:` dans la
   recherche, exportée en JSON (`note`, version 3) et en BibTeX (`annote`).
 - **Citer** (`_citation_panel.html`, `services/display/citations.py`, #286) : sur la fiche,
   un popover donne la référence en APA (7ᵉ édition) et en IEEE, et l'entrée BibTeX de la
@@ -91,6 +99,11 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   gardée ; une prépublication arXiv est citée par son identifiant. Le popover s'ouvre et se
   ferme sans JavaScript, le texte reste sélectionnable ; `static/js/copy_citation.js`
   ajoute « Copier » (HTML, qui garde l'italique, et texte brut ; texte brut pour BibTeX).
+  L'entrée BibTeX revient à la ligne dans le panneau (`whitespace-pre-wrap`) ; la copie
+  prend son `textContent`, sans ces retours à la ligne d'affichage (#413).
+- **Métadonnées brutes** (`/publications/<pk>/metadata/`, `publication_metadata.html`,
+  #413) : une carte par source, le JSON indenté et replié à la largeur de la carte, même
+  dans une longue chaîne (`wrap-anywhere`) ; `?format=json` rend le JSON lui-même.
 - **Actions groupées** (`_bulk_actions.html`, `views/corpus_bulk.py`,
   `services/corpus/bulk.py`, #287) : dans « Mon corpus », une case par ligne et, au-dessus
   du tableau, une barre pour ajouter un tag, changer le statut de lecture ou retirer du
@@ -115,6 +128,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   Retour à la liste par `next` (`#references-title` ou `#cited-by-title`), vérifié par
   `url_has_allowed_host_and_scheme`. Le message d'un retrait groupé dit ce qui est perdu
   (« avec 2 tags, 1 statut de lecture et 1 note »).
+  Sur la fiche, les deux barres sont repliées (`collapsed=True`, #410) : tant que rien
+  n'est coché, le script n'en montre que la première ligne, qui dit à quoi servent les
+  cases ; elle se déplie pour de bon à la première case cochée (décochée ensuite, ses
+  boutons sont désactivés, pas masqués). Les contrôles et l'aide sont dans la partie
+  repliée (`data-bulk-more`) : l'aide ne s'affiche que dans une barre dépliée. Sans
+  JavaScript, les barres restent dépliées. Celle de « Mon corpus » n'est jamais repliée.
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce
@@ -122,6 +141,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   sans la colonne sur la page d'un auteur), les références à identifier, les métadonnées
   manquantes et les références non importées. Ces valeurs sont des sous-requêtes, pour
   que les jointures ne multiplient pas les décomptes.
+  Sous `sm`, les colonnes Auteurs et Année sont résumées sous le titre (#334) ; dans
+  « Mon corpus », la colonne Lecture aussi : la liste du statut est sous le titre, à côté
+  de ce résumé (#412). Le formulaire du statut est alors deux fois dans la ligne, l'un
+  masqué selon la largeur ; celui sous le titre a ses propres identifiants
+  (`id_suffix="-compact"`). Le tri par ces colonnes reste dans `{% sort_links %}` ; leurs
+  filtres actifs restent dans le résumé des filtres.
 - **Listes paginées** (#154, `views/pagination.py`) : les publications, « Mon
   corpus » et les auteurs par pages de 50. Les annotations du tableau ne sont
   calculées que pour la page, et le nombre de requêtes ne dépend pas de la taille de la
@@ -161,8 +186,10 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
 - **Recherche** (#153, `services/display/search.py`, `/search/?q=…`) : une seule barre, du
   texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
   année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
-  auteurs et les identifiants ; les mots d'un `auteur:` doivent appartenir à la même
-  personne ; un `titre:` entre guillemets est une expression ; `note:` cherche dans les
+  auteurs, les identifiants et les notes de l'utilisateur connecté (#416), jamais
+  dans celles des autres ; une publication qu'un mot ne trouve que dans ma note porte le
+  badge « trouvée dans votre note ». Les mots d'un `auteur:` doivent appartenir à la même
+  personne ; un `titre:` entre guillemets est une expression ; `note:` cherche seulement dans les
   notes de mon corpus (#283), aucune pour un visiteur, à qui la page dit de se connecter. Un opérateur inconnu reste
   du texte (« Re:thinking ») ; une année mal écrite est signalée sans bloquer le reste.
   Résultats : les publications par pages, et les 20 premiers auteurs (sauf si la

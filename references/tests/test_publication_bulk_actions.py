@@ -66,6 +66,26 @@ class PublicationBulkActionsTests(TestCase):
         self.assertContains(response, reverse("publication_bulk", args=[self.pub.pk]), count=2)
         self.assertContains(response, "js/bulk_actions.js")
 
+    def test_both_bars_fold_with_the_script(self):
+        # Folded by bulk_actions.js while nothing is checked; served unfolded (#410).
+        response = self.page()
+        self.assertContains(response, "data-bulk-collapsible=", count=2)
+        self.assertContains(response, "data-bulk-more", count=2)
+        self.assertNotContains(response, "data-bulk-folded ")
+        self.assertNotContains(response, "data-bulk-more hidden")
+
+    def test_the_help_is_in_the_part_folded(self):
+        response = self.page()
+        html = response.content.decode()
+        help_text = "« Ajouter à mon corpus » leur donne aussi"
+        self.assertEqual(html.count(help_text), 2)
+        for form_id in ("references-actions", "cited-by-actions"):
+            with self.subTest(form_id=form_id):
+                form = html[html.index(f'id="{form_id}"') :]
+                form = form[: form.index("</form>")]
+                more = form[form.index("data-bulk-more") : form.index(f'id="{form_id}-remove"')]
+                self.assertIn(help_text, more)
+
     def test_each_tag_field_suggests_the_users_tags(self):
         Tag.objects.create(user=self.alice, name="Projet/Groupe")
         response = self.page()
@@ -114,7 +134,7 @@ class PublicationBulkActionsTests(TestCase):
         self.assertEqual(self.entry(self.cited).reading_status, "")
         self.assertIsNotNone(self.entry(self.citing))
         self.assertEqual(import_publication.call_count, 2)
-        self.assertContains(response, "2 publications ajoutées à votre corpus.")
+        self.assertContains(response, "2 publications ajoutées.")
         # Bob's entry of the same publication is his own.
         self.assertIsNotNone(self.entry(self.cited, self.bob))
 
@@ -127,15 +147,18 @@ class PublicationBulkActionsTests(TestCase):
         self.assertEqual(self.tag_names(self.cited), ["Projet/A"])
         self.assertEqual(self.tag_names(self.kept), ["Projet/A"])
         import_publication.assert_called_once_with(self.cited, with_references=False)
-        self.assertContains(response, "1 publication ajoutée à votre corpus, à lire.")
-        self.assertContains(response, "1 autre y était déjà.")
-        self.assertContains(response, "2 publications taguées « Projet › A ».")
+        # One sentence (#411).
+        self.assertContains(
+            response,
+            "1 publication ajoutée, à lire ; 1 autre y était déjà ; "
+            "2 publications taguées « Projet › A ».",
+        )
 
     def test_already_in_the_corpus_is_not_an_error(self):
         with patch(IMPORT) as import_publication:
             response = self.follow("add", [self.kept])
         import_publication.assert_not_called()
-        self.assertContains(response, "0 publication ajoutée à votre corpus. 1 autre y était")
+        self.assertContains(response, "Aucune publication ajoutée ; elle y était déjà.")
 
     @patch("references.services.corpus.bulk.fetch_queue.worker_alive", return_value=True)
     def test_with_a_worker_the_data_is_queued(self, _):
@@ -143,7 +166,9 @@ class PublicationBulkActionsTests(TestCase):
             response = self.follow("add", [self.cited])
         import_publication.assert_not_called()
         self.assertTrue(FetchRequest.objects.filter(publication=self.cited).exists())
-        self.assertContains(response, "Données en file de récupération : 1.")
+        # The queue has its own toast (#411).
+        self.assertContains(response, "1 publication ajoutée.")
+        self.assertNotContains(response, "Données en file")
 
     @patch(IMPORT, return_value=None)
     def test_data_not_retrieved_is_said(self, _):

@@ -5,7 +5,8 @@
         separated by a border only. The panel is in a column on the right from xl, under the
         frame below. It hides no publication, and nothing in it moves when a publication is
         selected: the commands first, then the controls of the context, then what the graph
-        shows (or the selected publication), the legend and the help. Below xl, the frame has
+        shows (or the selected publication) and the legend; the help is behind « ? » at
+        the end of the commands (#415). Below xl, the frame has
         its own height: a panel that grows never resizes it (which would reset the view). From
         xl, the panel takes the height of the frame and scrolls inside it: its content never
         makes the card taller.
@@ -47,13 +48,16 @@
             <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
                    aria-label="Informations et commandes du graphe">
                 {# Back to the view on load (#196), and the displayed graph as a PNG image, under the given file name (#175). #}
-                <div class="flex flex-wrap gap-2">
-                    <div data-graph-show-all>
-                        {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
+                <div class="flex items-start gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <div data-graph-show-all>
+                            {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
+                        </div>
+                        <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% if active_tag %}-tag-{{ active_tag_slug }}{% endif %}{% endif %}{% if graph_layout.vue == "reseau" %}-reseau{% endif %}">
+                            {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
+                        </div>
                     </div>
-                    <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% if active_tag %}-tag-{{ active_tag_slug }}{% endif %}{% endif %}{% if graph_layout.vue == "reseau" %}-reseau{% endif %}">
-                        {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
-                    </div>
+                    {% include "references/_graph_help.html" with help="citations" %}
                 </div>
                 {# Controls of the context, under the commands so that they never move: the layout (#195), the tag of « Mon graphe » (#290). #}
                 {% include "references/_graph_variants.html" %}
@@ -67,7 +71,7 @@
                          class="grid gap-3 border-t border-gray-100 pt-3">
                     <div class="grid gap-1" data-card-empty>
                         <p class="font-medium text-gray-900">
-                            {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize }}
+                            {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize_fr }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize_fr }}
                         </p>
                         <p class="text-gray-500">Cliquez sur un article du graphe pour le décrire ici.</p>
                     </div>
@@ -162,17 +166,6 @@
                             <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span>ses citants
                         </li>
                     </ul>
-                    <p class="text-gray-500">
-                        {% if graph_layout.vue == "reseau" %}
-                            Les articles qui se citent sont rapprochés ; la position ne suit pas la date.
-                        {% else %}
-                            Axe horizontal : date de publication ; les articles non datés sont dans la
-                            bande du bas.
-                        {% endif %}
-                        Survolez un article pour voir son titre ;
-                        cliquez pour le sélectionner, double-cliquez pour ouvrir sa fiche. Échap ou un
-                        clic dans le vide désélectionne.
-                    </p>
                 </div>
             </aside>
         </div>

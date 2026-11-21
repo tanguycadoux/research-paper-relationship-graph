@@ -56,10 +56,10 @@
                 <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
             </h3>
             <p class="mb-3 text-sm text-gray-600">
-                À partir de {{ context_count }} publication{{ context_count|pluralize }}.
+                À partir de {{ context_count }} publication{{ context_count|pluralize_fr }}.
                 {% if to_identify %}
-                    {{ to_identify }} de leurs références {{ to_identify|pluralize:"est,sont" }} encore à identifier :
-                    elle{{ to_identify|pluralize }} ne compte{{ to_identify|pluralize:"nt" }} pas.
+                    {{ to_identify }} de leurs références {{ to_identify|pluralize_fr:"est,sont" }} encore à identifier :
+                    elle{{ to_identify|pluralize_fr }} ne compte{{ to_identify|pluralize_fr:"nt" }} pas.
                 {% endif %}
             </p>
             {% if publications %}

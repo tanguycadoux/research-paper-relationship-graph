@@ -10,8 +10,12 @@
     }
 
     function copy(source) {
+        if (source.tagName === "PRE") {
+            // The BibTeX entry wraps to the panel (#413): its text, not its lines on screen.
+            return navigator.clipboard.writeText(source.textContent.trim());
+        }
         const text = source.innerText.trim();
-        if (source.tagName === "PRE" || !window.ClipboardItem) {
+        if (!window.ClipboardItem) {
             return navigator.clipboard.writeText(text);
         }
         return navigator.clipboard.write([

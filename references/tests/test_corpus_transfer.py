@@ -146,7 +146,7 @@ class ImportViewTests(TestCase):
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         response = self.post(json.dumps(export_of({"doi": "10.1000/known"})).encode())
         # One short toast, and the report at the top of the corpus until it is closed (#330).
-        self.assertContains(response, "Import terminé : 1 publication ajoutée.")
+        self.assertContains(response, "Import terminé : 1 publication ajoutée ; le rapport")
         self.assertContains(response, "Dernier import")
         report = response.context["import_report"]
         self.assertEqual((report["added"]["count"], report["already_there"]), (1, 0))
@@ -205,3 +205,28 @@ class BibtexTests(TestCase):
         self.assertIn("@book{deep2016,", bibtex)
         self.assertIn("@misc{deep2016a,", bibtex)
         self.assertIn("isbn = {9780262035613}", bibtex)
+
+
+class BibtexQueriesTests(TestCase):
+    """The BibTeX export reads the Crossref records of the whole corpus at once (#414)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user("alice")
+
+    def add_publications(self, count):
+        start = Publication.objects.count()
+        for number in range(start, start + count):
+            pub = Publication.objects.create(doi=f"10.1000/{number}", title=f"Article {number}")
+            with_crossref(pub, {"message": {"type": "journal-article"}})
+            author = Author.objects.create(last_name=f"Author{number}")
+            AuthorPublication.objects.create(publication=pub, author=author, order=0)
+            UserPublication.objects.create(user=self.user, publication=pub)
+
+    def test_query_count_does_not_depend_on_the_corpus_size(self):
+        self.add_publications(3)
+        with self.assertNumQueries(5):
+            self.assertEqual(corpus_bibtex(self.user).count("@article{"), 3)
+        self.add_publications(50)
+        with self.assertNumQueries(5):
+            self.assertEqual(corpus_bibtex(self.user).count("@article{"), 53)

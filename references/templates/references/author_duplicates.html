@@ -8,7 +8,7 @@
     <h2>
         Doublons probables
         {% if page_obj.paginator.count %}
-            <span class="font-normal text-gray-500">({{ page_obj.paginator.count }} groupe{{ page_obj.paginator.count|pluralize }})</span>
+            <span class="font-normal text-gray-500">({{ page_obj.paginator.count }} groupe{{ page_obj.paginator.count|pluralize_fr }})</span>
         {% endif %}
     </h2>
     <p class="mt-1 mb-6 max-w-3xl text-gray-600">
@@ -45,7 +45,7 @@
                                     <label for="duplicate-{{ author.pk }}" class="mb-0 font-normal">{{ author }}</label>
                                     {% if author.orcid %}<span class="text-gray-500">ORCID {{ author.orcid }}</span>{% endif %}
                                     <span class="text-gray-500">·
-                                        <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize }}</a>
+                                        <a href="{% url 'author_detail' author.pk %}">{{ author.publication_count }} publication{{ author.publication_count|pluralize_fr }}</a>
                                     </span>
                                 </li>
                             {% endfor %}

@@ -25,7 +25,7 @@
                 {% endif %}
                 <span>
                     {% if queue.worker_seen_at %}
-                        Dernier signe de vie le <time datetime="{{ queue.worker_seen_at|date:'c' }}">{{ queue.worker_seen_at|date:"j F Y à H:i:s" }}</time>.
+                        Dernier signe de vie le <time datetime="{{ queue.worker_seen_at|date:'c' }}" title="{{ queue.worker_seen_at|date:'j F Y à H:i:s' }}">{{ queue.worker_seen_at|date:"j N Y à H:i" }}</time>.
                     {% else %}
                         Aucun signe de vie connu.
                     {% endif %}

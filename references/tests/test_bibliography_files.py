@@ -186,7 +186,9 @@ class ImportBibliographyFileViewTests(TestCase):
             "@misc{c, year = {2020}}\n"
         )
         response = self.post("zotero.bib", content.encode())
-        self.assertContains(response, "Import terminé : 1 publication ajoutée, 2 entrées ignorées.")
+        self.assertContains(
+            response, "Import terminé : 1 publication ajoutée, 2 entrées ignorées ; le rapport"
+        )
         report = response.context["import_report"]
         self.assertEqual(report["ignored"]["items"], ["Rapport interne", "Entrée sans titre"])
         self.assertContains(response, "2 entrées ignorées, sans DOI, identifiant arXiv ni ISBN")

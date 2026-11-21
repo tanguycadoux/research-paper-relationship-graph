@@ -3,7 +3,7 @@ Sets the reading status of a publication of the user's corpus (#164), then comes
 to the page; sent as soon as the status changes (static/js/autosubmit.js), with a
 button without JavaScript. Context: pub, status (its current one, "" without),
 reading_statuses; with label_hidden, the label is only read by screen readers (rows
-of a table).
+of a table); with id_suffix, ids of its own when the form is twice on the page (#412).
 {% endcomment %}
 {% load ui %}
 <form method="post"
@@ -12,7 +12,7 @@ of a table).
       data-autosubmit>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
-    <label for="reading-status-{{ pub.pk }}"
+    <label for="reading-status-{{ pub.pk }}{{ id_suffix }}"
            class="{% if label_hidden %}sr-only{% else %}mb-0 mr-1{% endif %}">
         {% if label_hidden %}
             Statut de lecture de « {{ pub }} »
@@ -20,7 +20,7 @@ of a table).
             Lecture
         {% endif %}
     </label>
-    <select id="reading-status-{{ pub.pk }}"
+    <select id="reading-status-{{ pub.pk }}{{ id_suffix }}"
             name="status"
             class="w-auto py-1 pr-7 pl-2">
         <option value="">Sans statut</option>
