@@ -231,6 +231,10 @@ class AuthorGraphPageTests(TestCase):
         self.assertContains(response, 'data-graph-export="graphe-auteurs"')
         self.assertNotContains(response, "Cet auteur")
         self.assertNotContains(response, "data-graph-excluded")
+        # The help is in the popover of « ? » (#415), the same as the citation graphs.
+        self.assertContains(response, 'popovertarget="graph-help"', count=2)
+        self.assertContains(response, "Survolez un auteur", count=1)
+        self.assertContains(response, "1/(n − 1)", count=1)
 
     def test_the_list_of_authors_links_to_the_graph(self):
         response = self.client.get(reverse("author_list"))

@@ -160,9 +160,13 @@ Les graphes de citations, et le [graphe des auteurs](#graphe-des-auteurs-222) (c
   cadre (`border-t`). Dans l'ordre : les **commandes** (« Vue d'ensemble », « Exporter
   (PNG) »), puis les contrôles du contexte (le tag de « Mon graphe », #290 ; restés au-dessus
   du message quand un tag n'a aucune citation), puis ce que montre le graphe (« 76 publications, 85 citations » et une
-  indication) ou, avec une sélection, la carte de la publication, enfin la légende et
-  l'aide. Les commandes et les contrôles sont au-dessus de ce qui change de hauteur : rien
-  ne bouge à la première sélection. Le cadre gagne la hauteur de la légende et de l'aide,
+  indication) ou, avec une sélection, la carte de la publication, enfin la légende. Le
+  mode d'emploi (lecture de l'axe ou du réseau, survol, clic, double-clic, Échap) est
+  derrière le bouton « ? » au bout des commandes (#415) : un popover natif en verre dépoli
+  (`_graph_help.html`, sans JavaScript), le même pour les graphes de citations et de
+  coauteurs ; la légende reste visible, et c'est elle que reprend l'export PNG. Les
+  commandes et les contrôles sont au-dessus de ce qui change de hauteur : rien
+  ne bouge à la première sélection. Le cadre gagne la hauteur de la légende,
   et rien ne se superpose au graphe. Sous `xl`, le cadre a sa propre hauteur (70vh,
   24rem au moins) plutôt que l'espace restant : un panneau qui grandit ne le
   redimensionne jamais, ce qui ramènerait la vue d'ensemble ; les commandes sont alors
@@ -303,7 +307,8 @@ dessin que les graphes de citations, en vue réseau seulement.
   graphe au centre.
 - **Le reste est celui des graphes de citations** : vue d'ensemble et zoom bornés
   (`viewport.js`), sélection par un zoom uniforme (`focus.js`, `uniform`), panneau à
-  droite, légende, export PNG. Les éléments de la page portent les mêmes identifiants
+  droite, légende, aide derrière « ? » (qui explique aussi le poids des liens), export
+  PNG. Les éléments de la page portent les mêmes identifiants
   (`citation-graph`, `citation-graph-data`…), que lisent aussi les outils du banc.
 - **Sélection** (`coauthor_selection.js`) : un clic sur un auteur met en avant ses
   coauteurs et leurs liens (vert d'eau clair), estompe le reste et zoome sur eux. La carte
