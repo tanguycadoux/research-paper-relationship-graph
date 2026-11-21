@@ -176,7 +176,7 @@ static/
   js/search.js       raccourci Ctrl+K vers la barre de recherche
   js/identify_authors.js  liste des auteurs de « Sans identifiant » (suggestions, ordre)
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
-  js/bulk_actions.js  barre des actions groupées : compte, « Tout cocher », boutons désactivés
+  js/bulk_actions.js  barre des actions groupées : compte, « Tout cocher », boutons désactivés, repli
   vendor/cytoscape/  Cytoscape.js embarqué
 tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
 docs/                cette documentation
