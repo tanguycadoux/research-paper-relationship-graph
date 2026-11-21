@@ -146,6 +146,15 @@ worker quand le code change. Sans worker signalé depuis 30 s, les pages font la
 récupération elles-mêmes, comme avant : `tailwind runserver` seul fonctionne toujours. Une
 demande mise en file pendant que le worker est arrêté attend son prochain lancement.
 
+« Récupérer les bibliographies… » (sur la fiche d'une publication, dans « Mon corpus » et
+sur un tag) importe, par la même file, les bibliographies des publications citées
+(niveau 2), puis celles des publications qu'elles citent (niveau 3), un niveau après
+l'autre. Ces imports, sans demandeur, passent après ceux des pages, dans les mêmes lots.
+Une page de confirmation estime le nombre de publications, de requêtes et la durée
+(environ 0,8 s par publication). Une demande s'arrête au plafond
+`BIBLIOGRAPHY_REQUEST_LIMIT` (2 000 publications par défaut, variable d'environnement), et
+s'arrête à la main depuis « Demandes de bibliographies » (`/corpus/bibliographies/requests/`).
+
 Les administrateurs (`is_staff`) suivent la file sur la page « File des récupérations »
 (menu « Corrections », adresse `/queue/`) : demandes en attente, en cours, échouées avec
 leur erreur, faites récemment, et état du worker. Ils peuvent y relancer une demande

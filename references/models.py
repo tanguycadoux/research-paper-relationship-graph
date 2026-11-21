@@ -674,3 +674,94 @@ class FetchWorker(models.Model):
 
     def __str__(self):
         return f"Worker vu le {self.seen_at:%Y-%m-%d %H:%M:%S}"
+
+
+class BibliographyRequest(models.Model):
+    """
+    Bibliographies retrieved level by level around a starting point (#431): a
+    publication, the corpus of the user or one of their tags. Level 1 is the bibliography
+    of the start, level 2 those of the publications it cites, level 3 those of the
+    publications these cite. The imports of a level go through the queue (FetchRequest);
+    once they are over, the publications their references identify form the next level.
+    Nothing is added to the corpus. One running request per user and starting point.
+    """
+
+    class Scope(models.TextChoices):
+        PUBLICATION = "publication", "Publication"
+        CORPUS = "corpus", "Mon corpus"
+        TAG = "tag", "Tag"
+
+    class Status(models.TextChoices):
+        RUNNING = "running", "En cours"
+        DONE = "done", "Terminée"
+        STOPPED = "stopped", "Arrêtée"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="bibliography_requests"
+    )
+    scope = models.CharField(max_length=20, choices=Scope.choices)
+    # The starting point: the publication, or the path of the tag.
+    publication = models.ForeignKey(
+        Publication, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    tag = models.CharField(max_length=200, blank=True)
+    # « publication:12 », « corpus » or « tag:Projet A »: one running request for each.
+    start = models.CharField(max_length=255)
+    # The last level asked (2 or 3), and the level whose imports are in the queue.
+    depth = models.PositiveSmallIntegerField()
+    level = models.PositiveSmallIntegerField(default=0)
+    # The cap on the imports when it was asked (settings.BIBLIOGRAPHY_REQUEST_LIMIT), and
+    # whether it left publications out: the request then ends at that level.
+    limit = models.PositiveIntegerField()
+    capped = models.BooleanField(default=False)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.RUNNING)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    # The toast said how it ended: it does not say it again.
+    notified = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["requested_at", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "start"],
+                condition=models.Q(status="running"),
+                name="one_running_bibliography_request",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.start}, niveau {self.depth} ({self.get_status_display().lower()})"
+
+
+class BibliographyItem(models.Model):
+    """
+    A publication whose bibliography a BibliographyRequest wants, at its level, with the
+    request of the queue that imports it; none when its bibliography is already in the
+    base, or when no source has one to give: it costs nothing.
+    """
+
+    request = models.ForeignKey(BibliographyRequest, on_delete=models.CASCADE, related_name="items")
+    # Null once the publication is gone (a preprint merged into its published version):
+    # the request of the queue keeps the publication it ended on.
+    publication = models.ForeignKey(
+        Publication, null=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    level = models.PositiveSmallIntegerField()
+    fetch_request = models.ForeignKey(
+        FetchRequest,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="bibliography_items",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["request", "publication"], name="unique_bibliography_item"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.publication} (niveau {self.level})"

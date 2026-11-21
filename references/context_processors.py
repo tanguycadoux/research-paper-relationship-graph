@@ -1,4 +1,4 @@
-from .services.imports import fetch_queue
+from .services.imports import bibliography_requests, fetch_queue
 
 
 def fetch_progress(request):
@@ -11,13 +11,10 @@ def fetch_progress(request):
     if user is None or not user.is_authenticated:
         return {}
     state = fetch_queue.progress(user, since=fetch_queue.followed_batch(request.session))
-    if state is None:
+    if state is not None:
+        fetch_queue.follow_batch(request.session, state)
+    # The requests of bibliographies say their level in the same toast (#431).
+    toast = bibliography_requests.combined_toast(user, state)
+    if toast is None:
         return {}
-    fetch_queue.follow_batch(request.session, state)
-    return {
-        "fetch_progress": {
-            "text": fetch_queue.progress_text(state),
-            "since": state.start,
-            "active": state.active,
-        }
-    }
+    return {"fetch_progress": {**toast, "since": state.start if state else None}}

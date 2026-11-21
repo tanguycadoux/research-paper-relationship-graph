@@ -1,0 +1,131 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Récupérer les bibliographies · {% endblock title %}
+
+{% block content %}
+    {% comment %}
+    The confirmation of « Récupérer les bibliographies… » (#431): what each level would
+    import, exactly as long as the level before is in the base, estimated beyond.
+    {% endcomment %}
+    <p class="text-sm text-gray-500">
+        <a href="{{ back_url }}">{{ start_label }}</a>
+    </p>
+    <h1 class="mt-1">Récupérer les bibliographies</h1>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Depuis {{ start_label }} : les bibliographies des publications citées (niveau 2), puis
+        celles des publications qu'elles citent (niveau 3). Les publications récupérées entrent
+        dans la base commune ; rien n'est ajouté à votre corpus.
+    </p>
+
+    <div class="max-w-3xl space-y-8">
+        {% if running %}
+            <section aria-labelledby="running-title">
+                <h2 id="running-title" class="mb-3">Demande en cours</h2>
+                {% include "references/_bibliography_request_row.html" with row=running next=request.get_full_path %}
+            </section>
+        {% endif %}
+
+        <section aria-labelledby="estimate-title">
+            <h2 id="estimate-title" class="mb-3">Estimation</h2>
+            {% card flush=True %}
+                <table>
+                    <caption class="sr-only">Publications de chaque niveau</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Niveau</th>
+                            <th scope="col">Publications</th>
+                            <th scope="col">Bibliographies à récupérer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for level in estimate.levels %}
+                            <tr>
+                                <th scope="row" class="font-normal">
+                                    {{ level.number }}
+                                    <span class="text-gray-500">
+                                        {% if level.number == 1 %}
+                                            · le point de départ
+                                        {% elif level.number == 2 %}
+                                            · les publications qu'il cite
+                                        {% else %}
+                                            · celles qu'elles citent
+                                        {% endif %}
+                                    </span>
+                                </th>
+                                <td>
+                                    {% if not level.exact %}≈{% endif %}
+                                    {{ level.publications }}
+                                </td>
+                                <td>
+                                    {% if not level.exact %}≈{% endif %}
+                                    {{ level.imports }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endcard %}
+            <p class="mt-2 text-sm text-gray-500">
+                Un niveau n'est connu exactement qu'une fois les bibliographies du niveau précédent en base ;
+                au-delà, chaque bibliographie à récupérer compte pour {{ estimate.average|floatformat:1 }}
+                références identifiées, la moyenne de la base. Une publication dont la bibliographie est
+                déjà en base ne coûte rien.
+            </p>
+        </section>
+
+        <section aria-labelledby="choice-title">
+            <h2 id="choice-title" class="mb-3">Jusqu'à quel niveau ?</h2>
+            {% if not worker_alive %}
+                <div class="mb-3">
+                    {% alert "Le worker de la file ne tourne pas : la demande attendra qu'il démarre." variant="warning" %}
+                </div>
+            {% endif %}
+            {% card %}
+                <form method="post" class="space-y-4">
+                    {% csrf_token %}
+                    {% if start.publication %}
+                        <input type="hidden" name="publication" value="{{ start.publication.pk }}">
+                    {% elif start.tag %}
+                        <input type="hidden" name="tag" value="{{ start.tag }}">
+                    {% endif %}
+                    <fieldset class="space-y-3">
+                        <legend class="sr-only">Niveau</legend>
+                        {% for choice in estimate.choices %}
+                            <label class="flex items-start gap-2 font-normal">
+                                <input type="radio"
+                                       name="depth"
+                                       value="{{ choice.depth }}"
+                                       class="mt-1"
+                                       {% if choice.depth == depth %}checked{% endif %}>
+                                <span>
+                                    <span class="font-medium">Niveau {{ choice.depth }}</span>
+                                    · {% if not choice.exact %}environ{% endif %}
+                                    {{ choice.imports }} publication{{ choice.imports|pluralize_fr }} à récupérer,
+                                    {{ choice.requests }} requête{{ choice.requests|pluralize_fr }},
+                                    {% if choice.minutes %}
+                                        environ {{ choice.minutes }} min
+                                    {% else %}
+                                        rien à attendre
+                                    {% endif %}
+                                    {% if choice.capped %}
+                                        <span class="block text-sm text-amber-800">
+                                            Au-delà du plafond de {{ estimate.limit }} publications par demande : elle s'arrêtera au plafond.
+                                        </span>
+                                    {% endif %}
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </fieldset>
+                    <div class="flex flex-wrap gap-2">
+                        {% button "Récupérer" icon="download" %}
+                        {% button "Annuler" url=back_url variant="secondary" %}
+                    </div>
+                </form>
+            {% endcard %}
+            <p class="mt-2 text-sm">
+                <a href="{% url 'bibliography_request_list' %}">Toutes vos demandes de bibliographies</a>
+            </p>
+        </section>
+    </div>
+{% endblock content %}

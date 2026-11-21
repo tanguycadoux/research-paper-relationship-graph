@@ -99,6 +99,11 @@
                              data-fetch-since="{{ fetch_progress.since.isoformat }}">
                             {% icon "progress_activity" class="size-5 shrink-0 motion-safe:animate-spin" %}
                             <p class="flex-1" data-fetch-progress-text>{{ fetch_progress.text }}</p>
+                            {% if fetch_progress.bibliographies %}
+                                {# « Arrêter » a request of bibliographies (#431). #}
+                                <a href="{% url 'bibliography_request_list' %}"
+                                   class="pointer-events-auto shrink-0 text-sm">Voir</a>
+                            {% endif %}
                         </div>
                     {% else %}
                         {# The outcome of a batch that ended between two pages: a toast that fades. #}

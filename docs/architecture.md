@@ -62,6 +62,7 @@ references/          application principale
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),
+    bibliographies.py (« Récupérer les bibliographies… » : confirmation, demande, « Arrêter »),
     author_suggestions.py (auteurs de la base suggérés pendant la frappe, JSON),
     fetch_admin.py (page « File des récupérations », réservée aux administrateurs)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
@@ -95,6 +96,10 @@ references/          application principale
                      étape interroge chaque source pour tout le lot (#381)
       fetch_admin.py  administration de la file : état des demandes et du worker, relancer
                      une demande échouée, annuler une demande en attente
+      bibliography_levels.py  niveaux de bibliographies autour d'un point de départ, lus en
+                     base : publications de chaque niveau, imports à faire, estimation (#431)
+      bibliography_requests.py  demandes « Récupérer les bibliographies » jusqu'au niveau 2
+                     ou 3 : un niveau après l'autre par la file, plafond, arrêt, toast (#431)
       parser.py      réponse de la source vers les modèles
       titles.py      titres : nettoyage (entités HTML, balisage JATS), forme lisible du LaTeX
       latex_bibliography.py  bibliographie lue dans les sources LaTeX d'une prépublication
@@ -288,6 +293,8 @@ erDiagram
 | `MetadataConflict` | Une valeur d'une source qui contredit une valeur connue, sur une publication ou un auteur : type, valeur retenue, valeur proposée, source, ce que la page affiche de la proposition (`details`), décision (ouvert, existant gardé, proposée retenue, vu), qui et quand. Signalé une seule fois. Détails dans [corrections.md](corrections.md#conflits). |
 | `UserPublication` | Le corpus d'un utilisateur, avec le statut de lecture de chaque publication (`reading_status` : à lire, en cours, lu ; vide tant que l'utilisateur n'en a pas choisi), ses tags et sa note (`note`, texte libre et privé, #283). |
 | `FetchRequest` | Une récupération auprès des sources laissée au worker (#378) : publication, identifiant demandé (DOI ou ISBN, gardé si la publication disparaît dans une fusion), action (importer, avec ou sans la bibliographie), état (en attente, en cours, faite, échouée), demandeurs, dates et erreur. Une seule demande active par publication et par action : un second demandeur rejoint la ligne existante. Les administrateurs relancent une demande échouée (elle repart en fin de file) ou annulent une demande en attente (elle passe en échouée, « Annulée par … ») depuis la page « File des récupérations » (#382). |
+| `BibliographyRequest` | Une demande « Récupérer les bibliographies » d'un utilisateur (#431) : point de départ (une publication, « Mon corpus » ou un tag, et sa clé `start`), niveau demandé (`depth`, 2 ou 3), niveau en cours dans la file (`level`), plafond d'imports au moment de la demande (`limit`) et s'il a laissé des publications de côté (`capped`), état (en cours, terminée, arrêtée), dates, et si le toast a dit sa fin (`notified`). Une seule demande en cours par utilisateur et point de départ. |
+| `BibliographyItem` | Une publication dont une `BibliographyRequest` veut la bibliographie, à son niveau, avec la `FetchRequest` qui l'importe (sans demandeur) ; aucune quand sa bibliographie est déjà en base ou qu'aucune source n'en a : elle ne coûte rien. |
 | `FetchWorker` | La dernière date à laquelle `fetch_worker` s'est signalé (toutes les 10 s, même pendant un long import). Sans signe depuis 30 s, les pages font la récupération elles-mêmes. |
 | `Tag` | Un tag d'un utilisateur, hiérarchique : son nom est un chemin, « Projet A/Groupe A », dont les parents existent implicitement. Unique par utilisateur, casse ignorée ; un tag qui ne classe plus aucune publication est oublié. |
 | `accounts.User` | Modèle utilisateur du projet (`AUTH_USER_MODEL`), vide pour l'instant. Il est défini dès le départ pour pouvoir ajouter des champs ou changer l'identifiant de connexion sans migration délicate. |

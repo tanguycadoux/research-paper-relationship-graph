@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from django.utils import autoreload
 
-from references.services.imports import fetch_queue
+from references.services.imports import bibliography_requests, fetch_queue
 from references.services.sources.http import patient_requests
 
 # Well under fetch_queue.WORKER_TIMEOUT: a long import must not look like a dead worker.
@@ -51,6 +51,8 @@ class Command(BaseCommand):
     def work(self, once, interval):
         fetch_queue.signal_alive()
         while True:
+            # The levels whose imports are over form the next ones (#431).
+            bibliography_requests.advance_all()
             request = fetch_queue.claim_next()
             if request is not None:
                 done = fetch_queue.process_claimed(request)
