@@ -61,7 +61,7 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   `with_status`, `with_note`, sans lire le texte des notes).
 - **Note** (#283) : sur la fiche d'une publication de mon corpus, une carte « Ma note » en
   tête de la colonne de droite, un champ de texte libre enregistré par un bouton (vide, la
-  note est effacée). Privée : seul son auteur la voit. Cherchée par `note:` dans la
+  note est effacée). Privée : seul son auteur la voit. Cherchée par le texte libre et par `note:` dans la
   recherche, exportée en JSON (`note`, version 3) et en BibTeX (`annote`).
 - **Citer** (`_citation_panel.html`, `services/display/citations.py`, #286) : sur la fiche,
   un popover donne la référence en APA (7ᵉ édition) et en IEEE, et l'entrée BibTeX de la
@@ -152,8 +152,10 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
 - **Recherche** (#153, `services/display/search.py`, `/search/?q=…`) : une seule barre, du
   texte libre et des opérateurs, `auteur:Felice titre:"champ magnétique"
   année:2020..2024 doi:10.1109`. Le texte libre cherche dans les titres, les noms des
-  auteurs et les identifiants ; les mots d'un `auteur:` doivent appartenir à la même
-  personne ; un `titre:` entre guillemets est une expression ; `note:` cherche dans les
+  auteurs, les identifiants et les notes de l'utilisateur connecté (#416), jamais
+  dans celles des autres ; une publication qu'un mot ne trouve que dans ma note porte le
+  badge « trouvée dans votre note ». Les mots d'un `auteur:` doivent appartenir à la même
+  personne ; un `titre:` entre guillemets est une expression ; `note:` cherche seulement dans les
   notes de mon corpus (#283), aucune pour un visiteur, à qui la page dit de se connecter. Un opérateur inconnu reste
   du texte (« Re:thinking ») ; une année mal écrite est signalée sans bloquer le reste.
   Résultats : les publications par pages, et les 20 premiers auteurs (sauf si la
