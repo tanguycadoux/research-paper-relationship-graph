@@ -50,6 +50,12 @@ class BulkActionsTests(TestCase):
         self.assertContains(response, 'name="action" value="status"')
         self.assertContains(response, 'name="action" value="remove"')
 
+    def test_the_bar_stays_unfolded(self):
+        # « Mon corpus » is where one acts on several publications: no folding (#410).
+        response = self.client.get(reverse("corpus"))
+        self.assertContains(response, "data-bulk-more")
+        self.assertNotContains(response, "data-bulk-collapsible")
+
     def test_the_tag_field_suggests_the_users_tags(self):
         Tag.objects.create(user=self.alice, name="Projet/Groupe")
         Tag.objects.create(user=self.bob, name="Secret")

@@ -9,6 +9,7 @@ nothing matches; with reading_column (my references, publications annotated by
 corpus.with_reading_status, and with my_tags), a column to set the reading status
 (reading_statuses) and the tags under each title; with bulk_form (the id of the form of
 _bulk_actions.html, #287, #408), a first column of checkboxes that belong to that form.
+Publications annotated with found_in_note (search, #416) carry a badge saying so.
 The identifier is hidden below xl, where the content is too narrow for it (#150), and
 always beside the reading status: it stays on the page of each publication. Below sm,
 the reading status is under the title, beside the authors and year (#412).
@@ -80,6 +81,10 @@ the reading status is under the title, beside the authors and year (#412).
                                 {% include "references/_reading_status_form.html" with status=pub.reading_status label_hidden=True id_suffix="-compact" %}
                             {% endif %}
                         </div>
+                        {# Search (#416): a free word found in my note only, not in the shown fields. #}
+                        {% if pub.found_in_note %}
+                            {% badge "trouvée dans votre note" icon="edit" %}
+                        {% endif %}
                         {% if pub.metadata_status == "missing" %}
                             {% badge "métadonnées à récupérer" icon="refresh" %}
                         {% elif pub.metadata_status == "unknown" %}
