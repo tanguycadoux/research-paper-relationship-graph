@@ -122,6 +122,7 @@ references/          application principale
       author_merge.py  fusion d'auteurs (valeurs proposées, ORCID différents)
       author_duplicates.py  doublons probables (noms compatibles, ORCID, tutelle commune)
       author_distinctions.py  auteurs déclarés différents
+      safe_duplicates.py  groupes sûrs de doublons probables, fusionnés en une fois après confirmation
       conflicts.py   signalement et décision des conflits entre sources
     corpus/          corpus personnel
       entries.py     ajout au corpus par DOI (ou arXiv) ou ISBN, statut de lecture
