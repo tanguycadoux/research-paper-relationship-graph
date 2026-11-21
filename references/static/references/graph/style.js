@@ -33,9 +33,8 @@ export function nodeSizes(nodes) {
 // faded: the opacity of what a selection leaves out, nodes and edges.
 const CITATION_EDGES = { width: onScreen(1.25), hoveredWidth: onScreen(2), opacity: 0.85, faded: 0.15 };
 
-// edges: their width, at rest and hovered, their opacity, and that of the faded elements;
-// another graph gives its own (coauthors.js), and adds the rules of its selection after.
-export function graphStyle(edges = CITATION_EDGES) {
+// The nodes: their size, their colour by role, and their label when hovered.
+function nodeRules() {
     return [
         {
             selector: "node",
@@ -65,6 +64,11 @@ export function graphStyle(edges = CITATION_EDGES) {
                 "z-index": 10,
             },
         },
+    ];
+}
+
+function edgeRules(edges) {
+    return [
         // Straight edges: a publication cites older ones, on its left. An edge cannot be
         // clicked or hovered (events: no) nor outlined: the selection goes through the nodes.
         {
@@ -82,6 +86,11 @@ export function graphStyle(edges = CITATION_EDGES) {
             selector: "edge.hovered",
             style: { width: edges.hoveredWidth, "line-color": color("edge-strong"), opacity: 1, "z-index": 5 },
         },
+    ];
+}
+
+function selectionRules(edges) {
+    return [
         // Selection (#61): the publication, its references and the publications citing it,
         // each with the colour of its relation; edges in a lighter shade of their nodes.
         { selector: ".faded", style: { opacity: edges.faded } },
@@ -108,4 +117,10 @@ export function graphStyle(edges = CITATION_EDGES) {
             style: { width: onScreen(3), "line-color": color("citing-light"), opacity: 1, "z-index": 5 },
         },
     ];
+}
+
+// edges: their width, at rest and hovered, their opacity, and that of the faded elements;
+// another graph gives its own (coauthors.js), and adds the rules of its selection after.
+export function graphStyle(edges = CITATION_EDGES) {
+    return [...nodeRules(), ...edgeRules(edges), ...selectionRules(edges)];
 }

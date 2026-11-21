@@ -136,11 +136,11 @@ function viewBetween(cy, from, to, e) {
     };
 }
 
-// viewport: what bindViewport returns; stretch: what makeStretch returns. uniform: the
-// network (#195), where a selection zooms without stretching.
-export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
-    // The view and the stretch from before the selection, kept until back to them.
-    let before = null;
+// One loop moves the view and the stretch together (viewBetween), frame by frame; it ends
+// on the target exactly. A new move starts from where the view is; stop() leaves it where
+// it is. Uniform, the stretch stays the identity: the positions are not written again
+// (viewBetween gives it, up to rounding).
+function makeMover(cy, viewport, stretch, uniform) {
     let frame = null;
     const stop = () => {
         if (frame !== null) {
@@ -149,8 +149,6 @@ export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
             viewport.hold(false);
         }
     };
-    // One loop moves the view and the stretch together (viewBetween), frame by frame; it
-    // ends on the target exactly. A new move starts from where the view is.
     const moveTo = (target, complete) => {
         stop();
         cy.stop();
@@ -165,8 +163,6 @@ export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
         const step = (now) => {
             const t = still ? 1 : Math.min(1, (now - start) / DURATION);
             const view = t < 1 ? viewBetween(cy, from, target, easeInOutCubic(t)) : target;
-            // Uniform, the stretch stays the identity: the positions are not written again
-            // (viewBetween gives it, up to rounding).
             if (!uniform) {
                 stretch.apply(view.stretch);
             }
@@ -185,6 +181,15 @@ export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
             frame = requestAnimationFrame(step);
         }
     };
+    return { moveTo, stop, moving: () => frame !== null };
+}
+
+// viewport: what bindViewport returns; stretch: what makeStretch returns. uniform: the
+// network (#195), where a selection zooms without stretching.
+export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
+    // The view and the stretch from before the selection, kept until back to them.
+    let before = null;
+    const { moveTo, stop, moving } = makeMover(cy, viewport, stretch, uniform);
     // Zooming or panning by hand stops a move where it is.
     cy.on("scrollzoom pinchzoom dragpan", stop);
     const show = (nodes) => {
@@ -207,7 +212,7 @@ export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
     // motion is kept for the way back from a selection.
     viewport.onShowAllRequest(() => {
         const nothingToUndo = uniform ? before === null : isIdentity(stretch.current());
-        if (nothingToUndo && frame === null) {
+        if (nothingToUndo && !moving()) {
             return false;
         }
         before = null;

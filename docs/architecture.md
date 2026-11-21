@@ -172,7 +172,7 @@ references/          application principale
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphes, en modules ES : communs à tous (graph pour la mise en place, card pour la carte et la sélection, viewport, focus, stretch, export, hover, style), graphe des citations (main, scale, layout, network, axis, band, selection), graphe des auteurs (coauthors, coauthor_selection)
+  static/references/graph/  graphes, en modules ES : communs à tous (graph pour la mise en place, card pour la carte et la sélection, viewport, focus, stretch, export, export_labels, hover, style), graphe des citations (main, scale, layout, network, axis, band, selection), graphe des auteurs (coauthors, coauthor_selection)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph et _author_graph…)
     publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
                      _authors, _abstract, _note, _information, _references, _cited_by,
@@ -195,6 +195,7 @@ static/
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
   js/bulk_actions.js  barre des actions groupées : compte, « Tout cocher », boutons désactivés, repli
   vendor/cytoscape/  Cytoscape.js embarqué
+tools/check_js.sh    syntaxe de chaque fichier JavaScript (node --check), lancée par la CI (#341)
 tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
 docs/                cette documentation
 ```
