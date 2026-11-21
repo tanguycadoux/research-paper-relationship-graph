@@ -9,7 +9,8 @@ from references.services.imports.importer import import_publication
 from references.services.sources.datacite_api import fetch_datacite_json, fetch_datacite_works
 from references.services.sources.external_records import Source
 from references.services.sources.metadata_formats import datacite_message
-from references.tests.helpers import crossref_record, without_openalex
+from references.tests.helpers import crossref_record
+from references.tests.sources import active_sources, simulated_sources
 
 FIXTURE = Path(__file__).parent / "fixtures" / "datacite_jacow_ecris2016_tuao05.json"
 JACOW_DOI = "10.18429/jacow-ecris2016-tuao05"
@@ -122,22 +123,20 @@ class DataciteMessageTests(SimpleTestCase):
         )
 
 
-@without_openalex
-@patch("references.services.imports.importer.fetch_datacite_json", return_value=JACOW)
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources(datacite=[JACOW])
 class SingleDoiTests(TestCase):
-    def test_doi_unknown_to_crossref_is_found_in_datacite(self, crossref, datacite):
+    def test_doi_unknown_to_crossref_is_found_in_datacite(self):
         pub = Publication.objects.create(doi=JACOW_DOI)
         self.assertTrue(import_publication(pub))
         self.assertEqual(pub.title, "First Plasma of the PHOENIX V3 ECR Ion Source")
         self.assertEqual(pub.authorpublication_set.count(), 10)
         self.assertEqual(pub.external_records.get().source, Source.DATACITE)
 
-    def test_crossref_answer_is_used_first(self, crossref, datacite):
-        crossref.return_value = {"message": {"title": ["Article Crossref"]}}
+    def test_crossref_answer_is_used_first(self):
+        active_sources().add(crossref={"10.1000/x": {"message": {"title": ["Article Crossref"]}}})
         pub = Publication.objects.create(doi="10.1000/x")
         import_publication(pub)
-        datacite.assert_not_called()
+        self.assertEqual(active_sources().to("datacite"), [])
 
 
 def source_with_references(dois):
@@ -145,42 +144,23 @@ def source_with_references(dois):
     return {"message": {"title": ["Source"], "reference": references}}
 
 
-@without_openalex
 class CitedDoisTests(TestCase):
-    def import_source(self, crossref_works, datacite_works):
+    def import_source(self, **sources):
         source = Publication.objects.create(doi="10.1000/source")
         dois = ["10.1000/in-crossref", JACOW_DOI, "10.1000/ghost"]
-        with (
-            patch(
-                "references.services.imports.importer.fetch_crossref_json",
-                return_value=source_with_references(dois),
-            ),
-            patch(
-                "references.services.imports.importer.fetch_crossref_works",
-                side_effect=crossref_works,
-            ),
-            patch(
-                "references.services.imports.importer.fetch_datacite_works",
-                side_effect=datacite_works,
-            ),
-        ):
+        crossref = {
+            source.doi: source_with_references(dois),
+            "10.1000/in-crossref": {"message": {"title": ["Crossref"]}},
+        }
+        with simulated_sources(crossref=crossref, datacite=[JACOW], **sources) as simulated:
             import_publication(source, with_references=True)
+        return simulated
 
     def test_dois_missing_from_crossref_are_asked_to_datacite_in_one_batch(self):
-        datacite_calls = []
-
-        def datacite_works(dois):
-            datacite_calls.append(sorted(dois))
-            return {doi: JACOW if doi == JACOW_DOI else None for doi in dois}
-
-        self.import_source(
-            lambda dois: {
-                doi: {"message": {"title": ["Crossref"]}} if doi == "10.1000/in-crossref" else None
-                for doi in dois
-            },
-            datacite_works,
+        sources = self.import_source()
+        self.assertEqual(
+            [sorted(b) for b in sources.batches("datacite")], [["10.1000/ghost", JACOW_DOI]]
         )
-        self.assertEqual(datacite_calls, [sorted([JACOW_DOI, "10.1000/ghost"])])
         jacow = Publication.objects.get(doi=JACOW_DOI)
         self.assertEqual(jacow.title, "First Plasma of the PHOENIX V3 ECR Ion Source")
         ghost = Publication.objects.get(doi="10.1000/ghost")
@@ -188,5 +168,5 @@ class CitedDoisTests(TestCase):
         self.assertFalse(ghost.external_records.filter(data__isnull=False).exists())
 
     def test_doi_is_not_marked_unknown_when_datacite_fails(self):
-        self.import_source(lambda dois: {doi: None for doi in dois}, lambda dois: {})
+        self.import_source(unreachable=["datacite"])
         self.assertIsNone(crossref_record(Publication.objects.get(doi="10.1000/ghost")))
