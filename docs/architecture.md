@@ -145,7 +145,7 @@ references/          application principale
       publication_page.py  contexte de la fiche publication, section par section (entrée du
                      corpus, références, « Cité par », listes longues repliées, actions groupées)
       citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
-      open_access.py  « Lire l'article » : meilleure version en accès ouvert, sans requête
+      open_access.py  « Lire l'article » : meilleure version en accès ouvert et sa licence, sans requête
       wording.py     mots des messages accordés avec un nombre (« 3 publications ajoutées »)
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
