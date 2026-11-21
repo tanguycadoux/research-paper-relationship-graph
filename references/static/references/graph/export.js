@@ -71,6 +71,12 @@ function swatchOutline(style) {
     return { width, offset: parseFloat(style.outlineOffset) || 0, color: style.outlineColor };
 }
 
+// The border of a round swatch (a publication of level 2, hollow, #451), or null.
+function swatchBorder(style) {
+    const width = parseFloat(style.borderTopWidth);
+    return width ? { width, color: style.borderTopColor } : null;
+}
+
 // Each item of the legend as a list of parts: texts, and the swatches (dots and lines)
 // with their size and colour.
 function legendItems(legend) {
@@ -90,6 +96,7 @@ function legendItems(legend) {
                     color: style.backgroundColor,
                     round: style.borderRadius !== "0px",
                     outline: swatchOutline(style),
+                    border: swatchBorder(style),
                 },
             ];
         });
@@ -122,6 +129,14 @@ function drawSwatch(context, part, x, middle) {
         context.rect(x, middle - part.height / 2, part.width, part.height);
     }
     context.fill();
+    const border = part.border;
+    if (border && part.round) {
+        context.strokeStyle = border.color;
+        context.lineWidth = border.width;
+        context.beginPath();
+        context.arc(x + part.width / 2, middle, (part.width - border.width) / 2, 0, 2 * Math.PI);
+        context.stroke();
+    }
     const outline = part.outline;
     if (outline && part.round) {
         const radius = part.width / 2 + outline.offset + outline.width / 2;

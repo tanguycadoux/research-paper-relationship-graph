@@ -20,6 +20,45 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   corpus avec un message (`views/tag_context.requested_tag`, partagé avec les
   suggestions). « Mon corpus » filtré par un tag renvoie au graphe de ce tag, et le
   nom de l'image exportée le dit (`graphe-corpus-tag-projet`).
+- **Niveaux** (#451, `services/display/graph_levels.py`) : les graphes d'une publication,
+  de « Mon corpus » et d'un tag montrent le **niveau 1** par défaut (les publications liées
+  au point de départ : ses références, et sur le graphe d'une publication celles qui la
+  citent). Le choix « Niveau : 1 · 2 » du panneau, sous « Disposition » (`?niveau=2`, une
+  variante de `graph_variants.py`, que le formulaire du tag garde), développe **tout le
+  graphe** : le niveau 2 est fait des publications liées au niveau 1 **dans les deux sens**,
+  ses références et les publications qui le citent (décision de l'utilisateur). Les liens
+  sont ceux du niveau 1 et ceux de chaque publication développée (une requête de plus).
+  Seulement ce qui est en base : aucune requête aux sources. Une publication du niveau 1 se
+  développe seule : sa carte propose **« Développer »** (`?developper=<id>`), ou
+  **« Réduire »** une fois développée (au niveau 2, `?reduire=<id>`), sans toucher au reste
+  du graphe ; la page se recharge et la publication est sélectionnée de nouveau
+  (`?noeud=<id>`, `main.js`). Changer de niveau oublie ces choix. Niveau 2 au plus pour
+  l'instant : une publication du niveau 2 ne se développe pas. Le niveau se lit sur le
+  nœud (**creux**, un anneau de la couleur de son rôle, `style.js`, avec sa ligne dans la
+  légende et sur l'image exportée) et dans l'infobulle (« Niveau 2 ») dès que le graphe
+  dépasse le niveau 1 ; la carte le dit aussi. Le graphe de la base n'a pas de niveau.
+- **Bibliographies manquantes** (#451) : un niveau est incomplet quand des bibliographies
+  du niveau d'avant ne sont pas en base (celles du point de départ pour le niveau 1, des
+  publications développées pour le niveau 2). Le panneau les compte (« 41 bibliographies
+  manquent pour le niveau 2 », `bibliography_levels.to_import` : avec un DOI et quelque
+  chose à lire aux sources) et propose, à un utilisateur connecté, « Récupérer les
+  bibliographies… » (#431) depuis le même point de départ, jusqu'au niveau 2.
+- **Taille au niveau 2** (mesures du 21 novembre 2026, Chrome headless, 1 400 px) :
+
+  | Graphe | Niveau | Publications | Citations | JSON | Serveur | Page jusqu'à `DOMContentLoaded` |
+  |---|---|---|---|---|---|---|
+  | Mon graphe, copie de la base de l'utilisateur | 1 | 96 | 130 | 43 Ko | 23 ms | 0,41 s |
+  | Mon graphe, copie de la base de l'utilisateur | 2 | 219 | 310 | 115 Ko | 46 ms | 0,22 s (réseau 0,33 s) |
+  | Mon graphe, base du banc | 1 | 1 775 | 2 517 | 836 Ko | 0,48 s | 1,7 s |
+  | Mon graphe, base du banc | 2 | 1 776 | 2 518 | 1,0 Mo | 0,51 s | 1,3 s (réseau 4,1 s, dans un worker) |
+
+  41 bibliographies manquent au niveau 2 sur la base de l'utilisateur (1 433 sur le banc) :
+  l'estimation de #431 (environ 1 000 publications) les comptait déjà récupérées. Au-delà
+  de `LARGE_GRAPH` (1 000), les graphes de citations à niveaux ne passent **pas** à l'image
+  calculée sur le serveur (#328, réservée au graphe de la base et à celui de tous les
+  auteurs) : la page dessine le graphe avec les règles des grands graphes (tailles
+  réévaluées à l'arrêt du zoom, sélection sans animation, réseau dans un worker). « Mon
+  graphe » du banc dépasse déjà ce seuil au niveau 1.
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la

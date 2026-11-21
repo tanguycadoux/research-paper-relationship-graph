@@ -17,6 +17,8 @@ class Variant:
     param: str  # in the query string, and the key read by graph/main.js
     label: str  # before its choices, in the panel
     choices: tuple  # (value, label), the default first
+    # Params of the query string that make no sense once the choice changes.
+    resets: tuple = ()
 
     @property
     def default(self):
@@ -31,7 +33,21 @@ class Variant:
 # time axis (#195).
 VIEW = Variant(param="vue", label="Disposition", choices=(("frise", "Frise"), ("reseau", "Réseau")))
 
+# How far the graph goes from its start (#451, graph_levels.py): level 1, or level 2,
+# the publications linked to level 1. The publications developed or reduced one by one
+# are forgotten when the level changes.
+LEVEL = Variant(
+    param="niveau",
+    label="Niveau",
+    choices=(("1", "1"), ("2", "2")),
+    resets=("developper", "reduire", "noeud"),
+)
+
+# The variants read by graph/main.js.
 VARIANTS = (VIEW,)
+# Those of the graph of a publication, of the corpus or of a tag; the graph of the base
+# has every publication already.
+LEVEL_VARIANTS = (VIEW, LEVEL)
 
 
 def graph_layout(query):
@@ -39,27 +55,30 @@ def graph_layout(query):
     return {variant.param: variant.chosen(query) for variant in VARIANTS}
 
 
-def kept_params(query):
+def kept_params(query, variants=VARIANTS):
     """The variants chosen other than by default, for the forms of the page to keep them."""
     return {
         variant.param: variant.chosen(query)
-        for variant in VARIANTS
+        for variant in variants
         if variant.chosen(query) != variant.default
     }
 
 
-def variant_links(query):
+def variant_links(query, variants=VARIANTS):
     """
     The choices of each variant, each with the query string that selects it (other
     parameters kept) and whether it is the current one.
     """
     links = []
-    for variant in VARIANTS:
+    for variant in variants:
         current = variant.chosen(query)
         options = []
         for value, label in variant.choices:
             params = query.copy()
             params[variant.param] = value
+            if value != current:
+                for name in variant.resets:
+                    params.pop(name, None)
             options.append(
                 {"label": label, "query": params.urlencode(), "current": value == current}
             )
