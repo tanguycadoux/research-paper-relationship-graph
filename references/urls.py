@@ -15,6 +15,7 @@ from .views import (
     graph_images,
     graphs,
     home,
+    keywords,
     publication_merge,
     publications,
     search,
@@ -166,6 +167,8 @@ urlpatterns = [
     # Corpus of the current user
     path("corpus/", corpus.my_references, name="corpus"),
     path("corpus/graph/", graphs.my_refs_graph, name="corpus_graph"),
+    # The map of its keywords (#418)
+    path("corpus/keywords/", keywords.corpus_keywords, name="corpus_keywords"),
     # Under « Mon graphe », which stays the current entry of the navigation (#422).
     path(
         "corpus/graph/authors/",

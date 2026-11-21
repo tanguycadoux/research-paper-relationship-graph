@@ -14,6 +14,7 @@ from django.utils.http import urlencode
 from ...models import CitedReference, Publication, UserPublication
 from ..corpus import tags
 from ..corpus.entries import with_reading_status
+from . import keyword_graph
 from .search import Normalized, author_named, contains, noted
 
 YEAR = re.compile(r"^\d{4}$")
@@ -136,6 +137,28 @@ class ToIdentifyFilter:
 
     def describe(self, value):
         return "à identifier"
+
+
+class TermFilter:
+    """
+    A keyword or a topic of the OpenAlex answers (#418), ?keyword= or ?topic=. No column:
+    a double click on the map of the keywords sets it.
+    """
+
+    kind = "term"
+
+    def __init__(self, terms):
+        self.terms = terms
+        self.params = (terms.param,)
+
+    def read(self, data, errors):
+        return data.get(self.terms.param, "").strip() or None
+
+    def apply(self, queryset, value):
+        return keyword_graph.carrying(queryset, self.terms, value)
+
+    def describe(self, value):
+        return f"« {value} »"
 
 
 class NoteFilter:
@@ -268,6 +291,8 @@ def corpus_filters(user):
         | {
             "tag": ("Tag", TagFilter(user)),
             "to_identify": ("Références", ToIdentifyFilter()),
+            "keyword": ("Mot-clé", TermFilter(keyword_graph.KEYWORDS)),
+            "topic": ("Thème", TermFilter(keyword_graph.TOPICS)),
             "note": ("Note", NoteFilter(user)),
         }
     )

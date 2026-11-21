@@ -55,6 +55,7 @@ MENU_PAGES = {
     "corpus": "Publications",
     "corpus_suggestions": "Suggestions",
     "corpus_graph": "Graphe",
+    "corpus_keywords": "Mots-clés",
     "publication_list": "Publications",
     "author_list": "Auteurs",
     "author_merge_select": "Combiner des auteurs",
