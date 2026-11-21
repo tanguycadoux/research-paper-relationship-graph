@@ -38,6 +38,24 @@ class IdentificationTestCase(TestCase):
         return CitedReference.objects.get(source=self.source, position=position)
 
 
+class ToIdentifyDefinitionTests(IdentificationTestCase):
+    """The query, the annotation and the property agree on what is to identify (#293)."""
+
+    def setUp(self):
+        super().setUp()
+        identification.declare_unidentifiable(self.ref(1), self.user)
+
+    def test_queryset_property_and_annotation_agree(self):
+        to_identify = set(CitedReference.objects.to_identify().values_list("position", flat=True))
+        loaded = {ref.position for ref in self.source.cited_references.all() if ref.is_to_identify}
+        self.assertEqual(to_identify, loaded)
+        self.assertNotIn(1, to_identify)
+        annotated = identification.with_references_to_identify(
+            Publication.objects.filter(pk=self.source.pk)
+        ).get()
+        self.assertEqual(annotated.to_identify, len(to_identify))
+
+
 class ManualResolutionSurvivesReimportTests(IdentificationTestCase):
     def test_identification_is_traced(self):
         pub = identification.identify_without_identifier(

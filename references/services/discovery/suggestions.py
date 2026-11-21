@@ -64,6 +64,8 @@ def describe(user, publications, tag=""):
 
 def references_to_identify(user, tag=""):
     """The cited references of the context not linked yet: they do not count."""
-    return CitedReference.objects.filter(
-        source__in=context_publications(user, tag), target__isnull=True, unidentifiable=False
-    ).count()
+    return (
+        CitedReference.objects.to_identify()
+        .filter(source__in=context_publications(user, tag))
+        .count()
+    )
