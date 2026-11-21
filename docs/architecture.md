@@ -153,6 +153,7 @@ references/          application principale
       graph_variants.py  variantes d'un graphe choisies dans l'URL (frise ou réseau…)
       graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
+      author_groups.py  doublons probables regroupés en un nœud du graphe des auteurs, sans toucher à la base
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
     ui/              composants d'interface, une seule bibliothèque ({% load ui %}) :

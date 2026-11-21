@@ -324,8 +324,25 @@ dessin que les graphes de citations, en vue réseau seulement.
   son nombre de coauteurs dans ce graphe, et ses trois liens les plus forts (avec le
   nombre de publications communes). Survol : le nom, dans l'infobulle en verre dépoli des
   graphes de citations (`hover.js`, liens foncés sous 600 éléments) ; double-clic : la fiche.
-- **Export** : `graphe-auteur-<id>`, `graphe-auteurs`, suivis de `-selection-<id>` ou
-  `-zoom` comme les autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur
+- **Doublons probables regroupés** (#419, `services/display/author_groups.py`) : par
+  défaut, les auteurs d'un même groupe de « Doublons probables » (même nom de famille,
+  prénoms compatibles, jamais deux ORCID différents ni une paire déclarée distincte)
+  présents dans le graphe ne font qu'un nœud, au nom le plus complet (ou à celui de
+  l'auteur du graphe) ; ses publications sont comptées une fois, ses liens additionnés, et
+  deux variantes sur une même publication y sont une seule personne. **Rien n'est écrit
+  dans la base.** Le nœud est entouré d'un contour foncé (`outline`, aussi dans la
+  légende et sur l'image exportée) ; son infobulle liste les variantes et leurs
+  publications ; sa carte aussi, avec, pour un utilisateur connecté, des cases et deux
+  boutons : « Ce ne sont pas les mêmes » (`AuthorDistinction`, comme sur la page des
+  doublons, donc valable partout ensuite) et « Fusionner pour de bon… » (la confirmation
+  de fusion habituelle), qui reviennent au graphe. L'interrupteur « Regrouper les doublons
+  probables (n) » du panneau recharge la page avec `?doublons=separes` : la base telle
+  qu'elle est. Les groupes sont calculés une fois par page, sans les nombres de
+  publications ni les tutelles qui ne servent qu'à les ordonner (deux requêtes, 0,1 s sur
+  les 9 507 auteurs du banc, contre 0,15 à 0,6 s pour `duplicate_groups`). L'image des
+  grands graphes (#328) reste celle de la base telle qu'elle est.
+- **Export** : `graphe-auteur-<id>`, `graphe-auteurs`, suivis de `-doublons-separes` sans
+  regroupement, puis de `-selection-<id>` ou `-zoom` comme les autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur
   sélectionné et ses coauteurs, les plus publiés d'abord.
 - **Modules** : `coauthors.js` (point d'entrée : tailles, épaisseurs, style, disposition)
   et `coauthor_selection.js` (ce que sélectionne un clic, la carte de l'auteur) ; le

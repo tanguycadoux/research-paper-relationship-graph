@@ -1,25 +1,59 @@
-"""Coauthorship graphs (#222): of an author, from their page, and of all the authors."""
+"""
+Coauthorship graphs (#222): of an author, from their page, and of all the authors. The
+probable duplicates are gathered into one node by default, without changing the base;
+?doublons=separes draws the base as it is (#419).
+"""
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_POST
 
 from ..models import Author, GraphImage
+from ..services.corrections import author_distinctions
 from ..services.display import graph_images
 from ..services.display.author_graph import LARGE_COLLABORATION, all_authors_graph, author_graph
+from ..services.display.author_groups import probable_groups
+from .redirects import redirect_to_next
+
+# In the query string: the probable duplicates drawn apart, as in the base (#419).
+DUPLICATES_PARAM = "doublons"
+SEPARATE = "separes"
 
 
-def graph_context(graph, export_name, **extra):
+def is_grouped(request):
+    """The probable duplicates are gathered, unless the URL asks for the base as it is."""
+    return request.GET.get(DUPLICATES_PARAM) != SEPARATE
+
+
+def toggle_query(request):
+    """The query string of the same graph with the other choice, other parameters kept."""
+    query = request.GET.copy()
+    if is_grouped(request):
+        query[DUPLICATES_PARAM] = SEPARATE
+    else:
+        query.pop(DUPLICATES_PARAM, None)
+    return query.urlencode()
+
+
+def graph_context(request, graph, export_name, **extra):
+    grouped = is_grouped(request)
     return {
         "graph": graph,
-        # The name of the exported image (graph/export.js).
-        "graph_export": export_name,
+        # The name of the exported image (graph/export.js), which says when the
+        # duplicates are apart.
+        "graph_export": export_name if grouped else f"{export_name}-doublons-separes",
         "large_collaboration": LARGE_COLLABORATION,
+        "duplicates_grouped": grouped,
+        "duplicates_toggle": toggle_query(request),
         **extra,
     }
 
 
 def author_graph_view(request, pk):
     author = get_object_or_404(Author, pk=pk)
-    context = graph_context(author_graph(author), f"graphe-auteur-{author.pk}", author=author)
+    graph = author_graph(author, groups=probable_groups(), grouped=is_grouped(request))
+    context = graph_context(request, graph, f"graphe-auteur-{author.pk}", author=author)
     return render(request, "references/author_graph.html", context)
 
 
@@ -31,5 +65,25 @@ def authors_graph_view(request):
     if graph_images.is_large(GraphImage.Kind.AUTHORS):
         context = {"large_graph": graph_images.image_state(GraphImage.Kind.AUTHORS)}
     else:
-        context = graph_context(all_authors_graph(), "graphe-auteurs")
+        graph = all_authors_graph(groups=probable_groups(), grouped=is_grouped(request))
+        context = graph_context(request, graph, "graphe-auteurs")
     return render(request, "references/authors_graph.html", context)
+
+
+@login_required
+@require_POST
+def author_graph_distinct_view(request):
+    """
+    « Ce ne sont pas les mêmes » on a gathered node (#419): the checked authors are
+    declared different people, as on the page of probable duplicates, then back to
+    the graph.
+    """
+    pks = [pk for pk in request.POST.getlist("authors") if pk.isdigit()]
+    authors = list(Author.objects.filter(pk__in=pks))
+    if len(authors) < 2:
+        messages.error(request, "Cochez au moins deux auteurs.")
+    else:
+        author_distinctions.declare_distinct(authors, request.user)
+        names = ", ".join(str(author) for author in authors)
+        messages.success(request, f"Ne seront plus regroupés : {names}.")
+    return redirect_to_next(request, "authors_graph")

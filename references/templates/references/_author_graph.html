@@ -9,6 +9,9 @@
 {% block help %}
     {% include "references/_graph_help.html" with help="coauthors" %}
 {% endblock help %}
+{% block controls %}
+    {% include "references/_author_graph_duplicates.html" %}
+{% endblock controls %}
 {# Filled by graph/coauthor_selection.js with the selected author. #}
 {% block card_label %}Auteur sélectionné{% endblock card_label %}
 {% block card_empty %}
@@ -27,6 +30,7 @@
             <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="coauthors"></span>
         </p>
     </div>
+    {% include "references/_author_graph_variants.html" %}
     <div class="grid gap-1" data-card-row="strongest">
         <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Liens les plus forts</p>
         <ol class="grid gap-1" data-card="strongest">
@@ -50,6 +54,14 @@
             Auteur de la base
         {% endif %}
     </li>
+    {% if duplicates_grouped and graph.groups %}
+        <li>
+            {# The outline of graph/coauthors.js, also drawn on the exported image (graph/export.js). #}
+            <span class="mr-1.5 ml-0.5 inline-block size-3 rounded-full bg-graph-cited align-middle outline-2 outline-offset-1 outline-graph-edge-strong"
+                  aria-hidden="true"></span>
+            Doublons probables regroupés ({{ graph.groups }})
+        </li>
+    {% endif %}
     <li>Taille : nombre de publications dans la base</li>
     <li>Épaisseur : force du coautorat</li>
     <li>
