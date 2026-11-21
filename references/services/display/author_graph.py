@@ -1,9 +1,11 @@
 """
 Coauthorship graphs (#222): one node per author, one edge per pair of authors who signed
 a publication together. The graph of an author shows them, their coauthors and the links
-between these coauthors; the graph of all authors uses the same code.
+between these coauthors; the graph of all authors uses the same code, and so does the
+graph of the authors of a user's corpus (#422), through its publications only.
 
-- Size of a node: the number of publications of the author in the base, all of them.
+- Size of a node: the number of publications of the author in the base, all of them
+  (in the corpus, or the tag, for the graph of a corpus).
 - Weight of an edge (Newman): each publication of n authors adds 1/(n - 1) to each pair
   of its authors, so that a publication of two authors weighs as much as all the links
   of one author on a publication of ten. One edge per pair, with the sum and the number
@@ -25,6 +27,7 @@ from django.db.models import Count, Q
 from django.urls import reverse
 
 from ...models import Author, AuthorPublication, Publication
+from ..corpus.tags import context_publications
 from .author_groups import gathered_publications, graph_groups
 
 # Beyond this many authors, a publication links nobody (decision of #222).
@@ -48,12 +51,7 @@ def author_graph(author, groups=(), grouped=True):
     grouped: see coauthorship_graph.
     """
     own = AuthorPublication.objects.filter(author=author).values("publication_id")
-    linking = (
-        Publication.objects.filter(pk__in=own)
-        .annotate(people=Count("authorpublication__author", distinct=True))
-        .filter(people__lte=LARGE_COLLABORATION)
-        .values("pk")
-    )
+    linking = linking_publications(own)
     coauthors = AuthorPublication.objects.filter(publication__in=linking).values("author_id")
     # Every publication of a member: their sizes, and the links between them.
     of_members = AuthorPublication.objects.filter(
@@ -62,6 +60,33 @@ def author_graph(author, groups=(), grouped=True):
     slots = AuthorPublication.objects.filter(publication__in=of_members)
     members = Author.objects.filter(Q(pk=author.pk) | Q(pk__in=coauthors))
     return coauthorship_graph(slots, members, source_id=author.pk, groups=groups, grouped=grouped)
+
+
+def corpus_authors_graph(user, tag="", groups=(), grouped=True):
+    """
+    The authors of the publications of the user's corpus, or of a tag and its subtags,
+    linked through these publications only (#422): the publications the corpus only
+    cites are not part of it, and the size of an author is their number of publications
+    in the corpus. As around an author, the authors of its large collaborations only are
+    left out: a thousand nodes without any link. groups, grouped: see coauthorship_graph.
+    """
+    publications = context_publications(user, tag).values("pk")
+    slots = AuthorPublication.objects.filter(publication__in=publications)
+    linking = linking_publications(publications)
+    authors = Author.objects.filter(
+        pk__in=AuthorPublication.objects.filter(publication__in=linking).values("author_id")
+    )
+    return coauthorship_graph(slots, authors, groups=groups, grouped=grouped)
+
+
+def linking_publications(publications):
+    """The pks of the publications (pks) of at most LARGE_COLLABORATION authors."""
+    return (
+        Publication.objects.filter(pk__in=publications)
+        .annotate(people=Count("authorpublication__author", distinct=True))
+        .filter(people__lte=LARGE_COLLABORATION)
+        .values("pk")
+    )
 
 
 def publication_authors(slots):
@@ -75,7 +100,8 @@ def publication_authors(slots):
 def coauthorship_graph(slots, authors, source_id=None, groups=(), grouped=True):
     """
     The Cytoscape elements of the authors and of their coauthorships through the
-    publications of the slots, which must hold every publication of every author.
+    publications of the slots, which hold every publication of every author that the
+    sizes count.
     groups: the probable duplicates (author_groups.probable_groups); those with at least
     two authors in the graph are counted ("groups"), and gathered into one node unless
     grouped is false.

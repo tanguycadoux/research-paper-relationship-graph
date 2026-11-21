@@ -83,7 +83,9 @@ function fillCard(card, node) {
     fillVariants(card, data.variants);
     cardField(card, "title").textContent = data.label;
     cardField(card, "title").href = data.url;
-    cardField(card, "publications").textContent = `${plural(data.publications, "publication")} dans la base`;
+    // « dans la base », « dans le corpus » or « dans ce tag » (#422): what the sizes count.
+    const publications = cardField(card, "publications");
+    publications.textContent = `${plural(data.publications, "publication")} ${publications.dataset.scope}`;
     const coauthors = node.degree();
     cardField(card, "coauthors").textContent = plural(coauthors, "coauteur");
     const links = strongest(node);

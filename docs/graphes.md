@@ -290,6 +290,17 @@ dessin que les graphes de citations, en vue réseau seulement.
   public) montre chaque auteur qui a au moins une publication. Pas d'entrée de menu : la
   page reste sous « Auteurs ». Deux requêtes quelle que soit la taille (les signatures
   des publications concernées, puis les auteurs) ; les paires sont comptées en Python.
+- **Graphe des auteurs de mon corpus** (#422, `/corpus/graph/authors/`, connecté) : les
+  auteurs des publications du corpus, ou d'un tag et de ses sous-tags (`?tag=`, le
+  sélecteur de « Mon graphe »), reliés par ces publications seulement. Les publications
+  seulement citées n'en font pas partie (décision de l'utilisateur : elles doubleraient le
+  graphe sans dire qui je lis). La taille d'un nœud est son nombre de publications **dans
+  le corpus** (ou le tag) : la carte et la légende le disent (`data-scope`). Comme autour
+  d'un auteur, les auteurs des seules grandes collaborations n'y sont pas (sur le banc,
+  une publication de 1 012 auteurs aurait fait autant de nœuds sans lien). Un choix
+  « Graphe : Publications | Auteurs » en tête du panneau passe de « Mon graphe » à ce
+  graphe en gardant le tag ; « Mon graphe » reste l'entrée de menu en surbrillance.
+  Doublons regroupés comme les autres ; export `graphe-auteurs-corpus[-tag-<tag>]`.
 - **Nœuds** : la taille suit le nombre de publications de l'auteur dans la base (aire
   proportionnelle), toutes comprises. L'auteur du graphe est en bleu (`source`), les
   autres de la couleur ordinaire ; pas de couleur par tutelle ni par communauté.
@@ -341,9 +352,10 @@ dessin que les graphes de citations, en vue réseau seulement.
   publications ni les tutelles qui ne servent qu'à les ordonner (deux requêtes, 0,1 s sur
   les 9 507 auteurs du banc, contre 0,15 à 0,6 s pour `duplicate_groups`). L'image des
   grands graphes (#328) reste celle de la base telle qu'elle est.
-- **Export** : `graphe-auteur-<id>`, `graphe-auteurs`, suivis de `-doublons-separes` sans
-  regroupement, puis de `-selection-<id>` ou `-zoom` comme les autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur
-  sélectionné et ses coauteurs, les plus publiés d'abord.
+- **Export** : `graphe-auteur-<id>`, `graphe-auteurs`, `graphe-auteurs-corpus`, suivis de
+  `-doublons-separes` sans regroupement, puis de `-selection-<id>` ou `-zoom` comme les
+  autres. L'image nomme (nom de famille) l'auteur du graphe, ou l'auteur sélectionné et
+  ses coauteurs, les plus publiés d'abord.
 - **Modules** : `coauthors.js` (point d'entrée : tailles, épaisseurs, style, disposition)
   et `coauthor_selection.js` (ce que sélectionne un clic, la carte de l'auteur) ; le
   reste est partagé (voir ci-dessous).
