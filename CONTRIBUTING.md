@@ -72,11 +72,13 @@ Les tests ne font aucun appel réseau. Les sources externes (Crossref, DataCite,
 ```python
 from references.tests.sources import active_sources, fixture, simulated_sources
 
+
 @simulated_sources(crossref={DOI: {"message": {"title": ["Titre"]}}})
 class ImportTests(TestCase):
     def test_import(self):
         import_publication(Publication.objects.create(doi=DOI))
         self.assertEqual(active_sources().single("crossref"), [DOI])
+
 
 class BatchTests(TestCase):  # sans décorateur : la simulation dans le test
     def test_batch(self):
