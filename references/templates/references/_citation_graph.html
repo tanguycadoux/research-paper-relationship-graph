@@ -53,6 +53,17 @@
     <p class="font-medium text-gray-900">
         {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize_fr }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize_fr }}
     </p>
+    {# The bibliographies the shown levels lack (#451), fetched from the same start (#431). #}
+    {% if missing_bibliographies %}
+        <p class="text-gray-600" data-graph-missing>
+            {% for level, count in missing_bibliographies %}
+                {{ count }} bibliographie{{ count|pluralize_fr }} manque{{ count|pluralize_fr:"nt" }} pour le niveau {{ level }}{% if forloop.last %}.{% else %} ;{% endif %}
+            {% endfor %}
+        </p>
+        {% if bibliography_request_url %}
+            <div>{% button "Récupérer les bibliographies…" url=bibliography_request_url variant="secondary" icon="download" %}</div>
+        {% endif %}
+    {% endif %}
     <p class="text-gray-500">Cliquez sur un article du graphe pour le décrire ici.</p>
 {% endblock card_empty %}
 {% block card_title %}Publication sélectionnée{% endblock card_title %}
@@ -90,6 +101,19 @@
         </dl>
     </div>
     <p class="text-gray-600" data-card="cited-by"></p>
+    {% if graph_level %}
+        {# Its level (#451); a publication of level 1 is developed or reduced alone: its references and the publications citing it. #}
+        <p class="text-gray-600" data-card-row="level">
+            <span data-card="level"></span>
+        </p>
+        <div class="grid gap-1" data-card-row="toggle">
+            <div class="flex flex-wrap gap-2">
+                <span data-card="develop">{% button "Développer" url="#" variant="secondary" icon="add" %}</span>
+                <span data-card="reduce">{% button "Réduire" url="#" variant="secondary" icon="remove" %}</span>
+            </div>
+            <p class="text-xs text-gray-500">Ses références et les publications qui la citent, le reste du graphe inchangé.</p>
+        </div>
+    {% endif %}
 {% endblock card_content %}
 {% block legend %}
     {% comment %}
@@ -126,6 +150,14 @@
             Publication de la base
         {% endif %}
     </li>
+    {% if graph_beyond %}
+        {# Level 2 (#451): the colour of its role, hollow. #}
+        <li>
+            <span class="mr-1 inline-block size-3 rounded-full border-2 border-graph-cited bg-white align-middle"
+                  aria-hidden="true"></span>
+            Niveau 2 : reliée à une publication du niveau 1
+        </li>
+    {% endif %}
     <li>Taille : nombre de citations dans la base</li>
     <li>
         Après un clic :

@@ -52,6 +52,16 @@ async function network(container, graph) {
     return cy;
 }
 
+// The publication just developed or reduced (#451, ?noeud= of graph_levels.py) is
+// selected again once the page is loaded: its new neighbours stand out.
+function selectRequested(cy) {
+    const id = new URLSearchParams(window.location.search).get("noeud");
+    const node = id ? cy.getElementById(id) : cy.collection();
+    if (node.nonempty()) {
+        node.emit("tap");
+    }
+}
+
 async function render() {
     const frame = graphFrame();
     const { container, data: graph } = frame;
@@ -66,6 +76,7 @@ async function render() {
     const { cy, bindAxes } = isNetwork ? { cy: await network(container, graph) } : timeline(container, graph);
     // In the network, distances mean something in both directions: a uniform zoom (#195).
     bindGraph(cy, frame, { bindSelection: bindCitationSelection, uniform: isNetwork, bindAxes });
+    selectRequested(cy);
 }
 
 render();
