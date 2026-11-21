@@ -1,0 +1,29 @@
+{
+ "numFound": 1,
+ "start": 0,
+ "docs": [
+  {
+   "author_name": [
+    "Martin N. Wilson"
+   ],
+   "first_publish_year": 1983,
+   "isbn": [
+    "9780198548102",
+    "9780198548058",
+    "0198548109",
+    "0198548052"
+   ],
+   "key": "/works/OL5908966W",
+   "publish_year": [
+    1986,
+    1983
+   ],
+   "publisher": [
+    "Clarendon",
+    "Oxford University Press",
+    "Clarendon Press"
+   ],
+   "title": "Superconducting magnets"
+  }
+ ]
+}

@@ -3,7 +3,7 @@ from django.urls import reverse
 from references.models import Publication
 from references.services.corrections import identification
 from references.services.corrections.identification import with_references_to_identify
-from references.tests.helpers import without_candidate_search
+from references.tests.sources import simulated_sources
 from references.tests.test_identification import (
     BOOK,
     NO_KEY,
@@ -56,7 +56,7 @@ class UnidentifiableReferenceTests(IdentificationTestCase):
         self.assertFalse(self.ref(0).unidentifiable)
 
 
-@without_candidate_search
+@simulated_sources()
 class UnidentifiableViewTests(IdentificationTestCase):
     def url(self, position):
         return reverse("reference_unidentifiable", args=[self.source.pk, position])

@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -8,12 +6,8 @@ from references.forms import IdentifyReferenceForm
 from references.models import CitedReference, Publication, UserPublication
 from references.services.corrections import identification
 from references.services.imports.parser import parse_publication
-from references.tests.helpers import (
-    doi_org_answers,
-    with_crossref,
-    without_candidate_search,
-    without_other_sources,
-)
+from references.tests.helpers import with_crossref
+from references.tests.sources import active_sources, simulated_sources
 
 BOOK = {"key": "ref1", "unstructured": "Goodfellow I. Deep Learning. MIT Press, 2016."}
 NO_KEY = {"unstructured": "Private communication."}
@@ -90,25 +84,23 @@ class ManualResolutionSurvivesReimportTests(IdentificationTestCase):
         self.assertEqual(self.ref(2).target, other)
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json")
+@simulated_sources()
 class IdentifyByDoiTests(IdentificationTestCase):
-    def test_existing_publication_is_reused_without_calling_crossref(self, fetch):
+    def test_existing_publication_is_reused_without_calling_crossref(self):
         existing = with_crossref(Publication.objects.create(doi="10.1000/book"), {"message": {}})
         pub, imported = identification.identify_by_doi(self.ref(0), "10.1000/book", self.user)
         self.assertEqual(pub, existing)
         self.assertTrue(imported)
-        fetch.assert_not_called()
+        self.assertEqual(active_sources().to("crossref"), [])
 
-    def test_new_doi_is_imported(self, fetch):
-        fetch.return_value = {"message": {"title": ["Deep Learning"]}}
+    def test_new_doi_is_imported(self):
+        active_sources().add(crossref={"10.1000/book": {"message": {"title": ["Deep Learning"]}}})
         pub, imported = identification.identify_by_doi(self.ref(0), "10.1000/book", self.user)
         self.assertTrue(imported)
         self.assertEqual(pub.title, "Deep Learning")
         self.assertEqual(self.ref(0).target, pub)
 
-    def test_unknown_doi_is_linked_anyway(self, fetch):
-        fetch.return_value = None
+    def test_unknown_doi_is_linked_anyway(self):
         pub, imported = identification.identify_by_doi(self.ref(0), "10.1000/ghost", self.user)
         self.assertFalse(imported)
         self.assertEqual(self.ref(0).target, pub)
@@ -129,24 +121,22 @@ class IdentifyReferenceFormTests(TestCase):
         self.assertIn("title", form.errors)
 
 
-@without_candidate_search
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources()
 class IdentifyReferenceViewTests(IdentificationTestCase):
     def url(self, position):
         return reverse("reference_identify", args=[self.source.pk, position])
 
-    def test_login_required(self, _fetch):
+    def test_login_required(self):
         response = self.client.get(self.url(0))
         self.assertEqual(response.status_code, 302)
 
-    def test_form_shows_the_reference_text(self, _fetch):
+    def test_form_shows_the_reference_text(self):
         self.client.force_login(self.user)
         response = self.client.get(self.url(0))
         self.assertContains(response, "Goodfellow I. Deep Learning")
         self.assertContains(response, "Telle que donnée par Crossref")
 
-    def test_identify_without_identifier(self, _fetch):
+    def test_identify_without_identifier(self):
         self.client.force_login(self.user)
         response = self.client.post(
             self.url(0), {"method": "none", "title": "Deep Learning", "year": "2016"}
@@ -154,15 +144,13 @@ class IdentifyReferenceViewTests(IdentificationTestCase):
         self.assertRedirects(response, reverse("publication_detail", args=[self.source.pk]))
         self.assertEqual(self.ref(0).target.title, "Deep Learning")
 
-    def test_detail_page_links_to_identification(self, _fetch):
+    def test_detail_page_links_to_identification(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("publication_detail", args=[self.source.pk]))
         self.assertContains(response, self.url(0))
 
 
-@without_candidate_search
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources()
 class UnregisteredDoiTests(IdentificationTestCase):
     """A DOI that doi.org does not know is refused, not linked to an empty publication (#240)."""
 
@@ -170,13 +158,15 @@ class UnregisteredDoiTests(IdentificationTestCase):
 
     def post_doi(self, doi, registered):
         self.client.force_login(self.user)
-        with doi_org_answers(registered):
-            return self.client.post(
-                reverse("reference_identify", args=[self.source.pk, 0]),
-                {"method": "doi", "doi": doi},
-            )
+        if registered is None:  # doi.org does not answer
+            active_sources().add(unreachable=["doi.org"])
+        else:
+            active_sources().add(doi_org={doi: registered})
+        return self.client.post(
+            reverse("reference_identify", args=[self.source.pk, 0]), {"method": "doi", "doi": doi}
+        )
 
-    def test_unregistered_doi_is_refused(self, _fetch):
+    def test_unregistered_doi_is_refused(self):
         response = self.post_doi(self.ACM_DOI, registered=False)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "n&#x27;est enregistré nulle part")
@@ -184,7 +174,7 @@ class UnregisteredDoiTests(IdentificationTestCase):
         self.assertIsNone(self.ref(0).target)
         self.assertFalse(Publication.objects.filter(doi=self.ACM_DOI).exists())
 
-    def test_doi_linked_when_doi_org_cannot_answer(self, _fetch):
+    def test_doi_linked_when_doi_org_cannot_answer(self):
         response = self.post_doi("10.1000/ghost", registered=None)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.ref(0).target.doi, "10.1000/ghost")

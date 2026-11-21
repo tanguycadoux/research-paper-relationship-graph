@@ -208,7 +208,7 @@ references/          application principale
     _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
                      les suggestions, « Mon corpus » et la fiche (#296)
   templates/components/  gabarits des composants de ui/
-  tests/
+  tests/           tests ; sources.py simule les sources externes, fixtures/ leurs réponses
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
 assets/css/source.css  source Tailwind (styles de base des éléments, couleurs du graphe)
 static/
@@ -238,9 +238,13 @@ Règles :
   (`sources`, `identifiers`, `imports`, `corrections`, `corpus`, `discovery`, `display`) :
   un nouveau module va dans le sous-paquet de son domaine, et un client de source dans
   `sources/`.
-- Les tests ne font **aucun appel réseau** : toutes les sources sont simulées
-  (`references/tests/helpers.py`), et le test runner (`config/test_runner.py`) fait
-  échouer toute connexion réseau et désactive le cache de développement.
+- Les tests ne font **aucun appel réseau** : toutes les sources sont simulées au
+  niveau HTTP (`references/tests/sources.py`, #299). Un adaptateur `requests` monté sur
+  la session de `services/sources/http.py` répond selon l'URL et les paramètres, à
+  partir des réponses que donne le test ou de `references/tests/fixtures/` ; les clients
+  et le code HTTP commun tournent comme en production, et une requête non prévue fait
+  échouer le test. Le test runner (`config/test_runner.py`) fait échouer toute connexion
+  réseau et désactive le cache de développement.
 - Les auteurs d'une liste de publications se préchargent avec
   `Publication.objects.….with_author_slots()` (signatures dans l'ordre, auteurs joints),
   jamais avec `prefetch_related("authorpublication_set__author")` : sur SQLite, Django

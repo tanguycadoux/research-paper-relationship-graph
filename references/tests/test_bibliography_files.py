@@ -5,8 +5,8 @@ from django.urls import reverse
 
 from references.models import Publication, UserPublication
 from references.services.corpus.bibliography_files import file_entries
-from references.tests.helpers import with_crossref, without_other_sources
-from references.tests.test_importer import with_mocked_crossref
+from references.tests.helpers import with_crossref
+from references.tests.test_importer import CROSSREF_SOURCES
 
 ZOTERO_BIBTEX = r"""
 @article{abbott_observation_2016,
@@ -165,8 +165,7 @@ class RisEntriesTests(SimpleTestCase):
         )
 
 
-@without_other_sources
-@with_mocked_crossref
+@CROSSREF_SOURCES
 class ImportBibliographyFileViewTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("bob")
@@ -176,9 +175,7 @@ class ImportBibliographyFileViewTests(TestCase):
         upload = SimpleUploadedFile(name, content)
         return self.client.post(reverse("corpus_import"), {"file": upload}, follow=True)
 
-    def test_bibtex_file_is_imported_and_entries_without_identifier_listed(
-        self, fetch, fetch_works
-    ):
+    def test_bibtex_file_is_imported_and_entries_without_identifier_listed(self):
         pub = with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         content = (
             "@article{a, doi = {10.1000/known}}\n"
@@ -194,12 +191,12 @@ class ImportBibliographyFileViewTests(TestCase):
         self.assertContains(response, "2 entrées ignorées, sans DOI, identifiant arXiv ni ISBN")
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=pub).exists())
 
-    def test_ris_file_in_latin1(self, fetch, fetch_works):
+    def test_ris_file_in_latin1(self):
         content = "TY  - JOUR\nTI  - Étude\nDO  - 10.1000/known\nER  - \n".encode("latin-1")
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         self.assertContains(self.post("export.ris", content), "1 publication ajoutée")
 
-    def test_long_list_of_ignored_entries_is_cut(self, fetch, fetch_works):
+    def test_long_list_of_ignored_entries_is_cut(self):
         content = "".join(f"@misc{{k{i}, title = {{Titre {i}}}}}\n" for i in range(25))
         response = self.post("long.bib", content.encode())
         self.assertEqual(len(response.context["import_report"]["ignored"]["items"]), 20)

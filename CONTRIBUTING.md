@@ -69,6 +69,32 @@ Les templates suivent HTML5 : `lang="fr"`, balises sémantiques (`<header>`, `<n
 - Vocabulaire (#275) : « corpus » désigne les publications d'un utilisateur (« Mon corpus », « Ajouter à mon corpus », « Retirer de mon corpus ») ; « références » est réservé à la bibliographie d'un article (« Références (21) », « références à identifier »).
 - Icônes : `python manage.py add_icon <nom>` (noms de https://fonts.google.com/icons).
 
-Les tests ne font aucun appel réseau : les sources externes sont simulées avec `unittest.mock`, là où elles sont appelées, souvent par les décorateurs de `references/tests/helpers.py` (`without_other_sources`, `without_candidate_search`, `without_doi_org`…). Le test runner (`config/test_runner.py`) fait échouer toute tentative de connexion, ce qui révèle un appel oublié, et désactive le cache HTTP de développement.
+Les tests ne font aucun appel réseau. Les sources externes (Crossref, DataCite, OpenAlex, doi.org, ORCID, arXiv, Open Library) sont simulées au niveau HTTP par `references/tests/sources.py` (#299) : les clients de `references/services/sources/` tournent comme en production, seule la session HTTP répond à leur place, selon l'URL et les paramètres, lots compris. Un test dit donc quelles réponses existent, pas quels modules remplacer :
+
+```python
+from references.tests.sources import active_sources, fixture, simulated_sources
+
+
+@simulated_sources(crossref={DOI: {"message": {"title": ["Titre"]}}})
+class ImportTests(TestCase):
+    def test_import(self):
+        import_publication(Publication.objects.create(doi=DOI))
+        self.assertEqual(active_sources().single("crossref"), [DOI])
+
+
+class BatchTests(TestCase):  # sans décorateur : la simulation dans le test
+    def test_batch(self):
+        with simulated_sources(openalex=[fixture("openalex_arxiv1706.03762.json")]) as sources:
+            complete_cited_with_openalex(source)
+        self.assertEqual(sources.batches("openalex"), [[DOI_A, DOI_B]])
+```
+
+- `simulated_sources(...)` s'emploie comme `patch` : décorateur d'une méthode ou d'une classe de tests, ou bloc `with`, ou `self.enterContext(...)` dans `setUp`. Une seule simulation à la fois : un test d'une classe décorée ajoute des réponses par `active_sources().add(...)`, oubliées à la fin du test.
+- Tant qu'elle est active, chaque source ne connaît que ce qu'on lui a donné : un DOI inconnu est un 404, un lot répond sans lui, une recherche ne trouve rien. `unreachable=["crossref"]` fait répondre 503 à une source (réessais sans attente). doi.org enregistre les DOI connus de Crossref et DataCite et ne répond pas pour les autres (accepté, comme quand doi.org est injoignable), sauf `doi_org=…`.
+- Les réponses réelles sont dans `references/tests/fixtures/` (une réponse de la source, telle quelle) ; `fixture(nom)` les lit. Une réponse écrite dans le test peut se réduire aux champs utiles : le DOI (Crossref) ou l'`id` (DataCite) est ajouté d'après la clé.
+- Ce qui a été demandé se lit dans la simulation : `single(source)` (un DOI à la fois), `batches(source)` (les lots), `searches(source)`, `asked(source)`, `to(source)` (les requêtes, avec leurs paramètres), `forget()`.
+- Une requête qu'aucune route ne prévoit (autre hôte, autre chemin, autre paramètre) fait échouer le test : « requête non simulée : GET https://… ». Une nouvelle source ou un nouvel appel s'ajoute dans `sources.py`, avec un test dans `test_simulated_sources.py`.
+
+Les tests de la couche HTTP elle-même (réessais, `Retry-After`, en-têtes, journal des appels, cache, fichiers tronqués) remplacent encore la session par un `Mock`. Le test runner (`config/test_runner.py`) fait échouer toute tentative de connexion, ce qui révèle un appel oublié, et désactive le cache HTTP de développement.
 
 La CI (GitHub Actions) lance `ruff check`, `ruff format --check`, `djlint --lint`, `tools/check_js.sh` (`node --check` sur chaque fichier JavaScript, sans npm), `python manage.py test` (avec la couverture) et la construction de la feuille Tailwind sur chaque pull request. Les tests y tournent avec `requirements.txt` seul, comme en production : ceux qui demandent une dépendance de développement (requests-cache) sont sautés.

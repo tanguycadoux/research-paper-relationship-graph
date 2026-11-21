@@ -9,7 +9,7 @@ from references.models import Author, AuthorPublication, MetadataConflict, Publi
 from references.services.imports.published_versions import suggest_published_versions
 from references.services.sources.external_records import Source, store_record
 from references.services.sources.openalex_api import fetch_openalex_works, work_dois
-from references.tests.helpers import without_other_sources
+from references.tests.sources import active_sources, simulated_sources
 
 ARXIV = "10.48550/arxiv.2403.03225"
 JOURNAL = "10.1038/s41598-025-95297-z"
@@ -44,11 +44,10 @@ class WorkDoisTests(SimpleTestCase):
     def test_every_doi_of_the_work_main_one_first(self):
         self.assertEqual(work_dois(openalex_work(JOURNAL, ARXIV)), [JOURNAL, ARXIV])
 
-    @patch("references.services.sources.openalex_api.http.get_json")
-    def test_batch_finds_a_preprint_known_by_its_journal_doi(self, get_json):
+    def test_batch_finds_a_preprint_known_by_its_journal_doi(self):
         work = openalex_work(JOURNAL, ARXIV)
-        get_json.return_value = {"results": [work]}
-        self.assertEqual(fetch_openalex_works([ARXIV]), {ARXIV: work})
+        with simulated_sources(openalex=[work]):
+            self.assertEqual(fetch_openalex_works([ARXIV]), {ARXIV: work})
 
 
 class PreprintTestCase(TestCase):
@@ -63,12 +62,9 @@ class PreprintTestCase(TestCase):
         store_record(self.preprint, Source.OPENALEX, openalex_work(*dois))
 
     def suggest(self, works):
-        with patch(
-            "references.services.imports.published_versions.fetch_crossref_works",
-            return_value=works,
-        ) as fetch:
+        with simulated_sources(crossref=works) as sources:
             reported = suggest_published_versions([self.preprint])
-        return reported, fetch
+        return reported, sources
 
     def proposal(self):
         return MetadataConflict.objects.filter(kind=Kind.PUBLISHED_VERSION).first()
@@ -77,9 +73,9 @@ class PreprintTestCase(TestCase):
 class SuggestTests(PreprintTestCase):
     def test_verified_version_is_proposed_not_applied(self):
         self.with_openalex(JOURNAL, ARXIV)
-        reported, fetch = self.suggest({JOURNAL: crossref()})
+        reported, sources = self.suggest({JOURNAL: crossref()})
         self.assertEqual(reported, 1)
-        fetch.assert_called_once_with([JOURNAL])
+        self.assertEqual(sources.batches("crossref"), [[JOURNAL]])
         proposal = self.proposal()
         self.assertEqual((proposal.current_value, proposal.proposed_value), (ARXIV, JOURNAL))
         self.assertEqual(proposal.details["venue"], "Scientific Reports")
@@ -108,19 +104,19 @@ class SuggestTests(PreprintTestCase):
         self.with_openalex(JOURNAL, ARXIV)
         self.suggest({JOURNAL: crossref()})
         MetadataConflict.objects.update(status=MetadataConflict.Status.KEPT)
-        reported, fetch = self.suggest({JOURNAL: crossref()})
+        reported, sources = self.suggest({JOURNAL: crossref()})
         self.assertEqual(reported, 0)
-        fetch.assert_not_called()
+        self.assertEqual(sources.requests, [])
 
     def test_nothing_to_check_without_openalex_work_or_other_doi(self):
-        _, fetch = self.suggest({})
-        fetch.assert_not_called()
+        _, sources = self.suggest({})
+        self.assertEqual(sources.requests, [])
         self.with_openalex(ARXIV)
-        _, fetch = self.suggest({})
-        fetch.assert_not_called()
+        _, sources = self.suggest({})
+        self.assertEqual(sources.requests, [])
 
 
-@without_other_sources
+@simulated_sources()
 @patch("references.views.conflicts.import_publication", side_effect=lambda pub, **kw: pub)
 class DecisionTests(PreprintTestCase):
     def setUp(self):
@@ -130,16 +126,16 @@ class DecisionTests(PreprintTestCase):
         self.with_openalex(JOURNAL, ARXIV)
         self.suggest({JOURNAL: crossref()})
 
-    def decide(self, decision, answer=None):
-        with patch(
-            "references.services.imports.published_versions.fetch_crossref_json",
-            return_value=crossref() if answer is None else answer,
-        ):
-            return self.client.post(
-                reverse("conflict_resolve", args=[self.proposal().pk]),
-                {"decision": decision},
-                follow=True,
-            )
+    def decide(self, decision, reachable=True):
+        if reachable:
+            active_sources().add(crossref=[crossref()])
+        else:
+            active_sources().add(unreachable=["crossref"])
+        return self.client.post(
+            reverse("conflict_resolve", args=[self.proposal().pk]),
+            {"decision": decision},
+            follow=True,
+        )
 
     def test_conflicts_page_and_publication_page_show_the_proposal(self, _import):
         self.assertContains(self.client.get(reverse("conflict_list")), "Scientific Reports")
@@ -162,7 +158,7 @@ class DecisionTests(PreprintTestCase):
         self.assertEqual((proposal.publication, proposal.status), (published, "accepted"))
 
     def test_nothing_changes_when_crossref_does_not_answer(self, _import):
-        response = self.decide("accepted", answer=False)
+        response = self.decide("accepted", reachable=False)
         self.assertContains(response, "Crossref n&#x27;a pas répondu")
         self.preprint.refresh_from_db()
         self.assertEqual(self.preprint.doi, ARXIV)

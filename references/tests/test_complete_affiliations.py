@@ -1,5 +1,4 @@
 from io import StringIO
-from unittest.mock import patch
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -8,6 +7,7 @@ from references.models import MetadataConflict, Organization, Publication
 from references.services.imports.parser import parse_publication
 from references.services.sources.external_records import Source, store_record
 from references.tests.helpers import with_crossref
+from references.tests.sources import simulated_sources
 
 CEA = {
     "id": "https://openalex.org/I2738703131",
@@ -20,6 +20,7 @@ IRFU = {
     "lineage": ["https://openalex.org/I2738703131", "https://openalex.org/I4210165232"],
 }
 WORK = {"authorships": [{"raw_author_name": "Thomas Thuillier", "institutions": [IRFU]}]}
+OPENALEX = simulated_sources(institutions=[CEA])
 
 
 def parsed_publication(doi):
@@ -41,19 +42,15 @@ class CompleteAffiliationsCommandTests(TestCase):
     def organizations(self, pub):
         return [str(o) for o in pub.authorpublication_set.get().organizations.all()]
 
-    @patch("references.services.imports.enrichment.fetch_openalex_works")
-    @patch(
-        "references.services.imports.enrichment.fetch_openalex_institutions",
-        return_value={"I2738703131": CEA},
-    )
-    def test_uses_the_stored_works_without_requesting_the_publications(self, institutions, works):
+    @OPENALEX
+    def test_uses_the_stored_works_without_requesting_the_publications(self):
         pub = parsed_publication("10.1000/a")
         store_record(pub, Source.OPENALEX, WORK)
 
         output = run()
 
-        works.assert_not_called()
-        institutions.assert_called_once_with(["I2738703131"])
+        self.assertEqual(OPENALEX.asked("openalex"), ["I2738703131"])  # no work asked
+        self.assertEqual(OPENALEX.batches("openalex", "institutions"), [["I2738703131"]])
         self.assertEqual(self.organizations(pub), ["IRFU"])
         irfu = Organization.objects.get(name="IRFU")
         self.assertEqual([str(a) for a in irfu.ancestors.all()], ["CEA"])
@@ -74,34 +71,23 @@ class CompleteAffiliationsCommandTests(TestCase):
         )
         Organization.objects.create(name="DRF", openalex_id="I4210113668")  # without its ancestors
 
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_institutions", return_value={}
-        ) as fetch:
+        with simulated_sources() as sources:
             run()
-        fetch.assert_not_called()
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_institutions",
-            return_value={"I4210113668": drf},
-        ) as fetch:
+        self.assertEqual(sources.requests, [])
+        with simulated_sources(institutions=[drf]) as sources:
             run("--refresh-ancestors")
-        fetch.assert_called_once_with(["I4210113668"])
+        self.assertEqual(sources.batches("openalex", "institutions"), [["I4210113668"]])
         repaired = Organization.objects.get(name="DRF")
         self.assertEqual([str(a) for a in repaired.ancestors.all()], ["CEA"])
 
-    @patch(
-        "references.services.imports.enrichment.fetch_openalex_institutions",
-        return_value={"I2738703131": CEA},
-    )
-    def test_fetch_missing_requests_the_publications_without_openalex(self, _institutions):
+    @OPENALEX
+    def test_fetch_missing_requests_the_publications_without_openalex(self):
         pub = parsed_publication("10.1000/a")
         known = parsed_publication("10.1000/known")
         store_record(known, Source.OPENALEX, None)  # already answered: not requested again
-        with patch(
-            "references.services.imports.enrichment.fetch_openalex_works",
-            return_value={"10.1000/a": WORK},
-        ) as works:
-            output = run("--fetch-missing")
-        works.assert_called_once_with(["10.1000/a"])
+        OPENALEX.add(openalex=[{"doi": "https://doi.org/10.1000/a"} | WORK])
+        output = run("--fetch-missing")
+        self.assertEqual(OPENALEX.batches("openalex"), [["10.1000/a"]])
         self.assertEqual(self.organizations(pub), ["IRFU"])
         self.assertIn("Publications demandées à OpenAlex : 1", output)
 

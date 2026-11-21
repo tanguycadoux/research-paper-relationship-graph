@@ -7,7 +7,7 @@ from django.urls import reverse
 from references.models import Publication, UserPublication
 from references.services.corpus.corpus_transfer import export_corpus, import_corpus
 from references.services.display import dashboard
-from references.tests.helpers import without_doi_org
+from references.tests.sources import simulated_sources
 
 READ = UserPublication.ReadingStatus.READ
 TO_READ = UserPublication.ReadingStatus.TO_READ
@@ -134,7 +134,7 @@ class ReadingStatusTests(TestCase):
         self.assertContains(response, f'href="{reverse("corpus")}?status=none"')
 
 
-@without_doi_org
+@simulated_sources()
 class ReadingStatusTransferTests(TestCase):
     """The status in the JSON export, since version 2."""
 

@@ -18,9 +18,10 @@ from references.models import (
     UserPublication,
 )
 from references.services.imports import batch_import, fetch_actions, fetch_queue
-from references.tests.helpers import with_crossref, with_openlibrary, without_other_sources
+from references.tests.helpers import with_crossref, with_openlibrary
+from references.tests.sources import simulated_sources
 from references.tests.test_corpus_transfer import export_of
-from references.tests.test_importer import with_mocked_crossref
+from references.tests.test_importer import CROSSREF_SOURCES
 
 Status = FetchRequest.Status
 Action = FetchRequest.Action
@@ -98,14 +99,13 @@ class EnqueueTests(TestCase):
         self.assertEqual((request.status, request.started_at), (Status.PENDING, None))
 
 
-@without_other_sources
-@with_mocked_crossref
+@CROSSREF_SOURCES
 class WorkerTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user("alice")
 
-    def test_the_worker_imports_with_the_bibliography(self, fetch, fetch_works):
+    def test_the_worker_imports_with_the_bibliography(self):
         pub = Publication.objects.create(doi="10.1000/source")
         request = fetch_queue.enqueue(pub, self.user, with_references=True)
         run_worker()
@@ -116,13 +116,13 @@ class WorkerTests(TestCase):
         self.assertEqual(pub.title, "Source")
         self.assertTrue(CitedReference.objects.filter(source=pub).exists())
 
-    def test_without_the_bibliography(self, fetch, fetch_works):
+    def test_without_the_bibliography(self):
         pub = Publication.objects.create(doi="10.1000/source")
         fetch_queue.enqueue(pub, self.user, with_references=False)
         run_worker()
         self.assertFalse(CitedReference.objects.filter(source=pub).exists())
 
-    def test_a_failure_is_kept_with_its_error(self, fetch, fetch_works):
+    def test_a_failure_is_kept_with_its_error(self):
         pub = Publication.objects.create(doi="10.1000/unknown")
         request = fetch_queue.enqueue(pub, self.user, with_references=False)
         run_worker()
@@ -130,7 +130,7 @@ class WorkerTests(TestCase):
         self.assertEqual(request.status, Status.FAILED)
         self.assertIn("DOI inconnu", request.error)
 
-    def test_an_exception_fails_the_request_and_the_worker_goes_on(self, fetch, fetch_works):
+    def test_an_exception_fails_the_request_and_the_worker_goes_on(self):
         broken_pub = with_crossref(
             Publication.objects.create(doi="10.1000/broken"), {"message": {}}
         )
@@ -158,18 +158,13 @@ class WorkerTests(TestCase):
         self.assertEqual(next_one.status, Status.DONE)
 
 
-@without_other_sources
 class QueuedBookTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user("alice")
 
-    @patch("references.services.imports.books.fetch_crossref_by_isbn", return_value=None)
-    @patch(
-        "references.services.imports.books.fetch_openlibrary_book",
-        return_value={"title": "Un livre", "publish_date": "2016"},
-    )
-    def test_a_book_from_open_library(self, _openlibrary, _crossref):
+    @simulated_sources(openlibrary={BOOK_ISBN: {"title": "Un livre", "publish_date": "2016"}})
+    def test_a_book_from_open_library(self):
         book = Publication.objects.create(isbn=BOOK_ISBN)
         request = fetch_queue.enqueue(book, self.user, with_references=False)
         run_worker()
@@ -177,11 +172,10 @@ class QueuedBookTests(TestCase):
         self.assertEqual(request.status, Status.DONE)
         self.assertEqual(request.identifier, BOOK_ISBN)
 
-    @patch(
-        "references.services.imports.books.fetch_crossref_by_isbn",
-        return_value={"message": {"DOI": "10.1000/book", "title": ["Le livre"]}},
+    @simulated_sources(
+        crossref=[{"message": {"DOI": "10.1000/book", "title": ["Le livre"], "ISBN": [BOOK_ISBN]}}]
     )
-    def test_the_doi_of_a_book_already_in_the_base_takes_its_place(self, _crossref):
+    def test_the_doi_of_a_book_already_in_the_base_takes_its_place(self):
         holder = with_crossref(Publication.objects.create(doi="10.1000/book"), {"message": {}})
         placeholder = Publication.objects.create(isbn=BOOK_ISBN)
         UserPublication.objects.create(user=self.user, publication=placeholder)
@@ -195,9 +189,8 @@ class QueuedBookTests(TestCase):
         self.assertEqual((request.status, request.publication), (Status.DONE, holder))
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=holder).exists())
 
-    @patch("references.services.imports.books.fetch_crossref_by_isbn", return_value=None)
-    @patch("references.services.imports.books.fetch_openlibrary_book", return_value=None)
-    def test_an_unknown_isbn_fails(self, _openlibrary, _crossref):
+    @simulated_sources()
+    def test_an_unknown_isbn_fails(self):
         request = fetch_queue.enqueue(
             Publication.objects.create(isbn=BOOK_ISBN), self.user, with_references=False
         )
@@ -207,8 +200,7 @@ class QueuedBookTests(TestCase):
         self.assertIn("ISBN inconnu", request.error)
 
 
-@without_other_sources
-@with_mocked_crossref
+@CROSSREF_SOURCES
 class AddWithWorkerTests(TestCase):
     """With a worker, adding answers at once and leaves the retrieval to the queue."""
 
@@ -222,9 +214,9 @@ class AddWithWorkerTests(TestCase):
             reverse("corpus_add_by_identifier"), {"identifier": identifier, **extra}, follow=True
         )
 
-    def test_the_doi_is_queued_without_any_request(self, fetch, fetch_works):
+    def test_the_doi_is_queued_without_any_request(self):
         response = self.add("10.1000/source")
-        fetch.assert_not_called()
+        self.assertEqual(CROSSREF_SOURCES.single("crossref"), [])
         pub = Publication.objects.get(doi="10.1000/source")
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=pub).exists())
         request = FetchRequest.objects.get()
@@ -234,36 +226,36 @@ class AddWithWorkerTests(TestCase):
         self.assertEqual(list(request.requesters.all()), [self.user])
         self.assertContains(response, "ses données sont en file de récupération")
 
-    def test_to_read_leaves_the_bibliography_aside(self, fetch, fetch_works):
+    def test_to_read_leaves_the_bibliography_aside(self):
         response = self.add("10.1000/source", status=UserPublication.ReadingStatus.TO_READ)
         self.assertEqual(FetchRequest.objects.get().action, Action.IMPORT)
         self.assertContains(response, "à votre corpus, à lire ; ses données")
 
     @patch("references.services.corpus.entries.find_or_import_book")
-    def test_an_isbn_is_not_looked_up_by_the_page(self, find_book, fetch, fetch_works):
+    def test_an_isbn_is_not_looked_up_by_the_page(self, find_book):
         self.add("978-0-262-03561-3")
         find_book.assert_not_called()
         request = FetchRequest.objects.get()
         self.assertEqual((request.identifier, request.action), (BOOK_ISBN, Action.IMPORT))
 
-    def test_a_book_with_its_metadata_is_not_queued(self, fetch, fetch_works):
+    def test_a_book_with_its_metadata_is_not_queued(self):
         with_openlibrary(Publication.objects.create(isbn=BOOK_ISBN), {"title": "Un livre"})
         response = self.add(BOOK_ISBN)
         self.assertFalse(FetchRequest.objects.exists())
         self.assertContains(response, "a été ajouté à votre corpus.")
 
-    def test_without_worker_the_page_fetches_itself(self, fetch, fetch_works):
+    def test_without_worker_the_page_fetches_itself(self):
         FetchWorker.objects.update(seen_at=timezone.now() - timedelta(minutes=1))
         response = self.add("10.1000/source")
-        fetch.assert_called_once_with("10.1000/source")
+        self.assertEqual(CROSSREF_SOURCES.single("crossref"), ["10.1000/source"])
         self.assertFalse(FetchRequest.objects.exists())
         self.assertContains(response, "« Source » a été ajouté à votre corpus.")
 
-    def test_the_file_import_queues_its_entries(self, fetch, fetch_works):
+    def test_the_file_import_queues_its_entries(self):
         content = json.dumps(export_of({"doi": "10.1000/source"}, {"doi": "10.1000/other"}))
         upload = SimpleUploadedFile("corpus.json", content.encode(), "application/json")
         response = self.client.post(reverse("corpus_import"), {"file": upload}, follow=True)
-        fetch.assert_not_called()
+        self.assertEqual(CROSSREF_SOURCES.single("crossref"), [])
         self.assertEqual(FetchRequest.objects.count(), 2)
         self.assertEqual(UserPublication.objects.filter(user=self.user).count(), 2)
         self.assertContains(response, "Import terminé : 2 publications ajoutées ; le rapport")

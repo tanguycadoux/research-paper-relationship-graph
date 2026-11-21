@@ -11,7 +11,8 @@ from references.models import CitedReference, FetchRequest, Publication
 from references.services.imports import batch_import, fetch_queue
 from references.services.imports.batch_import import Item, import_publications
 from references.services.sources import api_log_summary as summary
-from references.tests.helpers import crossref_record, without_other_sources
+from references.tests.helpers import crossref_record
+from references.tests.sources import simulated_sources
 from references.tests.test_importer import CITED_DOI, SOURCE_DOI, crossref_json
 
 Action = FetchRequest.Action
@@ -22,27 +23,22 @@ CROSSREF = {
     OTHER_DOI: crossref_json("Other", [{"key": "o1", "DOI": CITED_DOI}]),
     CITED_DOI: crossref_json("Cited"),
 }
+SOURCES = simulated_sources(crossref=CROSSREF)
 
 
-def works(dois):
-    return {doi: CROSSREF.get(doi) for doi in dois}
-
-
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", side_effect=CROSSREF.get)
-@patch("references.services.imports.importer.fetch_crossref_works", side_effect=works)
+@SOURCES
 class BatchImportTests(TestCase):
     """The steps of the import, each for all the publications of the batch (#381)."""
 
     def items(self, *dois, with_references=True):
         return [Item(Publication.objects.create(doi=doi), with_references) for doi in dois]
 
-    def test_one_crossref_batch_for_all(self, fetch_works, fetch):
+    def test_one_crossref_batch_for_all(self):
         items = import_publications(self.items(SOURCE_DOI, OTHER_DOI))
-        fetch.assert_not_called()
+        self.assertEqual(SOURCES.single("crossref"), [])
         # The two publications, then the cited one once, shared by both.
         self.assertEqual(
-            [sorted(call.args[0]) for call in fetch_works.call_args_list],
+            [sorted(batch) for batch in SOURCES.batches("crossref")],
             [sorted([SOURCE_DOI, OTHER_DOI]), [CITED_DOI]],
         )
         self.assertEqual([item.result.title for item in items], ["Source", "Other"])
@@ -51,33 +47,31 @@ class BatchImportTests(TestCase):
         self.assertEqual(cited.title, "Cited")
         self.assertEqual(CitedReference.objects.filter(target=cited).count(), 2)
 
-    def test_a_single_publication_is_asked_alone(self, fetch_works, fetch):
+    def test_a_single_publication_is_asked_alone(self):
         import_publications(self.items(SOURCE_DOI, with_references=False))
-        fetch.assert_called_once_with(SOURCE_DOI)
-        fetch_works.assert_not_called()
+        self.assertEqual(SOURCES.single("crossref"), [SOURCE_DOI])
+        self.assertEqual(SOURCES.batches("crossref"), [])
 
-    def test_an_unknown_doi_fails_its_item_only(self, fetch_works, fetch):
+    def test_an_unknown_doi_fails_its_item_only(self):
         known, unknown = import_publications(self.items(SOURCE_DOI, "10.1000/unknown"))
         self.assertEqual((known.error, known.result.title), ("", "Source"))
         self.assertEqual((unknown.error, unknown.result), (batch_import.UNKNOWN, None))
         self.assertIsNone(crossref_record(unknown.pub))
 
-    def test_without_references(self, fetch_works, fetch):
+    def test_without_references(self):
         import_publications(self.items(SOURCE_DOI, OTHER_DOI, with_references=False))
         self.assertFalse(CitedReference.objects.exists())
         self.assertFalse(Publication.objects.filter(doi=CITED_DOI).exists())
 
-    def test_a_stored_answer_is_not_asked_again(self, fetch_works, fetch):
+    def test_a_stored_answer_is_not_asked_again(self):
         items = self.items(SOURCE_DOI, OTHER_DOI, with_references=False)
         import_publications(items)
-        fetch_works.reset_mock()
+        SOURCES.forget()
         import_publications([Item(item.pub, False) for item in items])
-        fetch_works.assert_not_called()
+        self.assertEqual(SOURCES.batches("crossref"), [])
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", side_effect=CROSSREF.get)
-@patch("references.services.imports.importer.fetch_crossref_works", side_effect=works)
+@SOURCES
 class WorkerBatchTests(TestCase):
     """The worker takes the imports that wait together (#381)."""
 
@@ -94,17 +88,17 @@ class WorkerBatchTests(TestCase):
         call_command("fetch_worker", "--once", stdout=out)
         return out.getvalue()
 
-    def test_the_imports_that_wait_go_together(self, fetch_works, fetch):
+    def test_the_imports_that_wait_go_together(self):
         first, second = self.enqueue(SOURCE_DOI), self.enqueue(OTHER_DOI)
         out = self.run_worker()
         self.assertIn("2 imports", out)
-        fetch.assert_not_called()
+        self.assertEqual(SOURCES.single("crossref"), [])
         for request in (first, second):
             request.refresh_from_db()
             self.assertEqual((request.status, request.error), (Status.DONE, ""))
             self.assertIsNotNone(request.started_at)
 
-    def test_the_other_actions_wait_their_turn(self, fetch_works, fetch):
+    def test_the_other_actions_wait_their_turn(self):
         first = self.enqueue(SOURCE_DOI)
         refresh = fetch_queue.enqueue_action(
             Action.REFRESH, self.user, publication=Publication.objects.create(doi=OTHER_DOI)
@@ -114,7 +108,7 @@ class WorkerBatchTests(TestCase):
         refresh.refresh_from_db()
         self.assertEqual(refresh.status, Status.PENDING)
 
-    def test_at_most_a_batch(self, fetch_works, fetch):
+    def test_at_most_a_batch(self):
         for index in range(fetch_queue.BATCH_SIZE + 3):
             self.enqueue(f"10.1000/n{index}", with_references=False)
         first = fetch_queue.claim_next()
@@ -122,7 +116,7 @@ class WorkerBatchTests(TestCase):
         self.assertEqual(len(done), fetch_queue.BATCH_SIZE)
         self.assertEqual(FetchRequest.objects.filter(status=Status.PENDING).count(), 3)
 
-    def test_two_requests_for_one_publication(self, fetch_works, fetch):
+    def test_two_requests_for_one_publication(self):
         without = self.enqueue(SOURCE_DOI, with_references=False)
         with_references = self.enqueue(SOURCE_DOI, with_references=True)
         self.run_worker()
@@ -130,12 +124,12 @@ class WorkerBatchTests(TestCase):
         self.assertEqual(set(FetchRequest.objects.values_list("status", flat=True)), {Status.DONE})
         self.assertNotEqual(without, with_references)
 
-    def test_a_book_without_doi_is_imported_alone(self, fetch_works, fetch):
+    def test_a_book_without_doi_is_imported_alone(self):
         book = Publication.objects.create(isbn="9780262035613")
         request = fetch_queue.enqueue(book, self.user, with_references=False)
         self.assertFalse(fetch_queue.batchable(request))
 
-    def test_the_journal_says_the_batch(self, fetch_works, fetch):
+    def test_the_journal_says_the_batch(self):
         self.enqueue(SOURCE_DOI), self.enqueue(OTHER_DOI)
         logger = "references.api"
         with (

@@ -1,5 +1,3 @@
-from unittest.mock import patch
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -10,7 +8,8 @@ from references.services.imports.jacow import written_jacow_doi
 from references.services.imports.parser import parse_publication
 from references.services.imports.written_identifiers import link_written_identifiers
 from references.services.sources.external_records import Source, has_record
-from references.tests.helpers import with_crossref, without_other_sources
+from references.tests.helpers import with_crossref
+from references.tests.sources import active_sources, simulated_sources
 
 DYER = {
     "key": "dyer",
@@ -144,53 +143,61 @@ class SelectionTests(CandidateTestCase):
         self.assertEqual(self.select(0, candidates.Candidate(title=pub.title, doi="10.1/a")), [])
 
 
-@patch("references.services.corrections.candidates.fetch_datacite_works", return_value={})
-@patch(
-    "references.services.corrections.candidates.search_datacite_title", return_value=[RNNG_ARXIV]
-)
-@patch("references.services.corrections.candidates.search_crossref", return_value=[RNNG])
+RNNG_TITLE = "Recurrent neural network grammars"
+
+
 class SourcesTests(CandidateTestCase):
-    def test_both_sources_cached(self, crossref, datacite, _works):
+    def search(self, crossref_found=(RNNG,), datacite_found=(RNNG_ARXIV,), **sources):
+        """What the searches of Crossref and DataCite find for the first reference."""
+        return self.enterContext(
+            simulated_sources(
+                crossref_searches={candidates.search_text(self.ref(0)): list(crossref_found)},
+                datacite_searches={RNNG_TITLE: list(datacite_found)},
+                **sources,
+            )
+        )
+
+    def test_both_sources_cached(self):
+        sources = self.search()
         found, failed = candidates.candidates_for(self.ref(0))
         self.assertFalse(failed)
         self.assertEqual(
             [c.doi for c in found], ["10.18653/v1/n16-1024", "10.48550/arxiv.1602.07776"]
         )
         self.assertEqual(found[1].kind, "Prépublication arXiv")
-        datacite.assert_called_once_with("Recurrent neural network grammars")
+        self.assertEqual(sources.searches("datacite"), [RNNG_TITLE])
         candidates.candidates_for(self.ref(0))
-        crossref.assert_called_once()
+        self.assertEqual(len(sources.searches("crossref")), 1)
 
-    def test_failed_source_not_cached(self, crossref, _datacite, _works):
-        crossref.return_value = None
+    def test_failed_source_not_cached(self):
+        self.search(unreachable=["crossref"])
         found, failed = candidates.candidates_for(self.ref(0))
         self.assertTrue(failed)
         self.assertEqual(len(found), 1)  # DataCite answered
         self.assertIsNone(self.ref(0).candidates)
 
-    def test_forget(self, crossref, _datacite, _works):
+    def test_forget(self):
+        sources = self.search()
         candidates.candidates_for(self.ref(0))
         candidates.forget_candidates(self.ref(0))
         candidates.candidates_for(self.ref(0))
-        self.assertEqual(crossref.call_count, 2)
+        self.assertEqual(len(sources.searches("crossref")), 2)
 
-    def test_jacow_code_first(self, crossref, datacite, works):
-        works.return_value = {JACOW_DOI: JACOW_RECORD}
-        crossref.return_value, datacite.return_value = [], []
+    def test_jacow_code_first(self):
+        self.search(crossref_found=[], datacite_found=[], datacite=[JACOW_RECORD])
         found, _failed = candidates.candidates_for(self.ref(1))
         self.assertEqual([(c.doi, c.kind) for c in found], [(JACOW_DOI, "Actes JACoW")])
 
-    def test_publication_of_the_base(self, crossref, datacite, _works):
-        crossref.return_value, datacite.return_value = [], []
+    def test_publication_of_the_base(self):
+        self.search(crossref_found=[], datacite_found=[])
         pub = Publication.objects.create(title="Recurrent neural network grammars")
         found, _failed = candidates.candidates_for(self.ref(0))
         self.assertEqual([c.publication for c in found], [pub])
 
 
-@patch("references.services.imports.written_identifiers.fetch_datacite_works")
 class JacowLinkTests(CandidateTestCase):
-    def test_linked_once_datacite_confirms(self, works):
-        works.return_value = {JACOW_DOI: JACOW_RECORD}
+    @simulated_sources(datacite=[JACOW_RECORD])
+    def test_linked_once_datacite_confirms(self):
         self.assertEqual(link_written_identifiers(self.source).linked, 1)
         target = self.ref(1).target
         self.assertEqual(target.doi, JACOW_DOI)
@@ -198,31 +205,27 @@ class JacowLinkTests(CandidateTestCase):
         self.assertTrue(has_record(target, Source.DATACITE))
         self.assertFalse(self.ref(1).resolved_manually)
 
-    def test_unknown_doi_creates_nothing(self, works):
-        works.return_value = {JACOW_DOI: None}
+    @simulated_sources()
+    def test_unknown_doi_creates_nothing(self):
         count = Publication.objects.count()
         self.assertEqual(link_written_identifiers(self.source).linked, 0)
         self.assertEqual(Publication.objects.count(), count)
 
-    def test_other_title_creates_nothing(self, works):
-        works.return_value = {JACOW_DOI: datacite_record(JACOW_DOI, "Another paper", "X", 2019)}
+    @simulated_sources(datacite=[datacite_record(JACOW_DOI, "Another paper", "X", 2019)])
+    def test_other_title_creates_nothing(self):
         count = Publication.objects.count()
         self.assertEqual(link_written_identifiers(self.source).linked, 0)
         self.assertEqual(Publication.objects.count(), count)
 
-    def test_publication_of_the_base_linked_without_request(self, works):
+    def test_publication_of_the_base_linked_without_request(self):
         Publication.objects.create(
             doi=JACOW_DOI, title=JACOW_RECORD["data"]["attributes"]["titles"][0]["title"]
         )
-        self.assertEqual(link_written_identifiers(self.source).linked, 1)
-        works.assert_not_called()
+        with simulated_sources() as sources:
+            self.assertEqual(link_written_identifiers(self.source).linked, 1)
+        self.assertEqual(sources.requests, [])
 
 
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
-@patch("references.services.corrections.candidates.fetch_datacite_works", return_value={})
-@patch("references.services.corrections.candidates.search_datacite_title", return_value=[])
-@patch("references.services.corrections.candidates.search_crossref", return_value=[RNNG])
 class CandidateViewTests(CandidateTestCase):
     def url(self, name, position=0):
         return reverse(name, args=[self.source.pk, position])
@@ -230,14 +233,16 @@ class CandidateViewTests(CandidateTestCase):
     def setUp(self):
         super().setUp()
         self.client.force_login(self.user)
+        text = candidates.search_text(self.ref(0))
+        self.enterContext(simulated_sources(crossref_searches={text: [RNNG]}))
 
-    def test_page_shows_the_candidates(self, *_mocks):
+    def test_page_shows_the_candidates(self):
         response = self.client.get(self.url("reference_identify"))
         self.assertContains(response, "Publications candidates")
         self.assertContains(response, "10.18653/v1/n16-1024")
         self.assertContains(response, "Titre identique")
 
-    def test_choose_a_doi(self, *_mocks):
+    def test_choose_a_doi(self):
         response = self.client.post(
             self.url("reference_candidate"), {"doi": "10.18653/v1/N16-1024"}
         )
@@ -246,22 +251,22 @@ class CandidateViewTests(CandidateTestCase):
         self.assertEqual(ref.target.doi, "10.18653/v1/n16-1024")
         self.assertTrue(ref.resolved_manually)
 
-    def test_choose_a_publication_of_the_base(self, *_mocks):
+    def test_choose_a_publication_of_the_base(self):
         pub = Publication.objects.create(title="Recurrent neural network grammars")
         self.client.post(self.url("reference_candidate"), {"publication": pub.pk})
         self.assertEqual(self.ref(0).target, pub)
 
-    def test_invalid_candidate(self, *_mocks):
+    def test_invalid_candidate(self):
         response = self.client.post(self.url("reference_candidate"), {"doi": "pas un DOI"})
         self.assertRedirects(response, self.url("reference_identify"))
         self.assertIsNone(self.ref(0).target)
 
-    def test_search_again(self, crossref, *_mocks):
+    def test_search_again(self):
         self.client.get(self.url("reference_identify"))
         self.client.post(self.url("reference_search_again"))
         self.assertIsNone(self.ref(0).candidates)
 
-    def test_manual_title_prefilled_from_the_text(self, *_mocks):
+    def test_manual_title_prefilled_from_the_text(self):
         response = self.client.get(self.url("reference_identify"))
         self.assertContains(response, 'value="Recurrent neural network grammars"')
 
@@ -279,9 +284,7 @@ ARXIV_RECORD = datacite_record(
 )
 
 
-@patch("references.services.corrections.candidates.search_datacite_title", return_value=[])
-@patch("references.services.corrections.candidates.search_crossref", return_value=[])
-@patch("references.services.corrections.candidates.fetch_datacite_works")
+@simulated_sources(datacite=[ARXIV_RECORD, JACOW_RECORD])
 class WrittenIdentifierCandidateTests(TestCase):
     """The identifier written in a reference is a candidate, whatever its title (#311)."""
 
@@ -296,41 +299,35 @@ class WrittenIdentifierCandidateTests(TestCase):
     def ref(self, position):
         return CitedReference.objects.get(source=self.source, position=position)
 
-    def test_an_arxiv_identifier_written(self, works, _crossref, _datacite):
-        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+    def test_an_arxiv_identifier_written(self):
         found, _failed = candidates.candidates_for(self.ref(0))
-        works.assert_called_once_with([ARXIV_DOI])
+        self.assertEqual(active_sources().batches("datacite"), [[ARXIV_DOI]])
         self.assertEqual([(c.doi, c.written) for c in found], [(ARXIV_DOI, True)])
         self.assertEqual(found[0].kind, "Prépublication arXiv")
 
-    def test_shown_whatever_its_title(self, works, _crossref, _datacite):
-        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+    def test_shown_whatever_its_title(self):
         found, _failed = candidates.candidates_for(self.ref(2))
         self.assertEqual([c.doi for c in found], [ARXIV_DOI])
         self.assertFalse(candidates.is_likely(found[0]))
 
-    def test_a_jacow_code_by_the_same_path(self, works, _crossref, _datacite):
-        works.return_value = {JACOW_DOI: JACOW_RECORD}
+    def test_a_jacow_code_by_the_same_path(self):
         found, _failed = candidates.candidates_for(self.ref(1))
         self.assertEqual(
             [(c.doi, c.kind, c.written) for c in found], [(JACOW_DOI, "Actes JACoW", True)]
         )
 
-    def test_first_before_the_other_candidates(self, works, crossref, _datacite):
-        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
-        crossref.return_value = [
-            crossref_item("10.1109/cvpr.2016.90", "Deep residual learning", "He", 2016)
-        ]
+    def test_first_before_the_other_candidates(self):
+        item = crossref_item("10.1109/cvpr.2016.90", "Deep residual learning", "He", 2016)
+        active_sources().add(crossref_searches={candidates.search_text(self.ref(0)): [item]})
         found, _failed = candidates.candidates_for(self.ref(0))
         self.assertEqual([c.doi for c in found], [ARXIV_DOI, "10.1109/cvpr.2016.90"])
 
-    def test_unknown_to_datacite_it_is_not_proposed(self, works, _crossref, _datacite):
-        works.return_value = {}
+    def test_unknown_to_datacite_it_is_not_proposed(self):
+        active_sources().datacite.clear()  # restored when the test ends
         found, _failed = candidates.candidates_for(self.ref(0))
         self.assertEqual(found, [])
 
-    def test_the_page_says_where_it_comes_from(self, works, _crossref, _datacite):
-        works.return_value = {ARXIV_DOI: ARXIV_RECORD}
+    def test_the_page_says_where_it_comes_from(self):
         self.client.force_login(get_user_model().objects.create_user("alice"))
         response = self.client.get(reverse("reference_identify", args=[self.source.pk, 0]))
         self.assertContains(response, "Identifiant écrit dans la référence")

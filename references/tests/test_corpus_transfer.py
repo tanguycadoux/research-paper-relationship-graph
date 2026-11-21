@@ -16,8 +16,8 @@ from references.services.corpus.corpus_transfer import (
     export_corpus,
     import_corpus,
 )
-from references.tests.helpers import with_crossref, without_other_sources
-from references.tests.test_importer import with_mocked_crossref
+from references.tests.helpers import with_crossref
+from references.tests.test_importer import CROSSREF_SOURCES
 
 
 def export_of(*entries):
@@ -78,25 +78,24 @@ class ExportTests(TestCase):
         self.assertContains(response, "1 publication sans DOI ni ISBN")
 
 
-@without_other_sources
-@with_mocked_crossref
+@CROSSREF_SOURCES
 class ImportTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("bob")
 
-    def test_known_publication_is_added_without_any_request(self, fetch, fetch_works):
+    def test_known_publication_is_added_without_any_request(self):
         pub = with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         report = import_corpus(self.user, export_of({"doi": "10.1000/known"}))
         self.assertEqual(report.added, [pub])
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=pub).exists())
-        fetch.assert_not_called()
+        self.assertEqual(CROSSREF_SOURCES.single("crossref"), [])
 
-    def test_unknown_doi_is_fetched(self, fetch, fetch_works):
+    def test_unknown_doi_is_fetched(self):
         report = import_corpus(self.user, export_of({"doi": "https://doi.org/10.1000/SOURCE"}))
         self.assertEqual([pub.title for pub in report.added], ["Source"])
-        fetch.assert_called_once_with("10.1000/source")
+        self.assertEqual(CROSSREF_SOURCES.single("crossref"), ["10.1000/source"])
 
-    def test_publications_already_in_the_corpus_are_counted(self, fetch, fetch_works):
+    def test_publications_already_in_the_corpus_are_counted(self):
         pub = with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         UserPublication.objects.create(user=self.user, publication=pub)
         report = import_corpus(
@@ -104,12 +103,12 @@ class ImportTests(TestCase):
         )
         self.assertEqual((report.added, report.already_there), ([], [pub, pub]))
 
-    def test_entries_without_valid_identifier_are_ignored(self, fetch, fetch_works):
+    def test_entries_without_valid_identifier_are_ignored(self):
         report = import_corpus(self.user, export_of({"doi": "pas un DOI"}, {"title": "X"}, "texte"))
         self.assertEqual(report.ignored, ["", "X"])
         self.assertFalse(UserPublication.objects.exists())
 
-    def test_book_without_metadata_is_never_sent_to_the_doi_sources(self, fetch, fetch_works):
+    def test_book_without_metadata_is_never_sent_to_the_doi_sources(self):
         book = Publication.objects.create(isbn="9780262035613")
         with patch(
             "references.services.corpus.entries.find_or_import_book", return_value=(book, False)
@@ -117,14 +116,14 @@ class ImportTests(TestCase):
             report = import_corpus(self.user, export_of({"isbn": "978-0-262-03561-3"}))
         self.assertEqual(report.without_metadata, [book])
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=book).exists())
-        fetch.assert_not_called()
+        self.assertEqual(CROSSREF_SOURCES.single("crossref"), [])
 
-    def test_other_files_are_refused(self, fetch, fetch_works):
+    def test_other_files_are_refused(self):
         for data in ({"publications": []}, [], {**export_of(), "version": 99}):
             with self.subTest(data=data), self.assertRaises(InvalidExport):
                 import_corpus(self.user, data)
 
-    def test_round_trip_between_two_users(self, fetch, fetch_works):
+    def test_round_trip_between_two_users(self):
         alice = get_user_model().objects.create_user("alice")
         pub = with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         UserPublication.objects.create(user=alice, publication=pub)
@@ -132,8 +131,7 @@ class ImportTests(TestCase):
         self.assertEqual(list(Publication.objects.filter(userpublication__user=self.user)), [pub])
 
 
-@without_other_sources
-@with_mocked_crossref
+@CROSSREF_SOURCES
 class ImportViewTests(TestCase):
     def setUp(self):
         self.client.force_login(get_user_model().objects.create_user("bob"))
@@ -142,7 +140,7 @@ class ImportViewTests(TestCase):
         upload = SimpleUploadedFile("corpus.json", content, content_type="application/json")
         return self.client.post(reverse("corpus_import"), {"file": upload}, follow=True)
 
-    def test_report_is_shown(self, fetch, fetch_works):
+    def test_report_is_shown(self):
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         response = self.post(json.dumps(export_of({"doi": "10.1000/known"})).encode())
         # One short toast, and the report at the top of the corpus until it is closed (#330).
@@ -156,12 +154,12 @@ class ImportViewTests(TestCase):
         response = self.client.post(reverse("corpus_import_report_close"), follow=True)
         self.assertNotContains(response, "Dernier import")
 
-    def test_invalid_file_is_reported(self, fetch, fetch_works):
+    def test_invalid_file_is_reported(self):
         self.assertContains(self.post(b"{ pas du json"), "pas un JSON valide")
         self.assertContains(self.post(b"\x00 ni JSON ni BibTeX"), "Aucune entrée trouvée")
         self.assertContains(self.post(b"{}"), "pas un export de corpus")
 
-    def test_get_is_refused(self, fetch, fetch_works):
+    def test_get_is_refused(self):
         self.assertEqual(self.client.get(reverse("corpus_import")).status_code, 405)
 
 

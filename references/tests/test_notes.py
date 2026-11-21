@@ -12,7 +12,7 @@ from references.services.corpus.corpus_transfer import (
 )
 from references.services.display.publication_table import corpus_ids
 from references.services.display.search import filter_publications, parse
-from references.tests.helpers import without_doi_org
+from references.tests.sources import simulated_sources
 
 
 class NoteTestCase(TestCase):
@@ -178,7 +178,7 @@ class FreeTextInNotesTests(NoteTestCase):
         self.assertFalse(any(pub.found_in_note for pub in last))
 
 
-@without_doi_org
+@simulated_sources()
 class NoteTransferTests(NoteTestCase):
     """The note in the JSON export (version 3) and the BibTeX export."""
 

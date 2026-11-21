@@ -20,7 +20,7 @@ from references.services.imports.latex_bibliography import (
 from references.services.sources import http
 from references.services.sources.external_records import Source, store_record
 from references.services.sources.metadata_formats import bibliography_source
-from references.tests.helpers import without_openalex, without_orcid
+from references.tests.sources import simulated_sources
 
 ARXIV = "10.48550/arxiv.1706.03762"
 INLINE_TEX = r"""
@@ -173,38 +173,22 @@ def datacite_preprint():
     }
 
 
-@without_orcid
-@without_openalex
 class ImportTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user("alice")
 
     def setUp(self):
-        self.eprint = Mock(return_value=read_eprint(tar_gz({"ms.tex": INLINE_TEX})))
-        patches = [
-            patch("references.services.imports.importer.fetch_crossref_json", new=lambda doi: None),
-            patch(
-                "references.services.imports.importer.fetch_datacite_json",
-                new=lambda doi: datacite_preprint() if doi == ARXIV else None,
-            ),
-            patch("references.services.imports.importer.fetch_arxiv_eprint", new=self.eprint),
-            patch(
-                "references.services.imports.importer.fetch_crossref_works",
-                new=lambda dois: dict.fromkeys(dois),
-            ),
-            patch(
-                "references.services.imports.importer.fetch_datacite_works",
-                new=lambda dois: dict.fromkeys(dois),
-            ),
-        ]
-        for p in patches:
-            p.start()
-            self.addCleanup(p.stop)
+        self.sources = self.enterContext(
+            simulated_sources(
+                datacite={ARXIV: datacite_preprint()},
+                eprints={"1706.03762": tar_gz({"ms.tex": INLINE_TEX})},
+            )
+        )
 
     def test_preprint_of_a_corpus_gets_its_bibliography(self):
         pub = add_to_corpus(self.user, Publication.objects.create(doi=ARXIV))
-        self.eprint.assert_called_once_with("1706.03762")
+        self.assertEqual(self.sources.single("arxiv"), ["1706.03762"])
         refs = list(CitedReference.objects.filter(source=pub).order_by("position"))
         self.assertEqual(len(refs), 3)
         self.assertEqual(refs[0].target.doi, "10.48550/arxiv.1607.06450")
@@ -214,11 +198,11 @@ class ImportTests(TestCase):
     def test_fetched_once(self):
         pub = add_to_corpus(self.user, Publication.objects.create(doi=ARXIV))
         add_to_corpus(get_user_model().objects.create_user("bob"), pub)
-        self.eprint.assert_called_once()
+        self.assertEqual(len(self.sources.to("arxiv")), 1)
 
     def test_not_fetched_outside_any_corpus(self):
         import_publication(Publication.objects.create(doi=ARXIV))
-        self.eprint.assert_not_called()
+        self.assertEqual(self.sources.to("arxiv"), [])
 
 
 class DetailTests(TestCase):

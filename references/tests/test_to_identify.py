@@ -7,6 +7,7 @@ from django.urls import reverse
 from references.models import CitedReference, Publication, UserPublication
 from references.services.corrections.identification import with_references_to_identify
 from references.templatetags.ui import BUTTON_VARIANTS
+from references.tests.sources import simulated_sources
 
 
 class ReferencesToIdentifyTests(TestCase):
@@ -97,16 +98,14 @@ class UndescribedReferenceTests(TestCase):
     def setUp(self):
         self.client.force_login(self.user)
 
-    @patch("references.services.corrections.candidates.search_datacite_title")
-    @patch("references.services.corrections.candidates.search_crossref")
-    def test_the_identification_page_points_to_the_article(self, crossref, datacite):
-        response = self.client.get(reverse("reference_identify", args=[self.pub.pk, 2]))
+    def test_the_identification_page_points_to_the_article(self):
+        with simulated_sources() as sources:
+            response = self.client.get(reverse("reference_identify", args=[self.pub.pk, 2]))
         self.assertContains(response, "Crossref ne donne que le numéro et l&#x27;année (1975)")
         self.assertContains(response, "<strong>[3]</strong>", html=True)
         self.assertContains(response, 'href="https://doi.org/10.1063/1.323913"')
         self.assertContains(response, "Aucune recherche : la source ne donne aucun texte")
-        crossref.assert_not_called()  # nothing to search with
-        datacite.assert_not_called()
+        self.assertEqual(sources.requests, [])  # nothing to search with
 
     def test_the_publication_says_how_many(self):
         response = self.client.get(reverse("publication_detail", args=[self.pub.pk]))

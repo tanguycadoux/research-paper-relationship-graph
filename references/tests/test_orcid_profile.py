@@ -8,6 +8,7 @@ from django.utils import timezone
 from references.models import Author, AuthorPublication, OrcidRecord, Publication
 from references.services.imports.orcid_profile import orcid_profile
 from references.services.sources.orcid_api import fetch_orcid_record
+from references.tests.sources import simulated_sources
 
 ORCID = "0000-0002-1825-0097"
 
@@ -147,27 +148,27 @@ class OrcidProfileTests(TestCase):
         self.assertContains(response, reverse("publication_detail", args=[self.unsigned.pk]))
         self.assertNotContains(response, "Compléter depuis ORCID")  # anonymous
 
-    @patch("references.services.imports.orcid_profile.fetch_orcid_record", return_value=RECORD)
-    def test_refresh_stores_the_record(self, fetch):
+    def test_refresh_stores_the_record(self):
         self.client.force_login(get_user_model().objects.create_user("alice"))
         self.assertContains(self.client.get(self.url), "Compléter depuis ORCID")
-        response = self.client.post(self.refresh_url, follow=True)
-        fetch.assert_called_once_with(ORCID)
+        with simulated_sources(orcid_records={ORCID: RECORD}) as sources:
+            response = self.client.post(self.refresh_url, follow=True)
+        self.assertEqual(sources.single("orcid"), [ORCID])
         self.assertEqual(OrcidRecord.objects.get(orcid=ORCID).data, RECORD)
         self.assertContains(response, "Profil ORCID mis à jour.")
         self.assertContains(response, "Actualiser depuis ORCID")
 
-    @patch("references.services.imports.orcid_profile.fetch_orcid_record", return_value=None)
-    def test_failure_keeps_the_stored_record(self, _fetch):
+    @simulated_sources(unreachable=["orcid"])
+    def test_failure_keeps_the_stored_record(self):
         self.store()
         self.client.force_login(get_user_model().objects.create_user("alice"))
         response = self.client.post(self.refresh_url, follow=True)
         self.assertContains(response, "ORCID n&#x27;a pas répondu")
         self.assertEqual(OrcidRecord.objects.get(orcid=ORCID).data, RECORD)
 
-    @patch("references.services.imports.orcid_profile.fetch_orcid_record")
-    def test_refresh_requires_login_and_post(self, fetch):
-        self.assertEqual(self.client.post(self.refresh_url).status_code, 302)
-        self.client.force_login(get_user_model().objects.create_user("alice"))
-        self.assertEqual(self.client.get(self.refresh_url).status_code, 405)
-        fetch.assert_not_called()
+    def test_refresh_requires_login_and_post(self):
+        with simulated_sources() as sources:
+            self.assertEqual(self.client.post(self.refresh_url).status_code, 302)
+            self.client.force_login(get_user_model().objects.create_user("alice"))
+            self.assertEqual(self.client.get(self.refresh_url).status_code, 405)
+        self.assertEqual(sources.requests, [])

@@ -13,7 +13,7 @@ from references.services.identifiers.arxiv import (
     typed_doi,
     written_arxiv_doi,
 )
-from references.tests.helpers import doi_org_answers, without_doi_org
+from references.tests.sources import simulated_sources
 
 ATTENTION = "10.48550/arxiv.1706.03762"
 OLD_STYLE = "10.48550/arxiv.hep-th/9901001"
@@ -98,13 +98,13 @@ class AddByArxivViewTests(TestCase):
         url = reverse("corpus_add_by_identifier")
         return self.client.post(url, {"identifier": identifier}, follow=True)
 
-    @without_doi_org
+    @simulated_sources()
     def test_link_adds_the_arxiv_doi(self, _import):
         self.add("https://arxiv.org/abs/1706.03762v5")
         pub = Publication.objects.get(doi=ATTENTION)
         self.assertTrue(UserPublication.objects.filter(user=self.user, publication=pub).exists())
 
-    @without_doi_org
+    @simulated_sources()
     def test_identifier_of_a_known_publication_adds_it(self, _import):
         known = Publication.objects.create(doi=ATTENTION, title="Attention Is All You Need")
         self.add("arXiv:1706.03762")
@@ -112,7 +112,7 @@ class AddByArxivViewTests(TestCase):
         self.assertTrue(UserPublication.objects.filter(publication=known).exists())
 
     def test_identifier_unknown_to_doi_org_is_refused(self, _import):
-        with doi_org_answers(False):
+        with simulated_sources(doi_org=False):
             response = self.add("2999.99999")
         self.assertContains(response, "Rien n&#x27;a été ajouté")
         self.assertFalse(Publication.objects.exists())
