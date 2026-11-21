@@ -95,7 +95,10 @@ class PublicationSortTests(TestCase):
 
     def test_hidden_columns_are_summed_up_under_the_title(self):
         response = self.client.get(reverse("publication_list"))
-        self.assertContains(response, 'class="block text-sm text-gray-600 sm:hidden"')
+        self.assertContains(
+            response, 'class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden"'
+        )
+        self.assertContains(response, '<span class="text-sm text-gray-600">')
 
     def test_headers_keep_the_search(self):
         response = self.client.get(reverse("search"), {"q": "dune", "sort": "title"})

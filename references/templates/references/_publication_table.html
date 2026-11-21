@@ -10,12 +10,15 @@ corpus.with_reading_status, and with my_tags), a column to set the reading statu
 (reading_statuses) and the tags under each title; with bulk_form (the id of the form of
 _bulk_actions.html, #287, #408), a first column of checkboxes that belong to that form.
 The identifier is hidden below xl, where the content is too narrow for it (#150), and
-always beside the reading status: it stays on the page of each publication.
+always beside the reading status: it stays on the page of each publication. Below sm,
+the reading status is under the title, beside the authors and year (#412).
 {% endcomment %}
 {% load ui %}
-{# Below sm, the author and year columns are hidden: their sort is here (#334). #}
+{# Below sm, the author, year and reading columns are hidden: their sort is here (#334, #412). #}
 {% if hide_authors %}
     {% sort_links "year:Année,title:Titre" %}
+{% elif reading_column %}
+    {% sort_links "year:Année,title:Titre,author:Premier auteur,status:Lecture" %}
 {% else %}
     {% sort_links "year:Année,title:Titre,author:Premier auteur" %}
 {% endif %}
@@ -40,7 +43,7 @@ always beside the reading status: it stays on the page of each publication.
                 {% endif %}
                 {% column_header "Année" "year" classes="hidden sm:table-cell" %}
                 {% if reading_column %}
-                    {% column_header "Lecture" "status" %}
+                    {% column_header "Lecture" "status" classes="hidden sm:table-cell" %}
                 {% endif %}
                 {% if corpus_actions %}
                     <th scope="col">
@@ -64,14 +67,19 @@ always beside the reading status: it stays on the page of each publication.
                     {% endif %}
                     <td>
                         <a class="{% row_title_classes %}" href="{% url 'publication_detail' pub.pk %}">{{ pub }}</a>
-                        {# Below sm, the hidden columns in one grey line under the title (#334). #}
-                        <span class="block text-sm text-gray-600 sm:hidden">
-                            {% if pub.first_author and not hide_authors %}
-                                {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
-                                {% if pub.publication_date %}·{% endif %}
+                        {# Below sm, the hidden columns in one line under the title (#334, #412). #}
+                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
+                            <span class="text-sm text-gray-600">
+                                {% if pub.first_author and not hide_authors %}
+                                    {{ pub.first_author }}{% if pub.author_count > 1 %}&nbsp;et&nbsp;al.{% endif %}
+                                    {% if pub.publication_date %}·{% endif %}
+                                {% endif %}
+                                {{ pub.publication_date|date:"Y" }}
+                            </span>
+                            {% if reading_column %}
+                                {% include "references/_reading_status_form.html" with status=pub.reading_status label_hidden=True id_suffix="-compact" %}
                             {% endif %}
-                            {{ pub.publication_date|date:"Y" }}
-                        </span>
+                        </div>
                         {% if pub.metadata_status == "missing" %}
                             {% badge "métadonnées à récupérer" icon="refresh" %}
                         {% elif pub.metadata_status == "unknown" %}
@@ -113,7 +121,7 @@ always beside the reading status: it stays on the page of each publication.
                     {% endif %}
                     <td class="hidden whitespace-nowrap text-gray-600 sm:table-cell">{{ pub.publication_date|date:"Y" }}</td>
                     {% if reading_column %}
-                        <td>
+                        <td class="hidden sm:table-cell">
                             {% include "references/_reading_status_form.html" with status=pub.reading_status label_hidden=True %}
                         </td>
                     {% endif %}
