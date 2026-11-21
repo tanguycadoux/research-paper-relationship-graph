@@ -136,6 +136,11 @@ urlpatterns = [
     path("authors/<int:pk>/", authors.AuthorDetailView.as_view(), name="author_detail"),
     path("authors/<int:pk>/graph/", author_graphs.author_graph_view, name="author_graph"),
     path("authors/graph/", author_graphs.authors_graph_view, name="authors_graph"),
+    path(
+        "authors/graph/distinct/",
+        author_graphs.author_graph_distinct_view,
+        name="authors_graph_distinct",
+    ),
     path("authors/<int:pk>/edit/", authors.AuthorUpdateView.as_view(), name="author_edit"),
     path("authors/<int:pk>/orcid/", authors.author_orcid_refresh_view, name="author_orcid_refresh"),
     path("authors/merge/", authors.author_merge_select_view, name="author_merge_select"),

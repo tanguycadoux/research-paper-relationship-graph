@@ -27,7 +27,8 @@
             {% block frame_overlays %}
             {% endblock frame_overlays %}
             {# The label of the hovered node, placed by graph/hover.js (#202), in frosted glass over the graph. #}
-            <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs text-gray-900 select-none {% glass_classes %}"
+            {# One line per line break of the text: the variants of gathered authors (#419). #}
+            <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs whitespace-pre-line text-gray-900 select-none {% glass_classes %}"
                  aria-hidden="true"
                  data-graph-tooltip
                  hidden></div>

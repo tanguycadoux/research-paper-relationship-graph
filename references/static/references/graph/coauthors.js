@@ -26,7 +26,25 @@ const SHORTEST_EDGE = 32;
 const SOFTEST_EDGE = 64;
 const STIFFEST_EDGE = 16;
 
+// The outline of the probable duplicates gathered into one node (#419), on the screen
+// whatever the zoom, outside the white ring of every node.
+const GROUPED_OUTLINE = 2;
+
 const lerp = (a, b, t) => a + (b - a) * t;
+
+const plural = (count, word) => `${count} ${word}${count > 1 ? "s" : ""}`;
+
+// On hover (hover.js): the name, and for gathered authors each variant with its
+// publications, one per line.
+function tooltip(data) {
+    if (!data.variants) {
+        return data.label;
+    }
+    const lines = data.variants.map(
+        (variant) => `${variant.label} · ${plural(variant.publications, "publication")}`,
+    );
+    return [`${data.label} (${data.variants.length} variantes)`, ...lines].join("\n");
+}
 
 // Starting positions on the spiral of the network view (network.js): the same graph is
 // laid out the same way at each visit, the author of the graph at its centre.
@@ -34,7 +52,8 @@ function nodeElements(nodes) {
     const most = Math.max(1, ...nodes.map((n) => n.data.publications));
     return nodes.map((node, i) => {
         const size = lerp(MIN_SIZE, MAX_SIZE, Math.sqrt(node.data.publications / most));
-        return { data: { ...node.data, size }, position: spiralPosition(i) };
+        const data = { ...node.data, size, tooltip: tooltip(node.data) };
+        return { data, position: spiralPosition(i) };
     });
 }
 
@@ -57,12 +76,19 @@ function edgeElements(edges) {
 
 // Edges as wide and as dark as their link is strong, on the screen whatever the zoom
 // (#185), the faded elements a little lighter than on the citation graphs; the links of a
-// selected author in the light shade of its colour.
+// selected author in the light shade of its colour; the gathered duplicates outlined.
 function coauthorStyle() {
     const width = (extra) => (edge) => (edge.data("width") + extra) / edge.cy().zoom();
     const edges = { width: width(0), hoveredWidth: width(1), opacity: "data(opacity)", faded: 0.12 };
     return [
         ...graphStyle(edges),
+        {
+            selector: "node[?grouped]",
+            style: {
+                "outline-width": (node) => GROUPED_OUTLINE / node.cy().zoom(),
+                "outline-color": color("edge-strong"),
+            },
+        },
         {
             selector: "edge.coauthor",
             style: { width: width(1), "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
