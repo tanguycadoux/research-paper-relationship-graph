@@ -1,14 +1,12 @@
 """The authors of a reference identified without identifier (#259)."""
 
-from unittest.mock import patch
-
 from django.test import TestCase
 from django.urls import reverse
 
 from references.forms import IdentifyReferenceForm
 from references.models import Author, AuthorPublication, Publication
 from references.services.corrections import identification, typed_authors
-from references.tests.helpers import without_candidate_search, without_other_sources
+from references.tests.sources import simulated_sources
 from references.tests.test_identification import IdentificationTestCase
 
 CITED = {"key": "ref1", "author": "I. Goodfellow", "article-title": "Deep Learning", "year": "2016"}
@@ -158,14 +156,12 @@ class FormTests(TestCase):
         self.assertTrue(form.is_valid())
 
 
-@without_candidate_search
-@without_other_sources
-@patch("references.services.imports.importer.fetch_crossref_json", return_value=None)
+@simulated_sources()
 class PageTests(TypedAuthorsTestCase):
     def url(self, position):
         return reverse("reference_identify", args=[self.source.pk, position])
 
-    def test_sent_without_script(self, _fetch):
+    def test_sent_without_script(self):
         self.client.force_login(self.user)
         response = self.client.post(
             self.url(0),
@@ -183,7 +179,7 @@ class PageTests(TypedAuthorsTestCase):
             ["Ian Goodfellow", "Yoshua Bengio"],
         )
 
-    def test_wrong_line_keeps_the_form(self, _fetch):
+    def test_wrong_line_keeps_the_form(self):
         self.client.force_login(self.user)
         response = self.client.post(
             self.url(0), {"method": "none", "title": "Deep Learning", "authors": "#999"}
@@ -193,7 +189,7 @@ class PageTests(TypedAuthorsTestCase):
         self.assertIsNone(self.ref(0).target)
         self.assertEqual(Publication.objects.filter(title="Deep Learning").count(), 0)
 
-    def test_proposal_and_entries_on_the_page(self, _fetch):
+    def test_proposal_and_entries_on_the_page(self):
         self.client.force_login(self.user)
         response = self.client.get(self.url(0))
         self.assertContains(response, "La référence cite d'abord")
@@ -201,7 +197,7 @@ class PageTests(TypedAuthorsTestCase):
         self.assertContains(response, 'id="author-entries"')
         self.assertEqual(response.context["author_entries"], [])
 
-    def test_entries_rebuilt_after_an_error(self, _fetch):
+    def test_entries_rebuilt_after_an_error(self):
         self.client.force_login(self.user)
         response = self.client.post(
             self.url(0), {"method": "none", "title": "", "authors": f"#{self.ian.pk}\nBengio"}

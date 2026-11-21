@@ -261,6 +261,10 @@ class simulated_sources:  # noqa: N801 (used like patch)
         """
         return [request.keys for request in self.to(service) if request.kind == kind]
 
+    def searches(self, service):
+        """The texts searched in a service (Crossref, DataCite), in order."""
+        return [request.keys[0] for request in self.to(service) if request.kind == "search"]
+
     def asked(self, service):
         """Every DOI (or key) asked to a service, alone or in a batch, in order."""
         return [key for request in self.to(service) for key in request.keys]
