@@ -84,23 +84,43 @@ function keepScreenSize(cy, live) {
     });
 }
 
-// showAllButton shows the whole graph again (#196); it is disabled, rather than hidden,
-// while the whole graph is shown: it stays in view and in place. stretch: what
-// makeStretch returns. Returns whether sizes follow the zoom at each frame (live: a small
-// graph), and what a selection needs to move the view (#142): the zoom
-// of the whole graph, a view brought within the bounds, a hold on the bounds while it
-// animates, and a callback when the whole graph is shown again; and whether the whole
-// graph is shown (#175).
-export function bindViewport(cy, container, showAllButton, stretch) {
-    // The view showing the whole graph, and its visible area in graph coordinates: the
-    // area the view stays within.
+// The view of this zoom and pan, brought within the bounds of the graph stretched as
+// given: not below the zoom of the whole graph, around the same centre, then moved as
+// little as needed. whole: the view of the whole graph (makeWholeView).
+function viewWithin(cy, whole, zoom, pan, stretchAimed) {
+    const kept = Math.max(zoom, whole.zoom);
+    const centre = {
+        x: (cy.width() / 2 - pan.x) / zoom,
+        y: (cy.height() / 2 - pan.y) / zoom,
+    };
+    const view = {
+        x1: centre.x - cy.width() / 2 / kept,
+        x2: centre.x + cy.width() / 2 / kept,
+        y1: centre.y - cy.height() / 2 / kept,
+        y2: centre.y + cy.height() / 2 / kept,
+    };
+    const aimed = stretchedBox(stretchAimed, whole.extent);
+    const dx = shiftInto(view.x1, view.x2, aimed.x1, aimed.x2);
+    const dy = shiftInto(view.y1, view.y2, aimed.y1, aimed.y2);
+    return { zoom: kept, pan: { x: -(view.x1 + dx) * kept, y: -(view.y1 + dy) * kept } };
+}
+
+// The view of the whole graph (#141): measured again by measure(), after forget(); the view
+// stays within its visible area, stretched with the graph (#291). stretch: what
+// makeStretch returns.
+function makeWholeView(cy, stretch) {
+    // The view showing the whole graph, and its visible area in graph coordinates.
     let whole = null;
-    // While a selection animates the view and the stretch together, the bounds wait.
-    let held = false;
-    const showAllListeners = [];
-    // A move in progress may take over the button, to show the whole graph with a motion.
-    let showAllRequest = null;
-    const bounds = () => stretchedBox(stretch.current(), whole.extent);
+    const measure = () => {
+        cy.minZoom(NO_MIN_ZOOM);
+        // fit measures the nodes at their size for the current zoom (#185): once more
+        // with their size for the new zoom, so that the result is the same from any view.
+        cy.fit(undefined, MARGIN / 2);
+        cy.style().update();
+        cy.fit(undefined, MARGIN / 2);
+        whole = { zoom: cy.zoom(), pan: { ...cy.pan() }, extent: cy.extent() };
+        cy.minZoom(whole.zoom);
+    };
     const showsAll = () => {
         const pan = cy.pan();
         return (
@@ -110,64 +130,76 @@ export function bindViewport(cy, container, showAllButton, stretch) {
             Math.abs(pan.y - whole.pan.y) < SAME_PAN
         );
     };
-    const updateButton = () => {
-        showAllButton.disabled = showsAll();
+    const within = (zoom, pan, stretchAimed) => viewWithin(cy, whole, zoom, pan, stretchAimed);
+    return {
+        measured: () => whole !== null,
+        forget: () => {
+            whole = null;
+        },
+        measure,
+        showsAll,
+        within,
+        keepWithin: () => keepWithin(cy, stretchedBox(stretch.current(), whole.extent)),
+        zoom: () => whole.zoom,
+        // Unstretched: where the button goes back to.
+        view: () => ({ zoom: whole.zoom, pan: { ...whole.pan } }),
     };
+}
+
+// The button shows the whole graph again (#196); it is disabled, rather than hidden,
+// while the whole graph is shown: it stays in view and in place. A move in progress may
+// take over the button (onRequest), to show the whole graph with a motion.
+function bindShowAllButton(button, showAll) {
+    let request = null;
+    button.addEventListener("click", () => {
+        if (!request?.()) {
+            showAll();
+        }
+    });
+    return {
+        update: (showsAll) => {
+            button.disabled = showsAll;
+        },
+        onRequest: (handler) => {
+            request = handler;
+        },
+    };
+}
+
+// stretch: what makeStretch returns. Returns whether sizes follow the zoom at each frame
+// (live: a small graph), and what a selection needs to move the view (#142): the zoom of
+// the whole graph, a view brought within the bounds, a hold on the bounds while it
+// animates, and a callback when the whole graph is shown again; and whether the whole
+// graph is shown (#175).
+export function bindViewport(cy, container, showAllButton, stretch) {
+    const whole = makeWholeView(cy, stretch);
+    // While a selection animates the view and the stretch together, the bounds wait.
+    let held = false;
+    const showAllListeners = [];
     const showAll = () => {
-        whole = null;
+        whole.forget();
         for (const listener of showAllListeners) {
             listener();
         }
-        cy.minZoom(NO_MIN_ZOOM);
-        // fit measures the nodes at their size for the current zoom (#185): once more
-        // with their size for the new zoom, so that the result is the same from any view.
-        cy.fit(undefined, MARGIN / 2);
-        cy.style().update();
-        cy.fit(undefined, MARGIN / 2);
-        whole = { zoom: cy.zoom(), pan: { ...cy.pan() }, extent: cy.extent() };
-        cy.minZoom(whole.zoom);
-        updateButton();
+        whole.measure();
+        button.update(whole.showsAll());
     };
-    // The view of this zoom and pan, brought within the bounds of the graph stretched as
-    // given: not below the zoom of the whole graph, around the same centre, then moved as
-    // little as needed.
-    const within = (zoom, pan, stretchAimed) => {
-        const kept = Math.max(zoom, whole.zoom);
-        const centre = {
-            x: (cy.width() / 2 - pan.x) / zoom,
-            y: (cy.height() / 2 - pan.y) / zoom,
-        };
-        const view = {
-            x1: centre.x - cy.width() / 2 / kept,
-            x2: centre.x + cy.width() / 2 / kept,
-            y1: centre.y - cy.height() / 2 / kept,
-            y2: centre.y + cy.height() / 2 / kept,
-        };
-        const aimed = stretchedBox(stretchAimed, whole.extent);
-        const dx = shiftInto(view.x1, view.x2, aimed.x1, aimed.x2);
-        const dy = shiftInto(view.y1, view.y2, aimed.y1, aimed.y2);
-        return { zoom: kept, pan: { x: -(view.x1 + dx) * kept, y: -(view.y1 + dy) * kept } };
-    };
+    const button = bindShowAllButton(showAllButton, showAll);
     showAll();
-    cy.on("viewport", () => {
-        if (whole) {
-            if (!held) {
-                keepWithin(cy, bounds());
-            }
-            updateButton();
-        }
-    });
     // Held during an animation that ends within the bounds; checked again at its end.
     const hold = (on) => {
         held = on;
-        if (!on && whole) {
-            keepWithin(cy, bounds());
-            updateButton();
+        if (!on && whole.measured()) {
+            whole.keepWithin();
+            button.update(whole.showsAll());
         }
     };
-    showAllButton.addEventListener("click", () => {
-        if (!showAllRequest?.()) {
-            showAll();
+    cy.on("viewport", () => {
+        if (whole.measured()) {
+            if (!held) {
+                whole.keepWithin();
+            }
+            button.update(whole.showsAll());
         }
     });
     // The container may change size after initialization (page layout, window resize).
@@ -180,15 +212,13 @@ export function bindViewport(cy, container, showAllButton, stretch) {
     keepScreenSize(cy, live);
     return {
         live,
-        wholeZoom: () => whole.zoom,
-        showsAll,
-        within,
+        wholeZoom: whole.zoom,
+        showsAll: whole.showsAll,
+        within: whole.within,
         hold,
         onShowAll: (listener) => showAllListeners.push(listener),
-        onShowAllRequest: (handler) => {
-            showAllRequest = handler;
-        },
+        onShowAllRequest: button.onRequest,
         // The view of the whole graph, unstretched: where the button goes back to.
-        wholeView: () => ({ zoom: whole.zoom, pan: { ...whole.pan } }),
+        wholeView: whole.view,
     };
 }

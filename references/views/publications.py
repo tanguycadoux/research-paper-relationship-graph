@@ -10,9 +10,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from ..forms import NoteForm, PublicationForm
-from ..models import CitedReference, FetchRequest, Publication, UserPublication
-from ..services.corpus import tags
-from ..services.corrections.identification import is_to_identify
+from ..models import FetchRequest, Publication
 from ..services.corrections.publication_edits import (
     forget_fetched,
     identifier_changed,
@@ -21,23 +19,11 @@ from ..services.corrections.publication_edits import (
     restore_source_values,
 )
 from ..services.discovery import incoming_citations
-from ..services.display import filters, wording
-from ..services.display.citations import publication_citations
-from ..services.display.open_access import open_access_link
-from ..services.display.publication_details import crossref_details, publication_abstract
-from ..services.display.publication_table import (
-    corpus_ids,
-    for_publication_table,
-    references_available,
-)
+from ..services.display import filters, publication_page, wording
+from ..services.display.publication_table import corpus_ids, for_publication_table
 from ..services.display.sorting import PUBLICATIONS
 from ..services.imports import fetch_queue
 from ..services.imports.importer import import_publication
-from ..services.imports.jacow import is_jacow
-from ..services.imports.organizations import numbered_affiliations
-from ..services.imports.preprints import BIBLIOGRAPHY_NOT_FETCHED, arxiv_bibliography
-from ..services.imports.published_versions import proposal_message
-from ..services.sources.external_records import metadata_status
 from .pagination import PageMixin
 
 
@@ -69,136 +55,10 @@ class PublicationDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        pub = self.object
-
-        # Its data still to come from the queue: the page says so, and reloads once done (#379).
-        if self.request.user.is_authenticated and fetch_queue.publication_pending(pub):
-            context["fetch_pending_publication"] = pub.pk
-        context["user_pub_ids"] = corpus_ids(self.request.user)
-        context["belongs_to_user"] = pub.pk in context["user_pub_ids"]
-        if context["belongs_to_user"]:
-            entry = UserPublication.objects.get(user=self.request.user, publication=pub)
-            context["reading_status"] = entry.reading_status
-            context["reading_statuses"] = UserPublication.ReadingStatus.choices
-            context["entry_tags"] = entry.tags.all()
+        context |= publication_page.page_context(self.request, self.object)
+        if entry := context.get("corpus_entry"):
             context["note_form"] = NoteForm(instance=entry)
-            context["known_tags"] = tags.suggested_paths(self.request.user)
-
-        context["cited_references"] = pub.cited_references.select_related("target")
-        # Only publications whose bibliography was imported (those of a corpus) can cite it.
-        context["citing_publications"] = for_publication_table(
-            Publication.objects.filter(
-                pk__in=CitedReference.objects.filter(target=pub).values("source")
-            )
-        ).order_by("-publication_date", "readable_title")
-        context |= incoming_citations_context(self.request, pub)
-        context["metadata_status"] = metadata_status(pub)
-        context["references_available"] = references_available(pub)
-        context["arxiv_bibliography"] = arxiv_bibliography(pub)
-        context["version_proposal"] = proposal_message(pub)
-        context["uncertain_author_order"] = is_jacow(pub.doi)
-        # The bibliography of a preprint is fetched by the same action (#227).
-        context["can_import_references"] = (
-            self.request.user.is_authenticated
-            and not context["cited_references"]
-            and (
-                context["references_available"]
-                or context["arxiv_bibliography"] == BIBLIOGRAPHY_NOT_FETCHED
-            )
-        )
-        to_identify = [ref for ref in context["cited_references"] if is_to_identify(ref)]
-        context["references_to_identify"] = len(to_identify)
-        # Those the source does not describe: the article alone says what they are (#273).
-        context["references_undescribed"] = sum(1 for ref in to_identify if not ref.is_described)
-        # Start of « Identifier en série » (#242).
-        context["first_to_identify"] = min(to_identify, key=lambda ref: ref.position, default=None)
-        context["references_unidentifiable"] = sum(
-            1 for ref in context["cited_references"] if ref.unidentifiable
-        )
-        context |= description_context(pub)
-        context.update(long_lists_context(self.request, pub, context["cited_references"]))
-        context |= bulk_actions_context(self.request, context["cited_references"])
         return context
-
-
-def bulk_actions_context(request, cited_references):
-    """
-    The bars of bulk actions of the references and « Cité par » (#408), for a user
-    signed in: only identified references can be checked, so their bar needs one.
-    """
-    if not request.user.is_authenticated:
-        return {}
-    return {
-        "references_checkable": any(ref.target_id for ref in cited_references),
-        "reading_statuses": UserPublication.ReadingStatus.choices,
-        "tag_max_length": tags.MAX_LENGTH,
-        "bulk_tags": tags.suggested_paths(request.user),
-    }
-
-
-def description_context(pub):
-    """What the page shows of the publication itself, read from the stored responses."""
-    return {
-        "details": crossref_details(pub),
-        "abstract": publication_abstract(pub),
-        "citations": publication_citations(pub),
-        "open_access": open_access_link(pub),
-    }
-
-
-# Long lists folded (#269): a LIGO article has 1 012 authors, « Hallmarks of Cancer »
-# 247 references; the page was 9 000 to 13 600 px high.
-AUTHORS_SHOWN = 20
-REFERENCES_SHOWN = 100
-
-
-def long_lists_context(request, pub, cited_references):
-    """
-    The authors (the first 20 and the last one, with the affiliations of these only)
-    and the references (the first 100) shown, unless ?auteurs=tous or
-    ?references=toutes asks for all of them; and the links that unfold them.
-    """
-    slots = list(
-        pub.authorpublication_set.select_related("author")
-        .prefetch_related("organizations__ancestors")
-        .order_by("order")
-    )
-    all_authors = request.GET.get("auteurs") == "tous" or len(slots) <= AUTHORS_SHOWN + 1
-    shown = slots if all_authors else [*slots[:AUTHORS_SHOWN], slots[-1]]
-    all_references = request.GET.get("references") == "toutes"
-    references = list(cited_references)
-    return {
-        "authors": numbered_affiliations(shown),
-        "author_total": len(slots),
-        "authors_hidden": len(slots) - len(shown),
-        "authors_shown": AUTHORS_SHOWN,
-        "all_authors_url": query_with(request, auteurs="tous") + "#authors-title",
-        "shown_references": references if all_references else references[:REFERENCES_SHOWN],
-        "references_hidden": 0 if all_references else max(len(references) - REFERENCES_SHOWN, 0),
-        "all_references_url": query_with(request, references="toutes") + "#references-title",
-    }
-
-
-def query_with(request, **params):
-    query = request.GET.copy()
-    for key, value in params.items():
-        query[key] = value
-    return f"?{query.urlencode()}"
-
-
-def incoming_citations_context(request, pub):
-    """Beyond the base, according to OpenAlex, once someone asked (#163)."""
-    citations = getattr(pub, "incoming_citations", None)
-    order = request.GET.get("citants", "")
-    order = order if order in incoming_citations.ORDERS else "citees"
-    return {
-        "incoming_citations": citations,
-        "citing_order": order,
-        "citing_orders": incoming_citations.ORDERS,
-        "citing_works": (
-            incoming_citations.citing_works(citations, request.user, order) if citations else []
-        ),
-    }
 
 
 class PublicationCreateView(LoginRequiredMixin, CreateView):

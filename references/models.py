@@ -321,6 +321,20 @@ class AuthorPublication(models.Model):
         return f"{self.order} – {self.author}"
 
 
+def to_identify_q(prefix=""):
+    """
+    The one definition of a reference to identify (#293): linked to no publication and
+    not declared unidentifiable. prefix reaches the references from another model, as
+    in "cited_references__" for an annotation of publications.
+    """
+    return models.Q(**{f"{prefix}target__isnull": True, f"{prefix}unidentifiable": False})
+
+
+class CitedReferenceQuerySet(models.QuerySet):
+    def to_identify(self):
+        return self.filter(to_identify_q())
+
+
 class CitedReference(models.Model):
     """
     An entry of the bibliography of a publication, as given by Crossref, and the
@@ -360,6 +374,8 @@ class CitedReference(models.Model):
     candidates = models.JSONField(null=True, blank=True)
     candidates_fetched_at = models.DateTimeField(null=True, blank=True)
 
+    objects = CitedReferenceQuerySet.as_manager()
+
     class Meta:
         ordering = ["position"]
         constraints = [
@@ -393,6 +409,11 @@ class CitedReference(models.Model):
         if self.year:
             return f"Crossref ne donne que le numéro et l'année ({self.year}) de cette référence"
         return "Crossref ne donne que le numéro de cette référence"
+
+    @property
+    def is_to_identify(self):
+        """to_identify_q() for a reference already loaded."""
+        return self.target_id is None and not self.unidentifiable
 
     @property
     def is_described(self):

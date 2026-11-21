@@ -1,0 +1,44 @@
+{% comment %}
+The section of the references: summary, import, « Identifier en série » (#242), bulk
+actions (#408) and table.
+{% endcomment %}
+{% load ui %}
+<section aria-labelledby="references-title" class="mt-8">
+    <h2 id="references-title">
+        Références <span class="font-normal text-gray-500">({{ cited_references|length }})</span>
+    </h2>
+    {% include "references/publication_detail/_references_summary.html" %}
+    {% if can_import_references %}
+        <form method="post"
+              action="{% url 'publication_import_references' publication.pk %}"
+              class="mb-3">
+            {% csrf_token %}
+            {% button "Importer ses références" icon="download" %}
+        </form>
+    {% endif %}
+    {% if user.is_authenticated and first_to_identify %}
+        <p class="mb-3">
+            {% url 'reference_identify' publication.pk first_to_identify.position as series_url %}
+            {# The one full button of the block: it says what it starts, and how many (#282). #}
+            {% if references_to_identify == 1 %}
+                {% button "Identifier la référence" url=series_url|add:"?serie=1" icon="playlist_play" %}
+            {% else %}
+                {% with count=references_to_identify|stringformat:"d" %}
+                    {% button "Identifier les "|add:count|add:" références en série" url=series_url|add:"?serie=1" icon="playlist_play" %}
+                {% endwith %}
+            {% endif %}
+        </p>
+    {% endif %}
+    {# Bulk actions on the identified references (#408), back to this list. #}
+    {% if references_checkable %}
+        {% url 'publication_bulk' publication.pk as bulk_url %}
+        {% include "references/_bulk_actions.html" with form_id="references-actions" action=bulk_url next=request.get_full_path|add:"#references-title" add=True collapsed=True %}
+    {% endif %}
+    {% include "references/publication_detail/_references_table.html" %}
+    {% if references_hidden %}
+        <p class="mt-3 text-sm">
+            <a href="{{ all_references_url }}">Afficher les {{ cited_references|length }} références</a>
+            <span class="text-gray-600">(les {{ references_hidden }} dernières sont repliées)</span>
+        </p>
+    {% endif %}
+</section>

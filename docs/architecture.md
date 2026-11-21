@@ -58,6 +58,7 @@ references/          application principale
     corpus_bulk.py (actions groupées de « Mon corpus » et des listes d'une fiche),
     search.py (recherche), title_search.py (« Chercher par titre »),
     pagination.py (listes par pages),
+    redirects.py (retour vers la page du formulaire, champ `next`, ou une page de repli),
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),
@@ -65,7 +66,8 @@ references/          application principale
     fetch_admin.py (page « File des récupérations », réservée aux administrateurs)
   services/          logique métier, sans dépendance aux vues, un sous-paquet par domaine
     sources/         sources externes
-      http.py        requêtes communes (session, nouvelles tentatives, cache de développement)
+      http.py        requêtes communes (session, nouvelles tentatives, découpe par lots,
+                     cache de développement)
       api_log.py     journal des requêtes (logs/api.log, une ligne JSON par requête, contexte)
       api_log_summary.py  résumé du journal (commande api_log)
       crossref_api.py  client Crossref (polite pool, lots de DOI, recherche par ISBN ou par texte)
@@ -140,6 +142,8 @@ references/          application principale
       publication_table.py  annotations du tableau commun (premier auteur, badges)
       publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
                      résumé)
+      publication_page.py  contexte de la fiche publication, section par section (entrée du
+                     corpus, références, « Cité par », listes longues repliées, actions groupées)
       citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
       open_access.py  « Lire l'article » : meilleure version en accès ouvert, sans requête
       wording.py     mots des messages accordés avec un nombre (« 3 publications ajoutées »)
@@ -151,8 +155,15 @@ references/          application principale
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
-    ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
-                     pagination, column_header, filter_summary, popover_panel_classes
+    ui/              composants d'interface, une seule bibliothèque ({% load ui %}) :
+      library.py     la bibliothèque, où chaque module inscrit ses balises
+      components.py  button, badge, alert, card
+      icons.py       icon, external_link
+      glass.py       verre dépoli : glass_classes, popover_panel_classes, notifications (toasts)
+      tables.py      pagination, column_header (tri et filtre), sort_links, filter_summary,
+                     row_title_classes
+      forms.py       field, form_errors
+      text.py        filtre pluralize_fr
     navigation.py    navigation principale (groupes, lien courant, compteurs, liens réservés
                      aux administrateurs)
   management/commands/
@@ -170,6 +181,8 @@ references/          application principale
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphes, en modules ES natifs (détail dans graphes.md)
+    graph.js         mise en place commune à tous les graphes (cadre, création, liaisons)
+    card.js          carte et sélection communes (appui, double appui, Échap, clic dans le vide)
     main.js          point d'entrée du graphe de citations (frise ou réseau)
     scale.js         dates et échelle de la frise
     layout.js        position des nœuds sur la frise
@@ -180,14 +193,21 @@ references/          application principale
     focus.js         recentrage à la sélection
     stretch.js       étirement des positions à la sélection
     axis.js          axe des années
-    selection.js     sélection d'une publication et sa carte
+    selection.js     sélection d'une publication (carte commune de card.js)
     hover.js         survol : infobulle, liens foncés sur un petit graphe
     style.js         style des nœuds et des liens
     export.js        export PNG (partagé avec le graphe des auteurs)
+    export_labels.js  placement des noms des nœuds sur l'image exportée
     coauthors.js     point d'entrée du graphe des auteurs (coautorat)
     coauthor_selection.js  sélection d'un auteur dans ce graphe
-  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
-  templates/components/  gabarits des composants de ui.py
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph et _author_graph…)
+    publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
+                     _authors, _abstract, _note, _information, _references, _cited_by,
+                     _incoming_citations…), assemblées par publication_detail.html
+    _corpus_add_form, _corpus_column_header, _cited_by_table_head, _first_author,
+    _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
+                     les suggestions, « Mon corpus » et la fiche (#296)
+  templates/components/  gabarits des composants de ui/
   tests/
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
 assets/css/source.css  source Tailwind (styles de base des éléments, couleurs du graphe)
@@ -205,6 +225,7 @@ static/
   js/copy_citation.js  boutons « Copier » du panneau « Citer » (HTML et texte)
   js/graph_image.js  image d'un grand graphe : état demandé jusqu'à ce qu'elle soit prête
   vendor/cytoscape/  Cytoscape.js embarqué
+tools/check_js.sh    syntaxe de chaque fichier JavaScript (node --check), lancée par la CI (#341)
 tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
 docs/                cette documentation
 ```

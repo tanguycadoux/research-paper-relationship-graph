@@ -38,7 +38,7 @@ def written_doi(ref):
 
 def references_to_link(publications=None):
     """References to identify that give no DOI, of the given publications or of all."""
-    references = CitedReference.objects.filter(target__isnull=True, unidentifiable=False, doi="")
+    references = CitedReference.objects.to_identify().filter(doi="")
     if publications is not None:
         references = references.filter(source__in=publications)
     return references

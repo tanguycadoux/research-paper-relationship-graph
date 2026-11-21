@@ -2,7 +2,10 @@
 // the year axis above it (on the timeline only: the network has none, #195) and the
 // legend below. Both are HTML, outside the canvas of
 // Cytoscape: they are drawn again on the image from the page. Without hovering, a dot
-// does not say which publication it is: the image names some of them (#289).
+// does not say which publication it is: the image names some of them (#289,
+// export_labels.js).
+
+import { drawNodeLabels } from "./export_labels.js";
 
 // Twice the size on screen (times the pixel density), sharp enough for a slide or a report.
 const SCALE = 2;
@@ -10,10 +13,6 @@ const SCALE = 2;
 const LEGEND_PADDING = 12;
 const ITEM_GAP = 20;
 const ROW_GAP = 4;
-// Labels of the publications, in pixels of the page (twice as many on the image).
-const LABEL_FONT_SIZE = 11;
-const LABEL_PADDING = 3;
-const LABEL_GAP = 4;
 
 function loadImage(blob) {
     return new Promise((resolve, reject) => {
@@ -142,106 +141,6 @@ function drawLegend(context, rows, style, top, lineHeight) {
     });
 }
 
-// The publications named on the image (#289): with a selection, the selected one and its
-// neighbours; otherwise the sources (the publication of the graph, or the corpus). The
-// selected publication first, then the most cited: they keep their label when two
-// labels would overlap. On a coauthorship graph (#222): the selected author and their
-// coauthors, or the author of the graph; the most published first.
-function labelledNodes(cy) {
-    const selected = cy.nodes(".selected");
-    const nodes = selected.nonempty()
-        ? selected.union(cy.nodes(".reference-node, .citing-node, .coauthor-node"))
-        : cy.nodes('[role = "source"]');
-    const rank = (node) => node.data("citedBy") ?? node.data("publications");
-    return nodes
-        .filter((node) => node.data("shortLabel"))
-        .sort(
-            (a, b) =>
-                Number(b.hasClass("selected")) - Number(a.hasClass("selected")) ||
-                rank(b) - rank(a),
-        );
-}
-
-function overlaps(a, b) {
-    return a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
-}
-
-function box(x1, y1, width, height) {
-    return { x1, y1, x2: x1 + width, y2: y1 + height };
-}
-
-// Where the label of a node may go, in order: right of the node, left, above, below.
-function labelPlaces(x, y, radius, width, height) {
-    return [
-        box(x + radius + LABEL_GAP, y - height / 2, width, height),
-        box(x - radius - LABEL_GAP - width, y - height / 2, width, height),
-        box(x - width / 2, y - radius - LABEL_GAP - height, width, height),
-        box(x - width / 2, y + radius + LABEL_GAP, width, height),
-    ];
-}
-
-function inView(nodes, width, height) {
-    return nodes.filter((node) => {
-        const { x, y } = node.renderedPosition();
-        return x >= 0 && x <= width && y >= 0 && y <= height;
-    });
-}
-
-function discs(nodes) {
-    return nodes.map((node) => {
-        const { x, y } = node.renderedPosition();
-        const radius = node.renderedWidth() / 2;
-        return box(x - radius, y - radius, 2 * radius, 2 * radius);
-    });
-}
-
-// The labels placed in the visible graph (width x height, in pixels of the page). Each
-// goes in the first place that stays inside and covers no other label nor any node; if
-// there is none, in the first that covers no other label nor a labelled node (an
-// unlabelled node may then be partly hidden). A label without such a place is left out.
-function placeLabels(context, cy, nodes, width, height) {
-    const labelled = inView(nodes, width, height);
-    const allDiscs = discs(inView(cy.nodes(), width, height));
-    const labelledDiscs = discs(labelled);
-    const fits = (candidate, obstacles) =>
-        candidate.x1 >= 0 &&
-        candidate.x2 <= width &&
-        candidate.y1 >= 0 &&
-        candidate.y2 <= height &&
-        !obstacles.some((other) => overlaps(candidate, other));
-    const placed = [];
-    for (const node of labelled) {
-        const text = node.data("shortLabel");
-        const { x, y } = node.renderedPosition();
-        const labelWidth = context.measureText(text).width + 2 * LABEL_PADDING;
-        const labelHeight = LABEL_FONT_SIZE + 2 * LABEL_PADDING;
-        const places = labelPlaces(x, y, node.renderedWidth() / 2, labelWidth, labelHeight);
-        const place =
-            places.find((candidate) => fits(candidate, [...placed, ...allDiscs])) ??
-            places.find((candidate) => fits(candidate, [...placed, ...labelledDiscs]));
-        if (place) {
-            placed.push({ ...place, text });
-        }
-    }
-    return placed;
-}
-
-// Each label on a light background, readable over the lines of the graph.
-function drawLabels(context, labels, top, color) {
-    context.textAlign = "left";
-    context.textBaseline = "middle";
-    for (const label of labels) {
-        context.fillStyle = "rgba(255, 255, 255, 0.85)";
-        context.strokeStyle = "rgba(0, 0, 0, 0.15)";
-        context.beginPath();
-        context.roundRect(label.x1, top + label.y1, label.x2 - label.x1, label.y2 - label.y1, 3);
-        context.fill();
-        context.stroke();
-        context.fillStyle = color;
-        context.fillText(label.text, label.x1 + LABEL_PADDING, top + (label.y1 + label.y2) / 2);
-    }
-}
-
 function download(blob, name) {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
@@ -251,41 +150,51 @@ function download(blob, name) {
     setTimeout(() => URL.revokeObjectURL(link.href));
 }
 
-async function exportImage(cy, { axis, band, legend }, name) {
+async function graphImage(cy) {
     const graph = await loadImage(
         await cy.png({ output: "blob-promise", scale: SCALE, bg: "white" }),
     );
     URL.revokeObjectURL(graph.src);
+    return graph;
+}
+
+// The legend laid out for the image, as wide as the graph: its style, font, rows, height
+// of a line and whole height.
+function legendLayout(context, legend, width) {
+    const style = getComputedStyle(legend);
+    const font = `${style.fontSize} ${style.fontFamily}`;
+    context.font = font;
+    const rows = layoutLegend(context, legendItems(legend), width);
+    const lineHeight = parseFloat(style.lineHeight);
+    const height = 2 * LEGEND_PADDING + rows.length * lineHeight + (rows.length - 1) * ROW_GAP;
+    return { style, font, rows, lineHeight, height };
+}
+
+async function exportImage(cy, { axis, band, legend }, name) {
+    const graph = await graphImage(cy);
     // Everything is drawn in pixels of the page. cy.png also multiplies by the pixel
     // density of the screen: the image is drawn at the scale actually produced.
     const width = cy.width();
     const scale = graph.width / width;
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    const legendStyle = getComputedStyle(legend);
-    const font = `${legendStyle.fontSize} ${legendStyle.fontFamily}`;
-    context.font = font;
-    const rows = layoutLegend(context, legendItems(legend), width);
-    const lineHeight = parseFloat(legendStyle.lineHeight);
+    const key = legendLayout(context, legend, width);
     const graphTop = axis ? axis.offsetHeight : 0;
     const legendTop = graphTop + cy.height();
-    const legendHeight = 2 * LEGEND_PADDING + rows.length * lineHeight + (rows.length - 1) * ROW_GAP;
     // Resizing the canvas resets the context.
     canvas.width = graph.width;
-    canvas.height = Math.ceil((legendTop + legendHeight) * scale);
+    canvas.height = Math.ceil((legendTop + key.height) * scale);
     context.scale(scale, scale);
     context.fillStyle = "white";
-    context.fillRect(0, 0, width, legendTop + legendHeight);
+    context.fillRect(0, 0, width, legendTop + key.height);
     if (axis) {
         drawAxis(context, axis, width);
     }
     context.drawImage(graph, 0, graphTop, width, cy.height());
     drawBand(context, band, cy, graphTop, width);
-    context.font = `${LABEL_FONT_SIZE}px ${legendStyle.fontFamily}`;
-    const labels = placeLabels(context, cy, labelledNodes(cy), width, cy.height());
-    drawLabels(context, labels, graphTop, legendStyle.color);
-    context.font = font;
-    drawLegend(context, rows, legendStyle, legendTop, lineHeight);
+    drawNodeLabels(context, cy, { top: graphTop, fontFamily: key.style.fontFamily, color: key.style.color });
+    context.font = key.font;
+    drawLegend(context, key.rows, key.style, legendTop, key.lineHeight);
     canvas.toBlob((blob) => download(blob, name), "image/png");
 }
 
