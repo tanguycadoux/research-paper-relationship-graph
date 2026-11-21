@@ -57,6 +57,7 @@
                 {% endif %}
             </div>
             {% if publications or active_filters %}
+                <div class="mb-3">{% include "references/_note_filter.html" %}</div>
                 {% filter_summary %}
                 {% include "references/_bulk_actions.html" with form_id="bulk-actions" %}
                 {% include "references/_publication_table.html" with caption="Publications de mon corpus" reading_column=True bulk_form="bulk-actions" %}

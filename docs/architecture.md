@@ -146,7 +146,7 @@ references/          application principale
       publication_page.py  contexte de la fiche publication, section par section (entrée du
                      corpus, références, « Cité par », listes longues repliées, actions groupées)
       citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
-      open_access.py  « Lire l'article » : meilleure version en accès ouvert, sans requête
+      open_access.py  « Lire l'article » : meilleure version en accès ouvert et sa licence, sans requête
       wording.py     mots des messages accordés avec un nombre (« 3 publications ajoutées »)
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
@@ -208,6 +208,7 @@ references/          application principale
     _corpus_add_form, _corpus_column_header, _cited_by_table_head, _first_author,
     _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
                      les suggestions, « Mon corpus » et la fiche (#296)
+    _note_filter     champ « Chercher dans mes notes » de « Mon corpus » (#443)
   templates/components/  gabarits des composants de ui/
   tests/           tests ; sources.py simule les sources externes, fixtures/ leurs réponses
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
