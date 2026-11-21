@@ -14,9 +14,7 @@ from ..corrections import author_duplicates
 
 def references_to_identify(user):
     """References of the user's corpus linked to no publication and not unidentifiable."""
-    return CitedReference.objects.filter(
-        source__userpublication__user=user, target__isnull=True, unidentifiable=False
-    ).count()
+    return CitedReference.objects.to_identify().filter(source__userpublication__user=user).count()
 
 
 def open_conflicts():

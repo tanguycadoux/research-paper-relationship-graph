@@ -131,11 +131,7 @@ class ToIdentifyFilter:
 
     def apply(self, queryset, value):
         return queryset.filter(
-            Exists(
-                CitedReference.objects.filter(
-                    source=OuterRef("pk"), target__isnull=True, unidentifiable=False
-                )
-            )
+            Exists(CitedReference.objects.to_identify().filter(source=OuterRef("pk")))
         )
 
     def describe(self, value):
