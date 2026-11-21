@@ -39,6 +39,9 @@
 {% endblock help %}
 {% block controls %}
     {# Controls of the context, under the commands so that they never move: the layout (#195), the tag of « Mon graphe » (#290). #}
+    {% if corpus_graphs %}
+        {% include "references/_corpus_graph_choice.html" %}
+    {% endif %}
     {% include "references/_graph_variants.html" %}
     {% if tag_choices %}
         {% include "references/_graph_tag_form.html" %}
@@ -138,7 +141,14 @@
 {% endblock script %}
 {% block empty %}
     {# Without a graph, the tag selector stays, to choose another tag or the whole corpus (#290). #}
-    {% if tag_choices %}
+    {% if corpus_graphs %}
+        <div class="mb-3 grid max-w-sm gap-3 text-sm">
+            {% include "references/_corpus_graph_choice.html" %}
+            {% if tag_choices %}
+                {% include "references/_graph_tag_form.html" %}
+            {% endif %}
+        </div>
+    {% elif tag_choices %}
         <div class="mb-3 max-w-sm text-sm">{% include "references/_graph_tag_form.html" %}</div>
     {% endif %}
     <p class="text-gray-600">Aucune citation identifiée : rien à afficher.</p>

@@ -1,0 +1,27 @@
+{% load ui %}
+{% comment %}
+    Controls of the map of the keywords (#418), in the panel of the graph or, without any
+    edge, beside the message: keywords or topics, the threshold, the tag. Each choice keeps
+    the others.
+{% endcomment %}
+{% include "references/_graph_variants.html" %}
+{# Sent as soon as it changes (static/js/autosubmit.js); as wide as the panel allows, not as its longest choice. #}
+<form method="get" class="flex items-center gap-1" data-autosubmit>
+    {% for param, value in threshold_kept_params.items %}<input type="hidden" name="{{ param }}" value="{{ value }}">{% endfor %}
+    {% if active_tag %}<input type="hidden" name="tag" value="{{ active_tag }}">{% endif %}
+    <label for="keyword-minimum" class="mr-1 mb-0 whitespace-nowrap"
+           title="Nombre minimum de publications par {{ terms.singular }}">Seuil</label>
+    <select id="keyword-minimum"
+            name="min"
+            class="w-0 min-w-0 flex-1 py-1 pr-7 pl-2">
+        {% for value, choice_label in graph.thresholds %}
+            <option value="{{ value }}" {% if value == minimum %}selected{% endif %}>{{ choice_label }}</option>
+        {% endfor %}
+    </select>
+    <span data-autosubmit-button>
+        {% button "Appliquer le seuil" variant="secondary" icon="filter_list" icon_only=True %}
+    </span>
+</form>
+{% if tag_choices %}
+    {% include "references/_graph_tag_form.html" %}
+{% endif %}

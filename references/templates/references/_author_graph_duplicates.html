@@ -1,0 +1,29 @@
+{% comment %}
+    The probable duplicates of a coauthorship graph gathered into one node, or drawn as in
+    the base (#419): a switch, on by default, which reloads the graph with the other choice
+    (views/author_graphs.py), other parameters kept. Without any group in the graph, it
+    stays in its place, disabled.
+{% endcomment %}
+{% if graph.groups %}
+    <a href="?{{ duplicates_toggle }}"
+       role="switch"
+       aria-checked="{% if duplicates_grouped %}true{% else %}false{% endif %}"
+       class="flex items-center gap-2 text-gray-700 no-underline select-none hover:text-gray-900"
+       data-graph-duplicates>
+        <span class="relative inline-block h-5 w-9 shrink-0 rounded-full {% if duplicates_grouped %}bg-blue-700{% else %}bg-gray-300{% endif %}"
+              aria-hidden="true">
+            <span class="absolute top-0.5 size-4 rounded-full bg-white shadow-sm {% if duplicates_grouped %}left-4.5{% else %}left-0.5{% endif %}"></span>
+        </span>
+        Regrouper les doublons probables ({{ graph.groups }})
+    </a>
+{% else %}
+    <p class="flex items-center gap-2 text-gray-400 select-none"
+       aria-disabled="true"
+       data-graph-duplicates>
+        <span class="relative inline-block h-5 w-9 shrink-0 rounded-full bg-gray-200"
+              aria-hidden="true">
+            <span class="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm"></span>
+        </span>
+        Regrouper les doublons probables (0)
+    </p>
+{% endif %}

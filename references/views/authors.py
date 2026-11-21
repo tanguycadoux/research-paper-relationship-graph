@@ -10,8 +10,13 @@ from django.views.generic import DetailView, ListView, UpdateView
 
 from ..forms import AuthorForm, AuthorMergeConfirmForm, AuthorMergeSelectForm
 from ..models import Author, FetchRequest, Publication
-from ..services.corrections import author_distinctions, author_duplicates, author_merge
-from ..services.display import filters
+from ..services.corrections import (
+    author_distinctions,
+    author_duplicates,
+    author_merge,
+    safe_duplicates,
+)
+from ..services.display import filters, wording
 from ..services.display.publication_table import corpus_ids, for_publication_table
 from ..services.display.search import parse, search_authors
 from ..services.display.sorting import AUTHORS
@@ -233,14 +238,64 @@ def author_merge_confirm_view(request, ids):
 
 @login_required
 def author_duplicates_view(request):
-    """The probable duplicates, the most likely first, in pages of 50 groups (#270)."""
-    page = page_of(request, author_duplicates.duplicate_groups(), DUPLICATES_PAGE_SIZE)
-    return render(
-        request, "references/author_duplicates.html", {"groups": page.object_list, "page_obj": page}
-    )
+    """
+    The probable duplicates, the most likely first, in pages of 50 groups (#270), under
+    the safe groups, merged in one go after a confirmation (#374).
+    """
+    groups = author_duplicates.duplicate_groups()
+    page = page_of(request, groups, DUPLICATES_PAGE_SIZE)
+    safe = safe_duplicates.safe_groups(groups)
+    context = {
+        "groups": page.object_list,
+        "page_obj": page,
+        "safe_groups": safe,
+        "safe_title": f"Groupes sûrs ({len(safe)})",
+        "safe_merge_label": f"{safe_merge_label(len(safe))}…",
+    }
+    return render(request, "references/author_duplicates.html", context)
 
 
 DUPLICATES_PAGE_SIZE = 50
+
+
+def safe_merge_label(count):
+    if count == 0:
+        return "Fusionner les groupes sûrs"
+    return "Fusionner ce groupe" if count == 1 else f"Fusionner ces {count} groupes"
+
+
+@login_required
+def author_duplicates_merge_view(request):
+    """
+    The merge of the safe groups (#374): a summary first, nothing merged without its
+    confirmation. The POST names the groups shown; one that is no longer safe, or
+    that has changed since, is not merged.
+    """
+    safe = safe_duplicates.safe_groups(author_duplicates.duplicate_groups())
+    if request.method != "POST":
+        context = {"groups": safe, "merge_label": safe_merge_label(len(safe))}
+        return render(request, "references/author_duplicates_merge.html", context)
+    shown = set(request.POST.getlist("groups"))
+    merged = safe_duplicates.merge_safe_groups(
+        [group for group in safe if group.key in shown], request.user
+    )
+    report_safe_merge(request, merged, len(shown))
+    return redirect("author_duplicates")
+
+
+def report_safe_merge(request, merged, shown):
+    if merged:
+        authors = sum(len(group) for group in merged)
+        groups = wording.count(len(merged), "groupe fusionné")
+        messages.success(request, f"{groups} ({authors} auteurs).")
+    left = shown - len(merged)
+    if left:
+        groups = wording.count(
+            left,
+            "groupe non fusionné : il a changé depuis le récapitulatif",
+            "groupes non fusionnés : ils ont changé depuis le récapitulatif",
+        )
+        messages.warning(request, f"{groups}.")
 
 
 @login_required

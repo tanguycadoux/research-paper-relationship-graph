@@ -11,19 +11,22 @@
     <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1>Mon corpus</h1>
         <div class="flex flex-wrap gap-2">
-            {# The suggestions (#162) and the graph (#290) of the tag filtered on, if any. #}
+            {# The suggestions (#162), the graph (#290) and the keywords (#418) of the tag filtered on, if any. #}
             {% url 'corpus_suggestions' as suggestions_url %}
             {% url 'corpus_graph' as graph_url %}
+            {% url 'corpus_keywords' as keywords_url %}
             {% url 'bibliography_request' as bibliographies_url %}
             {% if active_tag %}
                 {% with tag_query=active_tag|urlencode %}
                     {% button "Suggestions" url=suggestions_url|add:"?tag="|add:tag_query variant="secondary" icon="lightbulb" %}
                     {% button "Mon graphe" url=graph_url|add:"?tag="|add:tag_query variant="secondary" icon="hub" %}
+                    {% button "Mots-clés" url=keywords_url|add:"?tag="|add:tag_query variant="secondary" icon="label" %}
                     {% button "Récupérer les bibliographies…" url=bibliographies_url|add:"?tag="|add:tag_query variant="secondary" icon="download" %}
                 {% endwith %}
             {% else %}
                 {% button "Suggestions" url=suggestions_url variant="secondary" icon="lightbulb" %}
                 {% button "Mon graphe" url=graph_url variant="secondary" icon="hub" %}
+                {% button "Mots-clés" url=keywords_url variant="secondary" icon="label" %}
                 {% button "Récupérer les bibliographies…" url=bibliographies_url variant="secondary" icon="download" %}
             {% endif %}
         </div>
@@ -60,6 +63,7 @@
                 {% endif %}
             </div>
             {% if publications or active_filters %}
+                <div class="mb-3">{% include "references/_note_filter.html" %}</div>
                 {% filter_summary %}
                 {% include "references/_bulk_actions.html" with form_id="bulk-actions" %}
                 {% include "references/_publication_table.html" with caption="Publications de mon corpus" reading_column=True bulk_form="bulk-actions" %}

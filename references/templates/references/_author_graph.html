@@ -9,6 +9,16 @@
 {% block help %}
     {% include "references/_graph_help.html" with help="coauthors" %}
 {% endblock help %}
+{% block controls %}
+    {# The graph of a corpus (#422): its two graphs, then its tags, as on « Mon graphe ». #}
+    {% if corpus_graphs %}
+        {% include "references/_corpus_graph_choice.html" %}
+    {% endif %}
+    {% include "references/_author_graph_duplicates.html" %}
+    {% if tag_choices %}
+        {% include "references/_graph_tag_form.html" %}
+    {% endif %}
+{% endblock controls %}
 {# Filled by graph/coauthor_selection.js with the selected author. #}
 {% block card_label %}Auteur sélectionné{% endblock card_label %}
 {% block card_empty %}
@@ -20,13 +30,16 @@
 {% endblock card_empty %}
 {% block card_title %}Auteur sélectionné{% endblock card_title %}
 {% block card_content %}
-    <p class="text-gray-600" data-card="publications"></p>
+    <p class="text-gray-600"
+       data-card="publications"
+       data-scope="{{ publications_scope }}"></p>
     <div class="grid gap-1">
         <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Dans ce graphe</p>
         <p>
             <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="coauthors"></span>
         </p>
     </div>
+    {% include "references/_author_graph_variants.html" %}
     <div class="grid gap-1" data-card-row="strongest">
         <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Liens les plus forts</p>
         <ol class="grid gap-1" data-card="strongest">
@@ -46,11 +59,23 @@
               aria-hidden="true"></span>
         {% if author %}
             Coauteur
+        {% elif active_tag %}
+            Auteur du tag
+        {% elif corpus_graphs %}
+            Auteur du corpus
         {% else %}
             Auteur de la base
         {% endif %}
     </li>
-    <li>Taille : nombre de publications dans la base</li>
+    {% if duplicates_grouped and graph.groups %}
+        <li>
+            {# The outline of graph/coauthors.js, also drawn on the exported image (graph/export.js). #}
+            <span class="mr-1.5 ml-0.5 inline-block size-3 rounded-full bg-graph-cited align-middle outline-2 outline-offset-1 outline-graph-edge-strong"
+                  aria-hidden="true"></span>
+            Doublons probables regroupés ({{ graph.groups }})
+        </li>
+    {% endif %}
+    <li>Taille : nombre de publications {{ publications_scope }}</li>
     <li>Épaisseur : force du coautorat</li>
     <li>
         Après un clic :
@@ -61,6 +86,15 @@
     <script type="module" src="{% static 'references/graph/coauthors.js' %}"></script>
 {% endblock script %}
 {% block empty %}
+    {# Without a graph, the choices of a corpus stay, to choose another tag or graph (#422). #}
+    {% if corpus_graphs %}
+        <div class="mb-3 grid max-w-sm gap-3 text-sm">
+            {% include "references/_corpus_graph_choice.html" %}
+            {% if tag_choices %}
+                {% include "references/_graph_tag_form.html" %}
+            {% endif %}
+        </div>
+    {% endif %}
     <p class="text-gray-600">Aucun coautorat : rien à afficher.</p>
     {% include "references/_author_graph_excluded.html" %}
 {% endblock empty %}

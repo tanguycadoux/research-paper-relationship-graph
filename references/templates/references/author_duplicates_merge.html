@@ -1,0 +1,86 @@
+{% extends "references/base.html" %}
+{% load ui %}
+{% block title %}Fusionner les groupes sûrs · Corrections · {% endblock title %}
+{% block content %}
+    <header class="mb-6">
+        <h1>Corrections</h1>
+    </header>
+    {# The page it is reached from, above its title (#417). #}
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'author_duplicates' %}">Doublons probables</a>
+    </p>
+    <h2 class="mt-1">
+        Fusionner les groupes sûrs
+        <span class="font-normal text-gray-500">({{ groups|length }} groupe{{ groups|pluralize_fr }})</span>
+    </h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Chaque groupe est fusionné dans son auteur le plus ancien, avec les noms les plus
+        complets, et la fusion est gardée dans son historique. Un auteur qui porte le même
+        ORCID ailleurs dans la base est fusionné aussi, comme après une fusion à la main.
+        Les noms tels que publiés restent sur chaque publication. Rien n'est fusionné
+        avant votre confirmation.
+    </p>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% url 'author_duplicates' as back_url %}
+        <div class="flex flex-wrap gap-2">
+            {% if groups %}
+                {% button merge_label icon="merge" %}
+            {% else %}
+                {% button merge_label icon="merge" type="button" disabled=True %}
+            {% endif %}
+            {% button "Annuler" url=back_url variant="secondary" %}
+        </div>
+        {% if groups %}
+            {% card flush=True %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Après fusion</th>
+                            <th scope="col">Auteurs fusionnés</th>
+                            <th scope="col" class="hidden md:table-cell">Lien</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in groups %}
+                            <tr class="align-top">
+                                <th scope="row" class="font-normal">
+                                    <input type="hidden" name="groups" value="{{ group.key }}">
+                                    {{ group.merged_values.first_name }} {{ group.merged_values.last_name }}
+                                    {% if group.merged_values.orcid %}
+                                        <span class="block text-sm whitespace-nowrap text-gray-500">ORCID {{ group.merged_values.orcid }}</span>
+                                    {% endif %}
+                                </th>
+                                <td>
+                                    <ul class="text-sm">
+                                        {% for author in group %}
+                                            <li>
+                                                <a href="{% url 'author_detail' author.pk %}">{{ author }}</a>
+                                                <span class="whitespace-nowrap text-gray-500">· {{ author.publication_count }} publication{{ author.publication_count|pluralize_fr }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </td>
+                                <td class="hidden text-sm text-gray-600 md:table-cell">
+                                    {% if group.shared_coauthor %}
+                                        Coauteur commun
+                                        {% if group.shared_organizations %}<br>{% endif %}
+                                    {% endif %}
+                                    {% if group.shared_organizations %}
+                                        Tutelle commune : {{ group.shared_organizations|join:", " }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endcard %}
+            <div class="flex flex-wrap gap-2">
+                {% button merge_label icon="merge" %}
+                {% button "Annuler" url=back_url variant="secondary" %}
+            </div>
+        {% else %}
+            <p class="text-gray-600">Aucun groupe sûr à fusionner.</p>
+        {% endif %}
+    </form>
+{% endblock content %}

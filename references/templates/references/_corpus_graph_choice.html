@@ -1,0 +1,14 @@
+{% comment %}
+    The two graphs of « Mon corpus » (#422), its publications and its authors, like the
+    variants of a graph (_graph_variants.html): one link each, the tag kept (#290).
+{% endcomment %}
+<nav class="flex items-center gap-2" aria-label="Graphe du corpus">
+    <span class="text-gray-700">Graphe</span>
+    <span class="flex h-8 flex-1 overflow-hidden rounded-md border border-gray-300 select-none">
+        {% for label, url, current in corpus_graphs %}
+            <a href="{{ url }}"
+               class="flex flex-1 items-center justify-center px-2 no-underline {% if current %}bg-gray-100 font-semibold text-gray-900{% else %}text-gray-700 hover:bg-gray-50{% endif %}{% if not forloop.first %} border-l border-gray-300{% endif %}"
+               {% if current %}aria-current="page"{% endif %}>{{ label }}</a>
+        {% endfor %}
+    </span>
+</nav>

@@ -28,6 +28,7 @@ NAVIGATION = [
             ("À identifier", "corpus", "playlist_play", "?to_identify=1"),
             ("Suggestions", "corpus_suggestions", "lightbulb"),
             ("Mon graphe", "corpus_graph", "hub"),
+            ("Mots-clés", "corpus_keywords", "label"),
         ],
     ),
     (

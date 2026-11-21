@@ -1,0 +1,16 @@
+{% load ui %}
+{# Under the graph (#418): the publications that cannot appear in it, and why. #}
+{% if graph.unanswered or graph.without_terms %}
+    <ul class="mt-3 grid gap-1 text-sm text-gray-600" data-keyword-left-out>
+        {% if graph.unanswered %}
+            <li>
+                {{ graph.unanswered }} publication{{ graph.unanswered|pluralize_fr }} n'{{ graph.unanswered|pluralize_fr:"a,ont" }} pas de réponse OpenAlex (sans DOI, ou inconnue{{ graph.unanswered|pluralize_fr }} d'OpenAlex) : elle{{ graph.unanswered|pluralize_fr }} n'{{ graph.unanswered|pluralize_fr:"apparaît,apparaissent" }} pas.
+            </li>
+        {% endif %}
+        {% if graph.without_terms %}
+            <li>
+                {{ graph.without_terms }} publication{{ graph.without_terms|pluralize_fr }} n'{{ graph.without_terms|pluralize_fr:"a,ont" }} aucun {{ terms.singular }} selon OpenAlex.
+            </li>
+        {% endif %}
+    </ul>
+{% endif %}
