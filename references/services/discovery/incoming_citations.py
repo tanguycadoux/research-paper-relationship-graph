@@ -14,7 +14,7 @@ from ..display.publication_table import corpus_ids
 from ..identifiers.doi import normalize_doi
 from ..imports.titles import clean_title, readable_title
 from ..sources.external_records import Source, records_by_source
-from ..sources.openalex_api import fetch_citing_works, fetch_openalex_work
+from ..sources.openalex_api import fetch_citing_works, fetch_openalex_work, short_id
 
 PER_ORDER = 25
 MOST_CITED = "cited_by_count:desc"
@@ -30,7 +30,7 @@ class IncomingCitationsError(Exception):
     """Why the citing works could not be fetched, as said to the user."""
 
 
-def openalex_id(pub):
+def publication_openalex_id(pub):
     """
     The OpenAlex id of pub ('W2741809807'): from its stored OpenAlex record, else by
     its DOI (a single lookup, free). None if OpenAlex does not know it.
@@ -38,8 +38,7 @@ def openalex_id(pub):
     work = records_by_source(pub).get(Source.OPENALEX)
     if not work and pub.doi:
         work = fetch_openalex_work(pub.doi)
-    work_id = (work or {}).get("id") or ""
-    return work_id.rsplit("/", 1)[-1] or None
+    return short_id((work or {}).get("id")) or None
 
 
 def fetch(pub):
@@ -48,7 +47,7 @@ def fetch(pub):
     IncomingCitationsError. Two requests at most: the most recent are asked only
     when the most cited are not all of them.
     """
-    work_id = openalex_id(pub)
+    work_id = publication_openalex_id(pub)
     if work_id is None:
         raise IncomingCitationsError("OpenAlex ne connaît pas cette publication.")
     most_cited = fetch_citing_works(work_id, MOST_CITED, PER_ORDER)
@@ -76,7 +75,7 @@ def summarize(work):
         authorships[0] if authorships else {},
     )
     return {
-        "openalex": (work.get("id") or "").rsplit("/", 1)[-1],
+        "openalex": short_id(work.get("id")),
         "doi": normalize_doi(work.get("doi") or ""),
         "title": readable_title(clean_title(work.get("display_name"))) or "Sans titre",
         "year": work.get("publication_year"),

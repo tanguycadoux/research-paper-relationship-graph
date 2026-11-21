@@ -1,0 +1,18 @@
+{% comment %}
+The buttons that add a publication to my corpus from a table: « à lire », then « + » last,
+aligned with the « − » of _corpus_remove_form.html. Context: pub, or by_identifier (a DOI:
+the publication is created only then); next, the page to come back to; form_classes, the
+classes of the form (aligned right by default).
+{% endcomment %}
+{% load ui %}
+<form method="post"
+      action="{% if by_identifier %}{% url 'corpus_add_by_identifier' %}{% else %}{% url 'corpus_add' pub.pk %}{% endif %}"
+      class="{{ form_classes|default:'flex justify-end gap-1' }}">
+    {% csrf_token %}
+    {% if by_identifier %}
+        <input type="hidden" name="identifier" value="{{ by_identifier }}">
+    {% endif %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% button "Ajouter à mon corpus, à lire" variant="secondary" icon="bookmark_add" icon_only=True name="status" value="to_read" %}
+    {% button "Ajouter à mon corpus" variant="success-light" icon="add" icon_only=True %}
+</form>

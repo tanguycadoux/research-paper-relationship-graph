@@ -30,10 +30,7 @@ def fetch_datacite_works(dois):
     Return {doi: json or None}: None when DataCite answered without this DOI.
     DOIs of a batch whose request failed are absent from the result.
     """
-    works = {}
-    for start in range(0, len(dois), BATCH_SIZE):
-        works.update(_fetch_batch(dois[start : start + BATCH_SIZE]))
-    return works
+    return http.in_batches(dois, BATCH_SIZE, _fetch_batch)
 
 
 def _fetch_batch(dois):

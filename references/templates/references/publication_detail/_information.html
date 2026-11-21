@@ -1,0 +1,85 @@
+{% comment %}
+The identifiers and what the sources say of the publication: date, citations,
+disciplines, funders, licenses, and a link to their raw answers.
+{% endcomment %}
+{% load ui %}
+{% card title="Informations" %}
+    <dl class="space-y-3 text-sm">
+        {% if publication.doi %}
+            <div>
+                <dt class="text-gray-500">DOI</dt>
+                <dd>
+                    {% external_link "https://doi.org/"|add:publication.doi publication.doi class="break-all" %}
+                </dd>
+            </div>
+        {% endif %}
+        {% if publication.preprint_doi %}
+            {# The arXiv preprint replaced by this published version (#227). #}
+            <div>
+                <dt class="text-gray-500">Prépublication</dt>
+                <dd>
+                    {% external_link "https://doi.org/"|add:publication.preprint_doi publication.preprint_doi class="break-all" %}
+                </dd>
+            </div>
+        {% endif %}
+        {% if publication.isbn %}
+            <div>
+                <dt class="text-gray-500">ISBN</dt>
+                <dd>{{ publication.isbn }}</dd>
+            </div>
+        {% endif %}
+        {% if publication.publication_date %}
+            <div>
+                <dt class="text-gray-500">Date de publication</dt>
+                <dd>{{ publication.formatted_publication_date }}</dd>
+            </div>
+        {% endif %}
+        {% if details.citation_count is not None %}
+            <div>
+                <dt class="text-gray-500">Citations dans toute la littérature</dt>
+                <dd>{{ details.citation_count }} (selon Crossref)</dd>
+            </div>
+        {% endif %}
+        {% if details.subjects %}
+            <div>
+                <dt class="text-gray-500">Disciplines</dt>
+                <dd>{{ details.subjects|join:", " }}</dd>
+            </div>
+        {% endif %}
+        {% if details.funders %}
+            <div>
+                <dt class="text-gray-500">Financement</dt>
+                {% for funder in details.funders|slice:":10" %}<dd>{{ funder }}</dd>{% endfor %}
+                {% if details.funders|length > 10 %}
+                    {# Some articles list forty funders (#269). #}
+                    <dd>
+                        <details>
+                            <summary class="cursor-pointer text-blue-700">et {{ details.funders|length|add:-10 }} autres</summary>
+                            {% for funder in details.funders|slice:"10:" %}<p>{{ funder }}</p>{% endfor %}
+                        </details>
+                    </dd>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if details.licenses %}
+            <div>
+                <dt class="text-gray-500">Licences</dt>
+                {% for license in details.licenses %}
+                    <dd>
+                        {% external_link license.url license.label %}
+                        {% if license.versions %}<span class="text-gray-500">({{ license.versions }})</span>{% endif %}
+                    </dd>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if user.is_authenticated and publication.doi %}
+            <div>
+                <dt class="text-gray-500">Données brutes</dt>
+                <dd>
+                    <a href="{% url 'publication_metadata' publication.pk %}"
+                      >Réponses des sources (JSON)</a>
+                </dd>
+            </div>
+        {% endif %}
+    </dl>
+{% endcard %}

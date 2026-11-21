@@ -1,0 +1,29 @@
+{% comment %}
+The publications of the base that cite it, with their bulk actions (#408).
+{% endcomment %}
+{% load ui %}
+<section aria-labelledby="cited-by-title" class="mt-8">
+    <h2 id="cited-by-title">
+        Cité par <span class="font-normal text-gray-500">({{ citing_publications|length }})</span>
+    </h2>
+    <p class="mt-1 mb-3 text-sm text-gray-500">
+        Publications de cette base qui le citent. Seules celles dont la bibliographie a été
+        importée, c'est-à-dire celles d'un corpus, peuvent apparaître ici : la liste n'est pas
+        exhaustive.
+        {% if details.citation_count is not None %}
+            Crossref recense {{ details.citation_count }} citation{% if details.citation_count > 1 %}s{% endif %} dans toute la littérature.
+        {% endif %}
+    </p>
+    {% if citing_publications %}
+        {% if user.is_authenticated %}
+            {# Bulk actions on the publications citing it (#408), back to this list. #}
+            {% url 'publication_bulk' publication.pk as bulk_url %}
+            {% include "references/_bulk_actions.html" with form_id="cited-by-actions" action=bulk_url next=request.get_full_path|add:"#cited-by-title" add=True collapsed=True %}
+            {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" corpus_actions=True bulk_form="cited-by-actions" %}
+        {% else %}
+            {% include "references/_publication_table.html" with publications=citing_publications caption="Publications de la base qui citent celle-ci" %}
+        {% endif %}
+    {% else %}
+        <p class="text-sm text-gray-600">Aucune publication de la base ne la cite.</p>
+    {% endif %}
+</section>

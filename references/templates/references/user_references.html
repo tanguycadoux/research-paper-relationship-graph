@@ -74,13 +74,7 @@
             {% card title="Tags" %}
                 {% if tag_tree %}
                     <ul class="space-y-1 text-sm" aria-label="Filtrer par tag">
-                        {% for item in tag_tree %}
-                            <li class="flex items-baseline justify-between gap-3 {% if item.depth == 1 %}pl-4{% elif item.depth == 2 %}pl-8{% elif item.depth > 2 %}pl-12{% endif %}">
-                                <a href="?tag={{ item.path|urlencode }}"
-                                   {% if item.path == active_tag %}aria-current="true" class="font-semibold"{% endif %}>{{ item.name }}</a>
-                                <span class="text-gray-500">{{ item.count }}</span>
-                            </li>
-                        {% endfor %}
+                        {% include "references/_tag_filter_items.html" %}
                     </ul>
                     <p class="mt-3 text-sm">
                         <a href="{% url 'tag_list' %}">Renommer ou supprimer des tags</a>

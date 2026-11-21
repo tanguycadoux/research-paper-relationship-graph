@@ -22,7 +22,7 @@
             <ul class="divide-y divide-gray-200" aria-label="Tags">
                 {% for item in tag_tree %}
                     <li class="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
-                        <p class="pt-1 {% if item.depth == 1 %}pl-4{% elif item.depth == 2 %}pl-8{% elif item.depth > 2 %}pl-12{% endif %}">
+                        <p class="pt-1 {% tag_indent item.depth %}">
                             <a href="{% url 'corpus' %}?tag={{ item.path|urlencode }}">{{ item.name }}</a>
                             <span class="text-sm text-gray-500">
                                 {{ item.count }} publication{{ item.count|pluralize_fr }}

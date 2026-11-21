@@ -16,6 +16,14 @@ identifier. La décision est tracée (qui, quand) et survit aux ré-imports : la
 est retrouvée par sa clé Crossref, ou par sa position à défaut, et la correction
 l'emporte sur la source.
 
+Une référence « à identifier » est une référence reliée à aucune publication et non
+déclarée non identifiable. Cette règle est écrite une seule fois, dans `models.py`
+(#293) : `to_identify_q()` pour une requête ou une annotation (`CitedReference.objects.to_identify()`,
+`to_identify_q("cited_references__")` depuis les publications), et la propriété
+`CitedReference.is_to_identify` pour une référence déjà chargée. Les compteurs (navigation,
+tableau des publications, suggestions), le filtre `?to_identify=1`, la série
+d'identification et la liaison des identifiants écrits s'en servent.
+
 L'import a déjà relié les références qui écrivent un code JACoW ou un identifiant arXiv,
 quand DataCite le confirme ([arxiv-jacow.md](arxiv-jacow.md#identifiants-écrits-dans-une-référence)) :
 restent à identifier celles qui n'ont aucun identifiant, ou dont l'identifiant n'a pas
