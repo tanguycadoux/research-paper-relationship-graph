@@ -19,6 +19,47 @@ function onScreen(pixels) {
     return (element) => pixels / element.cy().zoom();
 }
 
+// The mark of the references to identify (#452): the SVG of the page
+// (_graph_warning_icon.html) as an image, or null on a graph without it.
+function warningImage() {
+    const svg = document.querySelector("[data-graph-warning-icon]");
+    if (!svg) {
+        return null;
+    }
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(svg))}`;
+}
+
+// Its size on the screen, in the top right corner of the node, over its ring.
+const WARNING_SIZE = 11;
+
+function warningRules() {
+    const image = warningImage();
+    if (!image) {
+        return [];
+    }
+    return [
+        {
+            selector: "node[toIdentify > 0]",
+            style: {
+                "background-image": image,
+                "background-image-containment": "over",
+                "background-clip": "none",
+                "background-fit": "none",
+                "background-width": onScreen(WARNING_SIZE),
+                "background-height": onScreen(WARNING_SIZE),
+                "background-position-x": "100%",
+                "background-position-y": "0%",
+                // Half of the mark beyond the corner of the node.
+                "background-offset-x": onScreen(WARNING_SIZE / 3),
+                "background-offset-y": onScreen(-WARNING_SIZE / 3),
+                "bounds-expansion": onScreen(WARNING_SIZE / 2),
+                // Above its neighbours, which would hide the mark.
+                "z-index": 1,
+            },
+        },
+    ];
+}
+
 function nodeSize(node) {
     return node.data("size") / node.cy().zoom();
 }
@@ -56,6 +97,7 @@ function nodeRules() {
             selector: "node[level = 2]",
             style: { "background-color": "white", "border-width": onScreen(2.5), "border-color": color("cited") },
         },
+        ...warningRules(),
         {
             selector: "node.hovered",
             style: {
