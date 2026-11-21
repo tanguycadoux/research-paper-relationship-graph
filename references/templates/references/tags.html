@@ -26,7 +26,7 @@
                         <p class="pt-1 {% if item.depth == 1 %}pl-4{% elif item.depth == 2 %}pl-8{% elif item.depth > 2 %}pl-12{% endif %}">
                             <a href="{% url 'corpus' %}?tag={{ item.path|urlencode }}">{{ item.name }}</a>
                             <span class="text-sm text-gray-500">
-                                {{ item.count }} publication{{ item.count|pluralize }}
+                                {{ item.count }} publication{{ item.count|pluralize_fr }}
                             </span>
                         </p>
                         <div class="flex flex-wrap items-start gap-2">
@@ -55,7 +55,7 @@
                                     {% csrf_token %}
                                     <input type="hidden" name="path" value="{{ item.path }}">
                                     <p>
-                                        Retirer « {{ item.path }} »{% if item.has_children %} et ses sous-tags{% endif %} de {{ item.count }} publication{{ item.count|pluralize }} ?
+                                        Retirer « {{ item.path }} »{% if item.has_children %} et ses sous-tags{% endif %} de {{ item.count }} publication{{ item.count|pluralize_fr }} ?
                                     </p>
                                     {% button "Supprimer le tag" variant="danger" icon="delete" %}
                                 </form>

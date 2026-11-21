@@ -18,9 +18,8 @@ closed. Context: import_report (services/corpus/import_reports.last).
         <div class="space-y-3 text-sm">
             <div>
                 <p>
-                    <strong>{{ import_report.added.count }}</strong> publication{{ import_report.added.count|pluralize }} ajoutée{{ import_report.added.count|pluralize }},
-                    {{ import_report.already_there }} déjà dans votre corpus.
-                    {% if import_report.added.count %}
+                    {{ import_report.headline }}
+                    {% if import_report.added_count %}
                         <a href="{% url 'corpus' %}?sort=-added">Les voir dans le tableau</a>
                     {% endif %}
                 </p>
@@ -32,16 +31,13 @@ closed. Context: import_report (services/corpus/import_reports.last).
                             </li>
                         {% endfor %}
                         {% if import_report.added.rest %}
-                            <li class="text-gray-600">et {{ import_report.added.rest }} autre{{ import_report.added.rest|pluralize }}</li>
+                            <li class="text-gray-600">et {{ import_report.added.rest }} autre{{ import_report.added.rest|pluralize_fr }}</li>
                         {% endif %}
                     </ul>
                 {% endif %}
-            </div>
-            {% if import_report.queued.count %}
-                <div>
-                    <p>
-                        <strong>{{ import_report.queued.count }}</strong> publication{{ import_report.queued.count|pluralize }} en file de récupération : ajoutée{{ import_report.queued.count|pluralize }} à votre corpus, leurs données arrivent en arrière-plan.
-                    </p>
+                {% if import_report.queued.count %}
+                    {# Said in the headline (#411): named here only below the list of the others. #}
+                    {% if import_report.added.count %}<p class="mt-2">Données en cours de récupération :</p>{% endif %}
                     <ul class="mt-1 list-disc space-y-0.5 pl-5">
                         {% for pub in import_report.queued.items %}
                             <li>
@@ -49,15 +45,15 @@ closed. Context: import_report (services/corpus/import_reports.last).
                             </li>
                         {% endfor %}
                         {% if import_report.queued.rest %}
-                            <li class="text-gray-600">et {{ import_report.queued.rest }} autre{{ import_report.queued.rest|pluralize }}</li>
+                            <li class="text-gray-600">et {{ import_report.queued.rest }} autre{{ import_report.queued.rest|pluralize_fr }}</li>
                         {% endif %}
                     </ul>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
             {% if import_report.without_metadata.count %}
                 <div>
                     <p class="text-amber-900">
-                        Ajoutée{{ import_report.without_metadata.count|pluralize }} sans métadonnées (source inconnue ou injoignable) :
+                        Ajoutée{{ import_report.without_metadata.count|pluralize_fr }} sans métadonnées (source inconnue ou injoignable) :
                     </p>
                     <ul class="mt-1 list-disc space-y-0.5 pl-5">
                         {% for pub in import_report.without_metadata.items %}
@@ -66,7 +62,7 @@ closed. Context: import_report (services/corpus/import_reports.last).
                             </li>
                         {% endfor %}
                         {% if import_report.without_metadata.rest %}
-                            <li class="text-gray-600">et {{ import_report.without_metadata.rest }} autre{{ import_report.without_metadata.rest|pluralize }}</li>
+                            <li class="text-gray-600">et {{ import_report.without_metadata.rest }} autre{{ import_report.without_metadata.rest|pluralize_fr }}</li>
                         {% endif %}
                     </ul>
                 </div>
@@ -74,12 +70,12 @@ closed. Context: import_report (services/corpus/import_reports.last).
             {% if import_report.ignored.count %}
                 <div>
                     <p class="text-amber-900">
-                        {{ import_report.ignored.count }} entrée{{ import_report.ignored.count|pluralize }} ignorée{{ import_report.ignored.count|pluralize }}, sans DOI, identifiant arXiv ni ISBN valide :
+                        {{ import_report.ignored.count }} entrée{{ import_report.ignored.count|pluralize_fr }} ignorée{{ import_report.ignored.count|pluralize_fr }}, sans DOI, identifiant arXiv ni ISBN valide :
                     </p>
                     <ul class="mt-1 list-disc space-y-0.5 pl-5">
                         {% for title in import_report.ignored.items %}<li>{{ title }}</li>{% endfor %}
                         {% if import_report.ignored.rest %}
-                            <li class="text-gray-600">et {{ import_report.ignored.rest }} autre{{ import_report.ignored.rest|pluralize }}</li>
+                            <li class="text-gray-600">et {{ import_report.ignored.rest }} autre{{ import_report.ignored.rest|pluralize_fr }}</li>
                         {% endif %}
                     </ul>
                 </div>
@@ -87,13 +83,13 @@ closed. Context: import_report (services/corpus/import_reports.last).
             {% if import_report.unregistered.count %}
                 <div>
                     <p class="text-amber-900">
-                        {{ import_report.unregistered.count }} entrée{{ import_report.unregistered.count|pluralize }} ignorée{{ import_report.unregistered.count|pluralize }}, dont le DOI n'est enregistré nulle part
+                        {{ import_report.unregistered.count }} entrée{{ import_report.unregistered.count|pluralize_fr }} ignorée{{ import_report.unregistered.count|pluralize_fr }}, dont le DOI n'est enregistré nulle part
                         (les identifiants 10.5555/… de l'ACM Digital Library ne sont pas des DOI) :
                     </p>
                     <ul class="mt-1 list-disc space-y-0.5 pl-5">
                         {% for title in import_report.unregistered.items %}<li>{{ title }}</li>{% endfor %}
                         {% if import_report.unregistered.rest %}
-                            <li class="text-gray-600">et {{ import_report.unregistered.rest }} autre{{ import_report.unregistered.rest|pluralize }}</li>
+                            <li class="text-gray-600">et {{ import_report.unregistered.rest }} autre{{ import_report.unregistered.rest|pluralize_fr }}</li>
                         {% endif %}
                     </ul>
                 </div>

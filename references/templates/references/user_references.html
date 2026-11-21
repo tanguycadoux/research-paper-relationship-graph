@@ -114,8 +114,8 @@
                     {% endif %}
                     {% if exports.not_exportable %}
                         <p class="text-gray-600">
-                            {{ exports.not_exportable }} publication{{ exports.not_exportable|pluralize }} sans DOI ni ISBN
-                            ne figure{{ exports.not_exportable|pluralize:"nt" }} pas dans les exports.
+                            {{ exports.not_exportable }} publication{{ exports.not_exportable|pluralize_fr }} sans DOI ni ISBN
+                            ne figure{{ exports.not_exportable|pluralize_fr:"nt" }} pas dans les exports.
                         </p>
                     {% endif %}
                     <form method="post"

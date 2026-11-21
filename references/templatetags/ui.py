@@ -14,6 +14,7 @@ Interface components: {% load ui %}, then
     {% pagination page_obj %}   (below a list in pages, its URL parameters kept)
     {% column_header "Année" "year" %}   (a <th>, sortable and filterable if the view says so)
     {% filter_summary %}   (the active filters of the table, each removable)
+    publication{{ n|pluralize_fr }}   (pluralize, 0 and 1 in the singular, #411)
 
 The Tailwind classes of each variant are written in full here, once: Tailwind
 finds them by scanning this file.
@@ -23,6 +24,7 @@ from django import template
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
+from references.services.display import wording
 from references.services.display.icons import UnknownIcon, icon_parts
 
 register = template.Library()
@@ -558,3 +560,17 @@ def row_title_classes():
 def glass_classes():
     """{% glass_classes %}: the frosted glass of what floats over the content."""
     return GLASS_CLASSES
+
+
+@register.filter
+def pluralize_fr(value, suffixes="s"):
+    """
+    {{ n|pluralize_fr }}, {{ n|pluralize_fr:"nt" }}, {{ n|pluralize_fr:"a,ont" }}: as
+    Django's pluralize, which puts 0 in the plural, but 0 and 1 take the singular in
+    French (#411). A list is agreed with its length.
+    """
+    number = len(value) if hasattr(value, "__len__") else value
+    try:
+        return wording.suffix(int(number), suffixes)
+    except TypeError, ValueError:
+        return ""

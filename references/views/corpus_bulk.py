@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 
 from ..models import Publication, UserPublication
 from ..services.corpus import bulk, tags
-from ..services.display.wording import count
+from ..services.display.wording import count, suffix
 from .corpus import back_or_corpus, redirect_back
 
 
@@ -89,20 +89,40 @@ def add_checked(request, checked):
 
 
 def addition_report(result, status):
-    """« 2 publications ajoutées à votre corpus, à lire. 1 autre y était déjà. … »"""
-    report = f"{count(result.added, 'publication ajoutée')} à votre corpus"
-    if result.added and status:
-        report += f", {UserPublication.ReadingStatus(status).label.lower()}"
-    report += "."
+    """
+    One sentence (#411), the queue having its own toast: « 2 publications ajoutées, à
+    lire, taguées « Essai ». », « 1 publication ajoutée ; 2 autres y étaient déjà ;
+    3 publications taguées « Essai ». »
+    """
+    added = result.added
+    clauses = [count(added, "publication ajoutée") if added else "Aucune publication ajoutée"]
+    if added and status:
+        clauses[0] += f", {status_words(status, added)}"
     if result.already:
-        report += f" {count(result.already, 'autre y était', 'autres y étaient')} déjà."
-    if result.tagging:
-        report += f" {tagging_report(result.tagging)}"
-    if result.added and status == UserPublication.ReadingStatus.TO_READ:
-        report += " Leurs bibliographies seront importées quand vous changerez leur statut."
-    if result.queued:
-        report += f" Données en file de récupération : {result.queued}."
-    return report
+        clauses.append(already_there(result.already, added))
+    tagging = result.tagging
+    if tagging and tagging.tagged == added and not result.already:
+        clauses[0] += f", taguée{suffix(added)} « {tagging.label} »"
+    elif tagging:
+        clauses.append(f"{count(tagging.tagged, 'publication taguée')} « {tagging.label} »")
+    if tagging and tagging.covered:
+        covered = count(tagging.covered, "autre avait", "autres avaient")
+        clauses.append(f"{covered} déjà un tag plus précis")
+    return " ; ".join(clauses) + "."
+
+
+def already_there(already, added):
+    """« 2 autres y étaient déjà »; after « Aucune publication ajoutée », « elle y était déjà »."""
+    if added:
+        return f"{count(already, 'autre y était', 'autres y étaient')} déjà"
+    return "elle y était déjà" if already == 1 else f"les {already} y étaient déjà"
+
+
+def status_words(status, number):
+    """« à lire », « en cours », « lue » or « lues »: the status, agreed with publications."""
+    if status == UserPublication.ReadingStatus.READ:
+        return f"lue{suffix(number)}"
+    return UserPublication.ReadingStatus(status).label.lower()
 
 
 def tagging_report(result):

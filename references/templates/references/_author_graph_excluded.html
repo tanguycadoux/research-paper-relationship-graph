@@ -1,6 +1,7 @@
+{% load ui %}
 {# The large collaborations set aside (#222): they count in the sizes, not in the links. #}
 {% if graph.excluded %}
     <p class="text-gray-600" data-graph-excluded>
-        {{ graph.excluded }} publication{{ graph.excluded|pluralize }} de plus de {{ large_collaboration }} auteurs ne crée{{ graph.excluded|pluralize:"nt" }} aucun lien ; elle{{ graph.excluded|pluralize }} compte{{ graph.excluded|pluralize:"nt" }} dans la taille des auteurs.
+        {{ graph.excluded }} publication{{ graph.excluded|pluralize_fr }} de plus de {{ large_collaboration }} auteurs ne crée{{ graph.excluded|pluralize_fr:"nt" }} aucun lien ; elle{{ graph.excluded|pluralize_fr }} compte{{ graph.excluded|pluralize_fr:"nt" }} dans la taille des auteurs.
     </p>
 {% endif %}

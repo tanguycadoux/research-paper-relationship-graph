@@ -40,7 +40,7 @@ hides it, shows the list below in its place, and keeps the text field filled fro
                                 {{ match.name }}
                                 <span class="text-xs text-gray-600">
                                     {% if match.orcid %}· {{ match.orcid }}{% endif %}
-                                    · {{ match.publications }} publication{{ match.publications|pluralize }}
+                                    · {{ match.publications }} publication{{ match.publications|pluralize_fr }}
                                 </span>
                             </span>
                             <span data-author-choice
