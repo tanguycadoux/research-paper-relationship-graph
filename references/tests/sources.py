@@ -481,10 +481,16 @@ def _keyed(answers, doi_of):
 
 
 def _with_doi(answer, doi):
-    """A Crossref answer written without its DOI gets it, as a list item has it."""
+    """
+    An answer written without its DOI gets it, as the source gives it: "DOI" in a
+    Crossref message, "id" in a DataCite record.
+    """
     message = answer.get("message")
     if isinstance(message, dict) and "DOI" not in message:
         return {**answer, "message": {"DOI": doi, **message}}
+    data = answer.get("data")
+    if isinstance(data, dict) and "id" not in data:
+        return {**answer, "data": {"id": doi, **data}}
     return answer
 
 

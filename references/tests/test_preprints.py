@@ -1,5 +1,4 @@
 from io import StringIO
-from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
@@ -16,7 +15,8 @@ from references.services.imports.preprints import (
     similar_titles,
 )
 from references.services.sources.external_records import Source, store_record
-from references.tests.helpers import with_crossref, without_doi_org, without_openalex, without_orcid
+from references.tests.helpers import with_crossref
+from references.tests.sources import simulated_sources
 
 ARXIV = "10.48550/arxiv.2403.00171"
 JOURNAL = "10.1109/tasc.2024.3358777"
@@ -82,9 +82,6 @@ class DeclarationTests(SimpleTestCase):
         self.assertFalse(is_published_version(TITLE, None))
 
 
-@without_doi_org
-@without_orcid
-@without_openalex
 class ReplacementTests(TestCase):
     """An arXiv preprint is replaced by the published version its authors declare (#227)."""
 
@@ -96,20 +93,9 @@ class ReplacementTests(TestCase):
         """Crossref knows the journal version only; DataCite knows the preprint."""
         datacite_record = datacite_record or datacite()
         journal = journal if journal is not None else crossref()
-        patches = [
-            patch("references.services.imports.importer.fetch_crossref_json", new=lambda doi: None),
-            patch(
-                "references.services.imports.importer.fetch_datacite_json",
-                new=lambda doi: datacite_record if doi == ARXIV else None,
-            ),
-            patch(
-                "references.services.imports.preprints.fetch_crossref_json",
-                new=lambda doi: journal if doi == JOURNAL else None,
-            ),
-        ]
-        for p in patches:
-            p.start()
-            self.addCleanup(p.stop)
+        self.enterContext(
+            simulated_sources(crossref={JOURNAL: journal}, datacite={ARXIV: datacite_record})
+        )
 
     def test_preprint_becomes_its_published_version(self):
         self.sources()
@@ -175,8 +161,6 @@ class ReplacementTests(TestCase):
         self.assertIn("doi", form.errors)
 
 
-@without_orcid
-@without_openalex
 class CitedPreprintTests(TestCase):
     """Cited preprints, imported in batch, are replaced too."""
 
@@ -186,23 +170,9 @@ class CitedPreprintTests(TestCase):
             Publication.objects.create(doi=CITING),
             crossref(CITING, "Citing", references=[reference]),
         )
-        patches = [
-            patch(
-                "references.services.imports.importer.fetch_crossref_works",
-                new=lambda dois: dict.fromkeys(dois),
-            ),
-            patch(
-                "references.services.imports.importer.fetch_datacite_works",
-                new=lambda dois: {doi: datacite() if doi == ARXIV else None for doi in dois},
-            ),
-            patch(
-                "references.services.imports.preprints.fetch_crossref_works",
-                new=lambda dois: {doi: crossref() if doi == JOURNAL else None for doi in dois},
-            ),
-        ]
-        for p in patches:
-            p.start()
-            self.addCleanup(p.stop)
+        self.enterContext(
+            simulated_sources(crossref={JOURNAL: crossref()}, datacite={ARXIV: datacite()})
+        )
 
     def test_cited_preprint_is_replaced(self):
         import_publication(self.citing, with_references=True)
@@ -215,8 +185,6 @@ class CitedPreprintTests(TestCase):
         self.assertEqual(Publication.objects.count(), 2)
 
 
-@without_orcid
-@without_openalex
 class StoredPreprintTests(TestCase):
     def test_command_replaces_the_preprints_in_the_base(self):
         pub = Publication.objects.create(doi=ARXIV)
@@ -224,9 +192,7 @@ class StoredPreprintTests(TestCase):
         other = Publication.objects.create(doi="10.48550/arxiv.1706.03762")
         store_record(other, Source.DATACITE, datacite(related=None))
         out = StringIO()
-        with patch(
-            "references.services.imports.preprints.fetch_crossref_json", return_value=crossref()
-        ):
+        with simulated_sources(crossref={JOURNAL: crossref()}):
             call_command("replace_preprints", stdout=out)
         pub.refresh_from_db()
         self.assertEqual((pub.doi, pub.preprint_doi), (JOURNAL, ARXIV))
