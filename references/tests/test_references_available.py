@@ -7,8 +7,8 @@ from references.services.display.publication_table import (
     for_publication_table,
     references_available,
 )
-from references.tests.helpers import with_crossref, without_other_sources
-from references.tests.test_importer import CROSSREF, SOURCE_DOI, with_mocked_crossref
+from references.tests.helpers import with_crossref
+from references.tests.test_importer import CROSSREF, CROSSREF_SOURCES, SOURCE_DOI
 
 
 def crossref_with_bibliography(count):
@@ -74,24 +74,25 @@ class ReferencesAvailableTests(TestCase):
         self.assertNotContains(imported_page, "Importer ses références")
 
 
-@without_other_sources
-@with_mocked_crossref
+@CROSSREF_SOURCES
 class ImportReferencesViewTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user("alice")
         self.pub = with_crossref(Publication.objects.create(doi=SOURCE_DOI), CROSSREF[SOURCE_DOI])
         self.url = reverse("publication_import_references", args=[self.pub.pk])
 
-    def test_imports_without_adding_to_the_corpus(self, fetch, fetch_works):
+    def test_imports_without_adding_to_the_corpus(self):
         self.client.force_login(self.user)
         response = self.client.post(self.url, follow=True)
         self.assertRedirects(response, reverse("publication_detail", args=[self.pub.pk]))
         self.assertEqual(CitedReference.objects.filter(source=self.pub).count(), 2)
         self.assertFalse(UserPublication.objects.exists())
         self.assertContains(response, "2 références importées")
-        fetch.assert_not_called()  # the publication's own answer is already stored
+        self.assertEqual(
+            CROSSREF_SOURCES.single("crossref"), []
+        )  # the publication's own answer is already stored
 
-    def test_post_only_and_login_required(self, fetch, fetch_works):
+    def test_post_only_and_login_required(self):
         self.assertRedirects(
             self.client.post(self.url),
             f"{reverse('login')}?next={self.url}",

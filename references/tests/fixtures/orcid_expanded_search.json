@@ -1,0 +1,46 @@
+{
+ "expanded-result": [
+  {
+   "orcid-id": "0000-0001-5066-7530",
+   "given-names": "Jakob",
+   "family-names": "Uszkoreit",
+   "credit-name": null,
+   "other-name": [],
+   "email": [],
+   "institution-name": [
+    "Google"
+   ]
+  },
+  {
+   "orcid-id": "0000-0003-1092-6010",
+   "given-names": "Lukasz",
+   "family-names": "Kaiser",
+   "credit-name": null,
+   "other-name": [],
+   "email": [],
+   "institution-name": [
+    "CNRS Délégation Paris B",
+    "Google Inc"
+   ]
+  },
+  {
+   "orcid-id": "0000-0001-5601-5437",
+   "given-names": "Aidan",
+   "family-names": "Gomez",
+   "credit-name": null,
+   "other-name": [],
+   "email": [],
+   "institution-name": []
+  },
+  {
+   "orcid-id": "0000-0002-7794-2085",
+   "given-names": "Ashish",
+   "family-names": "Vaswani",
+   "credit-name": null,
+   "other-name": [],
+   "email": [],
+   "institution-name": []
+  }
+ ],
+ "num-found": 4
+}
