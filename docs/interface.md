@@ -90,7 +90,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
 - **Note** (#283) : sur la fiche d'une publication de mon corpus, une carte « Ma note » en
   tête de la colonne de droite, un champ de texte libre enregistré par un bouton (vide, la
   note est effacée). Privée : seul son auteur la voit. Cherchée par le texte libre et par `note:` dans la
-  recherche, exportée en JSON (`note`, version 3) et en BibTeX (`annote`).
+  recherche, exportée en JSON (`note`, version 3) et en BibTeX (`annote`). Dans « Mon
+  corpus », un champ « Chercher dans mes notes » au-dessus du tableau filtre sur le texte
+  de mes notes (`?note=…`, sans casse ni accents, la fonction `noted` de la recherche), et
+  deux liens sur leur présence (« avec une note », « sans note » : `?has_note=1` / `0`) ;
+  ce filtre sans colonne entre dans le résumé des filtres et dans les exports filtrés
+  (`NoteFilter`, #443).
 - **Citer** (`_citation_panel.html`, `services/display/citations.py`, #286) : sur la fiche,
   un popover donne la référence en APA (7ᵉ édition) et en IEEE, et l'entrée BibTeX de la
   publication seule (`bibtex_entry` de l'export du corpus). Les citations sont mises en

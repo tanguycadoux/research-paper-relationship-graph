@@ -1,0 +1,26 @@
+{% load ui %}
+{# Search my notes (#443): a filter of « Mon corpus » without a column. #}
+<form method="get"
+      role="search"
+      aria-label="Chercher dans mes notes"
+      class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+    {% for name, value in note_filter.kept %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endfor %}
+    <label for="note-filter" class="sr-only">Chercher dans mes notes</label>
+    <input type="search"
+           id="note-filter"
+           name="note"
+           value="{{ note_filter.text }}"
+           placeholder="Chercher dans mes notes"
+           class="w-56 max-w-full">
+    {% button "Chercher" variant="secondary" icon="search" %}
+    <span class="select-none text-gray-600">
+        {% for label, url, on in note_filter.choices %}
+            {% if on %}
+                <span aria-current="true" class="font-medium text-gray-900">{{ label|lower }}</span>
+            {% else %}
+                <a href="{{ url }}">{{ label|lower }}</a>
+            {% endif %}
+            {% if not forloop.last %}·{% endif %}
+        {% endfor %}
+    </span>
+</form>
