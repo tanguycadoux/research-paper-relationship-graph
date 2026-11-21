@@ -1,0 +1,22 @@
+{% extends "references/base.html" %}
+{% load ui %}
+
+{% block title %}Demandes de bibliographies · {% endblock title %}
+
+{% block content %}
+    {# The requests « Récupérer les bibliographies » of the user (#431), the latest first. #}
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'corpus' %}">Mon corpus</a>
+    </p>
+    <h1 class="mt-1 mb-6">Demandes de bibliographies</h1>
+    <div class="max-w-3xl space-y-3">
+        {% for row in rows %}
+            {% include "references/_bibliography_request_row.html" with next=request.get_full_path %}
+        {% empty %}
+            <p class="text-gray-600">
+                Aucune demande. « Récupérer les bibliographies… » se trouve sur la page d'une publication,
+                dans « Mon corpus » et sur un tag.
+            </p>
+        {% endfor %}
+    </div>
+{% endblock content %}

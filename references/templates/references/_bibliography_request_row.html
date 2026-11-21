@@ -1,0 +1,21 @@
+{% comment %}
+A request « Récupérer les bibliographies » (#431): its start, its state in words, and
+« Arrêter » while it runs. row: bibliography_requests.describe; next: the page to come
+back to.
+{% endcomment %}
+{% load ui %}
+<div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 bg-white p-4">
+    <div class="min-w-0">
+        <p class="font-medium">{{ row.label }} · jusqu'au niveau {{ row.request.depth }}</p>
+        <p class="text-sm text-gray-600">{{ row.text }}</p>
+        <p class="text-xs text-gray-500">Demandée le {{ row.request.requested_at|date:"j F Y à H:i" }}</p>
+    </div>
+    {% if row.running %}
+        <form method="post"
+              action="{% url 'bibliography_request_stop' row.request.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% button "Arrêter" variant="danger-light" icon="block" %}
+        </form>
+    {% endif %}
+</div>

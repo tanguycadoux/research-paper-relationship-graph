@@ -5,6 +5,7 @@ from .views import (
     author_graphs,
     author_suggestions,
     authors,
+    bibliographies,
     cited_references,
     conflicts,
     corpus,
@@ -191,6 +192,20 @@ urlpatterns = [
     ),
     path("corpus/<int:pk>/status/", corpus.set_reading_status, name="corpus_reading_status"),
     path("corpus/<int:pk>/note/", corpus.set_note, name="corpus_note"),
+    # Bibliographies up to level 2 or 3 (#431)
+    path(
+        "corpus/bibliographies/", bibliographies.bibliography_request, name="bibliography_request"
+    ),
+    path(
+        "corpus/bibliographies/requests/",
+        bibliographies.bibliography_request_list,
+        name="bibliography_request_list",
+    ),
+    path(
+        "corpus/bibliographies/<int:pk>/stop/",
+        bibliographies.stop_bibliography_request,
+        name="bibliography_request_stop",
+    ),
     path("corpus/suggestions/", suggestions.corpus_suggestions, name="corpus_suggestions"),
     path("corpus/tags/", corpus.manage_tags, name="tag_list"),
     path("corpus/tags/rename/", corpus.rename_tag, name="tag_rename"),

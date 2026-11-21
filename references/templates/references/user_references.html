@@ -15,16 +15,19 @@
             {% url 'corpus_suggestions' as suggestions_url %}
             {% url 'corpus_graph' as graph_url %}
             {% url 'corpus_keywords' as keywords_url %}
+            {% url 'bibliography_request' as bibliographies_url %}
             {% if active_tag %}
                 {% with tag_query=active_tag|urlencode %}
                     {% button "Suggestions" url=suggestions_url|add:"?tag="|add:tag_query variant="secondary" icon="lightbulb" %}
                     {% button "Mon graphe" url=graph_url|add:"?tag="|add:tag_query variant="secondary" icon="hub" %}
                     {% button "Mots-clés" url=keywords_url|add:"?tag="|add:tag_query variant="secondary" icon="label" %}
+                    {% button "Récupérer les bibliographies…" url=bibliographies_url|add:"?tag="|add:tag_query variant="secondary" icon="download" %}
                 {% endwith %}
             {% else %}
                 {% button "Suggestions" url=suggestions_url variant="secondary" icon="lightbulb" %}
                 {% button "Mon graphe" url=graph_url variant="secondary" icon="hub" %}
                 {% button "Mots-clés" url=keywords_url variant="secondary" icon="label" %}
+                {% button "Récupérer les bibliographies…" url=bibliographies_url variant="secondary" icon="download" %}
             {% endif %}
         </div>
     </header>

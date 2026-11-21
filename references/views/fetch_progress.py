@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.utils.dateparse import parse_datetime
 
 from ..models import FetchRequest
-from ..services.imports import fetch_queue
+from ..services.imports import bibliography_requests, fetch_queue
 
 
 @login_required
@@ -31,9 +31,7 @@ def fetch_progress(request):
         # this page reloads now: it says it then.
         if not reloads:
             fetch_queue.follow_batch(request.session, state)
-        data.update(
-            active=state.active,
-            text=fetch_queue.progress_text(state),
-            since=state.start.isoformat(),
-        )
+        data["since"] = state.start.isoformat()
+    # With the level of the requests of bibliographies (#431).
+    data.update(bibliography_requests.combined_toast(request.user, state) or {})
     return JsonResponse(data)

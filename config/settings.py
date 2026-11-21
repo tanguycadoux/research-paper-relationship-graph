@@ -168,6 +168,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CROSSREF_MAILTO = os.environ.get("CROSSREF_MAILTO", "")
 
+# The cap on the publications that one request « Récupérer les bibliographies » imports
+# with their bibliography (#431): about 0.8 s and one request to the sources each, so
+# 2 000 take about 27 minutes. Beyond, the request stops at the cap and says so.
+BIBLIOGRAPHY_REQUEST_LIMIT = int(os.environ.get("BIBLIOGRAPHY_REQUEST_LIMIT", "2000"))
+
 
 # Tests
 

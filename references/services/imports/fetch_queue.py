@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
@@ -95,9 +95,24 @@ def recover_interrupted():
     )
 
 
+def in_turn(requests):
+    """
+    The requests in the order the worker takes them: the oldest first, but those without
+    requester, the levels of « Récupérer les bibliographies » (#431), after the others: a
+    publication added to a corpus does not wait behind a level of 2 000 imports.
+    """
+    return requests.annotate(asked=has_requester()).order_by("-asked", "requested_at", "pk")
+
+
+def has_requester():
+    """The condition on a request that someone asked for."""
+    return Exists(FetchRequest.requesters.through.objects.filter(fetchrequest=OuterRef("pk")))
+
+
 def claim_next():
-    """The oldest pending request, now running; None when the queue is empty."""
-    while pk := FetchRequest.objects.filter(status=Status.PENDING).values_list("pk").first():
+    """The pending request next in turn, now running; None when the queue is empty."""
+    pending = in_turn(FetchRequest.objects.filter(status=Status.PENDING))
+    while pk := pending.values_list("pk").first():
         claimed = FetchRequest.objects.filter(pk=pk[0], status=Status.PENDING).update(
             status=Status.RUNNING, started_at=timezone.now()
         )
@@ -127,9 +142,9 @@ def batchable(request):
 
 
 def claim_companions(limit):
-    """Pending imports by DOI, the oldest first, now running: a batch (#381)."""
+    """Pending imports by DOI, in turn (in_turn), now running: a batch (#381)."""
     pks = (
-        FetchRequest.objects.filter(status=Status.PENDING, action__in=BATCHED_ACTIONS)
+        in_turn(FetchRequest.objects.filter(status=Status.PENDING, action__in=BATCHED_ACTIONS))
         .exclude(publication=None)
         .exclude(publication__doi="")
         .values_list("pk", flat=True)[:limit]
@@ -300,11 +315,16 @@ def over_before(mine, since, first):
 
 
 def requests_ahead(request, user):
+    """
+    The active requests of other users before request; not those without requester,
+    which pass after it (in_turn).
+    """
     before = Q(requested_at__lt=request.requested_at) | Q(
         requested_at=request.requested_at, pk__lt=request.pk
     )
     return (
         FetchRequest.objects.filter(before, status__in=FetchRequest.ACTIVE)
+        .filter(has_requester())
         .exclude(requesters=user)
         .count()
     )

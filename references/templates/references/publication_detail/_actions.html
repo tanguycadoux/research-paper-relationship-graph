@@ -32,6 +32,11 @@ The actions of the page of a publication, in its header: the corpus entry, the g
                 {% button "Rafraîchir les métadonnées" variant="secondary" icon="refresh" %}
             </form>
         {% endif %}
+        {# Its bibliography, those of what it cites, up to level 2 or 3 (#431). #}
+        {% url 'bibliography_request' as bibliographies_url %}
+        {% with pk=publication.pk|stringformat:"d" %}
+            {% button "Récupérer les bibliographies…" url=bibliographies_url|add:"?publication="|add:pk variant="secondary" icon="download" %}
+        {% endwith %}
         {% if publication.title_edited or publication.date_edited %}
             <form method="post"
                   action="{% url 'publication_restore_sources' publication.pk %}">
