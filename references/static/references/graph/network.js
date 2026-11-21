@@ -4,6 +4,7 @@
 // the stretch of the timeline. A large network is laid out in a Web Worker
 // (network-worker.js, #202): the page keeps responding, with a message in the frame.
 
+import { findCrowns, hubSize, lineUpShared, placeCrowns, turnToFrame } from "./crown.js";
 import { nodeSizes } from "./style.js";
 import { LIVE_SIZES_MAX_ELEMENTS } from "./viewport.js";
 
@@ -50,15 +51,9 @@ export function networkNodes(nodes) {
     return nodes.map((node, i) => ({ data: { ...node.data, size: sizes[i] }, position: spiralPosition(i) }));
 }
 
-// Runs cose on the graph, at once (animate: false): before the view and the selection
-// read the positions.
-export function layOutNetwork(cy) {
-    cy.layout(COSE).run();
-}
-
-// cose reads the size of the nodes (with their border) from the style: in the Web Worker,
-// Cytoscape has no page and no style.js, so it gets the sizes of style.js at the zoom of
-// the layout (1). Checked: the positions are the same as in the page (docs/banc-graphe.md).
+// cose reads the size of the nodes (with their border) from the style: on a headless
+// Cytoscape, in the page or in the Web Worker, without style.js, it gets the sizes of
+// style.js at the zoom of the layout (1).
 export const LAYOUT_STYLE = [
     { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 2 } },
 ];
@@ -76,10 +71,69 @@ function startWorker() {
     }
 }
 
-// The nodes of networkNodes with the positions of cose, computed in a Web Worker while
-// `waiting` (the message in the frame) shows; container: the frame of the graph, whose size
-// cose reads. Resolves to null on a small graph, or if the worker fails: the caller then
-// lays the graph out in the page (layOutNetwork).
+// cose on a headless Cytoscape, in the page as in the Web Worker: the positions do not
+// depend on where it runs. frame: its width and height, towards whose centre cose pulls the
+// nodes (cy.width(), cy.height(), which a headless Cytoscape does not have). Returns the
+// positions by id.
+function cose(nodes, edges, frame) {
+    const cy = cytoscape({
+        headless: true,
+        // cose reads the sizes of the nodes from the style.
+        styleEnabled: true,
+        style: LAYOUT_STYLE,
+        elements: [...nodes, ...edges],
+        // Otherwise the null layout would put every node at (0, 0), and cose would separate
+        // them at random.
+        layout: { name: "preset", fit: false },
+    });
+    cy.width = () => frame.width;
+    cy.height = () => frame.height;
+    cy.layout(COSE).run();
+    const positions = new Map(cy.nodes().map((node) => [node.id(), { ...node.position() }]));
+    cy.destroy();
+    return positions;
+}
+
+// cose on the core of the graph, each hub as large as its crown, then the leaves in their
+// crowns and the shared references lined up (crown.js). Returns the positions by id.
+function arrange(nodes, edges, frame, leavesOf) {
+    const leaves = new Set([...leavesOf.values()].flat().map((leaf) => leaf.data.id));
+    const core = nodes
+        .filter((node) => !leaves.has(node.data.id))
+        .map((node) => {
+            const crown = leavesOf.get(node.data.id);
+            return crown ? { ...node, data: { ...node.data, size: hubSize(node, crown) } } : node;
+        });
+    const coreEdges = edges.filter(({ data }) => !leaves.has(data.source) && !leaves.has(data.target));
+    const positions = cose(core, coreEdges, frame);
+    placeCrowns(leavesOf, positions, coreEdges);
+    lineUpShared(nodes, edges, leavesOf, positions);
+    return positions;
+}
+
+// The positions of the nodes of networkNodes, by id (#323), the drawing turned to fill the
+// frame.
+export function networkPositions(nodes, edges, frame) {
+    const positions = arrange(nodes, edges, frame, findCrowns(nodes, edges));
+    const sizes = new Map(nodes.map((node) => [node.data.id, node.data.size]));
+    return turnToFrame(positions, sizes, frame);
+}
+
+// The nodes placed at the given positions (by id).
+function placed(nodes, positions) {
+    return nodes.map((node) => ({ ...node, position: positions.get(node.data.id) }));
+}
+
+// The nodes of networkNodes placed in the page, at once.
+export function layOutHere(nodes, edges, container) {
+    const frame = { width: container.clientWidth, height: container.clientHeight };
+    return placed(nodes, networkPositions(nodes, edges, frame));
+}
+
+// The nodes of networkNodes placed in a Web Worker while `waiting` (the message in the
+// frame) shows; container: the frame of the graph, whose size the layout reads. Resolves
+// to null on a small graph, or if the worker fails: the caller then lays the graph out in
+// the page (layOutHere).
 export function layOutAside(nodes, edges, container, waiting) {
     const worker = nodes.length + edges.length > WORKER_MIN_ELEMENTS ? startWorker() : null;
     if (!worker) {
@@ -90,8 +144,7 @@ export function layOutAside(nodes, edges, container, waiting) {
         const done = (positions) => {
             worker.terminate();
             waiting.hidden = true;
-            const placed = (node) => ({ ...node, position: positions[node.data.id] });
-            resolve(positions ? nodes.map(placed) : null);
+            resolve(positions ? placed(nodes, new Map(Object.entries(positions))) : null);
         };
         const failed = (error) => {
             console.error("Network layout failed in the Web Worker, done in the page instead:", error);
@@ -101,7 +154,7 @@ export function layOutAside(nodes, edges, container, waiting) {
         worker.onerror = (event) => failed(event.message);
         // The worker loads the same Cytoscape as the page.
         const library = document.querySelector('script[src$="/cytoscape.min.js"]').src;
-        const size = { width: container.clientWidth, height: container.clientHeight };
-        worker.postMessage({ library, ...size, elements: [...nodes, ...edges] });
+        const frame = { width: container.clientWidth, height: container.clientHeight };
+        worker.postMessage({ library, frame, nodes, edges });
     });
 }

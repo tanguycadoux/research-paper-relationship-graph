@@ -10,6 +10,7 @@
 
 import { fractionalYear } from "./scale.js";
 import { nodeSizes } from "./style.js";
+import { untangle } from "./untangle.js";
 
 // Passes of the barycentre method; the order is stable well before.
 const ORDER_PASSES = 20;
@@ -46,6 +47,8 @@ export const BAND_GAP = 56;
 // The band of the undated publications has at most MAX_BAND_ROWS rows (#318); beyond,
 // the publications are pushed along the rows.
 const MAX_BAND_ROWS = 4;
+// Up to this many edges in a group, crossings are removed by exchanges (untangle.js).
+const UNTANGLE_MAX_LINKS = 600;
 
 function linkPairs(nodes, edges) {
     const index = new Map(nodes.map((n, i) => [n.data.id, i]));
@@ -208,9 +211,9 @@ function nearPairs(xs, ys, order, reach) {
     return pairs;
 }
 
-function pullLinked(ys, links) {
-    for (const [a, b] of links) {
-        const pull = (ys[b] - ys[a]) * SPRING;
+function pullLinked(ys, links, weights) {
+    for (const [k, [a, b]] of links.entries()) {
+        const pull = (ys[b] - ys[a]) * SPRING * (weights ? weights[k] : 1);
         ys[a] += pull;
         ys[b] -= pull;
     }
@@ -289,8 +292,22 @@ export function verticalPositions(xs, startYs, sizes, links, timings = null) {
     let searched = -REFRESH_EVERY;
     let crossed = [];
     let close = [];
-    for (let step = 0; step < ITERATIONS; step++) {
-        timed(timings, "pullLinked", () => pullLinked(ys, links));
+    const EXP = globalThis.LAYOUT_EXP || {};
+    const deg = xs.map(() => 0);
+    for (const [a, b] of links) { deg[a]++; deg[b]++; }
+    const weights = EXP.leafPull === undefined ? null : links.map(([a, b]) => (deg[a] === 1 || deg[b] === 1 ? EXP.leafPull : 1));
+    for (let step = 0; step < (EXP.iterations ?? ITERATIONS); step++) {
+        if ((EXP.untangleAt || []).includes(step) && links.length <= UNTANGLE_MAX_LINKS) {
+            untangle(xs, ys, links);
+            reference = null;
+        }
+        if (EXP.swapAt !== undefined && step === EXP.swapAt && links.length <= UNTANGLE_MAX_LINKS) {
+            untangle(xs, ys, links);
+            reference = null;
+        }
+        if (EXP.swapAt === undefined || step < EXP.swapAt) {
+            timed(timings, "pullLinked", () => pullLinked(ys, links, weights));
+        }
         const due = step - searched >= REFRESH_EVERY;
         if (reference === null || (due && !stillApart(ys, reference, reach))) {
             searched = step;
@@ -327,6 +344,9 @@ function layOutGroup(group, edges, scale, sizeOf, timings) {
         links,
         timings,
     );
+    if (links.length <= UNTANGLE_MAX_LINKS && (globalThis.LAYOUT_EXP || {}).final !== false) {
+        timed(timings, "untangle", () => untangle(xs, ys, links, timings));
+    }
     return byDate.map((node, i) => ({ node, x: xs[i], y: ys[i], size: sizes[i] }));
 }
 

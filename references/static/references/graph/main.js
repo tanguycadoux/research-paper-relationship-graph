@@ -7,7 +7,7 @@ import { drawYearAxis } from "./axis.js";
 import { bindUndatedBand } from "./band.js";
 import { bindGraph, createGraph, graphFrame, LAYOUT_MEASURE } from "./graph.js";
 import { placeNodes } from "./layout.js";
-import { layOutAside, layOutNetwork, networkNodes } from "./network.js";
+import { layOutAside, layOutHere, networkNodes } from "./network.js";
 import { makeScale, yearRange } from "./scale.js";
 import { bindCitationSelection } from "./selection.js";
 
@@ -33,23 +33,17 @@ function timeline(container, graph) {
     return { cy, bindAxes };
 }
 
-// The network (#195): no axis, no band. cose places the nodes: a large graph in a Web
-// Worker before it is created, the page responding meanwhile (#202); a small one, or if the
-// worker fails, in the page once it is created.
+// The network (#195): no axis, no band. Laid out before it is created: a large graph in a
+// Web Worker, the page responding meanwhile (#202); a small one, or if the worker fails, in
+// the page.
 async function network(container, graph) {
     const nodes = networkNodes(graph.nodes);
     const waiting = container.parentElement.querySelector("[data-graph-waiting]");
     performance.mark(LAYOUT_MEASURE);
-    const placed = await layOutAside(nodes, graph.edges, container, waiting);
-    if (placed) {
-        performance.measure(LAYOUT_MEASURE, LAYOUT_MEASURE);
-        return createGraph(container, placed, graph.edges);
-    }
-    const cy = createGraph(container, nodes, graph.edges);
-    performance.mark(LAYOUT_MEASURE);
-    layOutNetwork(cy);
+    const placed =
+        (await layOutAside(nodes, graph.edges, container, waiting)) ?? layOutHere(nodes, graph.edges, container);
     performance.measure(LAYOUT_MEASURE, LAYOUT_MEASURE);
-    return cy;
+    return createGraph(container, placed, graph.edges);
 }
 
 async function render() {
