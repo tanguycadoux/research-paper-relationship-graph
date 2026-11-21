@@ -136,6 +136,8 @@ references/          application principale
       publication_table.py  annotations du tableau commun (premier auteur, badges)
       publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
                      résumé)
+      publication_page.py  contexte de la fiche publication, section par section (entrée du
+                     corpus, références, « Cité par », listes longues repliées, actions groupées)
       citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
@@ -143,8 +145,15 @@ references/          application principale
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
-    ui.py            composants d'interface : button, badge, alert, card, icon, external_link,
-                     pagination, column_header, filter_summary, popover_panel_classes
+    ui/              composants d'interface, une seule bibliothèque ({% load ui %}) :
+      library.py     la bibliothèque, où chaque module inscrit ses balises
+      components.py  button, badge, alert, card
+      icons.py       icon, external_link
+      glass.py       verre dépoli : glass_classes, popover_panel_classes, notifications (toasts)
+      tables.py      pagination, column_header (tri et filtre), sort_links, filter_summary,
+                     row_title_classes
+      forms.py       field, form_errors
+      text.py        filtre pluralize_fr
     navigation.py    navigation principale (groupes, lien courant, compteurs, liens réservés
                      aux administrateurs)
   management/commands/
@@ -163,7 +172,7 @@ references/          application principale
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, stretch, export, axis, band, selection, style ; coauthors et coauthor_selection pour le graphe des auteurs)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
-  templates/components/  gabarits des composants de ui.py
+  templates/components/  gabarits des composants de ui/
   tests/
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
 assets/css/source.css  source Tailwind (styles de base des éléments, couleurs du graphe)
