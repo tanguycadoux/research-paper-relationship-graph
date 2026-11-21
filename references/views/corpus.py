@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from ..forms import NoteForm
@@ -222,8 +223,33 @@ def my_references(request):
         "latest_first": latest_first(request, sort),
         "import_report": import_reports.last(request.session),
         "exports": export_buttons(selection, page.paginator.count),
+        "note_filter": note_filter(request, active_filters.values.get("note")),
     }
     return render(request, "references/user_references.html", context)
+
+
+NOTE_PARAMS = ("note", "has_note", "page")
+
+
+def note_filter(request, value):
+    """
+    The field that searches my notes (#443): its text, the other parameters it keeps,
+    and the links « avec une note » / « sans note », each with whether it is on.
+    """
+    kept = [
+        (name, item)
+        for name, items in request.GET.lists()
+        if name not in NOTE_PARAMS
+        for item in items
+    ]
+    return {
+        "text": value if isinstance(value, str) else "",
+        "kept": kept,
+        "choices": [
+            (label, f"?{urlencode([*kept, ('has_note', flag)])}", value is on)
+            for label, flag, on in (("Avec une note", "1", True), ("Sans note", "0", False))
+        ],
+    }
 
 
 def export_buttons(selection, shown):

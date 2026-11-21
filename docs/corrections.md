@@ -154,6 +154,27 @@ On peut aussi déclarer les auteurs cochés comme **personnes différentes**
 n'est plus jamais proposée, comme deux ORCID différents. Lors d'une fusion, les
 distinctions de l'auteur absorbé sont reportées sur l'auteur conservé.
 
+Les **groupes sûrs** (`services/corrections/safe_duplicates.py`, #374) se fusionnent en
+une fois, depuis une section en tête de la page. Le critère est strict, car deux auteurs
+au même nom peuvent être des homonymes. Un groupe est sûr si :
+
+- ses noms sont identiques à la ponctuation, à la casse et aux accents près
+  (« B. P. Abbott » et « B P Abbott ») ;
+- il n'a ni deux ORCID différents ni paire déclarée « pas les mêmes » ;
+- aucun de ses auteurs ne signe la même publication qu'un autre (deux personnes, ou une
+  liste d'auteurs à examiner) ;
+- chacun de ses auteurs est relié aux autres par un coauteur commun ou une tutelle
+  commune, de proche en proche : un auteur relié à aucun autre écarte le groupe.
+
+Le bouton mène à un récapitulatif (le résultat de chaque fusion, ses auteurs, leur
+lien) : rien n'est fusionné sans sa confirmation. Chaque groupe est alors fusionné comme
+après la confirmation d'un seul groupe (`merge_authors`, puis `merge_same_orcid`) : dans
+son auteur le plus ancien, avec les noms les plus complets, tracé par `AuthorMerge`. La
+confirmation renvoie la liste des groupes affichés : un groupe qui n'est plus sûr, ou qui
+a changé entre-temps, n'est pas fusionné et est signalé. Le tout est une seule
+transaction. Sur la base de banc (9 507 auteurs), 918 des 941 groupes aux noms identiques
+sont sûrs, et leur fusion prend environ 3 s : elle reste synchrone.
+
 ### Même ORCID
 
 `services/imports/orcid_merge.py`, #158. Un ORCID désigne une seule personne : quand un auteur
