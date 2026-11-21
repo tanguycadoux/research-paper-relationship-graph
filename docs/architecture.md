@@ -41,20 +41,23 @@ le statut de lecture, les tags et les notes sont propres à chaque utilisateur.
 config/              configuration Django (settings, urls, wsgi, asgi), test runner sans réseau
 accounts/            modèle utilisateur (accounts.User), inscription, templates registration/
 references/          application principale
+  apps.py            configuration de l'application, fonction SQL normalized() de la recherche
   models.py          modèle de données
   admin.py           administration Django (seul endroit où l'on supprime une publication)
   forms.py           formulaires (publication, auteur, fusions, identification)
   urls.py            routes, au pluriel pour les collections (publications/, authors/…)
   middleware.py      contexte des requêtes aux sources faites pour une page (journal)
-  views/             vues fines, une par domaine
   context_processors.py  toast de la file des récupérations sur toutes les pages
+  views/             vues fines, une par domaine
     home.py, publications.py, authors.py, corpus.py, graphs.py, conflicts.py,
     author_graphs.py (graphe des auteurs, coautorat),
+    graph_images.py (image d'un graphe trop grand pour la page : calcul, état, fichier),
     cited_references.py (identification d'une référence, en série),
     publication_merge.py (« Cette publication est en fait… »),
     corpus_transfer.py (export et import du corpus),
     corpus_bulk.py (actions groupées de « Mon corpus » et des listes d'une fiche),
-    search.py (recherche), pagination.py (listes par pages),
+    search.py (recherche), title_search.py (« Chercher par titre »),
+    pagination.py (listes par pages),
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),
@@ -125,6 +128,7 @@ references/          application principale
       bulk.py        actions groupées sur les publications cochées : ajout, tag, statut, retrait
       corpus_transfer.py  export JSON et BibTeX du corpus, import (JSON, BibTeX, RIS)
       bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
+      import_reports.py  compte rendu du dernier import de fichier, gardé en session
     discovery/       découverte d'articles
       suggestions.py  publications citées par plusieurs articles du corpus ou d'un tag
       incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
@@ -137,9 +141,13 @@ references/          application principale
       publication_details.py  informations de la fiche (revue, financeurs, licences, citations,
                      résumé)
       citations.py   citation d'une publication (APA, IEEE) et son entrée BibTeX, sans requête
+      open_access.py  « Lire l'article » : meilleure version en accès ouvert, sans requête
+      wording.py     mots des messages accordés avec un nombre (« 3 publications ajoutées »)
       pending.py     compteurs de la navigation (références à identifier, conflits ouverts)
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
+      graph_variants.py  variantes d'un graphe choisies dans l'URL (frise ou réseau…)
+      graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       icons.py       icônes SVG de static/icons/ (lecture, téléchargement)
   templatetags/
@@ -161,7 +169,23 @@ references/          application principale
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, stretch, export, axis, band, selection, style ; coauthors et coauthor_selection pour le graphe des auteurs)
+  static/references/graph/  graphes, en modules ES natifs (détail dans graphes.md)
+    main.js          point d'entrée du graphe de citations (frise ou réseau)
+    scale.js         dates et échelle de la frise
+    layout.js        position des nœuds sur la frise
+    band.js          bande des publications sans date
+    network.js       vue « Réseau » (disposition cose)
+    network-worker.js  la même disposition dans un Web Worker, pour un grand graphe
+    viewport.js      cadrage, bornes de la vue, tailles fixes à l'écran
+    focus.js         recentrage à la sélection
+    stretch.js       étirement des positions à la sélection
+    axis.js          axe des années
+    selection.js     sélection d'une publication et sa carte
+    hover.js         survol : infobulle, liens foncés sur un petit graphe
+    style.js         style des nœuds et des liens
+    export.js        export PNG (partagé avec le graphe des auteurs)
+    coauthors.js     point d'entrée du graphe des auteurs (coautorat)
+    coauthor_selection.js  sélection d'un auteur dans ce graphe
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
   templates/components/  gabarits des composants de ui.py
   tests/
@@ -177,6 +201,9 @@ static/
   js/identify_authors.js  liste des auteurs de « Sans identifiant » (suggestions, ordre)
   js/autosubmit.js   formulaires envoyés dès qu'une liste change (statut de lecture)
   js/bulk_actions.js  barre des actions groupées : compte, « Tout cocher », boutons désactivés, repli
+  js/busy.js         boutons d'un formulaire envoyé désactivés, icône en attente
+  js/copy_citation.js  boutons « Copier » du panneau « Citer » (HTML et texte)
+  js/graph_image.js  image d'un grand graphe : état demandé jusqu'à ce qu'elle soit prête
   vendor/cytoscape/  Cytoscape.js embarqué
 tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
 docs/                cette documentation

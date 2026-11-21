@@ -8,6 +8,7 @@
 - Une donnée externe n'est jamais appliquée d'office si elle vient d'un rapprochement automatique : elle est proposée (candidat, conflit) ou signalée.
 - Les templates respectent HTML5.
 - La documentation (`docs/`) est mise à jour dans la pull request qui change l'architecture ou le comportement décrit ; une décision de conception s'ajoute au [journal des décisions](docs/decisions.md).
+- Tout nouveau module (Python de `references/`, hors migrations et tests ; script de `static/js/` ou des graphes) est cité, avec une ligne qui dit à quoi il sert, à sa place dans l'arbre « Organisation du code » de [`docs/architecture.md`](docs/architecture.md). Le test `references/tests/test_architecture_doc.py` le vérifie et nomme les modules à ajouter.
 
 ## Organisation du travail
 
