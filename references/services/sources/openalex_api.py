@@ -79,6 +79,11 @@ def fetch_citing_works(work_id, sort, count):
     return (data.get("meta") or {}).get("count", 0), data.get("results") or []
 
 
+def short_id(url):
+    """'https://openalex.org/I4210141222' -> 'I4210141222' (a ROR link too); "" for None."""
+    return (url or "").rsplit("/", 1)[-1]
+
+
 def contact_params():
     mailto = settings.CROSSREF_MAILTO
     return {"mailto": mailto} if mailto else {}
@@ -107,6 +112,5 @@ def _institutions_batch(ids):
     params = {"filter": "openalex:" + "|".join(ids), "per-page": len(ids)}
     data = _get_json(OPENALEX_INSTITUTIONS_URL, params, f"batch of {len(ids)} institutions")
     return {
-        institution["id"].rsplit("/", 1)[-1]: institution
-        for institution in (data or {}).get("results", [])
+        short_id(institution["id"]): institution for institution in (data or {}).get("results", [])
     }

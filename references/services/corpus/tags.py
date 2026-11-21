@@ -28,8 +28,8 @@ def clean_path(raw):
 
 
 def label(path):
-    """« Projet A › Groupe A »."""
-    return " › ".join(path.split(SEPARATOR))
+    """« Projet A › Groupe A »: Tag.label, for a path not loaded as a Tag (#295)."""
+    return Tag(name=path).label
 
 
 def ancestors_and_self(path):
