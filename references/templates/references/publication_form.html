@@ -1,25 +1,30 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}{{ view.object.pk|yesno:"Modifier une publication,Saisir une publication à la main" }} · {% endblock title %}
+{% block title %}{% if view.object.pk %}Modifier une publication · {% else %}Saisir une publication à la main · Base commune · {% endif %}{% endblock title %}
 
 {% block content %}
-    <header class="mb-6">
-        <h1>{{ view.object.pk|yesno:"Modifier une publication,Saisir une publication à la main" }}</h1>
-        {% if view.object.pk %}
+    {% if view.object.pk %}
+        {# The modification of a publication keeps its own title, under the publication (#417). #}
+        <header class="mb-6">
+            <h1>Modifier une publication</h1>
             <p class="mt-1 text-gray-600">
                 <a href="{% url 'publication_detail' view.object.pk %}">{{ view.object }}</a>
             </p>
-        {% else %}
-            <p class="mt-2 max-w-3xl text-gray-600">
-                Pour une publication sans DOI, ISBN ni identifiant arXiv : elle entre dans la base
-                commune seulement, sans bibliographie, et s'ajoute ensuite à votre corpus depuis sa
-                fiche. Avec un identifiant, ajoutez-la plutôt depuis
-                <a href="{% url 'corpus' %}">Mon corpus</a> : ses métadonnées et sa bibliographie
-                sont récupérées.
-            </p>
-        {% endif %}
-    </header>
+        </header>
+    {% else %}
+        <header class="mb-6">
+            <h1>Base commune</h1>
+        </header>
+        <h2>Saisir une publication à la main</h2>
+        <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+            Pour une publication sans DOI, ISBN ni identifiant arXiv : elle entre dans la base
+            commune seulement, sans bibliographie, et s'ajoute ensuite à votre corpus depuis sa
+            fiche. Avec un identifiant, ajoutez-la plutôt depuis
+            <a href="{% url 'corpus' %}">Mon corpus</a> : ses métadonnées et sa bibliographie
+            sont récupérées.
+        </p>
+    {% endif %}
 
     {% card %}
         <form method="post" class="space-y-4">

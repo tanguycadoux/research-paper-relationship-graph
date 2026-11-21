@@ -45,5 +45,5 @@ class AddPublicationTests(TestCase):
 
     def test_the_page_typed_by_hand_says_it_is_for_the_base_only(self):
         response = self.client.get(reverse("publication_create"))
-        self.assertContains(response, "<h1>Saisir une publication à la main</h1>", html=True)
-        self.assertContains(response, "dans la base\n                commune seulement")
+        self.assertContains(response, "<h2>Saisir une publication à la main</h2>", html=True)
+        self.assertContains(response, "commune seulement, sans bibliographie")

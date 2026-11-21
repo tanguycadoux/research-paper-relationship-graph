@@ -54,7 +54,7 @@ class TitleSearchPageTests(TestCase):
 
     def test_nothing_is_asked_before_the_form_is_sent(self, crossref, datacite):
         response = self.client.get(URL)
-        self.assertContains(response, "Chercher une publication par son titre")
+        self.assertContains(response, "Chercher par titre</h2>")
         self.assertNotContains(response, "Publications trouvées")
         crossref.assert_not_called()
 

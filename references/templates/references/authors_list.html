@@ -1,15 +1,18 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}Auteurs · {% endblock title %}
+{% block title %}Auteurs · Base commune · {% endblock title %}
 
 {% block content %}
     <header class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1>Auteurs</h1>
+        <h1>Base commune</h1>
         {# The coauthorship graph of all the authors (#222): reached from here, without its own menu entry. #}
         {% url 'authors_graph' as graph_url %}
         {% button "Graphe des auteurs" url=graph_url variant="secondary" icon="hub" %}
     </header>
+    <h2 class="mb-3">
+        Auteurs <span class="font-normal text-gray-500">({{ page_obj.paginator.count }})</span>
+    </h2>
 
     {% if authors or active_filters %}
         {% filter_summary %}

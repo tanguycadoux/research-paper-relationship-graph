@@ -27,8 +27,13 @@
         @apply text-2xl leading-tight font-semibold text-balance;
     }
 
+    /* h1: the group of the navigation; h2: the page; h3: its sections (#417). */
     h2 {
         @apply text-lg font-semibold;
+    }
+
+    h3 {
+        @apply text-base font-semibold;
     }
 
     a {

@@ -62,7 +62,7 @@ class FetchAdminAccessTests(TestCase):
 
     def test_administrators_see_the_page(self):
         self.client.force_login(self.admin)
-        self.assertContains(self.client.get(URL), "<h1>File des récupérations</h1>", html=True)
+        self.assertContains(self.client.get(URL), "<h2>File des récupérations</h2>", html=True)
 
     def test_actions_are_posted(self):
         self.client.force_login(self.admin)

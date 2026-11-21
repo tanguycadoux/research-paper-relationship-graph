@@ -1,24 +1,26 @@
 {% extends "references/base.html" %}
 {% load ui %}
 
-{% block title %}Fusionner des auteurs · {% endblock title %}
+{% block title %}Fusionner {{ authors|length }} auteurs · Corrections · {% endblock title %}
 
 {% block content %}
     <header class="mb-6">
-        <p class="text-sm text-gray-500">
-            <a href="{% url 'author_merge_select' %}">Combiner des auteurs</a>
-        </p>
-        <h1 class="mt-1">Fusionner {{ authors|length }} auteurs</h1>
-        <p class="mt-2 max-w-3xl text-gray-600">
-            Toutes leurs publications seront rattachées à un seul auteur. Les noms tels
-            que publiés restent conservés sur chaque publication, si bien que la fusion
-            résiste aux ré-imports.
-        </p>
+        <h1>Corrections</h1>
     </header>
+    {# The page it is reached from, above its title (#417). #}
+    <p class="text-sm text-gray-500">
+        <a href="{% url 'author_merge_select' %}">Combiner des auteurs</a>
+    </p>
+    <h2 class="mt-1">Fusionner {{ authors|length }} auteurs</h2>
+    <p class="mt-1 mb-6 max-w-3xl text-gray-600">
+        Toutes leurs publications seront rattachées à un seul auteur. Les noms tels
+        que publiés restent conservés sur chaque publication, si bien que la fusion
+        résiste aux ré-imports.
+    </p>
 
     <div class="space-y-8">
         <section aria-labelledby="merged-authors-title">
-            <h2 id="merged-authors-title" class="mb-3">Auteurs fusionnés</h2>
+            <h3 id="merged-authors-title" class="mb-3">Auteurs fusionnés</h3>
             {% card flush=True %}
                 <table>
                     <thead>
@@ -44,7 +46,7 @@
         </section>
 
         <section aria-labelledby="merged-identity-title">
-            <h2 id="merged-identity-title">Identité après fusion</h2>
+            <h3 id="merged-identity-title">Identité après fusion</h3>
             <p class="mt-1 mb-3 text-sm text-gray-500">
                 Pour chaque champ, choisissez la valeur à conserver. La plus complète est proposée par défaut.
             </p>
