@@ -1,0 +1,38 @@
+{% comment %}
+What the references of the publication are: to identify, all identified, or why
+there are none (not imported, arXiv bibliography).
+{% endcomment %}
+{% load ui %}
+<p class="mt-1 mb-3 text-sm text-gray-500">
+    {% if references_to_identify %}
+        {{ references_to_identify }} référence{{ references_to_identify|pluralize_fr }} sur {{ cited_references|length }}
+        {% if references_to_identify == 1 %}
+            n'est reliée
+        {% else %}
+            ne sont reliées
+        {% endif %}
+        à aucune publication : à identifier{% if references_undescribed %},
+            dont {{ references_undescribed }} que Crossref ne décrit pas ({% if references_undescribed == 1 %}lisez-la{% else %}lisez-les{% endif %} dans
+            {% if publication.doi %}{% external_link "https://doi.org/"|add:publication.doi "l'article" %}{% else %}l'article{% endif %}){% endif %}.
+    {% elif references_unidentifiable %}
+        Toutes les références sont reliées à une publication ou déclarées non identifiables.
+    {% elif cited_references %}
+        Toutes les références sont reliées à une publication.
+    {% elif references_available %}
+        Les sources listent {{ references_available }} référence{% if references_available > 1 %}s{% endif %}
+        pour cette publication. Elles ne sont importées automatiquement que pour les
+        publications d'un corpus, sauf celles « à lire ».
+    {% elif arxiv_bibliography == "not_fetched" %}
+        La bibliographie de cette prépublication arXiv se trouve dans ses sources LaTeX :
+        elle est récupérée pour les publications d'un corpus, sauf celles « à lire ».
+    {% elif arxiv_bibliography == "pdf" %}
+        Bibliographie indisponible : cette prépublication a été déposée sur arXiv en PDF
+        seul, sans les sources LaTeX qui la contiennent.
+    {% elif arxiv_bibliography == "none" %}
+        Bibliographie introuvable dans les sources LaTeX déposées sur arXiv.
+    {% endif %}
+    {% if cited_references and arxiv_bibliography == "found" %}
+        Bibliographie tirée des sources LaTeX déposées sur arXiv : seules les références
+        dont les auteurs ont écrit l'identifiant (DOI ou arXiv) sont reliées d'office.
+    {% endif %}
+</p>

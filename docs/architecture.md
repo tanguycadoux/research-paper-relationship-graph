@@ -174,6 +174,12 @@ references/          application principale
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
   static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, stretch, export, axis, band, selection, style ; coauthors et coauthor_selection pour le graphe des auteurs)
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
+    publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
+                     _authors, _abstract, _note, _information, _references, _cited_by,
+                     _incoming_citations…), assemblées par publication_detail.html
+    _corpus_add_form, _corpus_column_header, _cited_by_table_head, _first_author,
+    _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
+                     les suggestions, « Mon corpus » et la fiche (#296)
   templates/components/  gabarits des composants de ui/
   tests/
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)

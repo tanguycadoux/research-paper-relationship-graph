@@ -1,0 +1,15 @@
+{% comment %}
+The head of a table of publications cited by several others (suggestions) or that cite
+one (OpenAlex). Context: with corpus_column, a last column for the corpus actions.
+{% endcomment %}
+<thead>
+    <tr>
+        <th scope="col">Titre</th>
+        <th scope="col">Auteurs</th>
+        <th scope="col">Année</th>
+        <th scope="col" class="whitespace-nowrap text-right">Citée par</th>
+        {% if corpus_column %}
+            {% include "references/_corpus_column_header.html" %}
+        {% endif %}
+    </tr>
+</thead>

@@ -226,3 +226,13 @@ class ExternalLinkTests(SimpleTestCase):
         for path in templates:
             with self.subTest(template=path.name):
                 self.assertNotRegex(path.read_text(encoding="utf-8"), r'href="https?:')
+
+
+class TagIndentTests(SimpleTestCase):
+    def test_indent_follows_the_depth_up_to_three_levels(self):
+        indents = [render("{% tag_indent depth %}", depth=depth) for depth in range(5)]
+        self.assertEqual(indents, ["", "pl-4", "pl-8", "pl-12", "pl-12"])
+
+    def test_nested_tree_is_one_level_further_in(self):
+        indents = [render("{% tag_indent depth nested=True %}", depth=depth) for depth in range(5)]
+        self.assertEqual(indents, ["pl-4", "pl-8", "pl-12", "pl-16", "pl-16"])
