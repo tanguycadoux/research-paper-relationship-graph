@@ -55,6 +55,7 @@ references/          application principale
     corpus_transfer.py (export et import du corpus),
     corpus_bulk.py (actions groupées de « Mon corpus » et des listes d'une fiche),
     search.py (recherche), pagination.py (listes par pages),
+    redirects.py (retour vers la page du formulaire, champ `next`, ou une page de repli),
     suggestions.py (suggestions de lecture),
     tag_context.py (tag demandé dans ?tag=, pour les suggestions et le graphe d'un tag)
     fetch_progress.py (avancement de la file, pour le toast),

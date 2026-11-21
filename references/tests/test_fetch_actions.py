@@ -208,7 +208,10 @@ class HandlersTests(TestCase):
         self.assertEqual(status, Status.FAILED)
         self.assertIn("Les sources n'ont pas répondu", error)
 
-    @patch("references.services.discovery.incoming_citations.openalex_id", return_value=None)
+    @patch(
+        "references.services.discovery.incoming_citations.publication_openalex_id",
+        return_value=None,
+    )
     def test_incoming_citations_error_is_kept(self, _openalex_id):
         request = fetch_queue.enqueue_action(
             Action.INCOMING_CITATIONS, self.user, publication=self.pub
