@@ -2,11 +2,12 @@
 // stand out, each with the colour of its relation (nodes and edges), and the compact
 // information card beside the graph describes it (#187, #291); the view zooms on them,
 // and goes back on deselection (#142). Without a selection, the card says how to select.
+// The gestures and the card are those of every graph (card.js).
 
-import { bindHover } from "./hover.js";
+import { bindSelection, cardField } from "./card.js";
 
 function fillCard(card, data, referenceCount, citingCount) {
-    const field = (name) => card.querySelector(`[data-card="${name}"]`);
+    const field = (name) => cardField(card, name);
     const showRow = (name, visible) => {
         card.querySelector(`[data-card-row="${name}"]`).hidden = !visible;
     };
@@ -24,26 +25,12 @@ function fillCard(card, data, referenceCount, citingCount) {
     field("citing").textContent = `citée par ${citingCount}`;
     const citations = data.citedBy;
     field("cited-by").textContent = `${citations} citation${citations > 1 ? "s" : ""} dans la base`;
-    showCard(card, true);
 }
 
-// The card keeps its place: its content, or the hint when nothing is selected.
-function showCard(card, selected) {
-    card.querySelector("[data-card-content]").hidden = !selected;
-    card.querySelector("[data-card-empty]").hidden = selected;
-}
-
-const SELECTION_CLASSES = "faded selected reference citing reference-node citing-node";
-
-function clearSelection(cy, card) {
-    cy.elements().removeClass(SELECTION_CLASSES);
-    showCard(card, false);
-}
-
-// An edge goes from the citing publication to the cited one.
-// focus: what bindFocus returns.
-function selectNode(cy, node, card, focus) {
-    clearSelection(cy, card);
+// An edge goes from the citing publication to the cited one. Returns the nodes the view
+// zooms on: the publication, its references and the publications citing it.
+function selectPublication(node, card) {
+    const cy = node.cy();
     const references = node.outgoers("edge");
     const citing = node.incomers("edge");
     const kept = node.union(references).union(references.targets());
@@ -54,32 +41,14 @@ function selectNode(cy, node, card, focus) {
     citing.addClass("citing");
     citing.sources().not(node).addClass("citing-node");
     fillCard(card, node.data(), references.length, citing.length);
-    focus.show(kept.union(citing.sources()).nodes());
+    return kept.union(citing.sources()).nodes();
 }
 
-function deselect(cy, card, focus) {
-    clearSelection(cy, card);
-    focus.release();
-}
-
-export function bindInteractions(cy, card, focus) {
-    // Hovering a publication shows its title (hover.js).
-    bindHover(cy);
-    cy.on("tap", "node[url]", (event) => selectNode(cy, event.target, card, focus));
-    cy.on("tap", (event) => {
-        if (event.target === cy) {
-            deselect(cy, card, focus);
-        }
+// focus: what bindFocus returns.
+export function bindCitationSelection(cy, card, focus) {
+    bindSelection(cy, card, focus, {
+        selector: "node[url]",
+        classes: "faded selected reference citing reference-node citing-node",
+        select: selectPublication,
     });
-    cy.on("dbltap", "node[url]", (event) => {
-        window.location.href = event.target.data("url");
-    });
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-            deselect(cy, card, focus);
-        }
-    });
-    card.querySelector("[data-card-close] button").addEventListener("click", () =>
-        deselect(cy, card, focus),
-    );
 }

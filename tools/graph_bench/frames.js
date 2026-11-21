@@ -153,7 +153,9 @@ window.graphFrames = (() => {
         const button = fresh(document.querySelector("[data-graph-show-all] button"));
         const viewport = viewportModule.bindViewport(cy, frame, button, stretch);
         const card = fresh(document.getElementById("citation-graph-card"));
-        selection.bindInteractions(cy, card, focusModule.bindFocus(cy, viewport, stretch));
+        // bindInteractions before #340.
+        const bindSelection = selection.bindCitationSelection ?? selection.bindInteractions;
+        bindSelection(cy, card, focusModule.bindFocus(cy, viewport, stretch));
         const axis = document.getElementById("citation-graph-axis");
         const drawAxis = () => axisModule.drawYearAxis(axis, cy, years, scale, stretch);
         cy.on("viewport stretch", drawAxis);
@@ -201,7 +203,7 @@ window.graphFrames = (() => {
         return { label: hub.data("label").slice(0, 50), degree: hub.degree() };
     }
 
-    // A tap on the background deselects (selection.js).
+    // A tap on the background deselects (card.js).
     function deselect() {
         cyOf().emit("tap");
     }

@@ -34,19 +34,20 @@ export const COSE = {
     gravity: 0.5,
 };
 
-// The elements of the nodes, with their size (style.js) and a starting position: on a
-// spiral (golden angle), in the order of the data. cose would otherwise start from random
-// positions, and the same graph would change at each visit.
+// The starting position of the i-th node of a network: on a spiral (golden angle), the
+// first at the centre. cose would otherwise start from random positions, and the same
+// graph would change at each visit.
+export function spiralPosition(i) {
+    const radius = START_SPACING * Math.sqrt(i);
+    const angle = i * GOLDEN_ANGLE;
+    return { x: radius * Math.cos(angle), y: radius * Math.sin(angle) };
+}
+
+// The elements of the nodes, with their size (style.js) and their starting position, in
+// the order of the data.
 export function networkNodes(nodes) {
     const sizes = nodeSizes(nodes);
-    return nodes.map((node, i) => {
-        const radius = START_SPACING * Math.sqrt(i);
-        const angle = i * GOLDEN_ANGLE;
-        return {
-            data: { ...node.data, size: sizes[i] },
-            position: { x: radius * Math.cos(angle), y: radius * Math.sin(angle) },
-        };
-    });
+    return nodes.map((node, i) => ({ data: { ...node.data, size: sizes[i] }, position: spiralPosition(i) }));
 }
 
 // Runs cose on the graph, at once (animate: false): before the view and the selection

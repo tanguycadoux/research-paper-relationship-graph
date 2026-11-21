@@ -172,8 +172,8 @@ references/          application principale
     reset_data.py    développement : efface toutes les données sauf les comptes et le cache
                      des sources (DEBUG seulement)
     add_icon.py      ajout d'une icône Material Symbols dans static/icons/
-  static/references/graph/  graphe, en modules ES (main, scale, layout, viewport, focus, stretch, export, axis, band, selection, style ; coauthors et coauthor_selection pour le graphe des auteurs)
-  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph…)
+  static/references/graph/  graphes, en modules ES : communs à tous (graph pour la mise en place, card pour la carte et la sélection, viewport, focus, stretch, export, hover, style), graphe des citations (main, scale, layout, network, axis, band, selection), graphe des auteurs (coauthors, coauthor_selection)
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph et _author_graph…)
     publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
                      _authors, _abstract, _note, _information, _references, _cited_by,
                      _incoming_citations…), assemblées par publication_detail.html

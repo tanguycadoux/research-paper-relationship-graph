@@ -1,183 +1,145 @@
+{% extends "references/_graph_frame.html" %}
 {% load static ui %}
-{% if graph.edges %}
-    {% comment %}
-        One card (#291): the frame of the graph and, beside it, a panel that is always there,
-        separated by a border only. The panel is in a column on the right from xl, under the
-        frame below. It hides no publication, and nothing in it moves when a publication is
-        selected: the commands first, then the controls of the context, then what the graph
-        shows (or the selected publication) and the legend; the help is behind « ? » at
-        the end of the commands (#415). Below xl, the frame has
-        its own height: a panel that grows never resizes it (which would reset the view). From
-        xl, the panel takes the height of the frame and scrolls inside it: its content never
-        makes the card taller.
-    {% endcomment %}
-    <div class="grid min-h-96 grid-cols-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm xl:flex-1 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div class="relative flex h-[70vh] min-h-96 flex-col xl:h-auto">
-            {# The year axis, on the timeline only: the network has no time axis (#195). #}
-            {% if graph_layout.vue == "frise" %}
-                <div id="citation-graph-axis"
-                     class="relative h-7 shrink-0 overflow-hidden border-b border-gray-100 text-xs text-gray-500 select-none"
-                     aria-hidden="true"></div>
-            {% endif %}
-            <div id="citation-graph" class="flex-1" role="img" aria-label="Graphe des citations"></div>
-            {% if graph_layout.vue == "frise" %}
-                {% comment %}
-                    The publications without a date, under the timeline (#288): a dashed line and its
-                    label, placed by graph/band.js at the height of the band, when there are any.
-                {% endcomment %}
-                <div id="citation-graph-band"
-                     class="pointer-events-none absolute inset-x-0 border-t border-dashed border-gray-300 text-xs text-gray-500 select-none"
-                     aria-hidden="true"
-                     hidden>
-                    <span class="ml-3 inline-block bg-white/90 px-1">Non daté</span>
-                </div>
-            {% else %}
-                {# While a large network is laid out aside, in a Web Worker (#202): graph/network.js. #}
-                <p class="absolute inset-0 flex items-center justify-center text-sm text-gray-500 select-none"
-                   role="status"
-                   data-graph-waiting
-                   hidden>Disposition du graphe…</p>
-            {% endif %}
-            {# The title of the hovered publication, placed by graph/hover.js (#202), in frosted glass over the graph. #}
-            <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs text-gray-900 select-none {% glass_classes %}"
-                 aria-hidden="true"
-                 data-graph-tooltip
-                 hidden></div>
+{% comment %}
+    A citation graph, on the timeline or in the network (#195), in the frame of every graph
+    (_graph_frame.html), read by graph/main.js.
+{% endcomment %}
+{% block frame_top %}
+    {# The year axis, on the timeline only: the network has no time axis (#195). #}
+    {% if graph_layout.vue == "frise" %}
+        <div id="citation-graph-axis"
+             class="relative h-7 shrink-0 overflow-hidden border-b border-gray-100 text-xs text-gray-500 select-none"
+             aria-hidden="true"></div>
+    {% endif %}
+{% endblock frame_top %}
+{% block graph_label %}Graphe des citations{% endblock graph_label %}
+{% block frame_overlays %}
+    {% if graph_layout.vue == "frise" %}
+        {% comment %}
+            The publications without a date, under the timeline (#288): a dashed line and its
+            label, placed by graph/band.js at the height of the band, when there are any.
+        {% endcomment %}
+        <div id="citation-graph-band"
+             class="pointer-events-none absolute inset-x-0 border-t border-dashed border-gray-300 text-xs text-gray-500 select-none"
+             aria-hidden="true"
+             hidden>
+            <span class="ml-3 inline-block bg-white/90 px-1">Non daté</span>
         </div>
-        <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
-            <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
-                   aria-label="Informations et commandes du graphe">
-                {# Back to the view on load (#196), and the displayed graph as a PNG image, under the given file name (#175). #}
-                <div class="flex items-start gap-2">
-                    <div class="flex flex-wrap gap-2">
-                        <div data-graph-show-all>
-                            {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
-                        </div>
-                        <div data-graph-export="{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% if active_tag %}-tag-{{ active_tag_slug }}{% endif %}{% endif %}{% if graph_layout.vue == "reseau" %}-reseau{% endif %}">
-                            {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
-                        </div>
-                    </div>
-                    {% include "references/_graph_help.html" with help="citations" %}
-                </div>
-                {# Controls of the context, under the commands so that they never move: the layout (#195), the tag of « Mon graphe » (#290). #}
-                {% include "references/_graph_variants.html" %}
-                {% if tag_choices %}
-                    {% include "references/_graph_tag_form.html" %}
-                {% endif %}
-                {# Filled by graph/selection.js with the selected publication (#61); otherwise what the graph shows. #}
-                <section id="citation-graph-card"
-                         aria-label="Publication sélectionnée"
-                         aria-live="polite"
-                         class="grid gap-3 border-t border-gray-100 pt-3">
-                    <div class="grid gap-1" data-card-empty>
-                        <p class="font-medium text-gray-900">
-                            {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize_fr }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize_fr }}
-                        </p>
-                        <p class="text-gray-500">Cliquez sur un article du graphe pour le décrire ici.</p>
-                    </div>
-                    {# Blocks spaced by the grid gap: title, identity, this graph, the base. #}
-                    <div class="grid gap-3" data-card-content hidden>
-                        <div class="flex items-start justify-between gap-2">
-                            <h2 class="text-base">
-                                <a href="#" data-card="title">Publication sélectionnée</a>
-                            </h2>
-                            <div data-card-close>
-                                {% button "Désélectionner" variant="secondary" icon="close" icon_only=True type="button" %}
-                            </div>
-                        </div>
-                        <div class="grid gap-1">
-                            {# Author and year speak for themselves: their labels are for screen readers. #}
-                            <dl class="grid grid-cols-2 gap-x-3">
-                                <div data-card-row="authors">
-                                    <dt class="sr-only">Premier auteur</dt>
-                                    <dd data-card="authors"></dd>
-                                </div>
-                                <div data-card-row="year">
-                                    <dt class="sr-only">Année</dt>
-                                    <dd data-card="year"></dd>
-                                </div>
-                            </dl>
-                            <p class="text-gray-500" data-card="venue"></p>
-                        </div>
-                        <div class="grid gap-1">
-                            <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Dans ce graphe</p>
-                            <dl class="grid grid-cols-2 gap-x-3">
-                                <div>
-                                    <dt class="sr-only">Références</dt>
-                                    <dd>
-                                        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="references"></span>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt class="sr-only">Citants</dt>
-                                    <dd>
-                                        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span><span data-card="citing"></span>
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
-                        <p class="text-gray-600" data-card="cited-by"></p>
-                    </div>
-                </section>
-                <div class="grid gap-2 border-t border-gray-100 pt-3">
-                    {# Same colours as graph/style.js: the --color-graph-* theme variables (#139). #}
-                    {# Also drawn under the exported image (graph/export.js). #}
-                    <ul id="citation-graph-legend"
-                        class="grid gap-1 text-sm text-gray-700 select-none"
-                        aria-label="Légende du graphe">
-                        {% comment %}
-                            The roles of services/display/graph.py: the publication or the corpus (source), the
-                            publications citing it (citing, only on the graph of a publication), the others.
-                            On the graph of the base (#131), only a logged-in user has a corpus.
-                        {% endcomment %}
-                        {% if graph_kind != "base" or user.is_authenticated %}
-                            <li>
-                                <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
-                                      aria-hidden="true"></span>
-                                {% if graph_kind == "publication" %}
-                                    Cette publication
-                                {% else %}
-                                    Publication de mon corpus
-                                {% endif %}
-                            </li>
-                        {% endif %}
-                        {% if graph_kind == "publication" %}
-                            <li>
-                                <span class="mr-1 inline-block size-3 rounded-full bg-graph-citing align-middle"
-                                      aria-hidden="true"></span>
-                                Publication qui la cite
-                            </li>
-                        {% endif %}
-                        <li>
-                            <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
-                                  aria-hidden="true"></span>
-                            {% if graph_kind != "base" %}
-                                Publication citée
-                            {% elif user.is_authenticated %}
-                                Autre publication de la base
-                            {% else %}
-                                Publication de la base
-                            {% endif %}
-                        </li>
-                        <li>Taille : nombre de citations dans la base</li>
-                        <li>
-                            Après un clic :
-                            <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses références,
-                            <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span>ses citants
-                        </li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
+    {% else %}
+        {# While a large network is laid out aside, in a Web Worker (#202): graph/network.js. #}
+        <p class="absolute inset-0 flex items-center justify-center text-sm text-gray-500 select-none"
+           role="status"
+           data-graph-waiting
+           hidden>Disposition du graphe…</p>
+    {% endif %}
+{% endblock frame_overlays %}
+{% block export_name %}{% if graph_kind == "publication" %}graphe-publication-{{ publication.pk }}{% else %}graphe-{{ graph_kind }}{% if active_tag %}-tag-{{ active_tag_slug }}{% endif %}{% endif %}{% if graph_layout.vue == "reseau" %}-reseau{% endif %}{% endblock export_name %}
+{% block help %}
+    {% include "references/_graph_help.html" with help="citations" %}
+{% endblock help %}
+{% block controls %}
+    {# Controls of the context, under the commands so that they never move: the layout (#195), the tag of « Mon graphe » (#290). #}
+    {% include "references/_graph_variants.html" %}
+    {% if tag_choices %}
+        {% include "references/_graph_tag_form.html" %}
+    {% endif %}
+{% endblock controls %}
+{# Filled by graph/selection.js with the selected publication (#61). #}
+{% block card_label %}Publication sélectionnée{% endblock card_label %}
+{% block card_empty %}
+    <p class="font-medium text-gray-900">
+        {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize_fr }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize_fr }}
+    </p>
+    <p class="text-gray-500">Cliquez sur un article du graphe pour le décrire ici.</p>
+{% endblock card_empty %}
+{% block card_title %}Publication sélectionnée{% endblock card_title %}
+{% block card_content %}
+    {# Identity, this graph, the base. #}
+    <div class="grid gap-1">
+        {# Author and year speak for themselves: their labels are for screen readers. #}
+        <dl class="grid grid-cols-2 gap-x-3">
+            <div data-card-row="authors">
+                <dt class="sr-only">Premier auteur</dt>
+                <dd data-card="authors"></dd>
+            </div>
+            <div data-card-row="year">
+                <dt class="sr-only">Année</dt>
+                <dd data-card="year"></dd>
+            </div>
+        </dl>
+        <p class="text-gray-500" data-card="venue"></p>
     </div>
-    {{ graph|json_script:"citation-graph-data" }}
+    <div class="grid gap-1">
+        <p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Dans ce graphe</p>
+        <dl class="grid grid-cols-2 gap-x-3">
+            <div>
+                <dt class="sr-only">Références</dt>
+                <dd>
+                    <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span><span data-card="references"></span>
+                </dd>
+            </div>
+            <div>
+                <dt class="sr-only">Citants</dt>
+                <dd>
+                    <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span><span data-card="citing"></span>
+                </dd>
+            </div>
+        </dl>
+    </div>
+    <p class="text-gray-600" data-card="cited-by"></p>
+{% endblock card_content %}
+{% block legend %}
+    {% comment %}
+        The roles of services/display/graph.py: the publication or the corpus (source), the
+        publications citing it (citing, only on the graph of a publication), the others.
+        On the graph of the base (#131), only a logged-in user has a corpus.
+    {% endcomment %}
+    {% if graph_kind != "base" or user.is_authenticated %}
+        <li>
+            <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
+                  aria-hidden="true"></span>
+            {% if graph_kind == "publication" %}
+                Cette publication
+            {% else %}
+                Publication de mon corpus
+            {% endif %}
+        </li>
+    {% endif %}
+    {% if graph_kind == "publication" %}
+        <li>
+            <span class="mr-1 inline-block size-3 rounded-full bg-graph-citing align-middle"
+                  aria-hidden="true"></span>
+            Publication qui la cite
+        </li>
+    {% endif %}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+              aria-hidden="true"></span>
+        {% if graph_kind != "base" %}
+            Publication citée
+        {% elif user.is_authenticated %}
+            Autre publication de la base
+        {% else %}
+            Publication de la base
+        {% endif %}
+    </li>
+    <li>Taille : nombre de citations dans la base</li>
+    <li>
+        Après un clic :
+        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses références,
+        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span>ses citants
+    </li>
+{% endblock legend %}
+{% block data %}
     {{ graph_layout|json_script:"citation-graph-layout" }}
-    <script src="{% static 'vendor/cytoscape/cytoscape.min.js' %}"></script>
+{% endblock data %}
+{% block script %}
     <script type="module" src="{% static 'references/graph/main.js' %}"></script>
-{% else %}
+{% endblock script %}
+{% block empty %}
     {# Without a graph, the tag selector stays, to choose another tag or the whole corpus (#290). #}
     {% if tag_choices %}
         <div class="mb-3 max-w-sm text-sm">{% include "references/_graph_tag_form.html" %}</div>
     {% endif %}
     <p class="text-gray-600">Aucune citation identifiée : rien à afficher.</p>
-{% endif %}
+{% endblock empty %}
