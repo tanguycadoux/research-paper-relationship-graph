@@ -220,6 +220,10 @@ class CitationPanelTests(TestCase):
         self.assertContains(response, 'id="citation-apa"')
         self.assertContains(response, 'id="citation-ieee"')
         self.assertContains(response, 'id="citation-bibtex"')
+        # The entry wraps to the panel instead of being cut on its right (#413).
+        self.assertRegex(
+            response.content.decode(), r'<pre id="citation-bibtex" class="[^"]*whitespace-pre-wrap'
+        )
         self.assertContains(response, "A &lt;b&gt;bold&lt;/b&gt; title")
         # « Copier » waits for the script.
         self.assertContains(response, 'data-copy="citation-apa" hidden')

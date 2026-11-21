@@ -71,6 +71,11 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   gardée ; une prépublication arXiv est citée par son identifiant. Le popover s'ouvre et se
   ferme sans JavaScript, le texte reste sélectionnable ; `static/js/copy_citation.js`
   ajoute « Copier » (HTML, qui garde l'italique, et texte brut ; texte brut pour BibTeX).
+  L'entrée BibTeX revient à la ligne dans le panneau (`whitespace-pre-wrap`) ; la copie
+  prend son `textContent`, sans ces retours à la ligne d'affichage (#413).
+- **Métadonnées brutes** (`/publications/<pk>/metadata/`, `publication_metadata.html`,
+  #413) : une carte par source, le JSON indenté et replié à la largeur de la carte, même
+  dans une longue chaîne (`wrap-anywhere`) ; `?format=json` rend le JSON lui-même.
 - **Actions groupées** (`_bulk_actions.html`, `views/corpus_bulk.py`,
   `services/corpus/bulk.py`, #287) : dans « Mon corpus », une case par ligne et, au-dessus
   du tableau, une barre pour ajouter un tag, changer le statut de lecture ou retirer du
