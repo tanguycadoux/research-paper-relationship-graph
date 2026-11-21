@@ -80,7 +80,12 @@
             </main>
         </div>
         {% if messages or fetch_progress %}
-            <div class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
+            {% comment %}
+                From md, the toasts float at the bottom of the navigation column, as wide as it
+                (#411): on the right, they hid the buttons of the last rows of a table. Below md,
+                there is no free column: they stay at the bottom, short (one sentence).
+            {% endcomment %}
+            <div class="pointer-events-none fixed right-4 bottom-4 z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2 md:right-auto md:left-3 md:w-60">
                 {% for message in messages %}
                     {% message_toast message %}
                 {% endfor %}

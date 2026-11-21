@@ -294,7 +294,7 @@
         </h2>
         <p class="mt-1 mb-3 text-sm text-gray-500">
             {% if references_to_identify %}
-                {{ references_to_identify }} référence{{ references_to_identify|pluralize }} sur {{ cited_references|length }}
+                {{ references_to_identify }} référence{{ references_to_identify|pluralize_fr }} sur {{ cited_references|length }}
                 {% if references_to_identify == 1 %}
                     n'est reliée
                 {% else %}

@@ -134,7 +134,7 @@ class PublicationBulkActionsTests(TestCase):
         self.assertEqual(self.entry(self.cited).reading_status, "")
         self.assertIsNotNone(self.entry(self.citing))
         self.assertEqual(import_publication.call_count, 2)
-        self.assertContains(response, "2 publications ajoutées à votre corpus.")
+        self.assertContains(response, "2 publications ajoutées.")
         # Bob's entry of the same publication is his own.
         self.assertIsNotNone(self.entry(self.cited, self.bob))
 
@@ -147,15 +147,18 @@ class PublicationBulkActionsTests(TestCase):
         self.assertEqual(self.tag_names(self.cited), ["Projet/A"])
         self.assertEqual(self.tag_names(self.kept), ["Projet/A"])
         import_publication.assert_called_once_with(self.cited, with_references=False)
-        self.assertContains(response, "1 publication ajoutée à votre corpus, à lire.")
-        self.assertContains(response, "1 autre y était déjà.")
-        self.assertContains(response, "2 publications taguées « Projet › A ».")
+        # One sentence (#411).
+        self.assertContains(
+            response,
+            "1 publication ajoutée, à lire ; 1 autre y était déjà ; "
+            "2 publications taguées « Projet › A ».",
+        )
 
     def test_already_in_the_corpus_is_not_an_error(self):
         with patch(IMPORT) as import_publication:
             response = self.follow("add", [self.kept])
         import_publication.assert_not_called()
-        self.assertContains(response, "0 publication ajoutée à votre corpus. 1 autre y était")
+        self.assertContains(response, "Aucune publication ajoutée ; elle y était déjà.")
 
     @patch("references.services.corpus.bulk.fetch_queue.worker_alive", return_value=True)
     def test_with_a_worker_the_data_is_queued(self, _):
@@ -163,7 +166,9 @@ class PublicationBulkActionsTests(TestCase):
             response = self.follow("add", [self.cited])
         import_publication.assert_not_called()
         self.assertTrue(FetchRequest.objects.filter(publication=self.cited).exists())
-        self.assertContains(response, "Données en file de récupération : 1.")
+        # The queue has its own toast (#411).
+        self.assertContains(response, "1 publication ajoutée.")
+        self.assertNotContains(response, "Données en file")
 
     @patch(IMPORT, return_value=None)
     def test_data_not_retrieved_is_said(self, _):

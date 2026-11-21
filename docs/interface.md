@@ -30,7 +30,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   (`author_duplicates.duplicate_count`, 78 ms pour 9 500 auteurs), gardé en cache sous une
   clé qui résume les auteurs (nombre, dernier, longueur des noms, ORCID, paires déclarées
   distinctes) : recompté seulement quand ils changent. **Notifications** : les messages Django s'affichent en
-  toasts (`static/js/toasts.js`). **Boutons occupés** (`static/js/busy.js`, #339) : à
+  toasts (`static/js/toasts.js`), d'une phrase ; à partir de `md`, en bas de la colonne de
+  navigation et de sa largeur, pour ne pas cacher les boutons des dernières lignes d'un
+  tableau ; en dessous, en bas de l'écran (#411). **Accords** : 0 et 1 prennent le
+  singulier, en Python avec `wording.count` (« 0 publication ajoutée ») et dans les
+  templates avec le filtre `pluralize_fr` de `{% load ui %}` (`|pluralize` de Django met 0
+  au pluriel). **Boutons occupés** (`static/js/busy.js`, #339) : à
   l'envoi d'un formulaire POST, ses boutons sont désactivés (après la lecture du bouton
   cliqué, dont la valeur compte : « à lire ») et celui qui a été cliqué remplace son icône
   par une animation ; ils se réactivent au retour par l'historique. Sans JavaScript, rien
@@ -43,7 +48,10 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
 - **Rapport d'import** (`_import_report.html`, `services/corpus/import_reports.py`, #330) :
   après l'import d'un fichier, un seul toast court ; le détail (publications ajoutées avec
   leur lien, déjà présentes, sans métadonnées, entrées ignorées et pourquoi, 20 par liste)
-  est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture.
+  est gardé en session et reste en tête de « Mon corpus » jusqu'à sa fermeture. Sa
+  première ligne compte toutes les publications ajoutées, celles en file de récupération
+  comprises (« 2 publications ajoutées à votre corpus ; leurs données arrivent en
+  arrière-plan »), et n'écrit pas de compte à zéro (#411).
 - **Exporter** (carte « Exporter et importer » de « Mon corpus », #285) : sans filtre, les
   boutons exportent tout le corpus (« JSON (réimportable) », « BibTeX ») ; avec des filtres
   (tag et ses sous-tags, colonnes, « à identifier »), ils exportent les publications

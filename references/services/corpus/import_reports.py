@@ -5,6 +5,8 @@ closes it: a toast faded out after 6 s and left nothing after a reload.
 
 from django.utils import timezone
 
+from ..display.wording import count
+
 SESSION_KEY = "import_report"
 # The lists of a report stay short: the rest is counted.
 LIMIT = 20
@@ -32,7 +34,7 @@ def last(session):
     data = session.get(SESSION_KEY)
     if not data:
         return None
-    return {
+    report = {
         **data,
         "at": timezone.datetime.fromisoformat(data["at"]),
         "added": publications(data["added"]),
@@ -42,6 +44,50 @@ def last(session):
         # Absent from the reports kept before #378.
         "queued": publications(data.get("queued", {"items": [], "count": 0})),
     }
+    report["added_count"] = added_count(report)
+    report["headline"] = headline(
+        report["added_count"], report["queued"]["count"], data["already_there"]
+    )
+    return report
+
+
+def added_count(report):
+    """
+    The publications added to the corpus: fetched, left to the queue (#378) or without
+    metadata, all of them are in it now. An ImportReport, or the dict of last().
+    """
+    parts = ("added", "queued", "without_metadata")
+    if isinstance(report, dict):
+        return sum(report[part]["count"] for part in parts)
+    return sum(len(getattr(report, part)) for part in parts)
+
+
+def headline(added, queued, already):
+    """
+    The first line of the report (#411), with no count at 0: « 2 publications ajoutées
+    à votre corpus ; leurs données arrivent en arrière-plan. 1 autre était déjà dans
+    votre corpus. »
+    """
+    if not added:
+        text = "Aucune publication ajoutée."
+        if already:
+            there = count(already, "publication était", "publications étaient")
+            text += f" {there} déjà dans votre corpus."
+        return text
+    text = f"{count(added, 'publication ajoutée')} à votre corpus{in_background(added, queued)}."
+    if already:
+        text += f" {count(already, 'autre était', 'autres étaient')} déjà dans votre corpus."
+    return text
+
+
+def in_background(added, queued):
+    """« ; leurs données arrivent en arrière-plan », when the queue fetches them (#378)."""
+    if not queued:
+        return ""
+    if queued < added:
+        whose = "de l'une d'elles" if queued == 1 else f"de {queued} d'entre elles"
+        return f" ; les données {whose} arrivent en arrière-plan"
+    return f" ; {'ses' if added == 1 else 'leurs'} données arrivent en arrière-plan"
 
 
 def publications(part):

@@ -26,7 +26,7 @@
                                 <a class="{% row_title_classes %}" href="{% url 'author_detail' author.pk %}">{{ author|default:"(sans nom)" }}</a>
                                 <span class="text-gray-600">
                                     {% if author.orcid %}· <span class="whitespace-nowrap">ORCID {{ author.orcid }}</span>{% endif %}
-                                    · {{ author.publication_count }} publication{{ author.publication_count|pluralize }}
+                                    · {{ author.publication_count }} publication{{ author.publication_count|pluralize_fr }}
                                 </span>
                             </span>
                             {% button "Retirer de la sélection" url=author.remove_url variant="secondary" icon="remove" icon_only=True %}

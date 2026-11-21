@@ -266,9 +266,15 @@ class AddWithWorkerTests(TestCase):
         fetch.assert_not_called()
         self.assertEqual(FetchRequest.objects.count(), 2)
         self.assertEqual(UserPublication.objects.filter(user=self.user).count(), 2)
-        self.assertContains(response, "Import enregistré : 2 publications en file de récupération.")
+        self.assertContains(response, "Import terminé : 2 publications ajoutées ; le rapport")
         self.assertEqual(response.context["import_report"]["queued"]["count"], 2)
-        self.assertContains(response, "2</strong> publications en file de récupération")
+        # No « 0 publications ajoutées » before them (#411).
+        self.assertContains(
+            response,
+            "2 publications ajoutées à votre corpus ; leurs données arrivent en arrière-plan.",
+        )
+        self.assertNotContains(response, "0 publications")
+        self.assertNotContains(response, "déjà dans votre corpus")
 
 
 class ProgressTests(TestCase):

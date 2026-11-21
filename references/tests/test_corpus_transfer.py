@@ -146,7 +146,7 @@ class ImportViewTests(TestCase):
         with_crossref(Publication.objects.create(doi="10.1000/known"), {"message": {}})
         response = self.post(json.dumps(export_of({"doi": "10.1000/known"})).encode())
         # One short toast, and the report at the top of the corpus until it is closed (#330).
-        self.assertContains(response, "Import terminé : 1 publication ajoutée.")
+        self.assertContains(response, "Import terminé : 1 publication ajoutée ; le rapport")
         self.assertContains(response, "Dernier import")
         report = response.context["import_report"]
         self.assertEqual((report["added"]["count"], report["already_there"]), (1, 0))
