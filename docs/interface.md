@@ -71,6 +71,11 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   gardée ; une prépublication arXiv est citée par son identifiant. Le popover s'ouvre et se
   ferme sans JavaScript, le texte reste sélectionnable ; `static/js/copy_citation.js`
   ajoute « Copier » (HTML, qui garde l'italique, et texte brut ; texte brut pour BibTeX).
+  L'entrée BibTeX revient à la ligne dans le panneau (`whitespace-pre-wrap`) ; la copie
+  prend son `textContent`, sans ces retours à la ligne d'affichage (#413).
+- **Métadonnées brutes** (`/publications/<pk>/metadata/`, `publication_metadata.html`,
+  #413) : une carte par source, le JSON indenté et replié à la largeur de la carte, même
+  dans une longue chaîne (`wrap-anywhere`) ; `?format=json` rend le JSON lui-même.
 - **Actions groupées** (`_bulk_actions.html`, `views/corpus_bulk.py`,
   `services/corpus/bulk.py`, #287) : dans « Mon corpus », une case par ligne et, au-dessus
   du tableau, une barre pour ajouter un tag, changer le statut de lecture ou retirer du
@@ -95,6 +100,12 @@ Organisation des pages et des listes. Les conventions d'écriture des templates 
   Retour à la liste par `next` (`#references-title` ou `#cited-by-title`), vérifié par
   `url_has_allowed_host_and_scheme`. Le message d'un retrait groupé dit ce qui est perdu
   (« avec 2 tags, 1 statut de lecture et 1 note »).
+  Sur la fiche, les deux barres sont repliées (`collapsed=True`, #410) : tant que rien
+  n'est coché, le script n'en montre que la première ligne, qui dit à quoi servent les
+  cases ; elle se déplie pour de bon à la première case cochée (décochée ensuite, ses
+  boutons sont désactivés, pas masqués). Les contrôles et l'aide sont dans la partie
+  repliée (`data-bulk-more`) : l'aide ne s'affiche que dans une barre dépliée. Sans
+  JavaScript, les barres restent dépliées. Celle de « Mon corpus » n'est jamais repliée.
 - **Tableau commun des publications** (`_publication_table.html`), utilisé par la liste
   des publications, « Mon corpus », « Cité par » et la page d'un auteur.
   `services/display/publication_table.py` (`for_publication_table`) calcule dans la même requête ce

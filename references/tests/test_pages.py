@@ -86,5 +86,14 @@ class PageSmokeTests(TestCase):
     def test_metadata_page_lists_the_records_of_each_source(self):
         with_crossref(self.pub, {"message": {"title": ["Un article"]}})
         self.client.force_login(self.user)
-        data = self.client.get(reverse("publication_metadata", args=[self.pub.pk])).json()
+        url = reverse("publication_metadata", args=[self.pub.pk])
+        data = self.client.get(url, {"format": "json"}).json()
         self.assertEqual(data["crossref"]["data"], {"message": {"title": ["Un article"]}})
+        # The page shows it indented, wrapped to its width (#413).
+        response = self.client.get(url)
+        self.assertContains(response, "<h1>Métadonnées brutes</h1>", html=True)
+        self.assertContains(response, "whitespace-pre-wrap wrap-anywhere")
+        self.assertContains(
+            response, "\n      &quot;title&quot;: [\n        &quot;Un article&quot;"
+        )
+        self.assertContains(response, f'href="{url}?format=json"')

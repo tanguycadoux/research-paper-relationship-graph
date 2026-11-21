@@ -50,15 +50,16 @@
                             <span class="text-gray-500">—</span>
                         {% endfor %}
                     </td>
+                    {# Short French dates (« 15 nov. 2026 à 22:01 », #413), the seconds in the title. #}
                     <td class="text-sm whitespace-nowrap text-gray-600">
-                        Demandée <time datetime="{{ fetch.requested_at|date:'c' }}">{{ fetch.requested_at|date:"j M Y, H:i:s" }}</time>
+                        Demandée le <time datetime="{{ fetch.requested_at|date:'c' }}" title="{{ fetch.requested_at|date:'j F Y à H:i:s' }}">{{ fetch.requested_at|date:"j N Y à H:i" }}</time>
                         {% if fetch.started_at %}
                             <br>
-                            Commencée <time datetime="{{ fetch.started_at|date:'c' }}">{{ fetch.started_at|date:"j M Y, H:i:s" }}</time>
+                            Commencée le <time datetime="{{ fetch.started_at|date:'c' }}" title="{{ fetch.started_at|date:'j F Y à H:i:s' }}">{{ fetch.started_at|date:"j N Y à H:i" }}</time>
                         {% endif %}
                         {% if fetch.finished_at %}
                             <br>
-                            Terminée <time datetime="{{ fetch.finished_at|date:'c' }}">{{ fetch.finished_at|date:"j M Y, H:i:s" }}</time>
+                            Terminée le <time datetime="{{ fetch.finished_at|date:'c' }}" title="{{ fetch.finished_at|date:'j F Y à H:i:s' }}">{{ fetch.finished_at|date:"j N Y à H:i" }}</time>
                         {% endif %}
                     </td>
                     {% if section == "failed" %}

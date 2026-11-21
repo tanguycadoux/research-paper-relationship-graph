@@ -17,13 +17,16 @@
         <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
             <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"
                    aria-label="Informations et commandes du graphe">
-                <div class="flex flex-wrap gap-2">
-                    <div data-graph-show-all>
-                        {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
+                <div class="flex items-start gap-2">
+                    <div class="flex flex-wrap gap-2">
+                        <div data-graph-show-all>
+                            {% button "Vue d'ensemble" variant="secondary" icon="fit_screen" type="button" %}
+                        </div>
+                        <div data-graph-export="{{ graph_export }}">
+                            {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
+                        </div>
                     </div>
-                    <div data-graph-export="{{ graph_export }}">
-                        {% button "Exporter (PNG)" variant="secondary" icon="download" type="button" %}
-                    </div>
+                    {% include "references/_graph_help.html" with help="coauthors" %}
                 </div>
                 {# Filled by graph/coauthor_selection.js with the selected author; otherwise what the graph shows. #}
                 <section id="citation-graph-card"
@@ -88,13 +91,6 @@
                             <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses coauteurs
                         </li>
                     </ul>
-                    <p class="text-gray-500">
-                        Une publication de n auteurs compte 1/(n − 1) dans le lien de chaque paire de
-                        ses auteurs : deux auteurs d'un article à deux sont plus liés que deux auteurs
-                        d'un article à vingt. Plus un lien est fort, plus ses auteurs sont rapprochés.
-                        Survolez un auteur pour voir son nom ; cliquez pour le sélectionner, double-cliquez pour ouvrir sa fiche. Échap ou un clic dans le
-                        vide désélectionne.
-                    </p>
                 </div>
             </aside>
         </div>
