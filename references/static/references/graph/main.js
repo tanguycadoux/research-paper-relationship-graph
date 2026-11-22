@@ -3,15 +3,16 @@
 // Entry point, loaded as an ES module after cytoscape.min.js (global `cytoscape`). The
 // frame, the view, the selection and the export are those of every graph (graph.js).
 // The layout takes the time of the field « Temps de calcul » (layout_time.js, #323): a
-// large graph, or a long time, in a Web Worker (layout_aside.js). The graph is developed
-// or reduced without reloading the page (#451, expand.js): each layout also says how to
-// lay out another graph, with the same time.
+// large graph, or a long time, in a Web Worker (layout_aside.js); a layout already done
+// for the same data is taken from the browser instead (layout_cache.js, #327). The graph
+// is developed or reduced without reloading the page (#451, expand.js): each layout also
+// says how to lay out another graph, with the same time.
 
 import { drawYearAxis } from "./axis.js";
 import { bindUndatedBand } from "./band.js";
 import { bindExpansion } from "./expand.js";
 import { bindGraph, createGraph, graphFrame, LAYOUT_MEASURE } from "./graph.js";
-import { CANCELLED, layOutAside } from "./layout_aside.js";
+import { CANCELLED, layOutKept } from "./layout_aside.js";
 import { bindLayoutTime, layoutTimeField } from "./layout_time.js";
 import { placeNodes } from "./layout.js";
 import { networkNodes, networkPositions, placedAt } from "./network.js";
@@ -39,12 +40,12 @@ async function placeOnTimeline(container, graph, budget, waiting, always = false
     const years = yearRange(graph.nodes);
     const scale = makeScale(years, graph.nodes.length, container);
     const message = { view: "frise", nodes: graph.nodes, edges: graph.edges, years, frame: frameSize(container), budget };
-    const reply = await layOutAside(message, waiting, always);
+    const inPage = () => ({ timeline: placeNodes(graph.nodes, graph.edges, scale, null, budget) });
+    const reply = await layOutKept(message, waiting, { always, inPage });
     if (reply === CANCELLED) {
         return reply;
     }
-    const placed = reply?.timeline ?? placeNodes(graph.nodes, graph.edges, scale, null, budget);
-    return { ...placed, years, scale };
+    return { ...reply.timeline, years, scale };
 }
 
 // The axes between two layouts (#451), at eased progress e: the scale in between, the
@@ -113,11 +114,14 @@ async function network(container, graph, budget, waiting) {
     let time = budget;
     const positionsOf = async (nodes, edges, budget, show, always = false) => {
         const message = { view: "reseau", nodes, edges, frame: frameSize(container), budget };
-        const reply = await layOutAside(message, show, always);
+        const inPage = () => ({
+            positions: Object.fromEntries(networkPositions(nodes, edges, message.frame, budget)),
+        });
+        const reply = await layOutKept(message, show, { always, inPage });
         if (reply === CANCELLED) {
             return reply;
         }
-        return reply ? new Map(Object.entries(reply.positions)) : networkPositions(nodes, edges, message.frame, budget);
+        return new Map(Object.entries(reply.positions));
     };
     const nodes = networkNodes(graph.nodes);
     performance.mark(LAYOUT_MEASURE);
