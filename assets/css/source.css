@@ -12,9 +12,10 @@
  * the hue of these three and computes the lightness of each level:
  * L(n) = 0.9 - 0.3 * (2/3)^n, so 0.6 for the centre, 0.70 at level 1, 0.767 at level 2.
  * The other colours of the legend are those of palette.js: -light at level 2 (the level-2
- * nodes, and the links of a selection, drawn at the level after their node), -border
- * 0.2 darker (the contour of a node). 155 and 345 rather than 164 and 4: the past and the
- * future stay apart for a red-green colour-blind reader (validated, #470).
+ * nodes), -lighter at level 3; with -light and the colour itself, the three steps away
+ * from a selected node (#472, graph/distance.js); -border 0.2 darker (the contour of a
+ * node). 155 and 345 rather than 164 and 4: the past and the future stay apart for a
+ * red-green colour-blind reader (validated, #470).
  * "static": always emitted.
  */
 @theme static {
@@ -23,6 +24,8 @@
     --color-graph-citing: oklch(0.7 0.12 345);
     --color-graph-cited-light: oklch(0.767 0.12 155);
     --color-graph-citing-light: oklch(0.767 0.12 345);
+    --color-graph-cited-lighter: oklch(0.811 0.12 155);
+    --color-graph-citing-lighter: oklch(0.811 0.12 345);
     --color-graph-source-border: oklch(0.4 0.2 264);
     --color-graph-cited-border: oklch(0.5 0.12 155);
     --color-graph-citing-border: oklch(0.5 0.12 345);

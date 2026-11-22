@@ -301,9 +301,10 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   rose framboise, teinte 345, tous deux de chroma 0,12. La luminance suit
   L(n) = 0,9 − 0,3 × (2/3)ⁿ : 0,6 pour le centre (niveau 0), 0,70 au niveau 1, 0,767
   au niveau 2, vers 0,9 sans atteindre le blanc. Le **contour** du nœud a la même teinte,
-  0,2 plus sombre ; le nœud sélectionné garde un anneau noir. Les **liens d'une
-  sélection** prennent la couleur du groupe vers lequel ils mènent, à la luminance du
-  niveau suivant celui du nœud voisin. Teintes 155 et 345 plutôt que 164 et 4 : le passé
+  0,2 plus sombre ; le nœud sélectionné garde un anneau noir. Pendant une **sélection**,
+  la luminance dit la **distance** au nœud choisi plutôt que le niveau (#472, voir
+  « Sélection »), et chaque lien prend la luminance de la distance suivant celle de son
+  extrémité la plus proche. Teintes 155 et 345 plutôt que 164 et 4 : le passé
   et l'avenir restent distincts pour un daltonien rouge-vert (écart ΔE de 6,3 à 6,6 du
   niveau 1 au niveau 4, contre 1,0). Cytoscape ne lit pas `oklch()` : `palette.js`
   convertit en sRGB, en baissant seulement la chroma d'une couleur hors gamut. Sa **taille** suit
@@ -339,8 +340,31 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   sélection (voir plus bas), qu'elle suit : les années restent sous les nœuds. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
 - **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
-  verts) et les articles qui le citent (nœuds roses), chaque lien dans la couleur de son
-  groupe à la luminance du niveau suivant (#470), et estompe le reste. La carte d'informations HTML
+  verts) et les articles qui le citent (nœuds roses), et estompe le reste. **Distance**
+  (#472, `distance.js`) : au-delà des voisins directs, les références de ses références
+  (le passé, en vert) et les articles qui citent ceux qui le citent (l'avenir, en rose)
+  restent visibles jusqu'à la **distance 3** (`DISTANCE_LIMIT`), plus clairs à chaque pas :
+  la luminance d'un nœud à la distance d suit la courbe des niveaux (#470),
+  L(d) = 0,9 − 0,3 × (2/3)^d (0,70, 0,767, 0,811), sa teinte reste celle de son groupe.
+  Un lien entre deux nœuds gardés prend la teinte de son extrémité la plus éloignée et la
+  luminance de la distance suivant celle de la plus proche : les liens de l'article
+  (distance 1) sont élargis, comme avant ; les autres gardent leur épaisseur et leur
+  opacité au repos. Sur les graphes de citations, la distance ne suit les citations que
+  **dans le sens du groupe** (le passé vers le passé, l'avenir vers l'avenir) :
+  `BOTH_WAYS` (`selection.js`) la ferait suivre dans les deux sens, la teinte étant alors
+  celle du dernier pas. Le parcours en largeur est fait dans le navigateur, à chaque
+  sélection ; le recentrage (`focus.js`) vise toujours les voisins directs seulement. La
+  légende le dit (« Après un clic, plus clair à chaque pas, jusqu'à 3 », trois pastilles
+  par groupe, `_graph_distance_swatch.html`). Mesures (Chrome headless, 1 400 px, médiane
+  de 5 sélections) : sur la base du banc, « Mon graphe » (4 292 éléments) passe de 31 à
+  35 ms pour le clic lui-même, et la plus longue image qui suit reste à 250 ms ; le graphe
+  des auteurs du corpus (11 995 éléments) passe de 68 à 102 ms en sélectionnant l'auteur
+  le plus relié (559 nœuds gardés), sans changement pour un auteur moyen (66 ms) ; la plus
+  longue image qui suit passe de 933 à 1 033 ms (déjà là avant : la restylisation de tout
+  le graphe) ; la carte des mots-clés du banc (1 396 éléments) passe de 8 à 18 ms pour le
+  terme le plus relié, sa plus longue image de 116 à 133 ms. Sur les petits graphes
+  (`frames.py`), la sélection reste à 17 ms en médiane,
+  aucune image de plus de 50 ms. La carte d'informations HTML
   (`#citation-graph-card`) est compacte (#187) : le titre est le lien vers la fiche, puis
   la revue (lue dans la réponse stockée de Crossref ou de DataCite, dans la même
   requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la
@@ -471,7 +495,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   `layout_time.js` (champ « Temps de calcul »), `layout_cache.js` (positions gardées
   dans le navigateur), `random.js` (graines des départs),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
-  un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
+  un clic sur une publication et le remplissage de sa carte), `distance.js` (distance au
+  nœud sélectionné et ses classes, pour tous les graphes, #472), `expand.js` (développer ou
   réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
   (feuille de style Cytoscape), `palette.js` (couleurs OKLCH par rôle et par niveau, #470). Pas de Node ni de tests
   JavaScript dans l'application : la CI vérifie seulement la syntaxe de chaque fichier
@@ -554,7 +579,9 @@ dessin que les graphes de citations, en vue réseau seulement.
   PNG. Les éléments de la page portent les mêmes identifiants
   (`citation-graph`, `citation-graph-data`…), que lisent aussi les outils du banc.
 - **Sélection** (`coauthor_selection.js`) : un clic sur un auteur met en avant ses
-  coauteurs et leurs liens (vert clair, la luminance du niveau suivant, #470), estompe le reste et zoome sur eux. La carte
+  coauteurs et leurs liens, puis les coauteurs de ses coauteurs jusqu'à la distance 3,
+  plus clairs à chaque pas (#472, `distance.js`, comme les graphes de citations ; la
+  teinte reste celle du groupe), estompe le reste et zoome sur ses coauteurs. La carte
   du panneau donne son nom (lien vers sa fiche), son nombre de publications dans la base,
   son nombre de coauteurs dans ce graphe, et ses trois liens les plus forts (avec le
   nombre de publications communes). Survol : le nom, dans l'infobulle en verre dépoli des
@@ -668,7 +695,8 @@ sous-tags, reliés par les publications qui les portent ensemble. En vue réseau
   un nœud) ; à 390 px, 15 sur 29 (10 avant, dont 8 sous un nœud). Placement : 0,6 ms
   (29 mots-clés), 2,2 ms (169).
 - **Sélection** (`keyword_selection.js`) : un clic met en avant le terme, ses voisins et
-  leurs liens, et zoome sur eux. La carte liste ses publications (lien vers leur fiche,
+  leurs liens, puis les voisins de ses voisins jusqu'à la distance 3, plus clairs à chaque
+  pas (#472, `distance.js`), et zoome sur ses voisins. La carte liste ses publications (lien vers leur fiche,
   les plus récentes d'abord), le lien « Ouvrir ses n publications dans « Mon corpus » »
   et les cinq termes qui l'accompagnent le plus souvent (un clic les sélectionne). Un
   double clic ouvre « Mon corpus » filtré sur le terme.
@@ -709,6 +737,11 @@ sa disposition, son style et ce que dit sa carte.
   dans le vide ou « Désélectionner » : retour à la vue d'avant) et le survol (`hover.js`).
   Le graphe ne donne que `select(node, card)`, qui pose ses classes, remplit la carte et
   renvoie les nœuds à montrer ; `cardField(card, name)` lit un champ `[data-card=name]`.
+  **`distance.js`** (#472) : `reach(node, steps)` parcourt le graphe en largeur jusqu'à
+  `DISTANCE_LIMIT` (les pas d'un nœud : `undirectedSteps`, ou ceux des citations dans
+  `selection.js`), `markDistances` pose les classes (`near`, `distance-<d>`, `past` ou
+  `future`) que lit `style.js`, et la classe propre au graphe sur les voisins directs et
+  leurs liens (leur épaisseur, et les noms de l'image exportée).
 - **Style** : `graphStyle(edges)` reçoit la largeur des liens (au repos, survolés), leur
   opacité et celle des éléments estompés ; le graphe ajoute après ses propres règles de
   sélection. `color(name)` lit une couleur du thème. **Disposition** : `spiralPosition(i)`

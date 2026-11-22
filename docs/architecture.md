@@ -217,6 +217,7 @@ references/          application principale
     stretch.js       étirement des positions à la sélection
     axis.js          axe des années
     selection.js     sélection d'une publication (carte commune de card.js)
+    distance.js      distance au nœud sélectionné (parcours en largeur, 3 au plus) et ses classes, tous les graphes
     expand.js        développer ou réduire le graphe sans recharger la page, en animation
     hover.js         survol : infobulle, liens foncés sur un petit graphe
     style.js         style des nœuds et des liens

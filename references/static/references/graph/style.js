@@ -5,6 +5,7 @@
 // number of citations in the base gives its size. Sizes are given on the screen (#185): zooming spreads the
 // nodes out instead of enlarging them, which separates publications close in date.
 
+import { distanceOf, hueOf } from "./distance.js";
 import { cssColor, groupColor, nodeGroup, nodeLevel } from "./palette.js";
 
 const MIN_SIZE = 14;
@@ -91,10 +92,10 @@ export function nodeSizes(nodes) {
 // faded: the opacity of what a selection leaves out, nodes and edges.
 const CITATION_EDGES = { width: onScreen(1.25), hoveredWidth: onScreen(2), opacity: 0.85, faded: 0.15 };
 
-// The fill and the contour of a node: the hue of its group (its role, or its relation to
-// the selected node), the lightness of its level (#470).
-const fill = (group) => (node) => groupColor(group ?? nodeGroup(node), nodeLevel(node));
-const contour = (group) => (node) => groupColor(group ?? nodeGroup(node), nodeLevel(node), true);
+// The fill and the contour of a node: the hue of its group (its role), the lightness of
+// its level (#470).
+const fill = (node) => groupColor(nodeGroup(node), nodeLevel(node));
+const contour = (node) => groupColor(nodeGroup(node), nodeLevel(node), true);
 
 // The nodes: their size, their colour by role and level, and their label when hovered.
 function nodeRules() {
@@ -104,10 +105,10 @@ function nodeRules() {
             style: {
                 width: nodeSize,
                 height: nodeSize,
-                "background-color": fill(),
+                "background-color": fill,
                 // A contour of the same hue, darker, separates overlapping nodes.
                 "border-width": onScreen(2),
-                "border-color": contour(),
+                "border-color": contour,
                 // No square halo when a node is clicked: Cytoscape draws one by default.
                 "overlay-opacity": 0,
             },
@@ -151,19 +152,22 @@ function edgeRules(edges) {
     ];
 }
 
-// A link of the selection (#470): the colour of the group it leads to, at the lightness of
-// the level after that of the node at its other end.
+// A link of the selection (#470, #472): the hue of the node it leads to (its relation on a
+// citation graph, else `group`), at the lightness of the distance after that of its
+// nearest end to the selected node (distance.js).
 export function linkColor(group) {
-    return (edge) => {
-        const other = edge.source().hasClass("selected") ? edge.target() : edge.source();
-        return groupColor(group, nodeLevel(other) + 1);
-    };
+    return (edge) => groupColor(hueOf(edge) ?? group, distanceOf(edge) ?? 1);
 }
+
+// A node near the selected one (#472): the hue of its relation on a citation graph, else
+// of its group; the lightness of its distance instead of its level.
+const nearFill = (outline) => (node) =>
+    groupColor(hueOf(node) ?? nodeGroup(node), distanceOf(node) ?? 1, outline);
 
 function selectionRules(edges) {
     return [
         // Selection (#61): the publication, its references and the publications citing it,
-        // each with the colour of its relation; edges in a lighter shade of their nodes.
+        // each with the colour of its relation, lighter with the distance (#472).
         { selector: ".faded", style: { opacity: edges.faded } },
         // The selected publication keeps a dark ring. The soft round halo only shows while
         // the node is pressed (:active), like Cytoscape's own, which is turned off above.
@@ -177,13 +181,12 @@ function selectionRules(edges) {
                 "underlay-shape": "ellipse",
             },
         },
+        // The links farther away keep their width and their opacity, in the colour of their
+        // distance; those of the selected node are widened by the rules below.
+        { selector: "edge.near", style: { "line-color": linkColor("cited") } },
         {
-            selector: "node.reference-node",
-            style: { "background-color": fill("cited"), "border-color": contour("cited") },
-        },
-        {
-            selector: "node.citing-node",
-            style: { "background-color": fill("citing"), "border-color": contour("citing") },
+            selector: "node.near",
+            style: { "background-color": nearFill(false), "border-color": nearFill(true) },
         },
         {
             selector: "edge.reference",

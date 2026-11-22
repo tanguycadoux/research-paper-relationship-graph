@@ -45,8 +45,9 @@
     <li>{% include "references/_graph_warning_icon.html" %}Références à identifier</li>
 {% endif %}
 <li>Taille : nombre de citations dans la base</li>
+{# The distance to the selected publication (#472, graph/distance.js). #}
 <li>
-    Après un clic :
-    <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses références,
-    <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span>ses citants
+    Après un clic, plus clair à chaque pas, jusqu'à&nbsp;3 :
+    {% include "references/_graph_distance_swatch.html" %}ses références et les leurs,
+    {% include "references/_graph_distance_swatch.html" with group="citing" %}ses citants et les leurs
 </li>

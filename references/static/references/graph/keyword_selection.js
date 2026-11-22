@@ -1,11 +1,13 @@
 // Selection of a term on the map of the keywords (#418): the terms it appears with and
-// their links stand out, the rest fades, and the card of the panel lists its publications
-// (each a link to its page), the link to « Mon corpus » filtered on them, and the terms it
-// appears with most often (a click selects one). The view zooms on them uniformly
-// (focus.js), and goes back on deselection. The gestures, the card and the hover are those
-// of every graph (card.js, hover.js): a double click opens « Mon corpus » filtered.
+// their links stand out, then theirs, lighter at each step (#472, distance.js), the rest
+// fades, and the card of the panel lists its publications (each a link to its page), the
+// link to « Mon corpus » filtered on them, and the terms it appears with most often (a
+// click selects one). The view zooms on them uniformly (focus.js), and goes back on
+// deselection. The gestures, the card and the hover are those of every graph (card.js,
+// hover.js): a double click opens « Mon corpus » filtered.
 
 import { bindSelection, cardField } from "./card.js";
+import { DISTANCE_CLASSES, markDistances, reach, undirectedSteps } from "./distance.js";
 
 // Terms listed on the card, the most shared first.
 const STRONGEST_SHOWN = 5;
@@ -82,16 +84,15 @@ function fillCard(card, node, publications) {
 }
 
 // publications: {id: {label, year, url}}, given by the server. Returns the select
-// function of card.js: it returns the nodes the view zooms on, the term and its neighbours.
+// function of card.js: it returns the nodes the view zooms on, the term and its
+// neighbours (distance 1); theirs, and so on, lighter with the distance (#472).
 function selectTerm(publications) {
     return (node, card) => {
-        const links = node.connectedEdges();
-        const neighbours = links.connectedNodes().not(node);
-        const kept = node.union(links).union(neighbours);
-        node.cy().elements().not(kept).addClass("faded");
         node.addClass("selected");
-        links.addClass("linked");
-        neighbours.addClass("linked-node");
+        const neighbours = markDistances(node, reach(node, undirectedSteps), {
+            edgeClass: () => "linked",
+            nearClass: () => "linked-node",
+        });
         fillCard(card, node, publications);
         return node.union(neighbours);
     };
@@ -102,7 +103,7 @@ export function bindKeywordSelection(publications) {
     return (cy, card, focus) =>
         bindSelection(cy, card, focus, {
             selector: "node",
-            classes: "faded selected linked linked-node",
+            classes: `faded selected linked linked-node ${DISTANCE_CLASSES}`,
             select: selectTerm(publications),
         });
 }
