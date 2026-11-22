@@ -8,8 +8,15 @@
 // viewBox at each step would draw the 9 500 circles and 56 000 edges of the graph of the
 // authors again at each frame. The layer of the lit nodes (image_highlight.js) is a second
 // SVG over the first, moved with it: lighting a node never draws the image again.
+//
+// The SVGs are drawn beyond the frame, by MARGIN frames on each side (#476): what a drag
+// brings into the frame is already drawn, instead of a blank until the view settles.
 
 const SETTLE = 150;
+// Drawn around the frame, in frames on each side: a whole frame, which costs nothing
+// measurable (#476); the SVG is SPAN frames wide and high.
+const MARGIN = 1;
+const SPAN = 1 + 2 * MARGIN;
 // Zoom of a wheel notch (deltaY of 100) and of a button.
 const WHEEL_ZOOM = 1.25;
 const BUTTON_ZOOM = 1.6;
@@ -24,9 +31,14 @@ export function createView(frame, svgs) {
     const listeners = { change: [], draw: [] };
     const state = { view: null, drawn: null, timer: null, frame: frame.getBoundingClientRect() };
     for (const svg of svgs) {
-        svg.setAttribute("width", "100%");
-        svg.setAttribute("height", "100%");
-        svg.style.transformOrigin = "0 0";
+        svg.setAttribute("width", `${100 * SPAN}%`);
+        svg.setAttribute("height", `${100 * SPAN}%`);
+        // Its top left corner MARGIN frames up and left of the frame's, which it moves and
+        // scales around (both are absolute, image_viewer.js): the transform is that of an SVG
+        // the size of the frame.
+        svg.style.left = `${-100 * MARGIN}%`;
+        svg.style.top = `${-100 * MARGIN}%`;
+        svg.style.transformOrigin = `${(100 * MARGIN) / SPAN}% ${(100 * MARGIN) / SPAN}%`;
         svg.style.willChange = "transform";
     }
 
@@ -66,8 +78,9 @@ export function createView(frame, svgs) {
         clearTimeout(state.timer);
         const { x, y, unit } = state.view;
         const { width, height } = state.frame;
+        const box = [x - MARGIN * width * unit, y - MARGIN * height * unit, SPAN * width * unit, SPAN * height * unit];
         for (const svg of svgs) {
-            svg.setAttribute("viewBox", `${x} ${y} ${width * unit} ${height * unit}`);
+            svg.setAttribute("viewBox", box.join(" "));
             svg.style.transform = "";
         }
         state.drawn = state.view;
