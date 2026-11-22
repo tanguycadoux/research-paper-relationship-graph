@@ -209,7 +209,8 @@ references/          application principale
     layout_time.js   champ « Temps de calcul » : temps mémorisé, nouvelle disposition animée
     layout_aside.js  disposition dans un Web Worker (grand graphe ou long temps de calcul)
     layout-worker.js  le Web Worker des dispositions, frise ou réseau
-    viewport.js      cadrage, bornes de la vue, tailles fixes à l'écran
+    viewport.js      cadrage, bornes de la vue
+    screen_size.js   tailles fixes à l'écran : réévaluées à chaque image, ou par parties sur un grand graphe
     focus.js         recentrage à la sélection
     stretch.js       étirement des positions à la sélection
     axis.js          axe des années
