@@ -28,10 +28,17 @@
             {% endblock frame_overlays %}
             {# The label of the hovered node, placed by graph/hover.js (#202), in frosted glass over the graph. #}
             {# One line per line break of the text: the variants of gathered authors (#419). #}
+            {# The distance (#477) and the references to identify (#452) begin with their icon, copied from the templates below. #}
             <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs whitespace-pre-line text-gray-900 select-none {% glass_classes %}"
                  aria-hidden="true"
                  data-graph-tooltip
                  hidden></div>
+            <template data-tooltip-icon="distance">
+                {% icon "arrow_range" class="mr-1 inline-block size-3.5 align-[-0.2em] text-gray-600" %}
+            </template>
+            <template data-tooltip-icon="to-identify">
+                {% graph_warning_icon %}
+            </template>
         </div>
         <div class="border-t border-gray-200 xl:relative xl:border-t-0 xl:border-l">
             <aside class="grid content-start gap-4 p-3 text-sm xl:absolute xl:inset-0 xl:overflow-y-auto"

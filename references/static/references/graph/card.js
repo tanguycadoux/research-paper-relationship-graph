@@ -30,7 +30,9 @@ export function clearSelection(cy, card, classes) {
 
 // The distance of a hovered node, in its tooltip (#477): to the selected node (the classes
 // of distance.js), or without a selection what atRest(node) says (each graph its own).
-function distanceText(node, selected, atRest) {
+// Beyond the limit, a node with no path at all to the selection, whatever the direction of
+// the links, is said to be in another island: linked(node) tells.
+function distanceText(node, selected, atRest, linked) {
     if (!selected) {
         return atRest(node);
     }
@@ -40,6 +42,9 @@ function distanceText(node, selected, atRest) {
     const distance = distanceOf(node);
     if (distance) {
         return `à ${distance} pas de la sélection`;
+    }
+    if (!linked(node)) {
+        return "dans un îlot indépendant, sans lien avec la sélection";
     }
     return `au-delà de ${DISTANCE_LIMIT} pas de la sélection`;
 }
@@ -52,11 +57,19 @@ function distanceText(node, selected, atRest) {
 // view: once the graph is developed or reduced (#451, expand.js), which moves it.
 export function bindSelection(cy, card, focus, { selector, classes, select, atRest = () => null }) {
     let selected = null;
+    // The connected part of the graph holding the selection, found at the first hover that
+    // needs it, so that a tap costs no more (a walk of the whole part).
+    let island = null;
+    const linked = (node) => {
+        island ??= selected.component();
+        return island.has(node);
+    };
     const groups = bindDistanceGroups(cy, card.querySelector("[data-distance-groups]"));
     const clear = () => {
         clearSelection(cy, card, classes);
         groups.reset();
         selected = null;
+        island = null;
     };
     const deselect = () => {
         clear();
@@ -65,12 +78,13 @@ export function bindSelection(cy, card, focus, { selector, classes, select, atRe
     const mark = (node) => {
         clearSelection(cy, card, classes);
         selected = node;
+        island = null;
         const shown = select(node, card);
         groups.show(node);
         showCard(card, true);
         return shown;
     };
-    bindHover(cy, (node) => distanceText(node, selected, atRest));
+    bindHover(cy, (node) => distanceText(node, selected, atRest, linked));
     cy.on("tap", selector, (event) => {
         focus.show(mark(event.target));
     });

@@ -45,19 +45,44 @@ function bindEdgeHover(cy) {
     cy.container().addEventListener("mouseleave", clear);
 }
 
-// The text of the tooltip: the title, or the longer text the graph gives (the variants of
-// gathered authors, #419; the references to identify, #452), its distance under the title.
-function tooltipText(node, describe) {
-    const lines = (node.data("tooltip") ?? node.data("label")).split("\n");
+// The lines of the tooltip: the title, or the longer text the graph gives (the variants of
+// gathered authors, #419; the references to identify, #452, its last line), its distance
+// under the title. Each line is [text, icon]: the distance and the references to identify
+// begin with their icon (the [data-tooltip-icon] templates of _graph_frame.html).
+function tooltipLines(node, describe) {
+    const lines = (node.data("tooltip") ?? node.data("label")).split("\n").map((text) => [text, null]);
+    if (node.data("toIdentify") && lines.length > 1) {
+        lines[lines.length - 1][1] = "to-identify";
+    }
     const distance = describe(node);
     if (distance) {
-        lines.splice(1, 0, distance);
+        lines.splice(1, 0, [distance, "distance"]);
     }
-    return lines.join("\n");
+    return lines;
+}
+
+function fillTooltip(tooltip, lines, icons) {
+    tooltip.replaceChildren(
+        ...lines.map(([text, icon]) => {
+            const line = document.createElement("div");
+            const template = icon && icons.get(icon);
+            if (template) {
+                line.append(template.content.firstElementChild.cloneNode(true));
+            }
+            line.append(text);
+            return line;
+        }),
+    );
 }
 
 function bindTooltip(cy, tooltip, describe) {
     const container = cy.container();
+    const icons = new Map(
+        Array.from(container.parentElement.querySelectorAll("[data-tooltip-icon]"), (template) => [
+            template.dataset.tooltipIcon,
+            template,
+        ]),
+    );
     const hide = () => {
         tooltip.hidden = true;
     };
@@ -66,7 +91,7 @@ function bindTooltip(cy, tooltip, describe) {
         if (event.originalEvent?.buttons) {
             return;
         }
-        tooltip.textContent = tooltipText(event.target, describe);
+        fillTooltip(tooltip, tooltipLines(event.target, describe), icons);
         tooltip.hidden = false;
         place(tooltip, event.target, container);
     });

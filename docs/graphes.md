@@ -372,13 +372,18 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   50 ms).
   **Infobulle** (#477, `hover.js`, `card.js`) : sous le titre, la distance du nœud
   survolé. Avec une sélection, « à 2 pas de la sélection » ou « au-delà de 3 pas de la
-  sélection » (lu sur les classes). Sans sélection, ce que dit chaque graphe : le niveau
+  sélection » (lu sur les classes), ou, pour un nœud sans aucun chemin vers la sélection
+  quel que soit le sens des liens, « dans un îlot indépendant, sans lien avec la
+  sélection » (la composante de la sélection, `component()`, calculée au premier survol
+  qui en a besoin, pas au clic). Sans sélection, ce que dit chaque graphe : le niveau
   (« Niveau 1 », rien pour le centre ni sur le graphe de la base, qui n'a pas de niveau) ;
   sur le graphe d'un auteur, la distance à cet auteur (« à 1 pas de Paolo Ferracin », par
   `reach` une fois au premier survol) ; sur les graphes d'auteurs sans centre (tous les
   auteurs, ceux du corpus), le nombre de coauteurs dans le graphe ; sur la carte des
-  mots-clés, « lié à n termes ». Le serveur n'écrit plus le niveau dans `tooltip`. Ce
-  n'est que du texte : le survol ne redessine rien de plus. La carte d'informations HTML
+  mots-clés, « lié à n termes ». Le serveur n'écrit plus le niveau dans `tooltip`. La
+  ligne de la distance commence par l'icône Material `arrow_range`, celle des références à
+  identifier par l'icône `warning` des nœuds (copiées des `<template
+  data-tooltip-icon>` du cadre). Le survol ne redessine rien de plus dans le graphe. La carte d'informations HTML
   (`#citation-graph-card`) est compacte (#187) : le titre est le lien vers la fiche, puis
   la revue (lue dans la réponse stockée de Crossref ou de DataCite, dans la même
   requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la

@@ -69,9 +69,10 @@ class ToIdentifyTests(TestCase):
         response = self.client.get(reverse("corpus_graph"))
         self.assertTrue(response.context["graph_to_identify"])
         self.assertContains(response, "Références à identifier</li>")
-        # In the legend and the card, the Material Symbols icon, in amber.
-        self.assertContains(response, "data-graph-warning-icon", count=2)
-        self.assertContains(response, 'fill="#b45309"', count=2)
+        # In the legend, the card and the template of the tooltip (#477), the Material
+        # Symbols icon, in amber.
+        self.assertContains(response, "data-graph-warning-icon", count=3)
+        self.assertContains(response, 'fill="#b45309"', count=3)
         self.client.logout()
         response = self.client.get(reverse("publication_graph", args=[self.mine.pk]))
         self.assertNotContains(response, "Références à identifier</li>")
