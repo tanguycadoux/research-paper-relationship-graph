@@ -210,7 +210,8 @@ references/          application principale
     layout_aside.js  disposition dans un Web Worker (grand graphe ou long temps de calcul)
     layout-worker.js  le Web Worker des dispositions, frise ou réseau
     layout_cache.js  positions des dispositions gardées dans le navigateur (IndexedDB), tant que les données ne changent pas
-    viewport.js      cadrage, bornes de la vue, tailles fixes à l'écran
+    viewport.js      cadrage, bornes de la vue
+    screen_size.js   tailles fixes à l'écran : réévaluées à chaque image, ou par parties sur un grand graphe
     focus.js         recentrage à la sélection
     stretch.js       étirement des positions à la sélection
     axis.js          axe des années
