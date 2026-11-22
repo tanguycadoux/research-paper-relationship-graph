@@ -6,7 +6,7 @@ list is sorted, not the page shown.
 
 from dataclasses import dataclass
 
-from django.db.models import Case, F, OuterRef, Subquery, Value, When
+from django.db.models import Case, F, OrderBy, OuterRef, Subquery, Value, When
 from django.db.models.functions import Concat
 
 from ...models import AuthorPublication, UserPublication
@@ -31,7 +31,10 @@ class Column:
 
 
 class Sorting:
-    """The sortable columns of a table, the ties broken always in the same order."""
+    """
+    The sortable columns of a table, the ties broken always in the same order: ascending,
+    unless a tie is given with its direction.
+    """
 
     def __init__(self, columns, ties, default):
         self.columns = columns
@@ -57,8 +60,10 @@ class Sorting:
         first = (
             expression.desc(nulls_last=True) if sort.descending else expression.asc(nulls_last=True)
         )
-        # Down to the id: rows that compare equal must not move between pages.
-        return queryset.order_by(first, *(tie.asc() for tie in self.ties), "pk")
+        # Down to the id: rows that compare equal must not move between pages. A tie
+        # given with its direction (F(…).desc()) keeps it.
+        ties = (tie if isinstance(tie, OrderBy) else tie.asc() for tie in self.ties)
+        return queryset.order_by(first, *ties, "pk")
 
 
 def first_author_name():

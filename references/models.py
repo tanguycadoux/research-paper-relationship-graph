@@ -600,6 +600,9 @@ class GraphImage(models.Model):
     nodes = models.PositiveIntegerField(default=0)
     edges = models.PositiveIntegerField(default=0)
     svg = models.TextField(blank=True)
+    # The nodes of the image and their edges, as JSON, for the page that browses it
+    # (#453; services/display/graph_images.node_list). Empty for an image drawn before.
+    node_list = models.TextField(blank=True)
     error = models.TextField(blank=True)
 
     def __str__(self):

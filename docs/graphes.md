@@ -20,12 +20,109 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   corpus avec un message (`views/tag_context.requested_tag`, partagé avec les
   suggestions). « Mon corpus » filtré par un tag renvoie au graphe de ce tag, et le
   nom de l'image exportée le dit (`graphe-corpus-tag-projet`).
+- **Niveaux** (#451, `services/display/graph_levels.py`) : les graphes d'une publication,
+  de « Mon corpus » et d'un tag montrent le **niveau 1** par défaut (les publications liées
+  au point de départ : ses références, et sur le graphe d'une publication celles qui la
+  citent). Le choix « Niveau : 1 · 2 » du panneau, sous « Disposition » (`?niveau=2`, une
+  variante de `graph_variants.py`, que le formulaire du tag garde), développe **tout le
+  graphe** : le niveau 2 est fait des publications liées au niveau 1 **dans les deux sens**,
+  ses références et les publications qui le citent (décision de l'utilisateur). Les liens
+  sont ceux du niveau 1 et ceux de chaque publication développée (une requête de plus).
+  Seulement ce qui est en base : aucune requête aux sources. Une publication du niveau 1 se
+  développe seule : sa carte propose **« Développer »** (`?developper=<id>`), ou
+  **« Réduire »** une fois développée (au niveau 2, `?reduire=<id>`), sans toucher au reste
+  du graphe ; la publication reste sélectionnée (`?noeud=<id>`, que `main.js` relit au
+  chargement). Changer de niveau oublie ces choix. Niveau 2 au plus pour
+  l'instant : une publication du niveau 2 ne se développe pas. Le niveau se lit sur le
+  nœud (**creux**, un anneau de la couleur de son rôle, `style.js`, avec sa ligne dans la
+  légende et sur l'image exportée) et dans l'infobulle (« Niveau 2 ») dès que le graphe
+  dépasse le niveau 1 ; la carte le dit aussi. Le graphe de la base n'a pas de niveau.
+- **Développer sans recharger** (#451, `expand.js`) : « Développer », « Réduire » et le
+  choix du niveau gardent leur lien (sans JavaScript, la page se recharge), mais la page
+  demande à la **même vue**, avec la même URL et l'en-tête `Accept: application/json`, les
+  éléments du nouveau graphe (`views/graphs.render_graph`) : les nœuds avec leur niveau et
+  leur lien de bascule, le niveau, les compteurs, les bibliographies manquantes, et les
+  parties du panneau rendues comme dans la page (`_citation_graph_summary.html`,
+  `_citation_graph_legend.html`, `_graph_variants.html`) et les variantes que garde le
+  formulaire du tag. Cette réponse n'est jamais gardée par le navigateur (`no-store`), et
+  les deux réponses varient selon `Accept` : Précédent montre toujours la page. La nouvelle
+  disposition est calculée hors écran : la frise par `layout.js` (déterministe, la même
+  qu'au rechargement de l'URL), le réseau par `cose` **à partir des positions affichées**
+  (dans la page, ou dans le Web Worker au-delà de 600 éléments), les nouveaux nœuds autour
+  de celui dont ils sortent : le réseau bouge le moins possible, mais diffère de celui qu'on
+  obtient en rechargeant l'URL. Puis **une seule animation** (500 ms, la boucle de
+  `focus.js`) : les nouveaux nœuds et liens sortent de la publication développée (à défaut,
+  d'un voisin déjà affiché) en apparaissant en fondu, ceux qui partent rentrent dans leur
+  publication en s'effaçant, puis sont retirés ; les autres glissent à leur nouvelle place,
+  leur taille suit (le maximum des citations change) ; l'axe des années (échelle
+  interpolée) et la bande « Non daté » suivent. La vue va en même temps vers la sélection
+  et ses voisins dans le nouveau graphe, ou vers la vue d'ensemble sans sélection ; la vue
+  d'ensemble et ses bornes sont remesurées sur la nouvelle disposition avant l'animation.
+  La sélection reste sur la publication (sa carte compte ses voisins du nouveau graphe) ; un
+  zoom ou un clic pendant l'animation la termine d'un coup. L'URL suit (`history.pushState`)
+  et Précédent ou Suivant refont le même chemin (`popstate`). Sur un grand graphe (plus de
+  600 éléments), le nouveau graphe s'affiche d'un coup, sans animation, comme la sélection ;
+  un graphe qui franchit ce seuil, ou qui n'a plus de lien, recharge la page (ses règles
+  sont fixées à sa création). Mesures (`frames.py` adapté, Chrome headless, 1 400 px,
+  médiane de 5 passages, intervalle entre images médiane / 90e centile / maximum) :
+  publication n° 9 (9 publications, 25 au niveau 2) : 17 / 19 / 25 ms en développant,
+  17 / 19 / 22 ms au niveau 2, aucune image de plus de 50 ms ; « Mon graphe » (96
+  publications, 244 au niveau 2) : 17 / 21 / 75 ms en développant une publication, 17 /
+  38 / 107 ms en passant au niveau 2, avec une seule image longue, la première (réponse,
+  disposition et remesure de la vue).
+- **Bibliographies manquantes** (#451) : un niveau est incomplet quand des bibliographies
+  du niveau d'avant ne sont pas en base (celles du point de départ pour le niveau 1, des
+  publications développées pour le niveau 2). Le panneau les compte (« 41 bibliographies
+  manquent pour le niveau 2 », `bibliography_levels.to_import` : avec un DOI et quelque
+  chose à lire aux sources) et propose, à un utilisateur connecté, « Récupérer les
+  bibliographies… » (#431) depuis le même point de départ, jusqu'au niveau 2.
+- **Taille au niveau 2** (mesures du 21 novembre 2026, Chrome headless, 1 400 px) :
+
+  | Graphe | Niveau | Publications | Citations | JSON | Serveur | Page jusqu'à `DOMContentLoaded` |
+  |---|---|---|---|---|---|---|
+  | Mon graphe, copie de la base de l'utilisateur | 1 | 96 | 130 | 43 Ko | 23 ms | 0,41 s |
+  | Mon graphe, copie de la base de l'utilisateur | 2 | 219 | 310 | 115 Ko | 46 ms | 0,22 s (réseau 0,33 s) |
+  | Mon graphe, base du banc | 1 | 1 775 | 2 517 | 836 Ko | 0,48 s | 1,7 s |
+  | Mon graphe, base du banc | 2 | 1 776 | 2 518 | 1,0 Mo | 0,51 s | 1,3 s (réseau 4,1 s, dans un worker) |
+
+  41 bibliographies manquent au niveau 2 sur la base de l'utilisateur (1 433 sur le banc) :
+  l'estimation de #431 (environ 1 000 publications) les comptait déjà récupérées. Au-delà
+  de `LARGE_GRAPH` (1 000), les graphes de citations à niveaux ne passent **pas** à l'image
+  calculée sur le serveur (#328, réservée au graphe de la base et à celui de tous les
+  auteurs) : la page dessine le graphe avec les règles des grands graphes (tailles
+  réévaluées à l'arrêt du zoom, sélection sans animation, réseau dans un worker). « Mon
+  graphe » du banc dépasse déjà ce seuil au niveau 1.
+- **Références à identifier** (#452) : **toute publication** du graphe qui a des
+  références à identifier (`to_identify_q`, #293), dans le corpus ou non (décision de
+  l'utilisateur : une référence à identifier est un lien qui manque au graphe), porte une
+  petite icône d'attention ambre en haut à droite du nœud (l'ambre attend une action,
+  CONTRIBUTING). Sur la base de l'utilisateur, 157 publications en ont, dont 15 de son
+  corpus. Seulement pour un utilisateur connecté : « Identifier » le demande. L'infobulle et
+  la carte disent « n références à identifier », la carte avec « Identifier », qui ouvre
+  l'identification en série à la première (`?serie=1`, #242). Sur les graphes d'une
+  publication, du corpus, d'un tag et de la base. Le compte et la position de la première
+  sont des sous-requêtes de la requête des nœuds (`graph.to_identify_annotations`) : aucune
+  requête de plus, et le nombre de citations n'est pas multiplié. L'icône est celle de
+  Material Symbols, `warning` (`static/icons/warning.svg`), en ambre foncé sur son
+  triangle rempli d'ambre clair, lisible sur tout nœud : un seul SVG
+  (`{% graph_warning_icon %}`, `templatetags/ui/icons.py`, couleurs écrites en clair car
+  l'image est lue sans la feuille de style), que la légende et la carte affichent
+  (`_graph_warning_icon.html`), que `style.js` pose sur les nœuds comme image de fond
+  (`background-image`, hors du nœud, `bounds-expansion` pour ne pas la couper), et que
+  `export.js` redessine dans la légende de l'image exportée. La légende (« Références à
+  identifier ») ne l'explique que si un nœud la porte. Durées de frame
+  inchangées sur « Mon graphe » (96 publications, 15 marquées) et sur le graphe d'une
+  publication (9) : médiane 17 ms, aucune frame au-delà de 50 ms (`frames.py`). Les grands
+  graphes calculés en image (#328) ne la montrent pas. Une arête qui passe sous la pointe
+  de l'icône peut en masquer le haut à certains zooms (rendu de Cytoscape).
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
   publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
-  citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
-- La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
+  citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base ;
+  les références à identifier sont dans celle des publications (#452).
+- La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée
+  (la même vue les donne seules en JSON pour développer le graphe sans recharger, #451).
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
   bande sous la frise. Ou en **réseau**, sans axe du temps (#195, voir plus bas).
@@ -313,8 +410,12 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   ses voisins ; sans sélection, les publications `source` (la publication du graphe, ou le
   corpus, y compris sur le graphe de la base pour la personne connectée). Chaque libellé,
   sur un fond clair, va à droite du nœud, sinon à gauche, au-dessus ou en dessous : d'abord
-  à une place qui ne couvre aucun nœud, puis à une qui ne couvre qu'un nœud non nommé ; un
-  libellé sans place est omis (la sélection, puis les plus citées, passent d'abord). Les
+  à une place qui ne couvre aucun nœud, puis à une qui ne couvre qu'un nœud non nommé ;
+  à défaut, il est **raccourci** au mot (ou à la lettre) avec « … » pour tenir à droite ou
+  à gauche du nœud (#421), sans quoi il est omis (la sélection, puis les plus citées,
+  passent d'abord). Aucun libellé ne sort de l'image : `fillText` ne le dessine jamais plus
+  large que son cadre, quelle que soit la police (vérifié dans Chrome sans interface par
+  `tools/graph_bench/labels.py`). Les
   libellés n'existent que sur l'image, pas à l'écran. Le nom du fichier dit ce que montre l'image :
   `graphe-corpus`, `graphe-publication-<id>`, suivi de `-reseau` en vue réseau (sans axe
   ni bande sur l'image), puis de `-selection-<id>` si une
@@ -331,7 +432,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   `layout_aside.js` et `layout-worker.js` (la disposition dans un Web Worker, chargé comme module),
   `layout_time.js` (champ « Temps de calcul »), `random.js` (graines des départs),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
-  un clic sur une publication et le remplissage de sa carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
+  un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
+  réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
   (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript dans l'application : la CI vérifie seulement la syntaxe de chaque fichier
   (`tools/check_js.sh`, `node --check`, sans npm, #341) ; le comportement se vérifie dans
@@ -558,18 +660,93 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
   comme mort et peut être relancé (une demande déjà en file n'est pas dédoublée).
   Pendant le calcul, `static/js/graph_image.js` interroge l'état toutes les 2 s
   (`/graph/image/<kind>/status/`) et recharge la page une fois l'image prête.
-- **Disposition** : igraph (dépendance du projet), Fruchterman-Reingold, **composante par
-  composante** : chaque groupe relié dans un carré à sa mesure, les carrés rangés par
-  taille décroissante, puis les nœuds sans lien en grille. Disposés ensemble, les petits
-  groupes et les auteurs isolés (ceux des grandes collaborations, qui ne relient personne)
-  s'étalaient sur toute l'image autour d'un petit cœur relié.
+- **Disposition** (`services/display/large_graph_layout.py`, #420) : igraph (dépendance
+  du projet), **composante par composante** : chaque groupe relié dans une boîte à sa
+  mesure, les boîtes rangées par taille décroissante, puis les nœuds sans lien en grille.
+  Disposés ensemble, les petits groupes et les auteurs isolés (ceux des grandes
+  collaborations, qui ne relient personne) s'étalaient sur toute l'image autour d'un petit
+  cœur relié. Dans un groupe :
+  - les **feuilles** (nœuds d'un seul lien : la plupart des références, citées une fois)
+    sont mises de côté, puis rangées **en couronne** autour de leur nœud, les plus grosses
+    à l'intérieur, chaque anneau aussi plein que son périmètre le permet. Disposées avec les
+    autres, elles serraient chaque article dans un « pissenlit » ;
+  - le **cœur** (les autres nœuds) est disposé par Fruchterman-Reingold (3 000 itérations,
+    au lieu de 500), ses **liens pondérés** (rapportés à leur médiane, bornés entre 0,25 et
+    8) : deux auteurs qui signent souvent ensemble sont plus proches que les cosignataires
+    d'un seul gros article ;
+  - **plus de place** : le cœur est agrandi pour que son lien médian vaille 4 fois le
+    diamètre de ses extrémités (couronnes comprises) et que ses disques couvrent au plus un
+    sixième de son carré ; puis les nœuds dont les couronnes se chevauchent sont écartés,
+    paire par paire (grille de voisinage, 80 passes au plus).
+  Le générateur d'igraph est fixé : la même base donne la même image. DrL, essayé, tassait
+  chaque groupe en un point (78 s pour les auteurs).
 - **SVG** : un cercle par nœud (taille selon les publications ou les citations), lien vers
   sa page et nom au survol (`<title>`) ; les noms des 150 plus gros nœuds écrits à côté ;
   les liens en quelques chemins, un par épaisseur (quartiles du poids), pour que le
   fichier reste léger. Servi avec `Content-Security-Policy: default-src 'none'`.
-- **Mesures** (base de banc) : graphe des auteurs, 1,2 s et 2,9 Mo ; graphe de la base,
-  0,6 s et 0,5 Mo.
+- **Mesures** (base de banc, disposition seule) : graphe des auteurs, 4,6 s (0,7 s avant
+  #420) et 3,1 Mo ; graphe de la base, 0,7 s (0,2 s avant) et 0,5 Mo. L'image, plus
+  compacte, passe de 6 246 × 9 362 à 3 947 × 6 310 px pour les auteurs.
 - **Fraîcheur** : la signature de l'image (nombres et derniers identifiants des
   publications, des créneaux d'auteurs, des citations) dit quand la base a changé depuis ;
   la page le signale et propose « Recalculer l'image ».
 - L'image est commune : le corpus de la personne connectée n'y est pas distingué.
+- **Parcourir l'image** (#453, `/graph/image/<kind>/`, `graph_image_viewer.html`) :
+  « Ouvrir l'image complète » mène à une page qui la parcourt (le fichier SVG reste
+  téléchargeable). Le calcul produit, avec l'image, la **liste de ses nœuds**
+  (`GraphImage.node_list`, JSON servi par `/graph/image/<kind>/nodes.json`) : nom, taille,
+  page, centre et rayon, et les liens en liste de paires ; chaque cercle du SVG porte le
+  rang de son nœud (`data-node`). Une image calculée avant n'a pas de liste : la page
+  demande de la recalculer. Le SVG est récupéré (`fetch`) et inséré dans la page, sans
+  `<script>` ni `<foreignObject>` ; dessiné par le serveur, il n'a pour texte que des noms
+  échappés.
+  - **Vue** (`image_view.js`) : la vue d'ensemble à l'ouverture ; zoom à la molette centré
+    sur le pointeur, déplacement par glisser, boutons + / − / « Tout voir ». La vue est le
+    `viewBox` du SVG, aux proportions du cadre, bornée entre l'image entière et 8 pixels
+    par unité. Pendant un geste, le SVG déjà dessiné est seulement déplacé et agrandi par
+    une transformation CSS ; le `viewBox` suit 150 ms après le dernier mouvement, et
+    l'image est redessinée nette.
+  - **Pointeur** (`image_pointer.js`) : le SVG ne reçoit aucun événement. Un calque
+    transparent au-dessus prend la molette et la souris, et trouve lui-même le nœud sous
+    le pointeur dans une grille des nœuds (cases de 64 unités, 3 pixels de tolérance) :
+    infobulle du nom (verre dépoli), anneau, ligne de la liste. Un clic **sélectionne** le
+    nœud, un second le retire ; un glisser commencé sur un nœud n'est pas un clic. Ctrl, ⌘
+    ou le bouton du milieu ouvrent sa page dans un nouvel onglet. Sous un gestionnaire de molette, Chrome
+    enregistrait chacun des 66 000 éléments du SVG des auteurs comme une zone de ce
+    gestionnaire, et les parcourait à chaque image où la page changeait : 90 ms par image
+    au survol. Pour la même raison, les liens et les noms du SVG ont
+    `pointer-events="none"`.
+  - **Surbrillance** (`image_highlight.js`) : un second SVG, vide, posé sur l'image avec le
+    même `viewBox`, porte l'anneau du nœud survolé (bleu) et ceux des nœuds sélectionnés
+    (orange), avec leurs liens tracés à partir de la liste. Les anneaux gardent 6 pixels
+    d'écart et 3 pixels d'épaisseur quel que soit le zoom (`non-scaling-stroke`) : un nœud
+    de 3 pixels se voit dans la vue d'ensemble.
+  - **Minicarte** (`image_minimap.js`) : les nœuds dessinés une fois en points dans un
+    `<canvas>` (180 pixels au plus, un tiers du cadre sur petit écran), plutôt qu'une
+    seconde copie du SVG ; un rectangle montre la partie vue. Un clic ou un glisser y
+    centre la vue. En verre dépoli, en bas à droite du cadre.
+  - **Sélection** (`image_selection.js`), en haut du panneau, au-dessus de la liste de
+    tous les nœuds : son compte, et pour chaque nœud sélectionné (dans l'ordre de la
+    sélection) son nom, qui centre la vue sur lui, un lien vers sa page et un bouton pour
+    le retirer ; « Tout désélectionner », désactivé quand rien n'est sélectionné. Vide, une
+    ligne grise dit comment sélectionner. C'est le seul chemin vers la page d'un nœud, hors
+    Ctrl+clic : un clic sur un point ou sur un nom de la liste ne quitte pas la page.
+  - **Liste** (`image_nodes.js`), dans le même panneau : recherche sans casse ni accents, tri par taille (publications d'un auteur, citations
+    d'une publication) ou par nom, compte des nœuds trouvés. Seules les lignes visibles
+    sont dessinées, à leur rang dans une liste aussi haute que toutes. Survoler une ligne
+    allume son nœud ; la cocher, ou cliquer sur son nom, le sélectionne ; « Centrer » l'amène au
+    milieu de la vue, au moins à la taille réelle. Survoler un nœud de l'image allume sa
+    ligne et la fait défiler jusqu'à elle.
+  - **Mesures** (`tools/graph_bench/image_frames.py`, base de banc, graphe des auteurs :
+    9 507 nœuds, SVG de 3,1 Mo, liste de 1,1 Mo ; Chrome sans interface, 1 400 × 1 000,
+    médiane de 3 séries) : page prête en 0,5 s ; zoom de 30 crans, déplacement, survol de
+    40 nœuds et de 12 lignes, zoom avec 3 nœuds sélectionnés : 17 ms par image, aucune de
+    plus de 50 ms, sauf le redessin net à la fin d'un zoom (une image de 380 ms, le cadre
+    étant plus grand en pleine largeur ; 470 à 550 ms à 1 920 × 1 080). Sélection de
+    10 nœuds par des clics : 17 ms, 35 ms au plus.
+  - **Mise en page** : à partir de `lg`, la page tient dans la fenêtre (bloc `page_height`
+    de `base.html` : `h-dvh`) ; le cadre prend toute la place restante, le panneau est à
+    sa droite (18rem, 22rem à partir de `xl`, la taille des nœuds masquée entre les deux),
+    et seules ses listes défilent. Sous `lg`, le cadre et le panneau ont leur propre hauteur,
+    l'un sous l'autre, et la page défile : empilés dans la fenêtre, la liste n'aurait que
+    quelques lignes à 1 024 × 768.

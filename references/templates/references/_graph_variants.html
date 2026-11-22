@@ -1,10 +1,11 @@
 {% comment %}
     The variants of the graph chosen in the URL (#195, services/display/graph_variants.py):
-    one link per choice, which keeps the other parameters (a tag, #290). Also the choice
+    one link per choice, which keeps the other parameters (a tag, #290); data-variant names its param, read by graph/expand.js (#451). Also the choice
     between keywords and topics (#418), named by variants_label.
 {% endcomment %}
 {% for variant in graph_variants %}
     <nav class="flex items-center gap-2"
+         data-variant="{{ variant.param|default:'' }}"
          aria-label="{{ variants_label|default:'Disposition du graphe' }}">
         <span class="text-gray-700">{{ variant.label }}</span>
         <span class="flex h-8 flex-1 overflow-hidden rounded-md border border-gray-300 select-none">

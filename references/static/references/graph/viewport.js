@@ -186,10 +186,14 @@ export function bindViewport(cy, container, showAllButton, stretch) {
     };
     const button = bindShowAllButton(showAllButton, showAll);
     showAll();
-    // Held during an animation that ends within the bounds; checked again at its end.
+    // Held during an animation that ends within the bounds; checked again at its end. The
+    // view of a graph just developed or reduced (#451) may start below its new zoom limit.
     const hold = (on) => {
         held = on;
-        if (!on && whole.measured()) {
+        if (on) {
+            cy.minZoom(NO_MIN_ZOOM);
+        } else if (whole.measured()) {
+            cy.minZoom(whole.zoom());
             whole.keepWithin();
             button.update(whole.showsAll());
         }
@@ -222,5 +226,11 @@ export function bindViewport(cy, container, showAllButton, stretch) {
         wholeView: whole.view,
         // Measures the whole graph again and shows it (after a new layout, layout_time.js).
         showAll,
+        // Measures the whole graph again once it is developed or reduced (#451), from the
+        // positions of its new layout: the view fits it (expand.js puts it back after).
+        remeasure: () => {
+            whole.forget();
+            whole.measure();
+        },
     };
 }

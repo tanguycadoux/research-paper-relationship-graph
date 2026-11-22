@@ -49,6 +49,15 @@ projet. Ils ne changent pas le code de l'application.
   dans une page de l'application avec ses modules (style, vue, étirement, sélection,
   axe) ; leurs positions sont posées sans la disposition (x : la date, y : au hasard),
   qui est mesurée par `bench.py`. Son port DevTools est réglable (`--port`).
+- **`labels.py`** vérifie les **libellés de l'export PNG** (#421) : il importe
+  `export_labels.js` dans une page du serveur et place le libellé d'un nœud au bord droit
+  ou dans un cadre étroit ; le libellé doit rester dans l'image, à gauche du nœud ou
+  raccourci avec « … ». Code de sortie 1 si un cas échoue (Node n'est pas nécessaire).
+- **`image_frames.py`** mesure les **images de la page qui parcourt un grand graphe**
+  (#453) : temps jusqu'à l'image dans le cadre, puis, avec les événements de souris de
+  `frames.py` et l'enregistrement de `frames.js`, un zoom de 30 crans, un glisser, le
+  survol de 40 nœuds de l'image et de 12 lignes de la liste, et un zoom avec 3 nœuds
+  cochés. Résultats dans [graphes.md](graphes.md) (« Parcourir l'image »).
 - **`bench.js`**, exécuté dans la page : `placeNodes` est appelé avec un objet `timings`,
   dans lequel `layout.js` additionne le temps de chacune de ses étapes (et le nombre de
   recherches de couples, `refreshes`) ; puis les croisements de liens du résultat sont

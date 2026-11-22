@@ -1,0 +1,150 @@
+{% extends "references/base.html" %}
+{% load static ui %}
+{% comment %}
+    The page that browses the image of a large graph (#453): the SVG, fetched and put in
+    the frame by graph/image_viewer.js, zoomed with the wheel and moved by dragging; a
+    minimap in a corner; beside it, the selected nodes, then the list of all the nodes,
+    searched and sorted, each row lighting its node. A click on a node of the image selects
+    it, like its box in the list. Context: image (GraphImage), kind, graph_page, noun,
+    browsable (False for an image drawn before the list of its nodes).
+    From lg, the page fits in the window (page_height): the frame takes all the room left,
+    the panel is beside it, and only the lists scroll, in the panel. Below lg, the frame and
+    the panel have their own heights, one under the other, and the page scrolls: stacked in
+    the window, each would be too small (the list a few rows high at 1024 × 768).
+{% endcomment %}
+{% block title %}Image complète · {{ image.get_kind_display }} · Base commune · {% endblock title %}
+{% block page_height %}{% if browsable %}min-h-screen lg:h-dvh lg:min-h-0{% else %}min-h-screen{% endif %}{% endblock page_height %}
+{% block head %}
+    {% if browsable %}
+        <script type="module" src="{% static 'references/graph/image_viewer.js' %}"></script>
+    {% endif %}
+{% endblock head %}
+{% block content %}
+    <header class="mb-4">
+        <h1>Base commune</h1>
+    </header>
+    {# The page it is reached from, above its title (#417). #}
+    <p class="text-sm text-gray-500">
+        <a href="{% url graph_page %}">{{ image.get_kind_display }}</a>
+    </p>
+    <h2 class="mt-1">Image complète</h2>
+    <p class="mt-1 mb-4 max-w-3xl text-gray-600">
+        Image du {{ image.finished_at|date:"j F Y à H:i" }} : {{ image.nodes }} {{ noun }}, {{ image.edges }} liens.
+        Molette pour zoomer, glisser pour se déplacer ; un clic sur un point le sélectionne
+        (<a href="{% url 'graph_image_svg' kind %}">fichier SVG</a>).
+    </p>
+    {% if not browsable %}
+        {% alert "Cette image a été calculée avant la liste de ses nœuds : recalculez-la depuis la page du graphe pour la parcourir ici." variant="warning" %}
+    {% else %}
+        <div class="grid grid-cols-1 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_22rem]"
+             data-image-viewer
+             data-kind="{{ kind }}"
+             data-svg-url="{% url 'graph_image_svg' kind %}"
+             data-nodes-url="{% url 'graph_image_nodes' kind %}">
+            <div class="relative h-[65vh] min-h-80 overflow-hidden bg-white select-none lg:h-auto lg:min-h-0"
+                 role="group"
+                 aria-label="{{ image.get_kind_display }}, image zoomable"
+                 data-image-frame>
+                <div class="absolute inset-0" data-image-stage></div>
+                {# Takes the wheel and the pointer for the image, which takes none (graph/image_pointer.js). #}
+                <div class="absolute inset-0 cursor-grab touch-none active:cursor-grabbing data-[over]:cursor-pointer"
+                     data-image-input></div>
+                {# The name of the node under the pointer. #}
+                <div class="pointer-events-none absolute z-10 max-w-xs px-2.5 py-1.5 text-xs text-gray-900 {% glass_classes %}"
+                     aria-hidden="true"
+                     data-image-tooltip
+                     hidden></div>
+                <p class="absolute inset-0 flex items-center justify-center gap-2 text-sm text-gray-600"
+                   role="status"
+                   data-image-loading>
+                    {% icon "progress_activity" class="size-5 shrink-0 animate-spin" %}
+                    Chargement de l'image…
+                </p>
+                <div class="absolute top-3 left-3 flex gap-1 p-1 {% glass_classes %}">
+                    <div data-image-zoom="in">{% button "Zoomer" variant="secondary" icon="add" icon_only=True type="button" %}</div>
+                    <div data-image-zoom="out">{% button "Dézoomer" variant="secondary" icon="remove" icon_only=True type="button" %}</div>
+                    <div data-image-zoom="all">{% button "Tout voir" variant="secondary" icon="fit_screen" type="button" %}</div>
+                </div>
+                {# The whole image in small, its nodes drawn as dots; the rectangle is the part shown (#453). #}
+                <div class="absolute right-3 bottom-3 p-1.5 {% glass_classes %}"
+                     data-image-minimap
+                     hidden>
+                    <div class="relative cursor-pointer touch-none">
+                        <canvas class="block"
+                                aria-label="Minicarte : cliquer ou glisser pour se déplacer"></canvas>
+                        <div class="pointer-events-none absolute rounded-sm border-2 border-blue-700 bg-blue-700/10"
+                             data-image-minimap-view></div>
+                    </div>
+                </div>
+            </div>
+            {# The panel takes the height the card gives it (from lg): its lists scroll inside it. #}
+            <aside class="flex h-[70vh] min-h-80 flex-col gap-3 border-t border-gray-200 p-3 text-sm lg:h-auto lg:min-h-0 lg:border-t-0 lg:border-l"
+                   aria-label="Nœuds de l'image">
+                {# The selected nodes (graph/image_selection.js): a click on one centres the view on it. #}
+                <section class="grid shrink-0 gap-2 border-b border-gray-100 pb-3"
+                         aria-labelledby="image-selection-title"
+                         data-image-selection>
+                    <div class="flex items-center justify-between gap-2">
+                        <h3 id="image-selection-title" class="text-sm text-gray-900">
+                            Sélection <span class="font-normal text-gray-500 tabular-nums" data-selection-count>(0)</span>
+                        </h3>
+                        <div data-selection-clear>{% button "Tout désélectionner" variant="secondary" type="button" disabled=True %}</div>
+                    </div>
+                    <p class="text-gray-500" data-selection-empty>Aucune sélection : cliquez sur un point de l'image ou cochez une ligne.</p>
+                    <ul class="grid max-h-36 gap-0.5 overflow-y-auto overscroll-contain"
+                        aria-live="polite"
+                        data-selection-list
+                        hidden>
+                    </ul>
+                    <template data-selection-row>
+                        <li class="flex items-center gap-1 rounded-md bg-orange-50 py-0.5 pr-0.5 pl-2">
+                            <button type="button"
+                                    class="min-w-0 flex-1 cursor-pointer truncate text-left text-gray-900 hover:text-blue-700"
+                                    data-selection-centre></button>
+                            <div class="shrink-0" data-selection-link>{% button "Voir sa page" url="#" variant="secondary" icon="article" icon_only=True %}</div>
+                            <div class="shrink-0" data-selection-remove>
+                                {% button "Retirer de la sélection" variant="secondary" icon="close" icon_only=True type="button" %}
+                            </div>
+                        </li>
+                    </template>
+                </section>
+                <div class="grid shrink-0 gap-2">
+                    <label class="sr-only" for="image-node-search">Chercher un nœud</label>
+                    <input id="image-node-search"
+                           type="search"
+                           placeholder="Chercher parmi les {{ noun }}"
+                           autocomplete="off"
+                           data-image-search>
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-gray-600" aria-live="polite" data-image-count></p>
+                        <label class="flex items-center gap-2">
+                            <span class="text-gray-600">Tri</span>
+                            <select class="w-auto" data-image-sort>
+                                <option value="size">Par taille</option>
+                                <option value="name">Par nom</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                {# Only the rows in sight are drawn (graph/image_nodes.js): the list may hold 10 000 nodes. #}
+                <div class="relative min-h-24 flex-1 overflow-y-auto overscroll-contain border-t border-gray-100"
+                     data-image-list>
+                    <ul class="relative" data-image-rows>
+                    </ul>
+                </div>
+                <template data-image-row>
+                    <li class="absolute inset-x-0 flex h-11 items-center gap-2 rounded-md px-1 hover:bg-gray-50 data-[checked]:bg-orange-50 data-[active]:bg-blue-50">
+                        {# The name is the label of the box: a click on it selects the node; its page is in the selection. #}
+                        <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                            <input type="checkbox" class="shrink-0" data-row-check>
+                            <span class="min-w-0 flex-1 truncate text-gray-900" data-row-name></span>
+                        </label>
+                        {# Hidden while the panel is narrow (lg to xl): the names first. #}
+                        <span class="shrink-0 text-xs text-gray-500 tabular-nums lg:max-xl:hidden" data-row-size></span>
+                        <div class="shrink-0" data-row-centre>{% button "Centrer" variant="secondary" type="button" %}</div>
+                    </li>
+                </template>
+            </aside>
+        </div>
+    {% endif %}
+{% endblock content %}

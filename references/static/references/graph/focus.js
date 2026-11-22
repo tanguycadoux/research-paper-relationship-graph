@@ -21,6 +21,8 @@ const MIN_SPAN = 1;
 // are stretched to this part of it only.
 const PAIR_FILL = 0.6;
 const DURATION = 300;
+// A graph developed or reduced (#451): nodes come out of a publication, or go back in.
+const MORPH_DURATION = 500;
 
 // Layout coordinates of the node centres: their size depends on the zoom (#185), and the
 // stretch of a previous selection does not count.
@@ -139,17 +141,23 @@ function viewBetween(cy, from, to, e) {
 // One loop moves the view and the stretch together (viewBetween), frame by frame; it ends
 // on the target exactly. A new move starts from where the view is; stop() leaves it where
 // it is. Uniform, the stretch stays the identity: the positions are not written again
-// (viewBetween gives it, up to rounding).
+// (viewBetween gives it, up to rounding). onFrame(e), when given (a graph developed or
+// reduced, #451), moves the layout at each frame, at the same eased progress: the
+// positions are then written again, uniform too; a move stopped on the way ends it at once.
 function makeMover(cy, viewport, stretch, uniform) {
     let frame = null;
+    let finish = null;
     const stop = () => {
         if (frame !== null) {
             cancelAnimationFrame(frame);
             frame = null;
             viewport.hold(false);
         }
+        const pending = finish;
+        finish = null;
+        pending?.();
     };
-    const moveTo = (target, complete) => {
+    const moveTo = (target, complete, onFrame) => {
         stop();
         cy.stop();
         const from = { stretch: stretch.current(), zoom: cy.zoom(), pan: { ...cy.pan() } };
@@ -160,11 +168,20 @@ function makeMover(cy, viewport, stretch, uniform) {
             !viewport.live || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const start = performance.now();
         viewport.hold(true);
+        if (onFrame) {
+            finish = () => {
+                onFrame(1);
+                stretch.apply(stretch.current());
+                complete?.();
+            };
+        }
         const step = (now) => {
-            const t = still ? 1 : Math.min(1, (now - start) / DURATION);
-            const view = t < 1 ? viewBetween(cy, from, target, easeInOutCubic(t)) : target;
-            if (!uniform) {
-                stretch.apply(view.stretch);
+            const t = still ? 1 : Math.min(1, (now - start) / (onFrame ? MORPH_DURATION : DURATION));
+            const e = easeInOutCubic(t);
+            const view = t < 1 ? viewBetween(cy, from, target, e) : target;
+            onFrame?.(e);
+            if (!uniform || onFrame) {
+                stretch.apply(uniform ? IDENTITY : view.stretch);
             }
             cy.viewport({ zoom: view.zoom, pan: view.pan });
             if (t < 1) {
@@ -172,6 +189,7 @@ function makeMover(cy, viewport, stretch, uniform) {
                 return;
             }
             frame = null;
+            finish = null;
             viewport.hold(false);
             complete?.();
         };
@@ -182,6 +200,40 @@ function makeMover(cy, viewport, stretch, uniform) {
         }
     };
     return { moveTo, stop, moving: () => frame !== null };
+}
+
+// The graph developed or reduced (#451, expand.js): from the layout `from` to the layout
+// `to` ({id: point}, every node of the graph), while the view goes to the selected nodes of
+// the new graph, or to the whole of it. The view to aim at is measured on the new layout,
+// then the old one is put back, and both move together. setBefore: where a deselection
+// goes back to, the whole new graph.
+function makeMorph(cy, viewport, stretch, uniform, moveTo, stop, setBefore) {
+    const setLayout = (points) => {
+        for (const [id, point] of points) {
+            stretch.setLayout(id, point);
+        }
+    };
+    return ({ from, to, nodes, onFrame, complete }) => {
+        stop();
+        cy.stop();
+        const start = { stretch: stretch.current(), zoom: cy.zoom(), pan: { ...cy.pan() } };
+        setLayout(to);
+        stretch.apply(IDENTITY);
+        viewport.remeasure();
+        const whole = { ...viewport.wholeView(), stretch: IDENTITY };
+        let target = whole;
+        if (nodes?.nonempty()) {
+            const box = centres(nodes, stretch);
+            const aim = aimFor(cy, box, viewport.wholeZoom() * MAX_ZOOM_RATIO, nodes.length, uniform);
+            target = { ...viewport.within(aim.zoom, aim.pan, aim.stretch), stretch: aim.stretch };
+        }
+        setBefore(nodes?.nonempty() ? whole : null);
+        setLayout(from);
+        viewport.hold(true);
+        stretch.apply(start.stretch);
+        cy.viewport({ zoom: start.zoom, pan: start.pan });
+        moveTo(target, complete, onFrame);
+    };
 }
 
 // viewport: what bindViewport returns; stretch: what makeStretch returns. uniform: the
@@ -224,5 +276,9 @@ export function bindFocus(cy, viewport, stretch, { uniform = false } = {}) {
         before = null;
         stretch.apply(IDENTITY);
     });
-    return { show, release };
+    const morph = makeMorph(cy, viewport, stretch, uniform, moveTo, stop, (view) => {
+        before = view;
+    });
+    // settle: ends a motion on its way, a graph developed or reduced included (#451).
+    return { show, release, morph, settle: stop };
 }

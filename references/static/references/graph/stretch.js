@@ -45,6 +45,10 @@ export function makeStretch(cy) {
         current: () => current,
         // Position of a node in the layout, whatever the stretch.
         layoutPosition: (node) => layout.get(node.id()),
+        // The layout changes when the graph is developed or reduced (#451, expand.js):
+        // the position of a node by its id, or forgotten once the node is removed.
+        setLayout: (id, point) => layout.set(id, point),
+        forgetLayout: (id) => layout.delete(id),
         // x of the graph for an x of the layout, and back (the year axis).
         x: (x) => current.cx + (x - current.cx) * current.sx,
         layoutX: (x) => current.cx + (x - current.cx) / current.sx,
