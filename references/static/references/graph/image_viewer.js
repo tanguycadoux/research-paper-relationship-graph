@@ -7,6 +7,7 @@ import { createHighlight } from "./image_highlight.js";
 import { createMinimap } from "./image_minimap.js";
 import { createNodeList } from "./image_nodes.js";
 import { createPointer } from "./image_pointer.js";
+import { createSelection } from "./image_selection.js";
 import { createView } from "./image_view.js";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -67,18 +68,30 @@ function wire(root, svg, layer, list) {
     view.onDraw(highlight.rescale);
     highlight.rescale(view.current());
     createMinimap(root.querySelector("[data-image-minimap]"), nodes, view);
+    const centre = (index) => {
+        highlight.hover(index);
+        view.centreOn(nodes[index].x, nodes[index].y, { unit: CENTRE_UNIT });
+    };
+    const selection = createSelection(root.querySelector("[data-image-selection]"), nodes, {
+        hover: highlight.hover,
+        centre,
+    });
     const rows = createNodeList(root, nodes, {
         nouns: NOUNS[root.dataset.kind] ?? NOUNS.base,
         hover: highlight.hover,
-        check: highlight.check,
-        centre: (index) => {
-            highlight.hover(index);
-            view.centreOn(nodes[index].x, nodes[index].y, { unit: CENTRE_UNIT });
-        },
+        centre,
+        selection,
     });
-    createPointer(input, root.querySelector("[data-image-tooltip]"), nodes, view, (index) => {
-        highlight.hover(index);
-        rows.reveal(index);
+    selection.onChange((index, on) => {
+        highlight.check(index, on);
+        rows.render();
+    });
+    createPointer(input, root.querySelector("[data-image-tooltip]"), nodes, view, {
+        hover: (index) => {
+            highlight.hover(index);
+            rows.reveal(index);
+        },
+        select: selection.toggle,
     });
     listenButtons(root, view);
 }

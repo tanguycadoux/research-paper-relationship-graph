@@ -216,8 +216,9 @@ references/          application principale
     keyword_labels.js  noms des mots-clés dessinés là où ils ne se chevauchent pas
     image_viewer.js  point d'entrée de la page qui parcourt l'image d'un grand graphe (#453)
     image_view.js    sa vue : zoom à la molette, déplacement, « Tout voir » (viewBox)
-    image_pointer.js  le nœud sous le pointeur : infobulle, surbrillance, clic vers sa page
-    image_highlight.js  nœuds en surbrillance (survolé, cochés et leurs liens), dans un SVG à part
+    image_pointer.js  le nœud sous le pointeur : infobulle, surbrillance, clic qui le sélectionne
+    image_highlight.js  nœuds en surbrillance (survolé, sélectionnés et leurs liens), dans un SVG à part
+    image_selection.js  nœuds sélectionnés, listés au-dessus de tous : centrer, page, retirer, tout désélectionner
     image_minimap.js  minicarte (points dans un canvas, rectangle de la partie vue)
     image_nodes.js   liste des nœuds : recherche, tri, seules les lignes visibles dessinées
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph…)

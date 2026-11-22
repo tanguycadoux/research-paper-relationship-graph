@@ -2,6 +2,7 @@
 Titles of the pages (#417): the <h1> of a page of the menu, or of a page reached from
 one, is its group of the navigation; the page itself is the first <h2>; the headings then
 follow each other without skipping a level; the <title> reads « Page · Group · … ».
+Their content takes the whole width of the window: no max-w around it (#453).
 """
 
 import re
@@ -93,6 +94,10 @@ class PageTitleTests(TestCase):
             for previous, level in zip(levels, levels[1:], strict=False):
                 self.assertLessEqual(level, previous + 1, parsed.headings)
             self.assertTrue(parsed.title.startswith(f"{page} · {group} · "), parsed.title)
+            column = re.search(
+                r'<main[^>]*class="([^"]*)"[^>]*>\s*<div class="([^"]*)"', response.content.decode()
+            )
+            self.assertNotIn("max-w", " ".join(column.groups()))
 
     def test_the_pages_of_the_menu_are_titled_by_their_group(self):
         menu = [(entry[1], title) for title, _, links in NAVIGATION for entry in links]

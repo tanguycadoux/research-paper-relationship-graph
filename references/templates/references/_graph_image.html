@@ -10,7 +10,7 @@ background on the server and kept for everyone. Context: large_graph
             <p class="max-w-3xl text-gray-700">
                 Ce graphe compte {{ state.nodes }} {{ state.noun }} : trop pour être dessiné et manipulé dans la page.
                 Son image complète est calculée sur le serveur en quelques secondes, puis gardée pour tous :
-                chaque point mène à sa page, et le nom apparaît au survol.
+                le nom d'un point apparaît au survol, un clic le sélectionne et donne le lien vers sa page.
             </p>
             {% if state.pending %}
                 <p class="flex items-center gap-2 text-sm text-gray-700"

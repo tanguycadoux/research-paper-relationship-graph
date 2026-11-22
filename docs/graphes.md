@@ -543,14 +543,15 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
   - **Pointeur** (`image_pointer.js`) : le SVG ne reçoit aucun événement. Un calque
     transparent au-dessus prend la molette et la souris, et trouve lui-même le nœud sous
     le pointeur dans une grille des nœuds (cases de 64 unités, 3 pixels de tolérance) :
-    infobulle du nom (verre dépoli), anneau, ligne de la liste, clic vers la page (nouvel
-    onglet avec Ctrl, ⌘ ou le bouton du milieu). Sous un gestionnaire de molette, Chrome
+    infobulle du nom (verre dépoli), anneau, ligne de la liste. Un clic **sélectionne** le
+    nœud, un second le retire ; un glisser commencé sur un nœud n'est pas un clic. Ctrl, ⌘
+    ou le bouton du milieu ouvrent sa page dans un nouvel onglet. Sous un gestionnaire de molette, Chrome
     enregistrait chacun des 66 000 éléments du SVG des auteurs comme une zone de ce
     gestionnaire, et les parcourait à chaque image où la page changeait : 90 ms par image
     au survol. Pour la même raison, les liens et les noms du SVG ont
     `pointer-events="none"`.
   - **Surbrillance** (`image_highlight.js`) : un second SVG, vide, posé sur l'image avec le
-    même `viewBox`, porte l'anneau du nœud survolé (bleu) et ceux des nœuds cochés
+    même `viewBox`, porte l'anneau du nœud survolé (bleu) et ceux des nœuds sélectionnés
     (orange), avec leurs liens tracés à partir de la liste. Les anneaux gardent 6 pixels
     d'écart et 3 pixels d'épaisseur quel que soit le zoom (`non-scaling-stroke`) : un nœud
     de 3 pixels se voit dans la vue d'ensemble.
@@ -558,15 +559,28 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
     `<canvas>` (180 pixels au plus, un tiers du cadre sur petit écran), plutôt qu'une
     seconde copie du SVG ; un rectangle montre la partie vue. Un clic ou un glisser y
     centre la vue. En verre dépoli, en bas à droite du cadre.
-  - **Liste** (`image_nodes.js`), à droite du cadre à partir de `xl`, dessous sinon :
-    recherche sans casse ni accents, tri par taille (publications d'un auteur, citations
+  - **Sélection** (`image_selection.js`), en haut du panneau, au-dessus de la liste de
+    tous les nœuds : son compte, et pour chaque nœud sélectionné (dans l'ordre de la
+    sélection) son nom, qui centre la vue sur lui, un lien vers sa page et un bouton pour
+    le retirer ; « Tout désélectionner », désactivé quand rien n'est sélectionné. Vide, une
+    ligne grise dit comment sélectionner. C'est le seul chemin vers la page d'un nœud, hors
+    Ctrl+clic : un clic sur un point ou sur un nom de la liste ne quitte pas la page.
+  - **Liste** (`image_nodes.js`), dans le même panneau : recherche sans casse ni accents, tri par taille (publications d'un auteur, citations
     d'une publication) ou par nom, compte des nœuds trouvés. Seules les lignes visibles
     sont dessinées, à leur rang dans une liste aussi haute que toutes. Survoler une ligne
-    allume son nœud ; la cocher le garde allumé avec ses liens ; « Centrer » l'amène au
+    allume son nœud ; la cocher, ou cliquer sur son nom, le sélectionne ; « Centrer » l'amène au
     milieu de la vue, au moins à la taille réelle. Survoler un nœud de l'image allume sa
     ligne et la fait défiler jusqu'à elle.
   - **Mesures** (`tools/graph_bench/image_frames.py`, base de banc, graphe des auteurs :
     9 507 nœuds, SVG de 3,1 Mo, liste de 1,1 Mo ; Chrome sans interface, 1 400 × 1 000,
     médiane de 3 séries) : page prête en 0,5 s ; zoom de 30 crans, déplacement, survol de
-    40 nœuds et de 12 lignes, zoom avec 3 nœuds cochés : 17 ms par image, aucune de plus de
-    50 ms, sauf le redessin net à la fin d'un zoom (une image de 280 ms).
+    40 nœuds et de 12 lignes, zoom avec 3 nœuds sélectionnés : 17 ms par image, aucune de
+    plus de 50 ms, sauf le redessin net à la fin d'un zoom (une image de 380 ms, le cadre
+    étant plus grand en pleine largeur ; 470 à 550 ms à 1 920 × 1 080). Sélection de
+    10 nœuds par des clics : 17 ms, 35 ms au plus.
+  - **Mise en page** : à partir de `lg`, la page tient dans la fenêtre (bloc `page_height`
+    de `base.html` : `h-dvh`) ; le cadre prend toute la place restante, le panneau est à
+    sa droite (18rem, 22rem à partir de `xl`, la taille des nœuds masquée entre les deux),
+    et seules ses listes défilent. Sous `lg`, le cadre et le panneau ont leur propre hauteur,
+    l'un sous l'autre, et la page défile : empilés dans la fenêtre, la liste n'aurait que
+    quelques lignes à 1 024 × 768.

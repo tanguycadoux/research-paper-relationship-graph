@@ -15,7 +15,7 @@ const WHEEL_ZOOM = 1.25;
 const BUTTON_ZOOM = 1.6;
 // At most this many screen pixels per unit of the image; at least the whole image.
 const MAX_SCALE = 8;
-// A press that moves less than this is a click (on a node, its link), not a drag.
+// A press that moves less than this is a click (on a node, its selection), not a drag.
 const DRAG_THRESHOLD = 4;
 
 // frame: the element over the image that takes the wheel and the pointer (image_pointer.js).
@@ -155,8 +155,8 @@ function listenWheel(frame, zoomAt) {
     );
 }
 
-// Drag to move the view; the click that ends a drag does not follow the link of the node
-// under the pointer.
+// Drag to move the view; the click that ends a drag does not select the node under the
+// pointer.
 function listenDrag(frame, move) {
     let press = null;
     frame.addEventListener("pointerdown", (event) => {

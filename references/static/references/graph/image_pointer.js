@@ -1,6 +1,7 @@
 // The node under the pointer on the image of a large graph (#453): its name in a tooltip,
-// its ring and its row lit, and a click that opens its page (in a new tab with Ctrl, ⌘ or
-// the middle button).
+// its ring and its row lit. A click selects it, or takes it out of the selection (a drag
+// is no click: image_view.js); with Ctrl, ⌘ or the middle button, its page opens in a new
+// tab. Its page is also linked from the selection (image_selection.js).
 //
 // The SVG takes no pointer event: the input layer over it does, and finds the node itself
 // in a grid of the nodes. Under a wheel handler (the zoom), the browser records each of the
@@ -13,7 +14,8 @@ const CELL = 64;
 // most a cell: the whole image of the authors is about 8 units a pixel).
 const TOLERANCE = 3;
 
-export function createPointer(input, tooltip, nodes, view, hover) {
+// actions: hover(index or null), select(index), which toggles the selection of the node.
+export function createPointer(input, tooltip, nodes, view, actions) {
     const grid = cells(nodes);
     let current = null;
 
@@ -30,7 +32,7 @@ export function createPointer(input, tooltip, nodes, view, hover) {
         if (index !== current) {
             current = index;
             input.toggleAttribute("data-over", index !== null);
-            hover(index);
+            actions.hover(index);
         }
         showTooltip(tooltip, input, event, index === null ? null : nodes[index].label);
     }
@@ -39,13 +41,24 @@ export function createPointer(input, tooltip, nodes, view, hover) {
     input.addEventListener("wheel", point, { passive: true });
     input.addEventListener("pointerleave", () => {
         current = null;
-        hover(null);
+        actions.hover(null);
         showTooltip(tooltip, input, null, null);
     });
-    input.addEventListener("click", (event) => openNode(nodes, nodeAt(event), event));
+    input.addEventListener("click", (event) => {
+        const index = nodeAt(event);
+        if (index === null) {
+            return;
+        }
+        if (event.ctrlKey || event.metaKey) {
+            openNode(nodes, index, event);
+        } else {
+            actions.select(index);
+        }
+    });
     input.addEventListener("auxclick", (event) => {
-        if (event.button === 1) {
-            openNode(nodes, nodeAt(event), event);
+        const index = nodeAt(event);
+        if (event.button === 1 && index !== null) {
+            openNode(nodes, index, event);
         }
     });
 }
@@ -103,16 +116,10 @@ function closest(candidates, nodes, x, y, tolerance) {
     return best;
 }
 
+// In a new tab, like a link.
 function openNode(nodes, index, event) {
-    if (index === null) {
-        return;
-    }
     event.preventDefault();
-    if (event.ctrlKey || event.metaKey || event.button === 1) {
-        window.open(nodes[index].url, "_blank", "noopener");
-    } else {
-        window.location.assign(nodes[index].url);
-    }
+    window.open(nodes[index].url, "_blank", "noopener");
 }
 
 // The name of the node above the pointer, kept in the frame.

@@ -99,8 +99,18 @@ class GraphImageTests(TestCase):
         self.assertContains(response, reverse("graph_image_nodes", args=[Kind.AUTHORS]))
         self.assertContains(response, "references/graph/image_viewer.js")
         self.assertContains(response, "Chercher parmi les auteurs")
-        # The graph page leads to it.
+        # The selection, above the list of all the nodes: empty, its button disabled.
+        content = response.content.decode()
+        self.assertLess(content.index("data-image-selection"), content.index("data-image-search"))
+        self.assertContains(response, "Aucune sélection")
+        self.assertRegex(content, r"<button[^>]*\sdisabled[^>]*>\s*Tout désélectionner\s*</button>")
+        # The name of a row selects its node: no link to its page in the list.
+        self.assertNotIn("data-row-name href", content)
+        # The page fits in the window from lg; the other pages grow with their content.
+        self.assertContains(response, "lg:h-dvh")
         page = self.client.get(reverse("authors_graph"))
+        self.assertNotContains(page, "h-dvh")
+        # The graph page leads to it.
         self.assertContains(page, reverse("graph_image_viewer", args=[Kind.AUTHORS]))
 
     def test_an_image_drawn_before_the_list_cannot_be_browsed(self):

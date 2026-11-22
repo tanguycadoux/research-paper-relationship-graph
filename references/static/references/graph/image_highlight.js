@@ -1,5 +1,5 @@
 // The nodes lit on the image of a large graph (#453): the one hovered, in the image or in
-// the list, and those checked in the list, with their links. Drawn in an SVG of their own
+// the lists, and the selected ones (image_selection.js), with their links. Drawn in an SVG of their own
 // over the image (layer), with the same viewBox: the thousands of circles and edges of the
 // image are never touched, and lighting a node costs only its ring.
 

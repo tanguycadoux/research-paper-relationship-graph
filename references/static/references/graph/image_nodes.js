@@ -1,8 +1,9 @@
 // The list of the nodes beside the image of a large graph (#453): searched without case
 // nor accents, sorted by size or by name. Only the rows in sight are drawn (the graph of
 // the authors has 9 500 nodes), placed at their rank in a list as tall as all of them.
-// Hovering a row lights its node, checking it keeps it lit with its links, « Centrer »
-// brings it to the middle of the view; hovering a node of the image shows its row.
+// Hovering a row lights its node, checking it (or clicking its name) selects it
+// (image_selection.js), « Centrer » brings it to the middle of the view; hovering a node of
+// the image shows its row.
 
 // The height of a row, in pixels (h-11 of the row of the template).
 const ROW = 44;
@@ -27,7 +28,7 @@ export function createNodeList(panel, nodes, actions) {
     };
     const keys = nodes.map((node) => fold(node.label));
     const orders = sortedOrders(nodes);
-    const state = { shown: orders.size, active: null, checked: new Set(), frame: 0 };
+    const state = { shown: orders.size, active: null, frame: 0 };
 
     function filter() {
         const query = fold(parts.search.value.trim());
@@ -52,8 +53,9 @@ export function createNodeList(panel, nodes, actions) {
         fillRow(item, nodes[index], actions.nouns);
         item.style.top = `${position * ROW}px`;
         item.dataset.node = index;
-        item.querySelector("[data-row-check]").checked = state.checked.has(index);
-        item.toggleAttribute("data-checked", state.checked.has(index));
+        const selected = actions.selection.has(index);
+        item.querySelector("[data-row-check]").checked = selected;
+        item.toggleAttribute("data-checked", selected);
         item.toggleAttribute("data-active", index === state.active);
         return item;
     }
@@ -71,17 +73,7 @@ export function createNodeList(panel, nodes, actions) {
         }
     }
 
-    function toggle(index, on) {
-        if (on) {
-            state.checked.add(index);
-        } else {
-            state.checked.delete(index);
-        }
-        actions.check(index, on);
-        render();
-    }
-
-    listenRows(parts, actions, toggle);
+    listenRows(parts, actions);
     parts.list.addEventListener("scroll", () => {
         cancelAnimationFrame(state.frame);
         state.frame = requestAnimationFrame(render);
@@ -90,7 +82,8 @@ export function createNodeList(panel, nodes, actions) {
     parts.sort.addEventListener("change", filter);
     new ResizeObserver(render).observe(parts.list);
     filter();
-    return { reveal };
+    // render: the boxes follow the selection, whoever changed it.
+    return { reveal, render };
 }
 
 // The ranks of the nodes, largest first (by name among equals), and by name.
@@ -105,11 +98,10 @@ function sortedOrders(nodes) {
 
 function fillRow(item, node, nouns) {
     const name = item.querySelector("[data-row-name]");
-    name.href = node.url;
     name.textContent = node.label;
     name.title = node.label;
     item.querySelector("[data-row-size]").textContent = counted(node.size, nouns.size);
-    item.querySelector("[data-row-check]").setAttribute("aria-label", `Garder en évidence : ${node.label}`);
+    item.querySelector("[data-row-check]").setAttribute("aria-label", `Sélectionner : ${node.label}`);
     item.querySelector("[data-row-centre] button").setAttribute("aria-label", `Centrer : ${node.label}`);
 }
 
@@ -126,7 +118,7 @@ function countText(shown, total, nouns) {
 }
 
 // Hover, check and « Centrer » of the rows, delegated: the rows come and go with the scroll.
-function listenRows(parts, actions, toggle) {
+function listenRows(parts, actions) {
     const indexOf = (target) => {
         const item = target.closest("[data-node]");
         return item ? Number(item.dataset.node) : null;
@@ -135,7 +127,7 @@ function listenRows(parts, actions, toggle) {
     parts.list.addEventListener("pointerleave", () => actions.hover(null));
     parts.rows.addEventListener("change", (event) => {
         if (event.target.matches("[data-row-check]")) {
-            toggle(indexOf(event.target), event.target.checked);
+            actions.selection.set(indexOf(event.target), event.target.checked);
         }
     });
     parts.rows.addEventListener("click", (event) => {
