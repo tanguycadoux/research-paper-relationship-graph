@@ -39,19 +39,14 @@ function keepWithin(cy, bounds) {
 // itself. Up to this many elements (about 20 ms), sizes follow the zoom at each frame.
 export const LIVE_SIZES_MAX_ELEMENTS = 600;
 
-// Beyond this many elements, even moving a picture of the graph is slow (#202).
-const HIDE_EDGES_MIN_ELEMENTS = 5000;
-
 // Options of Cytoscape for a graph of this many elements. On a large one, the drawing
 // itself is slow (45 ms for 4 300 elements, 100 ms for 7 000): while the view is zoomed or
-// dragged by hand, Cytoscape moves a picture of the graph, edges included, and draws it
-// again once the gesture ends. On a very large one, the picture is slow too: the edges are
-// hidden during the gesture instead.
+// dragged by hand, the edges are hidden and only the nodes are drawn, at each frame
+// (#476), so that what a drag brings into the frame shows at once. Moving a picture of the
+// graph instead (textureOnViewport, #320) was as fluid up to 4 300 elements, but showed
+// nothing of what was out of the frame when the gesture began, until it ended.
 export function rendererOptions(elementCount) {
-    if (elementCount > HIDE_EDGES_MIN_ELEMENTS) {
-        return { hideEdgesOnViewport: true };
-    }
-    return { textureOnViewport: elementCount > LIVE_SIZES_MAX_ELEMENTS };
+    return { hideEdgesOnViewport: elementCount > LIVE_SIZES_MAX_ELEMENTS };
 }
 
 // The view of this zoom and pan, brought within the bounds of the graph stretched as

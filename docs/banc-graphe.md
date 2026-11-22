@@ -507,3 +507,45 @@ tout dans la vue après le zoom de `frames.py` : rien n'y change. Les petits gra
 (600 éléments au plus) gardent leur réévaluation à chaque image. Après la passe, l'image
 est la même qu'avant à l'œil (captures comparées : écarts de lissage au bord des nœuds,
 au plus 55 pixels sur 1 400 × 1 000 qui diffèrent de plus de 40 niveaux).
+
+## Glisser hors du cadre (#476)
+
+Pendant un glisser, ce qui était hors du cadre au début du geste n'était pas dessiné
+avant le relâchement. Mesuré le 22 novembre 2026, Chrome headless à 1 400 px, base du
+banc ; `frames.py` et `image_frames.py`, médiane / 90e centile / plus longue image (ms),
+images de plus de 50 ms.
+
+**Graphes Cytoscape** (au-delà de 600 éléments) :
+
+| Graphe (éléments) | Geste | Image déplacée (`textureOnViewport`, avant) | Liens masqués (**retenu**) | Dessin complet |
+|---|---|---|---|---|
+| Corpus de `bench`, frise (4 292) | Glisser | 17 / 18 / 55, 1 | 17 / 24 / 53, 1 | 17 / 39 / 45, 0 |
+| | Zoom | 17 / 18 / 187, 2 | 17 / 26 / 201, 2 | 18 / 34 / 191, 4 |
+| Corpus de `bench`, réseau (4 292) | Glisser | 17 / 17 / 65, 1 | 17 / 23 / 63, 1 | — |
+| | Zoom | 17 / 17 / 198, 2 | 16 / 26 / 192, 1 | — |
+| Synthétique 1 000 (3 471) | Glisser | 17 / 17 / 52, 1 | 17 / 20 / 51, 1 | 48 / 52 / 56, 19 |
+| | Zoom | 17 / 17 / 154, 4 | 17 / 21 / 151, 2 | 17 / 51 / 135, 10 |
+
+- **Liens masqués** : les nœuds sont redessinés à chaque image, ce qui entre dans le cadre
+  apparaît aussitôt ; le 90e centile monte de 17–18 à 20–26 ms, la médiane reste à 17.
+  Les liens reviennent au relâchement. C'était déjà la règle au-delà de 5 000 éléments.
+- **Dessin complet** : fluide en médiane sur le corpus, mais 48 ms par image sur le
+  graphe synthétique de 1 000 publications, plus dense en liens.
+- Les petits graphes (600 éléments au plus) ne changent pas : ni image, ni liens masqués.
+
+**Image d'un grand graphe** (`image_view.js`) : le SVG est dessiné avec une marge autour
+du cadre. Mêmes mesures avec une marge de 0 (avant), d'un demi-cadre et d'un cadre de
+chaque côté (retenu) :
+
+| Image | Marge | Chargement | Zoom | Glisser | Survol |
+|---|---|---|---|---|---|
+| Auteurs (9 507 nœuds, 56 389 liens) | 0 | 490 ms | 17 / 17 / 370, 2 | 17 / 17 / 19 | 17 / 18 / 20 |
+| | ½ cadre | 516 ms | 17 / 17 / 366, 1 | 17 / 17 / 19 | 17 / 19 / 36 |
+| | 1 cadre | 490 ms | 17 / 17 / 361, 1 | 17 / 17 / 18 | 17 / 19 / 25 |
+| Base (1 797, 2 539) | 0 | 153 ms | 17 / 17 / 25 | 17 / 17 / 19 | 17 / 18 / 22 |
+| | 1 cadre | 116 ms | 17 / 17 / 21 | 17 / 17 / 18 | 17 / 18 / 19 |
+
+- La marge ne coûte rien de mesurable : le navigateur dessine un SVG par ses éléments
+  plus que par sa surface. Un glisser d'au plus un cadre dans chaque direction montre
+  donc tout de suite le graphe ; la position est la même au pixel près avant et après le
+  redessin du relâchement.

@@ -401,13 +401,14 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   - la **sélection va directement à sa vue**, sans animation, les tailles réévaluées une
     fois : sans réévaluation à chaque image, l'animation ferait gonfler les nœuds jusqu'à
     4 fois (le zoom de la sélection) avant de les réduire ;
-  - pendant un zoom à la molette ou un déplacement à la souris, Cytoscape déplace **une
-    image** du graphe, liens compris (`textureOnViewport`, `rendererOptions`), et le
-    redessine à la fin du geste ; au-delà de **5 000 éléments**, cette image est lente à
-    son tour (32 images de plus de 50 ms pendant un zoom à 2 000 publications) : les
-    **liens sont masqués** pendant le geste (`hideEdgesOnViewport`, 2 images lentes). Les
-    deux gagnent autant jusqu'à 1 800 publications ; l'image garde les liens, d'où son
-    choix sous ce seuil ;
+  - pendant un zoom à la molette ou un déplacement à la souris, les **liens sont
+    masqués** et seuls les nœuds sont dessinés, à chaque image (`hideEdgesOnViewport`,
+    `rendererOptions`, #476) : ce qu'un glisser fait entrer dans le cadre apparaît aussitôt.
+    Avant, Cytoscape déplaçait une image du graphe, liens compris (`textureOnViewport`,
+    #320), aussi fluide jusqu'à 4 300 éléments, mais qui laissait en gris tout ce qui
+    était hors du cadre au début du geste, jusqu'au relâchement ; au-delà de 5 000
+    éléments, elle était lente à son tour (32 images de plus de 50 ms pendant un zoom à
+    2 000 publications), et les liens y étaient déjà masqués ;
   - le **survol** (`hover.js`) ne change aucune classe Cytoscape, ce qui redessinerait
     tout le canevas (40 ms à 1 000 publications, 140 ms à 2 000) : l'infobulle seule, les
     liens ne foncent pas. Le survol revient à 17 ms par image ;
@@ -725,7 +726,10 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
     `viewBox` du SVG, aux proportions du cadre, bornée entre l'image entière et 8 pixels
     par unité. Pendant un geste, le SVG déjà dessiné est seulement déplacé et agrandi par
     une transformation CSS ; le `viewBox` suit 150 ms après le dernier mouvement, et
-    l'image est redessinée nette.
+    l'image est redessinée nette. Le SVG est dessiné **un cadre au-delà de chaque bord**
+    (trois fois la largeur et la hauteur du cadre, #476) : un glisser montre aussitôt ce
+    qu'il fait entrer dans le cadre, au lieu d'un blanc jusqu'au relâchement ; le coût ne
+    se mesure pas (mêmes images pendant le zoom, le glisser et le survol).
   - **Pointeur** (`image_pointer.js`) : le SVG ne reçoit aucun événement. Un calque
     transparent au-dessus prend la molette et la souris, et trouve lui-même le nœud sous
     le pointeur dans une grille des nœuds (cases de 64 unités, 3 pixels de tolérance) :
