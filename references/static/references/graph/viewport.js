@@ -4,6 +4,7 @@
 // the screen (#185).
 
 import { MARGIN } from "./scale.js";
+import { keepScreenSize } from "./screen_size.js";
 import { isIdentity, stretchedBox } from "./stretch.js";
 
 // Cytoscape's own lower limit, so that a smaller frame can fit the graph again.
@@ -37,51 +38,15 @@ function keepWithin(cy, bounds) {
 // for the 4 300 elements of a graph of 1 800 publications, three times the drawing
 // itself. Up to this many elements (about 20 ms), sizes follow the zoom at each frame.
 export const LIVE_SIZES_MAX_ELEMENTS = 600;
-// On a larger graph, sizes are evaluated again once the zoom has not changed for this
-// long, in milliseconds: meanwhile they scale with the zoom, like a picture.
-const SETTLE_DELAY = 150;
-
-// Beyond this many elements, even moving a picture of the graph is slow (#202).
-const HIDE_EDGES_MIN_ELEMENTS = 5000;
 
 // Options of Cytoscape for a graph of this many elements. On a large one, the drawing
 // itself is slow (45 ms for 4 300 elements, 100 ms for 7 000): while the view is zoomed or
-// dragged by hand, Cytoscape moves a picture of the graph, edges included, and draws it
-// again once the gesture ends. On a very large one, the picture is slow too: the edges are
-// hidden during the gesture instead.
+// dragged by hand, the edges are hidden and only the nodes are drawn, at each frame
+// (#476), so that what a drag brings into the frame shows at once. Moving a picture of the
+// graph instead (textureOnViewport, #320) was as fluid up to 4 300 elements, but showed
+// nothing of what was out of the frame when the gesture began, until it ended.
 export function rendererOptions(elementCount) {
-    if (elementCount > HIDE_EDGES_MIN_ELEMENTS) {
-        return { hideEdgesOnViewport: true };
-    }
-    return { textureOnViewport: elementCount > LIVE_SIZES_MAX_ELEMENTS };
-}
-
-// Sizes in the style are divided by the zoom (#185): they are evaluated again when the
-// zoom changes, at most once per frame on a small graph, once the zoom stops on a large one.
-function keepScreenSize(cy, live) {
-    let zoom = cy.zoom();
-    let pending = false;
-    let settle = null;
-    const update = () => {
-        pending = false;
-        zoom = cy.zoom();
-        cy.style().update();
-    };
-    cy.style().update();
-    cy.on("viewport", () => {
-        if (cy.zoom() === zoom) {
-            return;
-        }
-        if (!live) {
-            clearTimeout(settle);
-            settle = setTimeout(update, SETTLE_DELAY);
-            return;
-        }
-        if (!pending) {
-            pending = true;
-            requestAnimationFrame(update);
-        }
-    });
+    return { hideEdgesOnViewport: elementCount > LIVE_SIZES_MAX_ELEMENTS };
 }
 
 // The view of this zoom and pan, brought within the bounds of the graph stretched as
@@ -107,8 +72,8 @@ function viewWithin(cy, whole, zoom, pan, stretchAimed) {
 
 // The view of the whole graph (#141): measured again by measure(), after forget(); the view
 // stays within its visible area, stretched with the graph (#291). stretch: what
-// makeStretch returns.
-function makeWholeView(cy, stretch) {
+// makeStretch returns; sizes: what keepScreenSize returns.
+function makeWholeView(cy, stretch, sizes) {
     // The view showing the whole graph, and its visible area in graph coordinates.
     let whole = null;
     const measure = () => {
@@ -116,8 +81,11 @@ function makeWholeView(cy, stretch) {
         // fit measures the nodes at their size for the current zoom (#185): once more
         // with their size for the new zoom, so that the result is the same from any view.
         cy.fit(undefined, MARGIN / 2);
-        cy.style().update();
+        sizes.updateNow();
         cy.fit(undefined, MARGIN / 2);
+        // The sizes are those of this zoom, give or take the few pixels of the second fit:
+        // a large graph does not evaluate them all again (#326).
+        sizes.settled();
         whole = { zoom: cy.zoom(), pan: { ...cy.pan() }, extent: cy.extent() };
         cy.minZoom(whole.zoom);
     };
@@ -172,7 +140,10 @@ function bindShowAllButton(button, showAll) {
 // animates, and a callback when the whole graph is shown again; and whether the whole
 // graph is shown (#175).
 export function bindViewport(cy, container, showAllButton, stretch) {
-    const whole = makeWholeView(cy, stretch);
+    // A small graph is drawn again with its exact sizes at each frame of a motion.
+    const live = cy.elements().length <= LIVE_SIZES_MAX_ELEMENTS;
+    const sizes = keepScreenSize(cy, live);
+    const whole = makeWholeView(cy, stretch, sizes);
     // While a selection animates the view and the stretch together, the bounds wait.
     let held = false;
     const showAllListeners = [];
@@ -211,9 +182,6 @@ export function bindViewport(cy, container, showAllButton, stretch) {
         cy.resize();
         showAll();
     }).observe(container);
-    // A small graph is drawn again with its exact sizes at each frame of a motion.
-    const live = cy.elements().length <= LIVE_SIZES_MAX_ELEMENTS;
-    keepScreenSize(cy, live);
     return {
         live,
         wholeZoom: whole.zoom,

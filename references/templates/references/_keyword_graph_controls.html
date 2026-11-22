@@ -22,6 +22,10 @@
         {% button "Appliquer le seuil" variant="secondary" icon="filter_list" icon_only=True %}
     </span>
 </form>
+{# The default threshold depends on the corpus (#468): said, so that it does not look arbitrary. #}
+<p class="-mt-2 text-xs text-gray-500" data-default-minimum>
+    Par défaut : {{ graph.default_minimum }} publication{{ graph.default_minimum|pluralize_fr }}, le plus petit seuil qui garde au plus {{ most_terms }} {{ terms.plural }}.
+</p>
 {% if tag_choices %}
     {% include "references/_graph_tag_form.html" %}
 {% endif %}
