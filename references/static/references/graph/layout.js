@@ -10,6 +10,7 @@
 
 import { fractionalYear } from "./scale.js";
 import { nodeSizes } from "./style.js";
+import { untangle } from "./untangle.js";
 
 // Passes of the barycentre method; the order is stable well before.
 const ORDER_PASSES = 20;
@@ -46,6 +47,13 @@ export const BAND_GAP = 56;
 // The band of the undated publications has at most MAX_BAND_ROWS rows (#318); beyond,
 // the publications are pushed along the rows.
 const MAX_BAND_ROWS = 4;
+// Up to this many edges in a group, crossings are removed by exchanges (untangle.js,
+// #323): beyond, they would take too long.
+const UNTANGLE_MAX_LINKS = 600;
+// A reference of the same date as a publication citing it goes this far to its left, in
+// pixels (#322): the edge would be vertical, and the edges of several such references
+// would lie on one another, through their nodes.
+const SAME_DATE_SHIFT = 20;
 
 function linkPairs(nodes, edges) {
     const index = new Map(nodes.map((n, i) => [n.data.id, i]));
@@ -309,6 +317,23 @@ export function verticalPositions(xs, startYs, sizes, links, timings = null) {
     return ys;
 }
 
+// The x of the publications, each reference of the same date as a publication citing it
+// moved to its left (#322), the k-th by (k + 1) * SAME_DATE_SHIFT, in the order of their
+// starting rows. links: [citing, cited].
+function apartFromCiters(xs, links, rows) {
+    const shifted = [...xs];
+    const sameDate = links
+        .filter(([citing, cited]) => Math.abs(xs[citing] - xs[cited]) < 1)
+        .sort((p, q) => rows[p[1]] - rows[q[1]]);
+    const counts = new Map();
+    for (const [citing, cited] of sameDate) {
+        const k = counts.get(citing) || 0;
+        counts.set(citing, k + 1);
+        shifted[cited] = Math.min(shifted[cited], xs[citing] - (k + 1) * SAME_DATE_SHIFT);
+    }
+    return shifted;
+}
+
 // One group of linked publications laid out alone, in the order of their dates: x is the
 // date, y the result of the barycentre order and of the vertical simulation, not yet
 // fitted to the frame.
@@ -318,7 +343,7 @@ function layOutGroup(group, edges, scale, sizeOf, timings) {
     const byDate = [...group].sort((a, b) => yearOf(a) - yearOf(b));
     const links = linkPairs(byDate, edges);
     const rows = timed(timings, "barycentreOrder", () => barycentreOrder(byDate.length, links));
-    const xs = byDate.map((n) => scale.x(yearOf(n)));
+    const xs = apartFromCiters(byDate.map((n) => scale.x(yearOf(n))), links, rows);
     const sizes = byDate.map(sizeOf);
     const ys = verticalPositions(
         xs,
@@ -327,6 +352,9 @@ function layOutGroup(group, edges, scale, sizeOf, timings) {
         links,
         timings,
     );
+    if (links.length <= UNTANGLE_MAX_LINKS) {
+        timed(timings, "untangle", () => untangle(xs, ys, links));
+    }
     return byDate.map((node, i) => ({ node, x: xs[i], y: ys[i], size: sizes[i] }));
 }
 
