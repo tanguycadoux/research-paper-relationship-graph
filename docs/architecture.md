@@ -196,12 +196,15 @@ references/          application principale
     main.js          point d'entrée du graphe de citations (frise ou réseau)
     scale.js         dates et échelle de la frise
     layout.js        position des nœuds sur la frise
-    untangle.js      frise : échanges de hauteurs qui retirent des croisements de liens
+    untangle.js      frise : échanges de hauteurs qui retirent des croisements de liens, jusqu'au temps donné
     band.js          bande des publications sans date
-    network.js       vue « Réseau » (disposition cose, plusieurs départs sur un petit graphe)
+    network.js       vue « Réseau » (disposition cose, autant de départs que le temps donné le permet)
     crown.js         réseau : feuilles en couronne autour de leur publication, dessin tourné
     crossings.js     nombre de croisements de liens droits
-    network-worker.js  la même disposition dans un Web Worker, pour un grand graphe
+    random.js        générateur pseudo-aléatoire à graine (départs reproductibles des dispositions)
+    layout_time.js   champ « Temps de calcul » : temps mémorisé, nouvelle disposition animée
+    layout_aside.js  disposition dans un Web Worker (grand graphe ou long temps de calcul)
+    layout-worker.js  le Web Worker des dispositions, frise ou réseau
     viewport.js      cadrage, bornes de la vue, tailles fixes à l'écran
     focus.js         recentrage à la sélection
     stretch.js       étirement des positions à la sélection

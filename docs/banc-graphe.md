@@ -389,3 +389,44 @@ synthétiques.
   groupe, c'était 1,2 s sur 500 nœuds : la limite est donc de 300.
 - Les animations ne changent pas : images de la sélection à 17 ms en médiane partout
   (maximum 22 à 29 ms), zoom des graphes synthétiques inchangé.
+
+## Temps de calcul (#323)
+
+Les dispositions vont jusqu'au temps donné par le champ « Temps de calcul » et gardent le
+dessin le moins croisé (voir [graphes.md](graphes.md)). Mesuré le 22 novembre 2026,
+Chrome headless à 1 400 px, sur une copie de la base de l'utilisateur : `placeNodes` et
+`networkPositions` appelés dans la page avec chaque temps, croisements comptés sur les
+positions finales (bande « Non daté » comprise). Le « Avant » est cette même PR avant le
+temps de calcul (six départs de `cose`, échanges sur 8 voisins sans contrôle des
+chevauchements).
+
+| Croisements | Avant | 0,1 s (défaut) | 0,5 s | 2 s | 10 s |
+|---|---|---|---|---|---|
+| « Mon graphe », frise | 174 | 171 | 130 | 127 | **100** |
+| « Mon graphe », réseau | 67 | 58 | 58 | 55 | **47** |
+| Tag MT28, frise | 34 | 38 | 35 | 20 | **20** |
+| Tag MT28, réseau | 26 | 21 | 17 | 17 | **17** |
+
+- Les nombres d'avant diffèrent de la section précédente : la base de l'utilisateur a
+  changé depuis, et la feuille Tailwind manquait alors à la copie de travail (le cadre
+  du graphe n'avait pas de hauteur).
+- Frise : les nœuds qui se recouvrent à l'écran passent de 48 à 25 sur « Mon graphe »
+  (11 à 10 s) et de 7 à 0 sur le tag (au plus 3 selon le temps) : un échange ne serre plus les nœuds. D'où, au temps
+  par défaut, un peu plus de croisements sur le tag (38 au lieu de 34).
+- Le résultat dépend du nombre d'essais qui tiennent dans le temps : dans la page, au
+  chargement, le réseau de « Mon graphe » à 0,1 s a 67 croisements (moins de départs, le
+  code n'étant pas encore compilé), 58 appelé ensuite.
+- Sur « Mon graphe », l'ordre de départ de la simulation fait varier ses croisements de
+  156 à 367, et après les premiers échanges de 103 à 213 : les autres départs sont ce
+  qui gagne le plus. Élargir seulement la fenêtre (24 voisins, blocs) gagnait peu (192 →
+  180), et sans contrôle de la hauteur du groupe les nœuds se recouvraient davantage
+  (39 au lieu de 19 à 2 s).
+- Un groupe de plus de 300 liens (graphe aléatoire de 1 000 nœuds, 2 509 liens) : à 2 s,
+  la simulation seule prend le temps et le groupe n'est pas démêlé ; à 10 s, 8 s
+  d'échanges, 398 307 → 392 774 croisements, et l'échéance est tenue (10,03 s).
+- Animations : pendant le calcul (dans le Web Worker), la page reste à 16,7 ms par image
+  (maximum 17) ; les nœuds glissent vers leurs nouvelles positions à 16,7 ms par image en
+  médiane (maximum 17), en frise comme en réseau, sur « Mon graphe » (226 éléments).
+
+Captures côte à côte, 0,1 s à gauche et 10 s à droite : `~/revue-app/work/b5/compare/`
+(`corpus-frise.png`, `corpus-reseau.png`, `tag-frise.png`, `tag-reseau.png`).
