@@ -5,6 +5,8 @@
 const LABEL_FONT_SIZE = 11;
 const LABEL_PADDING = 3;
 const LABEL_GAP = 4;
+// A shortened label keeps at least these first letters.
+const MIN_SHORTENED = 4;
 
 // The publications named on the image (#289): with a selection, the selected one and its
 // neighbours; otherwise the sources (the publication of the graph, or the corpus). The
@@ -59,11 +61,45 @@ function discs(nodes) {
     });
 }
 
+// The text cut at a word, or at a letter for a single long word, and ended by « … », so
+// that it is at most `room` wide; null if not even its first letters fit.
+function shortened(context, text, room) {
+    const fits = (candidate) => context.measureText(candidate).width <= room;
+    let cut = text;
+    while (cut.length > MIN_SHORTENED) {
+        const space = cut.lastIndexOf(" ");
+        cut = space > MIN_SHORTENED ? cut.slice(0, space) : cut.slice(0, -1);
+        cut = cut.replace(/[\s,:;.\-…]+$/u, "");
+        if (fits(`${cut}…`)) {
+            return `${cut}…`;
+        }
+    }
+    return null;
+}
+
+// A label shortened to the room left of the frame beside the node, on its right or else
+// on its left (#421): a node near the edge keeps a name rather than none.
+function shortenedPlaces(context, text, x, y, radius, frameWidth, height) {
+    const right = frameWidth - (x + radius + LABEL_GAP);
+    const left = x - radius - LABEL_GAP;
+    return [right, left].flatMap((room, side) => {
+        const cut = shortened(context, text, room - 2 * LABEL_PADDING);
+        if (!cut) {
+            return [];
+        }
+        const width = context.measureText(cut).width + 2 * LABEL_PADDING;
+        const x1 = side === 0 ? x + radius + LABEL_GAP : x - radius - LABEL_GAP - width;
+        return [{ ...box(x1, y - height / 2, width, height), text: cut }];
+    });
+}
+
 // The labels placed in the visible graph (width x height, in pixels of the page). Each
 // goes in the first place that stays inside and covers no other label nor any node; if
 // there is none, in the first that covers no other label nor a labelled node (an
-// unlabelled node may then be partly hidden). A label without such a place is left out.
-function placeLabels(context, cy, nodes, width, height) {
+// unlabelled node may then be partly hidden); if there is none either, shortened to the
+// room beside the node. A label without such a place is left out: none crosses the edge
+// of the image (#421).
+export function placeLabels(context, cy, nodes, width, height) {
     const labelled = inView(nodes, width, height);
     const allDiscs = discs(inView(cy.nodes(), width, height));
     const labelledDiscs = discs(labelled);
@@ -77,14 +113,18 @@ function placeLabels(context, cy, nodes, width, height) {
     for (const node of labelled) {
         const text = node.data("shortLabel");
         const { x, y } = node.renderedPosition();
+        const radius = node.renderedWidth() / 2;
         const labelWidth = context.measureText(text).width + 2 * LABEL_PADDING;
         const labelHeight = LABEL_FONT_SIZE + 2 * LABEL_PADDING;
-        const places = labelPlaces(x, y, node.renderedWidth() / 2, labelWidth, labelHeight);
+        const places = labelPlaces(x, y, radius, labelWidth, labelHeight).map((place) => ({ ...place, text }));
         const place =
             places.find((candidate) => fits(candidate, [...placed, ...allDiscs])) ??
-            places.find((candidate) => fits(candidate, [...placed, ...labelledDiscs]));
+            places.find((candidate) => fits(candidate, [...placed, ...labelledDiscs])) ??
+            shortenedPlaces(context, text, x, y, radius, width, labelHeight).find((candidate) =>
+                fits(candidate, [...placed, ...labelledDiscs]),
+            );
         if (place) {
-            placed.push({ ...place, text });
+            placed.push(place);
         }
     }
     return placed;
@@ -102,7 +142,9 @@ function drawLabels(context, labels, top, color) {
         context.fill();
         context.stroke();
         context.fillStyle = color;
-        context.fillText(label.text, label.x1 + LABEL_PADDING, top + (label.y1 + label.y2) / 2);
+        // Never wider than its box, whatever the font drawn (#421).
+        const room = label.x2 - label.x1 - 2 * LABEL_PADDING;
+        context.fillText(label.text, label.x1 + LABEL_PADDING, top + (label.y1 + label.y2) / 2, room);
     }
 }
 

@@ -246,8 +246,12 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   ses voisins ; sans sélection, les publications `source` (la publication du graphe, ou le
   corpus, y compris sur le graphe de la base pour la personne connectée). Chaque libellé,
   sur un fond clair, va à droite du nœud, sinon à gauche, au-dessus ou en dessous : d'abord
-  à une place qui ne couvre aucun nœud, puis à une qui ne couvre qu'un nœud non nommé ; un
-  libellé sans place est omis (la sélection, puis les plus citées, passent d'abord). Les
+  à une place qui ne couvre aucun nœud, puis à une qui ne couvre qu'un nœud non nommé ;
+  à défaut, il est **raccourci** au mot (ou à la lettre) avec « … » pour tenir à droite ou
+  à gauche du nœud (#421), sans quoi il est omis (la sélection, puis les plus citées,
+  passent d'abord). Aucun libellé ne sort de l'image : `fillText` ne le dessine jamais plus
+  large que son cadre, quelle que soit la police (vérifié dans Chrome sans interface par
+  `tools/graph_bench/labels.py`). Les
   libellés n'existent que sur l'image, pas à l'écran. Le nom du fichier dit ce que montre l'image :
   `graphe-corpus`, `graphe-publication-<id>`, suivi de `-reseau` en vue réseau (sans axe
   ni bande sur l'image), puis de `-selection-<id>` si une

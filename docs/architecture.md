@@ -241,7 +241,7 @@ static/
   js/graph_image.js  image d'un grand graphe : état demandé jusqu'à ce qu'elle soit prête
   vendor/cytoscape/  Cytoscape.js embarqué
 tools/check_js.sh    syntaxe de chaque fichier JavaScript (node --check), lancée par la CI (#341)
-tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
+tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202), libellés de l'export PNG (labels.py, #421)
 docs/                cette documentation
 ```
 
