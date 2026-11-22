@@ -139,7 +139,8 @@ references/          application principale
       bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
       import_reports.py  compte rendu du dernier import de fichier, gardé en session
     discovery/       découverte d'articles
-      suggestions.py  publications citées par plusieurs articles du corpus ou d'un tag
+      suggestions.py  publications citées par les articles du corpus ou d'un tag, et leurs tris
+      importance.py  PageRank du graphe des citations (toute la base, en cache, ou un contexte)
       incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
       title_search.py  publication cherchée par son titre pour l'ajouter (base, Crossref, DataCite)
     display/         affichage
@@ -158,6 +159,8 @@ references/          application principale
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
       graph_variants.py  variantes d'un graphe choisies dans l'URL (frise ou réseau…)
+      graph_levels.py  niveaux d'un graphe de citations (niveau 2, nœud développé ou réduit,
+                       bibliographies manquantes)
       graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
       large_graph_layout.py  disposition de ces images : composante par composante, feuilles en couronne
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
@@ -205,6 +208,7 @@ references/          application principale
     stretch.js       étirement des positions à la sélection
     axis.js          axe des années
     selection.js     sélection d'une publication (carte commune de card.js)
+    expand.js        développer ou réduire le graphe sans recharger la page, en animation
     hover.js         survol : infobulle, liens foncés sur un petit graphe
     style.js         style des nœuds et des liens
     export.js        export PNG (partagé avec le graphe des auteurs)
@@ -221,7 +225,7 @@ references/          application principale
     image_selection.js  nœuds sélectionnés, listés au-dessus de tous : centrer, page, retirer, tout désélectionner
     image_minimap.js  minicarte (points dans un canvas, rectangle de la partie vue)
     image_nodes.js   liste des nœuds : recherche, tri, seules les lignes visibles dessinées
-  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph…)
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph ; _graph_warning_icon : icône Material `warning` des références à identifier d'un nœud…)
     publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
                      _authors, _abstract, _note, _information, _references, _cited_by,
                      _incoming_citations…), assemblées par publication_detail.html
@@ -229,6 +233,8 @@ references/          application principale
     _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
                      les suggestions, « Mon corpus » et la fiche (#296)
     _note_filter     champ « Chercher dans mes notes » de « Mon corpus » (#443)
+    _suggestion_counts, _suggestion_columns_help  colonnes des suggestions (citations,
+                     par an, importance) et leur explication (#432)
   templates/components/  gabarits des composants de ui/
   tests/           tests ; sources.py simule les sources externes, fixtures/ leurs réponses
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)

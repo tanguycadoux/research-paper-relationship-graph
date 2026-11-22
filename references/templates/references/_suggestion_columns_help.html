@@ -1,0 +1,29 @@
+{% comment %}
+What the columns of the suggestions count (#432), above the table. Context:
+importance_scope, the graph of the PageRank (importance.SCOPE).
+{% endcomment %}
+<details class="mb-3 text-sm text-gray-600">
+    <summary class="cursor-pointer">Que comptent les colonnes ?</summary>
+    <dl class="mt-2 max-w-3xl space-y-1">
+        <div>
+            <dt class="inline font-medium text-gray-800">Citée par :</dt>
+            <dd class="inline">les articles du contexte qui la citent.</dd>
+        </div>
+        <div>
+            <dt class="inline font-medium text-gray-800">Citations :</dt>
+            <dd class="inline">
+                ses citations dans toute la littérature, selon OpenAlex, sinon Crossref, à la date de leur réponse
+                (« Rafraîchir les métadonnées » sur sa fiche les met à jour) ; « Par an » les divise par les années
+                écoulées depuis sa publication.
+            </dd>
+        </div>
+        <div>
+            <dt class="inline font-medium text-gray-800">Importance :</dt>
+            <dd class="inline">
+                son PageRank dans le graphe des citations
+                {% if importance_scope == "context" %}du contexte et des publications qu'il cite{% else %}de toute la base{% endif %} : une publication citée par des publications
+                elles-mêmes citées compte plus. 100 pour la plus importante des suggestions.
+            </dd>
+        </div>
+    </dl>
+</details>

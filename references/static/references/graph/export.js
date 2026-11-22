@@ -71,6 +71,34 @@ function swatchOutline(style) {
     return { width, offset: parseFloat(style.outlineOffset) || 0, color: style.outlineColor };
 }
 
+// The border of a round swatch (a publication of level 2, hollow, #451), or null.
+function swatchBorder(style) {
+    const width = parseFloat(style.borderTopWidth);
+    return width ? { width, color: style.borderTopColor } : null;
+}
+
+// An icon of the legend (the mark of the references to identify, #452): drawn as an image,
+// loaded before the legend is drawn (loadLegendImages).
+function svgPart(svg, style) {
+    const box = svg.getBoundingClientRect();
+    return {
+        svg,
+        width: box.width,
+        height: box.height,
+        before: parseFloat(style.marginLeft),
+        margin: parseFloat(style.marginRight),
+    };
+}
+
+async function loadLegendImages(rows) {
+    const parts = rows.flatMap((row) => row.flatMap((item) => item.parts)).filter((part) => part.svg);
+    for (const part of parts) {
+        const source = new XMLSerializer().serializeToString(part.svg);
+        part.image = await loadImage(new Blob([source], { type: "image/svg+xml" }));
+        URL.revokeObjectURL(part.image.src);
+    }
+}
+
 // Each item of the legend as a list of parts: texts, and the swatches (dots and lines)
 // with their size and colour.
 function legendItems(legend) {
@@ -80,7 +108,13 @@ function legendItems(legend) {
                 const text = node.textContent.replace(/\s+/g, " ");
                 return text.trim() ? [{ text }] : [];
             }
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                return [];
+            }
             const style = getComputedStyle(node);
+            if (node instanceof SVGSVGElement) {
+                return [svgPart(node, style)];
+            }
             return [
                 {
                     width: node.offsetWidth,
@@ -90,6 +124,7 @@ function legendItems(legend) {
                     color: style.backgroundColor,
                     round: style.borderRadius !== "0px",
                     outline: swatchOutline(style),
+                    border: swatchBorder(style),
                 },
             ];
         });
@@ -122,6 +157,14 @@ function drawSwatch(context, part, x, middle) {
         context.rect(x, middle - part.height / 2, part.width, part.height);
     }
     context.fill();
+    const border = part.border;
+    if (border && part.round) {
+        context.strokeStyle = border.color;
+        context.lineWidth = border.width;
+        context.beginPath();
+        context.arc(x + part.width / 2, middle, (part.width - border.width) / 2, 0, 2 * Math.PI);
+        context.stroke();
+    }
     const outline = part.outline;
     if (outline && part.round) {
         const radius = part.width / 2 + outline.offset + outline.width / 2;
@@ -160,6 +203,8 @@ function drawLegend(context, rows, style, top, lineHeight) {
                 if (part.text) {
                     context.fillStyle = style.color;
                     context.fillText(part.text, x, middle);
+                } else if (part.image) {
+                    context.drawImage(part.image, x + part.before, middle - part.height / 2, part.width, part.height);
                 } else {
                     drawSwatch(context, part, x + part.before, middle);
                 }
@@ -207,6 +252,7 @@ async function exportImage(cy, { axis, band, legend }, name) {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     const key = legendLayout(context, legend, width);
+    await loadLegendImages(key.rows);
     const graphTop = axis ? axis.offsetHeight : 0;
     const legendTop = graphTop + cy.height();
     // Resizing the canvas resets the context.

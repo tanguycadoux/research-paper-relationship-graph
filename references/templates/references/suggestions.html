@@ -11,18 +11,19 @@
     </header>
     <h2>Suggestions</h2>
     <p class="mt-1 mb-6 max-w-3xl text-gray-600">
-        Les publications citées par au moins {{ min_citing }} articles
+        Les publications citées par au moins {{ min_citing }} article{{ min_citing|pluralize_fr }}
         {% if active_tag %}
             du tag « {{ active_tag_label }} » (sous-tags compris)
         {% else %}
             de votre corpus
         {% endif %}
         : si plusieurs de vos articles citent le même, il est sans doute central pour votre sujet.
+        Triez-les aussi par leurs citations dans la littérature ou par leur importance dans le graphe des citations.
     </p>
 
-    {# The context comes first below xl: it decides what the list shows. #}
-    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <aside aria-labelledby="context-title" class="xl:order-last">
+    {# The context comes first below 2xl: it decides what the list shows. The table needs the whole width up to there (#432). #}
+    <div class="grid grid-cols-1 gap-6 2xl:grid-cols-3">
+        <aside aria-labelledby="context-title" class="2xl:order-last">
             {% card %}
                 <h3 id="context-title" class="mb-3">Calculées à partir de</h3>
                 <ul class="space-y-1 text-sm">
@@ -37,10 +38,21 @@
                         Avec des tags (« Projet/Groupe/… »), vous aurez aussi des suggestions par sujet.
                     </p>
                 {% endif %}
+                <h3 id="minimum-title" class="mt-5 mb-2">Citées par au moins</h3>
+                <ul aria-labelledby="minimum-title" class="flex flex-wrap gap-x-4 text-sm">
+                    {% for link in minimum_links %}
+                        <li>
+                            <a href="{{ link.url }}"
+                               {% if link.current %}aria-current="true" class="font-semibold"{% endif %}>
+                                {{ link.value }} article{{ link.value|pluralize_fr }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
             {% endcard %}
         </aside>
 
-        <section aria-labelledby="suggestions-title" class="xl:col-span-2">
+        <section aria-labelledby="suggestions-title" class="2xl:col-span-2">
             <h3 id="suggestions-title" class="mb-1">
                 {% if active_tag %}
                     Pour « {{ active_tag_label }} »
@@ -57,10 +69,24 @@
                 {% endif %}
             </p>
             {% if publications %}
+                {% include "references/_suggestion_columns_help.html" %}
+                {# Below sm, the author, year and count columns are hidden: their sort is here (#334). #}
+                {% sort_links "citing:Citée par,cited:Citations,per_year:Par an,importance:Importance,year:Année,title:Titre,author:Premier auteur" %}
                 {% card flush=True %}
                     <table>
-                        <caption class="sr-only">Publications citées par plusieurs articles du contexte</caption>
-                        {% include "references/_cited_by_table_head.html" with corpus_column=True %}
+                        <caption class="sr-only">Publications citées par les articles du contexte</caption>
+                        <thead>
+                            <tr>
+                                {% column_header "Titre" "title" %}
+                                {% column_header "Auteurs" "author" classes="hidden sm:table-cell" %}
+                                {% column_header "Année" "year" classes="hidden sm:table-cell" %}
+                                {% column_header "Citée par" "citing" classes="whitespace-nowrap" %}
+                                {% column_header "Citations" "cited" classes="hidden sm:table-cell whitespace-nowrap" %}
+                                {% column_header "Par an" "per_year" classes="hidden sm:table-cell whitespace-nowrap" %}
+                                {% column_header "Importance" "importance" classes="hidden sm:table-cell" %}
+                                {% include "references/_corpus_column_header.html" %}
+                            </tr>
+                        </thead>
                         <tbody>
                             {% for pub in publications %}
                                 <tr>
@@ -74,17 +100,19 @@
                                             {% endfor %}
                                         {% endif %}
                                     </td>
-                                    <td class="text-gray-600">
+                                    <td class="hidden text-gray-600 sm:table-cell">
                                         {% if pub.first_author %}
                                             {% include "references/_first_author.html" %}
                                         {% endif %}
                                     </td>
-                                    <td class="whitespace-nowrap text-gray-600">{{ pub.publication_date|date:"Y" }}</td>
-                                    <td class="text-right">
+                                    <td class="hidden whitespace-nowrap text-gray-600 sm:table-cell">
+                                        {{ pub.publication_date|date:"Y" }}
+                                    </td>
+                                    <td>
                                         {# The citing articles in a panel: listed in the row, they made it very high. #}
                                         {% with counter=forloop.counter|stringformat:"d" %}
-                                            {% with panel_id="citing-"|add:counter %}
-                                            {% button pub.citing_count|stringformat:"d"|add:" articles" type="button" variant="secondary" popovertarget=panel_id %}
+                                            {% with panel_id="citing-"|add:counter suffix=pub.citing_count|pluralize_fr %}
+                                            {% button pub.citing_count|stringformat:"d"|add:" article"|add:suffix type="button" variant="secondary" popovertarget=panel_id %}
                                             <div popover id="{{ panel_id }}" class="{% popover_panel_classes %}">
                                                 <p class="mb-2 font-medium">Citée par</p>
                                                 <ul class="space-y-2">
@@ -99,6 +127,7 @@
                                             {% endwith %}
                                         {% endwith %}
                                     </td>
+                                    {% include "references/_suggestion_counts.html" %}
                                     <td class="text-right">
                                         {% if pub.in_corpus %}
                                             {# Already there under another tag: one click gives it this one. #}
@@ -120,7 +149,11 @@
                 {% pagination page_obj %}
             {% else %}
                 <p class="text-gray-600">
-                    Aucune publication n'est citée par {{ min_citing }} de ces articles ou plus.
+                    {% if min_citing > 1 %}
+                        Aucune publication n'est citée par {{ min_citing }} de ces articles ou plus.
+                    {% else %}
+                        Aucune publication n'est citée par ces articles.
+                    {% endif %}
                     Identifier leurs références en fera peut-être apparaître.
                 </p>
             {% endif %}
