@@ -1,0 +1,30 @@
+{% comment %}
+The cells of the counts of a suggestion (#432): its citations in the literature, with
+their source and date, per year, and its importance in the citation graph. A
+publication that neither OpenAlex nor Crossref counts has a dash.
+{% endcomment %}
+<td class="hidden whitespace-nowrap sm:table-cell">
+    {% if pub.cited_count is not None %}
+        <span title="Selon {% if pub.cited_source == 'openalex' %}OpenAlex{% else %}Crossref{% endif %}, le {{ pub.cited_at|date:'j F Y' }}">{{ pub.cited_count }}</span>
+    {% else %}
+        <span class="text-gray-500" title="Ni OpenAlex ni Crossref ne donne ce nombre">–</span>
+    {% endif %}
+</td>
+<td class="hidden whitespace-nowrap text-gray-600 sm:table-cell">
+    {% if pub.cited_per_year is not None %}
+        {{ pub.cited_per_year|floatformat:1 }}
+    {% else %}
+        <span class="text-gray-500">–</span>
+    {% endif %}
+</td>
+<td class="hidden sm:table-cell">
+    {# A bar as long as the importance, relative to the most important suggestion. #}
+    <span class="flex items-center gap-2">
+        <span class="h-1.5 w-12 shrink-0 overflow-hidden rounded-full bg-gray-200" aria-hidden="true">
+            {# djlint:off H021 #}
+            <span class="block h-full rounded-full bg-blue-700" style="width: {{ pub.importance }}%"></span>
+            {# djlint:on #}
+        </span>
+        <span class="text-sm text-gray-600">{{ pub.importance }}</span>
+    </span>
+</td>

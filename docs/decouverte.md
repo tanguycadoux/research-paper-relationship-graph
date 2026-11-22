@@ -8,8 +8,8 @@ Retour au [sommaire](architecture.md).
 Page « Suggestions » (`/corpus/suggestions/`, `views/suggestions.py`,
 `services/discovery/suggestions.py`, #162). Si plusieurs articles du corpus citent la même
 publication, elle est sans doute centrale pour le sujet. La page liste les publications
-citées par au moins `MIN_CITING` (2) publications d'un **contexte**, de la plus citée à
-la moins citée.
+citées par au moins `MIN_CITING` (1) publication d'un **contexte**, de la plus citée à
+la moins citée ; « Citées par au moins 1 / 2 articles » (`?min=2`) resserre la liste.
 
 - **Contexte** : tout le corpus (par défaut), ou un tag avec ses sous-tags
   (`?tag=Projet` compte aussi les articles tagués « Projet/Groupe », comme le filtre de
@@ -27,6 +27,30 @@ la moins citée.
 - **Affichage** : les publications citantes sont dans un panneau (popover) ouvert depuis
   leur nombre ; listées dans la ligne, elles la rendaient très haute. Les boutons
   d'ajout sont ceux des autres tableaux (« à lire », puis « + »).
+- **Tris** (#432, `SUGGESTIONS` dans `suggestions.py`, `?sort=` comme les autres
+  tableaux, en-têtes `column_header` et `sort_links` sous sm) : par articles du contexte
+  qui la citent (par défaut), par **citations dans la littérature**, par **citations par
+  an** et par **importance**, ainsi que par titre, auteur et année. Les égalités gardent
+  l'ordre par défaut (citée par, puis la plus récente, puis le titre).
+  - *Citations* : `cited_by_count` de la réponse OpenAlex gardée, sinon
+    `is-referenced-by-count` de Crossref (`literature_citations`, une sous-requête sur
+    `ExternalRecord`). Aucune requête de plus : le nombre date de l'import, sa source et
+    sa date sont dans l'infobulle, « Rafraîchir les métadonnées » le met à jour. Sans
+    nombre, une publication est en fin de liste, dans les deux sens.
+  - *Par an* : les citations divisées par les années écoulées depuis l'année de
+    publication, 1 au moins (une publication de l'année compte pour un an).
+  - *Importance* : le PageRank (igraph, amortissement 0,85) du graphe des citations
+    identifiées, sans les autocitations (`services/discovery/importance.py`). Affiché
+    relativement à la plus importante des suggestions (100), avec une barre. Le tri se
+    fait en Python sur toute la liste (quelques centaines de lignes), les autres en SQL.
+  - *Portée du PageRank* : `importance.SCOPE`. `SCOPE_BASE` (par défaut) le calcule sur
+    toute la base, une fois pour tous, gardé dans le cache de Django sous une clé qui
+    contient la signature des citations identifiées (nombre, dernier id, sommes des
+    sources et des cibles) : une citation identifiée, retirée ou déplacée change la clé.
+    `SCOPE_CONTEXT` le calcule à chaque page sur le sous-graphe du contexte et des
+    publications qu'il cite. Mesures sur la base de l'utilisateur (629 publications,
+    904 citations) : 4 ms sans cache pour la base, 1 ms avec (la signature) ; 2 à 5 ms
+    pour un contexte. Comparaison des deux portées dans la PR de #432.
 - **Accès** : la navigation (« Mon corpus › Suggestions ») et le bouton « Suggestions »
   de « Mon corpus », qui garde le tag filtré.
 
