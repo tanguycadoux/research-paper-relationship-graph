@@ -188,7 +188,8 @@ Ce qui n'est pas réglé :
 - le **survol** : il redessine tout le canevas (classes `hovered` du nœud et de ses
   liens) : 39 ms à 1 000 publications, 137 à 2 000 ;
 - **l'image qui suit un zoom ou une sélection** : réévaluer le style une fois reste 140 à
-  200 ms (maximum à 190–480 ms), perceptible comme un à-coup à la fin du geste ;
+  200 ms (maximum à 190–480 ms), perceptible comme un à-coup à la fin du geste (réduite
+  quand la vue ne montre qu'une partie du graphe : « Image longue en fin de geste ») ;
 - la sélection d'un graphe de 2 000 publications a un 90e centile de 141 ms, pour la même
   raison (une image longue au saut).
 
@@ -343,8 +344,9 @@ Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #
 4. **Dessin pendant le mouvement** (fait, voir la série ci-dessus) : options de Cytoscape
    `textureOnViewport` et `hideEdgesOnViewport` au-delà d'un seuil, et tailles à l'écran
    recalculées à la fin du zoom plutôt qu'à chaque image ; le survol par une infobulle
-   HTML au-delà du même seuil (fait, « Survol léger »). Reste l'image longue à la fin
-   d'un geste.
+   HTML au-delà du même seuil (fait, « Survol léger »). L'image longue à la fin d'un
+   geste ne porte plus que sur ce qui est dans la vue (#326, « Image longue en fin de
+   geste ») ; elle reste quand la vue montre tout le graphe.
 5. **Ne pas bloquer la page** : fait pour la vue réseau (`cose` dans un Web Worker avec
    un message d'attente, « Survol léger et réseau disposé hors de la page ») ; la frise
    (0,3 s sur le banc) reste dans la page. Les positions gardées en cache (navigateur)
@@ -439,3 +441,145 @@ chevauchements).
 
 Captures côte à côte, 0,1 s à gauche et 10 s à droite : `~/revue-app/work/b5/compare/`
 (`corpus-frise.png`, `corpus-reseau.png`, `tag-frise.png`, `tag-reseau.png`).
+
+## Image longue en fin de geste (#326)
+
+Au-delà de 600 éléments, les tailles fixes à l'écran sont réévaluées une fois le zoom
+arrêté (#320). Cette réévaluation et le dessin qui suit faisaient une image de 190 à
+220 ms sur le corpus de `bench` (1 775 publications, 2 517 citations, 4 292 éléments).
+Mesuré le 22 novembre 2026, Chrome headless à 1 400 px, sur la base du banc.
+
+**Où part le temps** (profil Chrome) : la réévaluation du style est répartie dans tout
+Cytoscape (cascade des règles, empreintes du style, boîtes englobantes, textures des
+nœuds), sans point chaud ; elle est **paresseuse** : `updateStyle` ne fait que marquer les
+éléments, et le dessin suivant réévalue tous ceux qui sont marqués, dans la vue ou non.
+Chaque élément dont la taille change fait aussi redessiner le cadre (événement `bounds`),
+de 10 à 30 ms à cette taille.
+
+**Pistes essayées** (outil de mesure : un zoom de 30 crans vers l'intérieur, jusqu'à
+2,5 fois la vue d'ensemble, puis vers l'extérieur jusqu'à elle ; la sélection de la
+publication la plus reliée, puis sa désélection ; « Vue d'ensemble » ; plus longue image
+après le geste, médiane de 3 séries, en ms) :
+
+| Corpus de `bench`, frise | Zoom avant | Zoom arrière | Désélection | Vue d'ensemble |
+|---|---|---|---|---|
+| Avant (tout d'un coup) | 194 | 216 | 106 | 199 (+ 245 au clic) |
+| Vue d'abord, puis le reste par parties de 8 ms (**retenu**) | **132** | 218 | **87** | **18** (+ 245 au clic) |
+| Tout par parties de 6 à 15 ms, vue d'abord | 110 à 122, puis 9 à 13 images de 35 à 60 ms | 60 à 80 × 8 | 56 à 94 | — |
+| Nœuds de la vue d'abord, liens ensuite | 111 | 165, puis 5 images de 60 à 85 | 108 | — |
+| Tailles qui suivent le zoom (aucune réévaluation) | 117 | 97 | 47 | 18 |
+
+- **Retenu** : les éléments dans la vue (élargie de 48 px) sont réévalués d'un coup, puis
+  les autres par parties de 50, 8 ms par image, lus aussitôt (`pstyle`) pour que le coût
+  tombe dans l'image prévue et non au dessin suivant (`screen_size.js`). L'image longue
+  suit la part du graphe dans la vue : 2 427 éléments sur 4 292 à 2,5 fois la vue
+  d'ensemble, 132 ms au lieu de 194 ; les parties suivantes font des images de 35 à 55 ms.
+  Quand la vue montre tout (retour à la vue d'ensemble), rien ne change.
+- **« Vue d'ensemble »** réévaluait les tailles deux fois : pour se mesurer (`measure`,
+  245 ms au clic, inchangé), puis 150 ms après, l'arrêt du zoom (199 ms). La seconde est
+  retirée : les tailles sont déjà celles de ce zoom.
+- **Tout par parties** : chaque partie fait redessiner tout le cadre, 50 à 60 ms dans la
+  vue d'ensemble ; une image de 210 ms devient 8 à 10 images de 60 ms, et sur les graphes
+  synthétiques, plus coûteux à dessiner, 5 images de 90 ms au lieu d'une de 150. Ce n'est
+  pas mieux ; et les nœuds changent de taille par vagues, du centre vers les bords.
+- **Tailles qui suivent le zoom** : plus d'image longue (il ne reste que la fin du dessin
+  de Cytoscape, 45 à 60 ms, et le début du geste, 100 à 130 ms, qui ne dépendent pas des
+  tailles), mais zoomer grossit les nœuds au lieu de les écarter (#185) au-delà de
+  600 éléments.
+- Le début d'un geste reste une image de 100 à 140 ms : Cytoscape y prend l'image du
+  graphe qu'il déplace (`textureOnViewport`, #320) ; elle ne dépend pas des tailles.
+- **Sélection** : l'appui lui-même bloque 245 à 265 ms (classes de la sélection posées sur
+  tous les éléments, puis vue calculée), avant comme après ; seule l'image de l'arrêt du
+  zoom qui suit change (90 → 40 à 60 ms).
+
+Avec `frames.py` (médiane / 90e centile / plus longue image, puis images de plus de
+50 ms ; avant → après) :
+
+| Graphe (éléments) | Zoom | Glisser | Sélection |
+|---|---|---|---|
+| Corpus de `bench`, frise (4 292) | 17 / 18 / **191**, 2 → 17 / 18 / **139**, 3 | inchangé (56) | 17 / 17 / 60, 1 → 17 / 17 / 44, 0 |
+| Corpus de `bench`, réseau (4 292) | 17 / 17 / **192**, 2 → 17 / 17 / **123**, 3 | inchangé (66) | 17 / 17 / 93, 1 → 17 / 17 / 52, 1 |
+| Synthétique 1 000 (3 471) | 17 / 17 / 169, 4 → 17 / 18 / 176, 6 | inchangé (53) | 17 / 46 / 79, 2 → 17 / 43 / 75, 2 |
+| « Hallmarks of Cancer » (479, petit graphe) | 15 / 33 / 36 → 16 / 32 / 38 | inchangé | 17 / 28 / 31 → 17 / 29 / 30 |
+
+Le graphe synthétique, aux positions tirées au hasard sur toute la hauteur, a presque
+tout dans la vue après le zoom de `frames.py` : rien n'y change. Les petits graphes
+(600 éléments au plus) gardent leur réévaluation à chaque image. Après la passe, l'image
+est la même qu'avant à l'œil (captures comparées : écarts de lissage au bord des nœuds,
+au plus 55 pixels sur 1 400 × 1 000 qui diffèrent de plus de 40 niveaux).
+
+## Glisser hors du cadre (#476)
+
+Pendant un glisser, ce qui était hors du cadre au début du geste n'était pas dessiné
+avant le relâchement. Mesuré le 22 novembre 2026, Chrome headless à 1 400 px, base du
+banc ; `frames.py` et `image_frames.py`, médiane / 90e centile / plus longue image (ms),
+images de plus de 50 ms.
+
+**Graphes Cytoscape** (au-delà de 600 éléments) :
+
+| Graphe (éléments) | Geste | Image déplacée (`textureOnViewport`, avant) | Liens masqués (**retenu**) | Dessin complet |
+|---|---|---|---|---|
+| Corpus de `bench`, frise (4 292) | Glisser | 17 / 18 / 55, 1 | 17 / 24 / 53, 1 | 17 / 39 / 45, 0 |
+| | Zoom | 17 / 18 / 187, 2 | 17 / 26 / 201, 2 | 18 / 34 / 191, 4 |
+| Corpus de `bench`, réseau (4 292) | Glisser | 17 / 17 / 65, 1 | 17 / 23 / 63, 1 | — |
+| | Zoom | 17 / 17 / 198, 2 | 16 / 26 / 192, 1 | — |
+| Synthétique 1 000 (3 471) | Glisser | 17 / 17 / 52, 1 | 17 / 20 / 51, 1 | 48 / 52 / 56, 19 |
+| | Zoom | 17 / 17 / 154, 4 | 17 / 21 / 151, 2 | 17 / 51 / 135, 10 |
+
+- **Liens masqués** : les nœuds sont redessinés à chaque image, ce qui entre dans le cadre
+  apparaît aussitôt ; le 90e centile monte de 17–18 à 20–26 ms, la médiane reste à 17.
+  Les liens reviennent au relâchement. C'était déjà la règle au-delà de 5 000 éléments.
+- **Dessin complet** : fluide en médiane sur le corpus, mais 48 ms par image sur le
+  graphe synthétique de 1 000 publications, plus dense en liens.
+- Les petits graphes (600 éléments au plus) ne changent pas : ni image, ni liens masqués.
+
+**Image d'un grand graphe** (`image_view.js`) : le SVG est dessiné avec une marge autour
+du cadre. Mêmes mesures avec une marge de 0 (avant), d'un demi-cadre et d'un cadre de
+chaque côté (retenu) :
+
+| Image | Marge | Chargement | Zoom | Glisser | Survol |
+|---|---|---|---|---|---|
+| Auteurs (9 507 nœuds, 56 389 liens) | 0 | 490 ms | 17 / 17 / 370, 2 | 17 / 17 / 19 | 17 / 18 / 20 |
+| | ½ cadre | 516 ms | 17 / 17 / 366, 1 | 17 / 17 / 19 | 17 / 19 / 36 |
+| | 1 cadre | 490 ms | 17 / 17 / 361, 1 | 17 / 17 / 18 | 17 / 19 / 25 |
+| Base (1 797, 2 539) | 0 | 153 ms | 17 / 17 / 25 | 17 / 17 / 19 | 17 / 18 / 22 |
+| | 1 cadre | 116 ms | 17 / 17 / 21 | 17 / 17 / 18 | 17 / 18 / 19 |
+
+- La marge ne coûte rien de mesurable : le navigateur dessine un SVG par ses éléments
+  plus que par sa surface. Un glisser d'au plus un cadre dans chaque direction montre
+  donc tout de suite le graphe ; la position est la même au pixel près avant et après le
+  redessin du relâchement.
+
+## Positions gardées dans le navigateur (#327)
+
+Chaque disposition est gardée dans IndexedDB sous l'empreinte de ce qu'elle lit
+(`layout_cache.js`, voir [graphes.md](graphes.md)). Mesuré le 22 novembre 2026, Chrome
+headless à 1 400 px, base du banc : trois chargements de suite dans un profil neuf,
+médiane de 3 profils. `layout` : la disposition (ou la lecture de celle gardée), `shown` :
+le graphe affiché, depuis le début de la navigation (ms).
+
+| Graphe | Temps de calcul | `main`, chaque visite (`layout` / `shown`) | 1re visite | 2e visite |
+|---|---|---|---|---|
+| Corpus de `bench`, frise (1 775 nœuds, 2 517 liens) | 0,1 s | 431 à 488 / 1 622 à 1 847 | 506 / 1 965 | **15 / 1 225** |
+| Corpus de `bench`, réseau | 0,1 s | 289 à 323 / 1 465 à 1 723 | 296 / 1 718 | **12 / 1 219** |
+| Corpus de `bench`, frise | 2 s | 2 048 à 2 218 / 3 147 à 3 363 | 2 070 / 3 278 | **14 / 1 177** |
+| Corpus de `bench`, réseau | 2 s | 1 719 à 1 798 / 2 809 à 2 930 | 1 776 / 2 907 | **10 / 1 105** |
+| « Hallmarks of Cancer », frise (240, 239) | 0,1 s | 89 à 101 / 265 à 540 | 112 / 604 | **8 / 204** |
+| « Hallmarks of Cancer », réseau | 0,1 s | 11 à 21 / 190 à 475 | 28 / 515 | **9 / 224** |
+
+- **La deuxième visite** lit la disposition en 8 à 15 ms au lieu de la refaire : le
+  graphe s'affiche 0,4 à 2,2 s plus tôt sur le corpus, et toujours **au même endroit**
+  (positions identiques d'une visite à l'autre ; sans la mémoire, à 2 s de calcul, deux
+  visites sur trois donnaient un autre dessin, le nombre d'essais dépendant de la charge).
+- La première visite ne coûte presque rien de plus : l'empreinte prend 3 à 6 ms pour
+  1 775 nœuds (`JSON.stringify` et un hachage de 64 bits), l'écriture se fait après.
+  La première visite de chaque ligne compte aussi le démarrage du navigateur.
+- **Donnée changée** : le titre d'une publication modifié entre la 2e et la 3e visite, la
+  disposition est refaite (337 ms au lieu de 10 sur le réseau du corpus).
+- **Sans IndexedDB** (accès qui lève une erreur, ou base qui ne répond pas) : le graphe
+  s'affiche comme sur `main`, sans erreur ; une base muette coûte l'attente de 0,3 s.
+- Un nouveau temps de calcul est gardé à son tour : la page rechargée avec ce temps lit sa
+  disposition (12 ms au lieu de 0,5 s).
+- La plus longue image au premier chargement du corpus (900 ms) est la création du
+  graphe et son premier dessin, sur `main` comme ici ; selon l'instant où la disposition
+  finit, `bench.py` la compte ou non dans `layoutFrameMax`.

@@ -275,6 +275,24 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   l'ensemble, mesuré à nouveau. D'un coup sur un grand graphe ou si les animations sont
   réduites, comme une sélection. Le dessin dépend du nombre d'essais qui tiennent dans le
   temps, donc un peu de la machine et de sa charge ; les graines, elles, sont fixes.
+- **Positions gardées** (#327, `layout_cache.js`) : chaque disposition faite (au
+  chargement, après « Développer » ou « Réduire », après un nouveau temps de calcul) est
+  gardée dans le navigateur (IndexedDB), sous une empreinte de tout ce qu'elle lit : les
+  nœuds et les liens avec leurs données, la vue, la taille du cadre, les années de la
+  frise, le temps de calcul, et un numéro de version de la disposition
+  (`LAYOUT_VERSION`, à augmenter quand une disposition change de résultat pour les mêmes
+  données). Le même graphe revient donc **tel quel et aussitôt** à la visite suivante :
+  sans message d'attente, et sans dépendre du nombre d'essais qui ont tenu dans le temps.
+  Une donnée qui change (une publication, un titre, une citation), un cadre d'une autre
+  taille ou un autre temps donnent une autre empreinte : la disposition est refaite, puis
+  gardée à son tour. On garde les positions seules (identifiants dans l'ordre, x et y, la
+  hauteur de la bande « Non daté »), environ 45 Ko pour 1 800 nœuds, et **20
+  dispositions** au plus : la moins récemment vue est oubliée la première. Les deux vues
+  en profitent : la disposition dure au moins le temps de calcul (0,1 s par défaut,
+  jusqu'à 10 s), frise comprise. Si le navigateur refuse IndexedDB (navigation privée,
+  données du site bloquées) ou ne répond pas en 0,3 s, le graphe est disposé à chaque fois,
+  comme avant. Une demande de disposition arrête celle en cours, qu'elle soit gardée ou
+  non (`layOutKept`, `layout_aside.js`).
 - **Style** (#139, #140, #470, `style.js`, `palette.js`) : en OKLCH, la **teinte** d'un
   nœud dit son **rôle** (`role` dans les données) et sa **luminance** son **niveau**.
   Le centre, `source` (la publication du graphe, celles du corpus, l'auteur), est en bleu,
@@ -393,23 +411,30 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   base de 76 publications et 85 citations, 161 éléments, anime et zoome comme avant).
   Au-delà :
   - les tailles fixes à l'écran sont réévaluées **une fois le zoom arrêté** (150 ms sans
-    changement) ; pendant le geste, elles grandissent avec le zoom, comme une image ;
+    changement) ; pendant le geste, elles grandissent avec le zoom, comme une image. Puis
+    par parties (#326, `screen_size.js`) : les éléments dans la vue d'abord, d'un coup,
+    puis les autres, 8 ms par image, sans redessiner pour eux ; un nouveau zoom arrête
+    cette passe. La vue d'ensemble, qui réévalue tout pour se mesurer (`measure`), ne la
+    relance pas ;
   - la **sélection va directement à sa vue**, sans animation, les tailles réévaluées une
     fois : sans réévaluation à chaque image, l'animation ferait gonfler les nœuds jusqu'à
     4 fois (le zoom de la sélection) avant de les réduire ;
-  - pendant un zoom à la molette ou un déplacement à la souris, Cytoscape déplace **une
-    image** du graphe, liens compris (`textureOnViewport`, `rendererOptions`), et le
-    redessine à la fin du geste ; au-delà de **5 000 éléments**, cette image est lente à
-    son tour (32 images de plus de 50 ms pendant un zoom à 2 000 publications) : les
-    **liens sont masqués** pendant le geste (`hideEdgesOnViewport`, 2 images lentes). Les
-    deux gagnent autant jusqu'à 1 800 publications ; l'image garde les liens, d'où son
-    choix sous ce seuil ;
+  - pendant un zoom à la molette ou un déplacement à la souris, les **liens sont
+    masqués** et seuls les nœuds sont dessinés, à chaque image (`hideEdgesOnViewport`,
+    `rendererOptions`, #476) : ce qu'un glisser fait entrer dans le cadre apparaît aussitôt.
+    Avant, Cytoscape déplaçait une image du graphe, liens compris (`textureOnViewport`,
+    #320), aussi fluide jusqu'à 4 300 éléments, mais qui laissait en gris tout ce qui
+    était hors du cadre au début du geste, jusqu'au relâchement ; au-delà de 5 000
+    éléments, elle était lente à son tour (32 images de plus de 50 ms pendant un zoom à
+    2 000 publications), et les liens y étaient déjà masqués ;
   - le **survol** (`hover.js`) ne change aucune classe Cytoscape, ce qui redessinerait
     tout le canevas (40 ms à 1 000 publications, 140 ms à 2 000) : l'infobulle seule, les
     liens ne foncent pas. Le survol revient à 17 ms par image ;
   - en vue réseau, la disposition se fait dans un Web Worker (voir « Vue Réseau »).
-  Limite connue : la réévaluation unique à la fin d'un zoom ou d'une sélection reste une
-  image longue (190 ms sur 1 800 publications).
+  Limite connue : quand la vue montre presque tout le graphe (retour à la vue
+  d'ensemble), la réévaluation à la fin du zoom reste une image longue (210 ms sur 1 800
+  publications) ; zoomé, elle ne porte que sur ce qui est vu (130 ms au lieu de 190 à
+  2,5 fois la vue d'ensemble). Mesures dans [banc-graphe.md](banc-graphe.md).
 - **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
   télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
@@ -437,12 +462,14 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   chargé avec `type="module"` après Cytoscape), `graph.js` (commun à tous les graphes :
   éléments du cadre, création du graphe Cytoscape, puis vue, sélection et export),
   `card.js` (commun aussi : carte de la sélection et gestes de la sélection), `scale.js` (dates et échelle),
-  `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
+  `viewport.js` (cadrage, bornes de la vue), `screen_size.js` (tailles fixes à l'écran,
+  réévaluées par parties sur un grand graphe), `focus.js`
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
   `export.js` (export PNG), `export_labels.js` (noms des nœuds sur l'image),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
   `layout_aside.js` et `layout-worker.js` (la disposition dans un Web Worker, chargé comme module),
-  `layout_time.js` (champ « Temps de calcul »), `random.js` (graines des départs),
+  `layout_time.js` (champ « Temps de calcul »), `layout_cache.js` (positions gardées
+  dans le navigateur), `random.js` (graines des départs),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
   un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
   réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
@@ -451,7 +478,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   (`tools/check_js.sh`, `node --check`, sans npm, #341) ; le comportement se vérifie dans
   Chrome headless (banc). Fonctions courtes, comme en Python : la vue
   (`viewport.js`) sépare la vue d'ensemble et ses bornes (`makeWholeView`), le bouton
-  « Vue d'ensemble » (`bindShowAllButton`) et les tailles à l'écran (`keepScreenSize`) ;
+  « Vue d'ensemble » (`bindShowAllButton`), et les tailles à l'écran ont leur module
+  (`keepScreenSize`, `screen_size.js`) ;
   le recentrage (`focus.js`) sépare l'animation (`makeMover`) de la sélection ; le style
   est fait de trois groupes de règles (nœuds, liens, sélection).
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
@@ -746,7 +774,10 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
     `viewBox` du SVG, aux proportions du cadre, bornée entre l'image entière et 8 pixels
     par unité. Pendant un geste, le SVG déjà dessiné est seulement déplacé et agrandi par
     une transformation CSS ; le `viewBox` suit 150 ms après le dernier mouvement, et
-    l'image est redessinée nette.
+    l'image est redessinée nette. Le SVG est dessiné **un cadre au-delà de chaque bord**
+    (trois fois la largeur et la hauteur du cadre, #476) : un glisser montre aussitôt ce
+    qu'il fait entrer dans le cadre, au lieu d'un blanc jusqu'au relâchement ; le coût ne
+    se mesure pas (mêmes images pendant le zoom, le glisser et le survol).
   - **Pointeur** (`image_pointer.js`) : le SVG ne reçoit aucun événement. Un calque
     transparent au-dessus prend la molette et la souris, et trouve lui-même le nœud sous
     le pointeur dans une grille des nœuds (cases de 64 unités, 3 pixels de tolérance) :
