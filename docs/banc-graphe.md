@@ -439,3 +439,37 @@ chevauchements).
 
 Captures côte à côte, 0,1 s à gauche et 10 s à droite : `~/revue-app/work/b5/compare/`
 (`corpus-frise.png`, `corpus-reseau.png`, `tag-frise.png`, `tag-reseau.png`).
+
+## Positions gardées dans le navigateur (#327)
+
+Chaque disposition est gardée dans IndexedDB sous l'empreinte de ce qu'elle lit
+(`layout_cache.js`, voir [graphes.md](graphes.md)). Mesuré le 22 novembre 2026, Chrome
+headless à 1 400 px, base du banc : trois chargements de suite dans un profil neuf,
+médiane de 3 profils. `layout` : la disposition (ou la lecture de celle gardée), `shown` :
+le graphe affiché, depuis le début de la navigation (ms).
+
+| Graphe | Temps de calcul | `main`, chaque visite (`layout` / `shown`) | 1re visite | 2e visite |
+|---|---|---|---|---|
+| Corpus de `bench`, frise (1 775 nœuds, 2 517 liens) | 0,1 s | 431 à 488 / 1 622 à 1 847 | 506 / 1 965 | **15 / 1 225** |
+| Corpus de `bench`, réseau | 0,1 s | 289 à 323 / 1 465 à 1 723 | 296 / 1 718 | **12 / 1 219** |
+| Corpus de `bench`, frise | 2 s | 2 048 à 2 218 / 3 147 à 3 363 | 2 070 / 3 278 | **14 / 1 177** |
+| Corpus de `bench`, réseau | 2 s | 1 719 à 1 798 / 2 809 à 2 930 | 1 776 / 2 907 | **10 / 1 105** |
+| « Hallmarks of Cancer », frise (240, 239) | 0,1 s | 89 à 101 / 265 à 540 | 112 / 604 | **8 / 204** |
+| « Hallmarks of Cancer », réseau | 0,1 s | 11 à 21 / 190 à 475 | 28 / 515 | **9 / 224** |
+
+- **La deuxième visite** lit la disposition en 8 à 15 ms au lieu de la refaire : le
+  graphe s'affiche 0,4 à 2,2 s plus tôt sur le corpus, et toujours **au même endroit**
+  (positions identiques d'une visite à l'autre ; sans la mémoire, à 2 s de calcul, deux
+  visites sur trois donnaient un autre dessin, le nombre d'essais dépendant de la charge).
+- La première visite ne coûte presque rien de plus : l'empreinte prend 3 à 6 ms pour
+  1 775 nœuds (`JSON.stringify` et un hachage de 64 bits), l'écriture se fait après.
+  La première visite de chaque ligne compte aussi le démarrage du navigateur.
+- **Donnée changée** : le titre d'une publication modifié entre la 2e et la 3e visite, la
+  disposition est refaite (337 ms au lieu de 10 sur le réseau du corpus).
+- **Sans IndexedDB** (accès qui lève une erreur, ou base qui ne répond pas) : le graphe
+  s'affiche comme sur `main`, sans erreur ; une base muette coûte l'attente de 0,3 s.
+- Un nouveau temps de calcul est gardé à son tour : la page rechargée avec ce temps lit sa
+  disposition (12 ms au lieu de 0,5 s).
+- La plus longue image au premier chargement du corpus (900 ms) est la création du
+  graphe et son premier dessin, sur `main` comme ici ; selon l'instant où la disposition
+  finit, `bench.py` la compte ou non dans `layoutFrameMax`.

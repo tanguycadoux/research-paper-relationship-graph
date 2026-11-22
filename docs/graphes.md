@@ -275,6 +275,24 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   l'ensemble, mesuré à nouveau. D'un coup sur un grand graphe ou si les animations sont
   réduites, comme une sélection. Le dessin dépend du nombre d'essais qui tiennent dans le
   temps, donc un peu de la machine et de sa charge ; les graines, elles, sont fixes.
+- **Positions gardées** (#327, `layout_cache.js`) : chaque disposition faite (au
+  chargement, après « Développer » ou « Réduire », après un nouveau temps de calcul) est
+  gardée dans le navigateur (IndexedDB), sous une empreinte de tout ce qu'elle lit : les
+  nœuds et les liens avec leurs données, la vue, la taille du cadre, les années de la
+  frise, le temps de calcul, et un numéro de version de la disposition
+  (`LAYOUT_VERSION`, à augmenter quand une disposition change de résultat pour les mêmes
+  données). Le même graphe revient donc **tel quel et aussitôt** à la visite suivante :
+  sans message d'attente, et sans dépendre du nombre d'essais qui ont tenu dans le temps.
+  Une donnée qui change (une publication, un titre, une citation), un cadre d'une autre
+  taille ou un autre temps donnent une autre empreinte : la disposition est refaite, puis
+  gardée à son tour. On garde les positions seules (identifiants dans l'ordre, x et y, la
+  hauteur de la bande « Non daté »), environ 45 Ko pour 1 800 nœuds, et **20
+  dispositions** au plus : la moins récemment vue est oubliée la première. Les deux vues
+  en profitent : la disposition dure au moins le temps de calcul (0,1 s par défaut,
+  jusqu'à 10 s), frise comprise. Si le navigateur refuse IndexedDB (navigation privée,
+  données du site bloquées) ou ne répond pas en 0,3 s, le graphe est disposé à chaque fois,
+  comme avant. Une demande de disposition arrête celle en cours, qu'elle soit gardée ou
+  non (`layOutKept`, `layout_aside.js`).
 - **Style** (#139, #140, #470, `style.js`, `palette.js`) : en OKLCH, la **teinte** d'un
   nœud dit son **rôle** (`role` dans les données) et sa **luminance** son **niveau**.
   Le centre, `source` (la publication du graphe, celles du corpus, l'auteur), est en bleu,
@@ -442,7 +460,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   `export.js` (export PNG), `export_labels.js` (noms des nœuds sur l'image),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
   `layout_aside.js` et `layout-worker.js` (la disposition dans un Web Worker, chargé comme module),
-  `layout_time.js` (champ « Temps de calcul »), `random.js` (graines des départs),
+  `layout_time.js` (champ « Temps de calcul »), `layout_cache.js` (positions gardées
+  dans le navigateur), `random.js` (graines des départs),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
   un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
   réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
