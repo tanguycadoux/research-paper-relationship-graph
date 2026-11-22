@@ -10,7 +10,8 @@ the base (ExternalRecord.data).
 - Size of a node: the number of publications of the corpus that carry the term.
   Weight of an edge: the number of publications that carry both.
 - A threshold keeps the terms carried by at least that many publications; the edges link
-  kept terms only. A term is named by its display name, the same in the graph and in the
+  kept terms only. By default, the lowest threshold that keeps at most MOST_TERMS terms
+  (#468). A term is named by its display name, the same in the graph and in the
   filter of « Mon corpus » that a double click opens (?keyword=, ?topic=).
 - The publications without an answer from OpenAlex (no DOI, or unknown to OpenAlex)
   cannot appear: the page says how many.
@@ -30,12 +31,13 @@ from django.utils.http import urlencode
 from ...models import ExternalRecord, Publication
 from ..corpus import tags
 
-# Keywords carried by a single publication link no two publications of the corpus: they
-# were 88 of the 117 of the user's corpus (26 publications), and drew 117 nodes; from 2,
-# 29 keywords and 6 topics (decision of #418).
-DEFAULT_MINIMUM = 2
-# The choices of the threshold go no further: beyond, a corpus of a few hundred
-# publications keeps a handful of terms.
+# The default threshold is the lowest that keeps at most this many terms (#468): beyond,
+# the map is a tangle whose names cover each other. On the user's corpus (26
+# publications), it is 2 for the keywords (29 kept; 117 with 1, as #418 had chosen) and 1
+# for the topics (12); on the corpus of the benchmark (217 publications), 6 for the
+# keywords (44 kept, where 2 kept 169 and 1 227 links) and 2 for the topics (26).
+MOST_TERMS = 50
+# The choices of the threshold go at least this far, and up to the default threshold.
 MAX_MINIMUM = 10
 
 
@@ -61,11 +63,24 @@ def requested_kind(query):
 
 
 def requested_minimum(query):
-    """The threshold asked in ?min=, between 1 and MAX_MINIMUM, else DEFAULT_MINIMUM."""
+    """The threshold asked in ?min=, from 1; None otherwise: the default of the corpus."""
     value = query.get("min", "")
-    if value.isdigit() and 1 <= int(value) <= MAX_MINIMUM:
+    if value.isdigit() and int(value) >= 1:
         return int(value)
-    return DEFAULT_MINIMUM
+    return None
+
+
+def kept_count(counts, minimum):
+    """The number of terms carried by at least minimum publications."""
+    return sum(1 for count in counts.values() if count >= minimum)
+
+
+def default_minimum(counts):
+    """The lowest threshold that keeps at most MOST_TERMS terms (#468)."""
+    minimum = 1
+    while kept_count(counts, minimum) > MOST_TERMS:
+        minimum += 1
+    return minimum
 
 
 def term_names(entries):
@@ -108,11 +123,16 @@ def carrying(publications, terms, name):
     return publications.filter(pk__in=[pk for pk, names in by_publication.items() if name in names])
 
 
-def threshold_choices(counts, terms):
-    """(threshold, label) from 1 to MAX_MINIMUM: « 2 publications (29 mots-clés) »."""
+def highest_minimum(default):
+    """The last choice of the threshold: MAX_MINIMUM, or the default when it is higher."""
+    return max(MAX_MINIMUM, default)
+
+
+def threshold_choices(counts, terms, default):
+    """(threshold, label) from 1 to highest_minimum: « 2 publications (29 mots-clés) »."""
     choices = []
-    for minimum in range(1, MAX_MINIMUM + 1):
-        kept = sum(1 for count in counts.values() if count >= minimum)
+    for minimum in range(1, highest_minimum(default) + 1):
+        kept = kept_count(counts, minimum)
         word = terms.singular if kept < 2 else terms.plural
         unit = "publication" if minimum == 1 else "publications"
         choices.append((minimum, f"{minimum} {unit} ({kept} {word})"))
@@ -127,15 +147,19 @@ def co_occurrences(by_publication, kept):
     return pairs
 
 
-def keyword_graph(user, tag="", terms=KEYWORDS, minimum=DEFAULT_MINIMUM):
+def keyword_graph(user, tag="", terms=KEYWORDS, minimum=None):
     """
     The map of the terms of the user's corpus, or of a tag and its subtags: the
     Cytoscape elements, the publications listed by the card of a term, and what the
-    page says around the graph (thresholds, publications left out).
+    page says around the graph (thresholds, publications left out). minimum: the
+    threshold asked, brought back to the last choice; None for the default of this
+    corpus (default_minimum).
     """
     corpus = tags.context_publications(user, tag)
     by_publication, details = terms_by_publication(corpus, terms)
     counts = Counter(name for names in by_publication.values() for name in names)
+    default = default_minimum(counts)
+    minimum = default if minimum is None else min(minimum, highest_minimum(default))
     kept = {name for name, count in counts.items() if count >= minimum}
     # The most carried first: at the centre of the starting spiral (keywords.js).
     order = sorted(kept, key=lambda name: (-counts[name], name.casefold()))
@@ -154,7 +178,9 @@ def keyword_graph(user, tag="", terms=KEYWORDS, minimum=DEFAULT_MINIMUM):
             for (first, second), shared in sorted(co_occurrences(by_publication, kept).items())
         ],
         "publications": listed_publications(carriers),
-        "thresholds": threshold_choices(counts, terms),
+        "thresholds": threshold_choices(counts, terms, default),
+        "minimum": minimum,
+        "default_minimum": default,
         "unanswered": corpus.count() - len(by_publication),
         "without_terms": sum(1 for names in by_publication.values() if not names),
     }

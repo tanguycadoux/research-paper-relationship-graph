@@ -533,7 +533,21 @@ dessin que les graphes de citations, en vue réseau seulement.
   tire avec (longueur − idéale)² / élasticité ; ses valeurs par défaut sont 48 et 32). Un
   lien fort est donc deux fois plus court et quatre fois plus raide qu'un lien faible ;
   les liens faibles gardent leur place dans le réseau. Départ en spirale, l'auteur du
-  graphe au centre.
+  graphe au centre ; le dessin est ensuite tourné pour remplir le cadre, comme la carte
+  des mots-clés (#468).
+- **Noms** (#468, `node_labels.js`, comme la carte des mots-clés) : les **12 auteurs les
+  plus gros** sont nommés (`NAMED_AUTHORS`), par leur nom de famille comme sur l'image des
+  grands graphes : l'auteur sélectionné puis l'auteur du graphe d'abord, puis les plus
+  publiés (dans le corpus, pour le graphe du corpus). Avec une sélection, seuls l'auteur
+  et ses coauteurs. Dans le cœur dense d'un graphe d'auteurs, presque aucun nom ne
+  tiendrait sans toucher un nœud : un nom qui n'a pas de place libre peut couvrir les
+  nœuds sans nom et les nommés plus petits (il est dessiné au-dessus d'eux, `z-index`
+  selon les publications), jamais un nom ni un nœud nommé plus gros. L'export PNG ne les
+  écrit pas une seconde fois et place ses propres noms autour (`export_labels.js`).
+  Copie de la base, graphe du corpus (151 auteurs) : 0 nom avant, 12 après, dont 10 des 12
+  plus publiés à 1 400 et à 390 px (Felice, Simon, Rochepault…) ; banc (771 auteurs), 5 des 12
+  plus publiés, les autres étant serrés au centre. Placement : 1,1 ms (151 auteurs),
+  5,5 ms (771).
 - **Le reste est celui des graphes de citations** : vue d'ensemble et zoom bornés
   (`viewport.js`), sélection par un zoom uniforme (`focus.js`, `uniform`), panneau à
   droite, légende, aide derrière « ? » (qui explique aussi le poids des liens), export
@@ -614,14 +628,22 @@ sous-tags, reliés par les publications qui les portent ensemble. En vue réseau
   par une même publication, d'autant plus épais (0,75 à 5 px), opaque, court et raide que
   ces publications sont nombreuses (`shared`), en racine carrée comme le graphe des
   auteurs. Disposition `cose` de la vue réseau, départ en spirale, le terme le plus porté
-  au centre.
-- **Seuil** (`?min=`, de 1 à 10) : seuls les termes portés par au moins *n* publications
-  sont gardés, et les liens ne relient que ceux-là. Chaque choix de la liste dit combien
-  de termes il garde. **2 par défaut** : sur la copie de la base de l'utilisateur
-  (corpus de 26 publications, 25 réponses OpenAlex, 21 novembre 2026), 88 des 117
-  mots-clés ne sont portés que par une publication ; ils ne relient aucune paire de
-  publications et faisaient 117 nœuds et 578 liens. Avec 2 : 29 mots-clés et 135 liens ;
-  avec 3 : 17 et 71. Thèmes : 12 et 22 liens avec 1, 6 et 11 avec 2.
+  au centre ; puis le dessin est **tourné** pour remplir le cadre (#468,
+  `turnGraphToFrame` de `crown.js`, comme le réseau des citations) : un réseau n'a pas
+  de sens, et à 390 px de large, le dessin plus large que haut n'occupait que 30 % d'un
+  cadre en portrait (315 × 201 px sur 356 × 591).
+- **Seuil** (`?min=`, de 1 à 10, ou jusqu'au seuil par défaut s'il est plus haut) : seuls
+  les termes portés par au moins *n* publications sont gardés, et les liens ne relient
+  que ceux-là. Chaque choix de la liste dit combien de termes il garde. **Par défaut, le
+  plus petit seuil qui garde au plus 50 termes** (`MOST_TERMS`, #468), dit sous la liste :
+  un seuil fixe ne convient pas à toutes les tailles de corpus. Sur la copie de la base de
+  l'utilisateur (corpus de 26 publications, 25 réponses OpenAlex, 21 novembre 2026), 88
+  des 117 mots-clés ne sont portés que par une publication : à 1, 117 nœuds et 578 liens ;
+  le défaut est 2 (29 mots-clés et 135 liens, le seuil fixe de #418). Thèmes : 12 et 22
+  liens à 1, le défaut. Sur le corpus du banc (217 publications), 2 gardait 169 mots-clés
+  et 1 227 liens, une pelote ; le défaut est 6 (44 mots-clés, 318 liens), et 2 pour les
+  thèmes (26). Seul un seuil choisi est gardé par les autres formulaires de la page (tag,
+  termes) : le défaut d'un autre tag est le sien.
 
   | Seuil | 1 | 2 | 3 | 4 | 5 |
   |---|---|---|---|---|---|
@@ -629,15 +651,22 @@ sous-tags, reliés par les publications qui les portent ensemble. En vue réseau
   | Thèmes (corpus) | 12 / 22 | 6 / 11 | 6 / 11 | 5 / 8 | 4 / 6 |
   | Mots-clés (toute la base, 192 publications) | 725 / 3 574 | 171 / 970 | 91 / 552 | — | 51 / 284 |
   | Thèmes (toute la base) | 65 / 124 | 30 / 62 | 24 / 52 | — | 13 / 25 |
+  | Mots-clés (corpus du banc, 217 publications) | 737 / 3 925 | 169 / 1 227 | 109 / 864 | 76 / 591 | 58 / 438 |
 
   (termes / liens). Construction des données : 4,5 ms pour le corpus, 17 ms pour les
   termes des 192 publications de la base ; disposition dans Chrome : 19 ms (29 mots-clés),
   5 ms (6 thèmes).
-- **Noms** (`keyword_labels.js`) : comme sur VOSviewer, écrits sous les nœuds, le
-  terme sélectionné puis les plus portés d'abord, chacun seulement s'il ne chevauche aucun
-  nom déjà placé ; zoomer en fait tenir davantage. Ils sont replacés quand la vue ou la
-  sélection ne bouge plus (120 ms), jamais pendant une animation. L'image exportée les a
-  (c'est le canevas).
+- **Noms** (`node_labels.js`) : comme sur VOSviewer, le terme sélectionné puis les plus
+  portés d'abord, chacun seulement s'il ne chevauche ni un nom déjà placé ni un autre
+  nœud (#468 ; avant, un nom pouvait passer sous un nœud) : sous le nœud, sinon au-dessus,
+  à droite ou à gauche ; zoomer en fait tenir davantage. Ils sont replacés quand la vue ou
+  la sélection ne bouge plus (120 ms), jamais pendant une animation. L'image exportée les
+  a (c'est le canevas). **Les noms masqués sont signalés** : une étiquette en verre dépoli
+  en bas à gauche du cadre dit « 3 noms masqués : zoomez, ou survolez les nœuds »
+  (l'infobulle du survol donne le nom de chaque nœud), et disparaît quand tous tiennent.
+  Sur la copie de la base, à 1 400 px, 26 noms sur 29 (24 avant, dont 5 en partie sous
+  un nœud) ; à 390 px, 15 sur 29 (10 avant, dont 8 sous un nœud). Placement : 0,6 ms
+  (29 mots-clés), 2,2 ms (169).
 - **Sélection** (`keyword_selection.js`) : un clic met en avant le terme, ses voisins et
   leurs liens, et zoome sur eux. La carte liste ses publications (lien vers leur fiche,
   les plus récentes d'abord), le lien « Ouvrir ses n publications dans « Mon corpus » »
