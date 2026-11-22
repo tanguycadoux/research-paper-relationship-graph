@@ -2,10 +2,13 @@
 // (services/display/author_graph.py), in the network view only (#195). Entry point,
 // loaded as an ES module after cytoscape.min.js (global `cytoscape`). The frame, the
 // view, the uniform zoom on a selection and the export are those of every graph (graph.js).
+// The most published authors are named (node_labels.js, #468).
 
 import { bindCoauthorSelection } from "./coauthor_selection.js";
+import { turnGraphToFrame } from "./crown.js";
 import { bindGraph, createGraph, graphFrame, LAYOUT_MEASURE } from "./graph.js";
 import { COSE, spiralPosition } from "./network.js";
+import { bindNodeLabels, labelRules } from "./node_labels.js";
 import { color, graphStyle, linkColor } from "./style.js";
 
 // Diameter of a node on the screen: its area follows the number of publications.
@@ -29,6 +32,9 @@ const STIFFEST_EDGE = 16;
 // The outline of the probable duplicates gathered into one node (#419), on the screen
 // whatever the zoom, outside the white ring of every node.
 const GROUPED_OUTLINE = 2;
+// The authors named at most (#468), by their family name, as on the image of the large
+// graphs: the 151 authors of the user's corpus had no name without a hover.
+const NAMED_AUTHORS = 12;
 
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -77,7 +83,7 @@ function edgeElements(edges) {
 // Edges as wide and as dark as their link is strong, on the screen whatever the zoom
 // (#185), the faded elements a little lighter than on the citation graphs; the links of a
 // selected author in the light shade of its colour; the gathered duplicates outlined.
-function coauthorStyle() {
+function coauthorStyle(fontFamily) {
     const width = (extra) => (edge) => (edge.data("width") + extra) / edge.cy().zoom();
     const edges = { width: width(0), hoveredWidth: width(1), opacity: "data(opacity)", faded: 0.12 };
     return [
@@ -93,6 +99,7 @@ function coauthorStyle() {
             selector: "edge.coauthor",
             style: { width: width(1), "line-color": linkColor("cited"), opacity: 1, "z-index": 5 },
         },
+        ...labelRules(fontFamily, "shortLabel"),
     ];
 }
 
@@ -103,17 +110,21 @@ function layOut(cy) {
         idealEdgeLength: (edge) => lerp(LONGEST_EDGE, SHORTEST_EDGE, edge.data("strength")),
         edgeElasticity: (edge) => lerp(SOFTEST_EDGE, STIFFEST_EDGE, edge.data("strength")),
     }).run();
+    // A network has no direction: turned to fill the frame (#468).
+    turnGraphToFrame(cy);
     performance.measure(LAYOUT_MEASURE, LAYOUT_MEASURE);
 }
 
 function render() {
     const frame = graphFrame();
+    const fontFamily = getComputedStyle(frame.container).fontFamily;
     const nodes = nodeElements(frame.data.nodes);
     const edges = edgeElements(frame.data.edges);
-    const cy = createGraph(frame.container, nodes, edges, coauthorStyle());
+    const cy = createGraph(frame.container, nodes, edges, coauthorStyle(fontFamily));
     layOut(cy);
     // Never stretched: the network keeps its distances (#195); the view needs it anyway.
     bindGraph(cy, frame, { bindSelection: bindCoauthorSelection, uniform: true });
+    bindNodeLabels(cy, fontFamily, { field: "shortLabel", most: NAMED_AUTHORS, overNodes: true });
 }
 
 render();

@@ -204,6 +204,7 @@ references/          application principale
     band.js          bande des publications sans date
     network.js       vue « Réseau » (disposition cose, autant de départs que le temps donné le permet)
     crown.js         réseau : feuilles en couronne autour de leur publication, dessin tourné
+                     (aussi celui des mots-clés et des auteurs, pour remplir le cadre)
     crossings.js     nombre de croisements de liens droits
     random.js        générateur pseudo-aléatoire à graine (départs reproductibles des dispositions)
     layout_time.js   champ « Temps de calcul » : temps mémorisé, nouvelle disposition animée
@@ -224,7 +225,7 @@ references/          application principale
     coauthor_selection.js  sélection d'un auteur dans ce graphe
     keywords.js      point d'entrée de la carte des mots-clés (co-occurrence)
     keyword_selection.js  sélection d'un mot-clé : ses publications, ses voisins les plus liés
-    keyword_labels.js  noms des mots-clés dessinés là où ils ne se chevauchent pas
+    node_labels.js   noms dessinés là où ils ne se chevauchent pas : mots-clés, auteurs les plus publiés
     image_viewer.js  point d'entrée de la page qui parcourt l'image d'un grand graphe (#453)
     image_view.js    sa vue : zoom à la molette, déplacement, « Tout voir » (viewBox)
     image_pointer.js  le nœud sous le pointeur : infobulle, surbrillance, clic qui le sélectionne

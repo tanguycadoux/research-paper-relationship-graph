@@ -1,5 +1,8 @@
 """The map of the keywords of a corpus (#418): built from the OpenAlex answers in base."""
 
+from collections import Counter
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -7,8 +10,10 @@ from django.urls import reverse
 from references.models import Publication, UserPublication
 from references.services.corpus import tags
 from references.services.display.keyword_graph import (
-    DEFAULT_MINIMUM,
+    MAX_MINIMUM,
+    MOST_TERMS,
     TOPICS,
+    default_minimum,
     keyword_graph,
     requested_minimum,
 )
@@ -92,6 +97,7 @@ class KeywordGraphTests(TestCase):
         graph = keyword_graph(self.alice, minimum=2)
         self.assertEqual(set(nodes(graph)), {"magnets", "quench"})
         self.assertEqual(links(graph), {frozenset({"magnets", "quench"}): 2})
+        self.assertIn((1, "1 publication (4 mots-clés)"), graph["thresholds"])
         self.assertIn((2, "2 publications (2 mots-clés)"), graph["thresholds"])
         self.assertIn((4, "4 publications (0 mot-clé)"), graph["thresholds"])
 
@@ -137,8 +143,97 @@ class KeywordGraphTests(TestCase):
 
     def test_the_requested_threshold(self):
         self.assertEqual(requested_minimum({"min": "3"}), 3)
-        for wrong in ("0", "11", "deux", ""):
-            self.assertEqual(requested_minimum({"min": wrong}), DEFAULT_MINIMUM)
+        self.assertEqual(requested_minimum({"min": "11"}), 11)
+        for wrong in ("0", "-1", "deux", ""):
+            self.assertIsNone(requested_minimum({"min": wrong}))
+
+    def test_the_default_threshold_keeps_all_the_terms_of_a_small_corpus(self):
+        graph = keyword_graph(self.alice)
+        self.assertEqual((graph["minimum"], graph["default_minimum"]), (1, 1))
+        self.assertEqual(set(nodes(graph)), {"magnets", "quench", "LHC", "ion source"})
+
+    def test_the_default_threshold_keeps_at_most_most_terms(self):
+        with patch("references.services.display.keyword_graph.MOST_TERMS", 2):
+            graph = keyword_graph(self.alice)
+        self.assertEqual(graph["minimum"], 2)
+        self.assertEqual(set(nodes(graph)), {"magnets", "quench"})
+        self.assertEqual(graph["default_minimum"], 2)
+
+    def test_a_threshold_beyond_the_choices_is_the_last_one(self):
+        graph = keyword_graph(self.alice, minimum=40)
+        self.assertEqual(graph["minimum"], MAX_MINIMUM)
+        self.assertEqual(len(graph["thresholds"]), MAX_MINIMUM)
+        self.assertEqual(nodes(graph), {})
+
+
+def carried(*kept):
+    """
+    A Counter of terms {name: publications} such that kept[i] terms are carried by at
+    least i + 1 publications.
+    """
+    counts = Counter()
+    for index, many in enumerate(kept):
+        exactly = many - (kept[index + 1] if index + 1 < len(kept) else 0)
+        counts.update({f"t{index + 1}-{n}": index + 1 for n in range(exactly)})
+    return counts
+
+
+class DefaultMinimumTests(TestCase):
+    """The default threshold aims at 30 to 50 terms (#468): the lowest that keeps 50 at most."""
+
+    def test_one_when_every_term_fits(self):
+        self.assertEqual(default_minimum(Counter()), 1)
+        self.assertEqual(default_minimum(carried(MOST_TERMS, 10)), 1)
+        self.assertEqual(default_minimum(carried(MOST_TERMS + 1, 10)), 2)
+
+    def test_the_corpus_of_the_user(self):
+        # The keywords of the copy of the user's base (26 publications): 117, 29, 17…
+        self.assertEqual(default_minimum(carried(117, 29, 17, 13, 6, 4, 2, 1)), 2)
+
+    def test_the_corpus_of_the_benchmark(self):
+        # The keywords of the corpus of the benchmark (217 publications): 2 kept 169.
+        kept = (737, 169, 109, 76, 58, 44, 33, 24, 21, 20, 18, 14, 13, 11, 9)
+        self.assertEqual(default_minimum(carried(*kept)), 6)
+
+    def test_beyond_the_usual_choices(self):
+        # 60 terms carried by 12 publications: the default goes past MAX_MINIMUM, and so
+        # do the choices.
+        self.assertEqual(default_minimum(carried(*[60] * 12, 1)), 13)
+
+
+class DefaultMinimumPageTests(TestCase):
+    """The page keeps the threshold asked only, never the default (#468)."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_user("alice")
+        for index in range(3):
+            pub = Publication.objects.create(title=f"Publication {index}")
+            # 60 keywords on a single publication each, 2 on all three.
+            names = ["magnets", "quench", *(f"k{index}-{n}" for n in range(20))]
+            openalex(pub, names)
+            entry = UserPublication.objects.create(user=cls.user, publication=pub)
+            tags.tag_entry(entry, "Aimants")
+
+    def setUp(self):
+        self.client.force_login(self.user)
+
+    def test_the_default_keeps_the_terms_of_several_publications(self):
+        response = self.client.get(reverse("corpus_keywords"))
+        self.assertContains(response, "2 mots-clés, 1 lien")
+        self.assertContains(response, '<option value="2" selected>2 publications (2 mots-clés)')
+        self.assertContains(
+            response, "Par défaut : 2 publications, le plus petit seuil qui garde au plus 50"
+        )
+        # The tag form does not keep it: another tag has its own default.
+        self.assertContains(response, 'id="graph-tag"')
+        self.assertNotContains(response, '<input type="hidden" name="min"')
+
+    def test_a_threshold_asked_is_kept(self):
+        response = self.client.get(reverse("corpus_keywords"), {"min": "1"})
+        self.assertContains(response, "62 mots-clés")
+        self.assertContains(response, '<option value="1" selected>')
+        self.assertContains(response, '<input type="hidden" name="min" value="1">')
 
 
 class KeywordPageTests(TestCase):

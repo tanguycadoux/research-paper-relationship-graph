@@ -3,7 +3,8 @@
 // cose lays out the rest of the graph, the core, where each hub takes the room of its
 // crown; its leaves then go around it, in the widest gaps between its links to the core:
 // away from the rest of the graph, their edges no longer cross it, and the leaves of two
-// neighbouring hubs do not mix. Then the whole drawing is turned to fill the frame.
+// neighbouring hubs do not mix. Then the whole drawing is turned to fill the frame, as are
+// the networks laid out in the page (turnGraphToFrame).
 
 // Between two leaves of a crown, along it, in pixels.
 const LEAF_GAP = 10;
@@ -207,4 +208,15 @@ export function turnToFrame(positions, sizes, frame) {
         positions.set(id, { x: x * cos - y * sin, y: x * sin + y * cos });
     }
     return positions;
+}
+
+// The nodes of a network laid out in the page (the map of the keywords, the graphs of the
+// authors, #468) turned the same way: on a narrow screen, a drawing wider than tall left
+// two thirds of a frame in portrait empty. Their sizes on the screen are data("size").
+export function turnGraphToFrame(cy) {
+    const nodes = cy.nodes();
+    const positions = new Map(nodes.map((node) => [node.id(), { ...node.position() }]));
+    const sizes = new Map(nodes.map((node) => [node.id(), node.data("size")]));
+    turnToFrame(positions, sizes, { width: cy.width(), height: cy.height() });
+    nodes.positions((node) => positions.get(node.id()));
 }
