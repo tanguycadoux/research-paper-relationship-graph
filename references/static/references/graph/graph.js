@@ -47,7 +47,8 @@ const withoutAxes = () => ({ axis: null, band: null });
 // export. bindSelection(cy, card, focus): that of the graph (selection.js,
 // coauthor_selection.js). uniform: a zoom without stretch on a selection, in a network.
 // bindAxes(stretch): draws the year axis and the band of the timeline, and returns their
-// elements for the export.
+// elements for the export. Returns the stretch (makeStretch) and the view (bindViewport),
+// for a new layout of the graph (layout_time.js).
 export function bindGraph(cy, frame, { bindSelection, uniform, bindAxes = withoutAxes }) {
     // Positions of the layout, kept for the stretch of a selection on the timeline.
     const stretch = makeStretch(cy);
@@ -57,4 +58,5 @@ export function bindGraph(cy, frame, { bindSelection, uniform, bindAxes = withou
     bindExport(cy, { axis, band, legend: frame.legend }, frame.exportCommand, viewport);
     frame.exportCommand.querySelector("button").disabled = false;
     performance.mark(SHOWN_MARK);
+    return { stretch, viewport };
 }

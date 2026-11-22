@@ -220,5 +220,7 @@ export function bindViewport(cy, container, showAllButton, stretch) {
         onShowAllRequest: button.onRequest,
         // The view of the whole graph, unstretched: where the button goes back to.
         wholeView: whole.view,
+        // Measures the whole graph again and shows it (after a new layout, layout_time.js).
+        showAll,
     };
 }

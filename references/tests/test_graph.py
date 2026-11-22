@@ -413,21 +413,32 @@ class GraphViewTests(TestCase):
         self.assertContains(response, '<a href="?vue=frise"', count=1)
 
     def test_waiting_message_and_tooltip_of_large_graphs(self):
-        # #202: the network may be laid out in a Web Worker, with a message in the frame,
-        # hidden until then; the hover tooltip is in both views.
+        # #202, #323: both views may be laid out in a Web Worker, with a message in the
+        # frame, hidden until then; the hover tooltip is in both views.
         network = self.client.get(
             reverse("publication_graph", args=[self.source.pk]), {"vue": "reseau"}
         )
-        self.assertContains(network, "data-graph-waiting", count=1)
-        self.assertContains(network, "Disposition du graphe…</p>")
-        self.assertContains(network, 'role="status"')
         timeline = self.client.get(reverse("publication_graph", args=[self.source.pk]))
-        self.assertNotContains(timeline, "data-graph-waiting")
         for response in (network, timeline):
+            self.assertContains(response, "data-graph-waiting", count=1)
+            self.assertContains(response, "Disposition du graphe…</p>")
+            self.assertContains(response, 'role="status"')
             self.assertContains(response, "data-graph-tooltip", count=1)
             self.assertContains(response, "pointer-events-none absolute z-10")
             # Frosted glass, shared by what floats over the content (ui.GLASS_CLASSES).
             self.assertContains(response, "backdrop-blur-md")
+
+    def test_layout_time_field(self):
+        # #323: the time given to the layout, in seconds, in both views, with what says a
+        # new layout is being computed.
+        for params in ({}, {"vue": "reseau"}):
+            response = self.client.get(reverse("publication_graph", args=[self.source.pk]), params)
+            self.assertContains(response, '<label for="graph-layout-time"')
+            self.assertContains(response, 'min="0.1"')
+            self.assertContains(response, 'max="10"')
+            self.assertContains(response, 'value="0.1"')
+            self.assertContains(response, "data-graph-computing", count=1)
+            self.assertContains(response, "Calcul en cours…")
 
     def test_an_invalid_view_falls_back_to_the_timeline(self):
         response = self.client.get(reverse("base_graph"), {"vue": "cercle"})
