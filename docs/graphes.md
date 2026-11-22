@@ -157,6 +157,41 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   rangées par blocs de 32 dates voisines, triés par y (`nearEdges`). Sur la base du banc
   (1 797 publications) : 0,3 s au lieu de 11,2 s, pour un résultat équivalent
   (49 838 croisements, contre 50 436 avec une recherche exacte à chaque itération).
+- **Moins de croisements** (#323, `untangle.js`) : après la simulation, deux publications
+  proches dans l'ordre vertical (chacune contre les 8 suivantes, depuis le haut)
+  échangent leurs hauteurs quand moins de liens se croisent ainsi, comme dans le dessin
+  d'un graphe en couches ; chacune emmène ses feuilles (les publications reliées à elle
+  seule), dont l'éventail reste groupé. Seuls les liens qui partagent des dates peuvent se
+  croiser (x ne bouge pas) ; les liens vers la bande « Non daté » comptent aussi, leur
+  autre bout fixé sous le groupe. Un échange est **refusé** s'il rapproche des nœuds
+  proches en date (moins de 40 px) plus que la simulation ne les garde (leurs rayons et
+  12 px, en somme des manques), ou s'il sort un nœud de la hauteur du groupe, qui serait
+  alors plus comprimé dans le cadre : les échanges ne créent plus de chevauchements.
+  Ensuite, jusqu'au **temps de calcul** (ci-dessous) : la simulation repart d'autres ordres
+  de départ (mêlés d'après les graines 1, 2, 3…) pendant la moitié du temps, et l'ordre qui
+  laisse le moins de croisements est gardé (`layout.js`) ; puis, sur lui, des échanges plus
+  larges (24 voisins, et des blocs de 1 à 4 publications voisines échangés avec le bloc
+  suivant) et des **redémarrages** : quelques échanges au hasard (5 % des publications),
+  puis de nouveau les échanges utiles ; un dessin aussi bon est gardé pour continuer, un
+  moins bon abandonné, et le meilleur reste. Le temps est partagé entre les groupes en
+  proportion de leurs liens, les plus petits d'abord (le temps dont ils n'ont pas besoin
+  va aux grands). Jusqu'à 300 liens, les premiers échanges se font toujours ; au-delà,
+  seulement si le temps le permet (sinon le groupe garde la simulation, comme avant).
+  **Pourquoi la frise bougeait peu** : x est la date, seule la hauteur bouge, et les
+  échanges ne partaient que d'un ordre (celui des dates, puis du barycentre) en
+  n'essayant que les 8 voisins ; ils trouvaient vite un minimum local. Sur « Mon graphe »,
+  l'ordre de départ seul fait varier les croisements de la simulation de 156 à 367 ;
+  repartir d'autres ordres gagne bien plus que d'élargir la fenêtre. Sur « Mon graphe »
+  (96 publications, 130 citations) : 171 croisements à 0,1 s, 100 à 10 s ; 38 et 20 sur
+  le tag MT28 ([banc-graphe.md](banc-graphe.md)).
+- **Références de la même date** (#322) : une référence qui a la même date qu'une
+  publication qui la cite est décalée vers sa gauche, de 20 px pour la première, 40 pour
+  la deuxième, etc. (dans l'ordre des rangées de départ). Sans cela, les liens étaient
+  verticaux : les références de 2017 d'« Attention Is All You Need » (dates sans mois ni
+  jour, toutes au 1er janvier) faisaient une colonne sous lui, chaque lien passant sur
+  les nœuds et les autres liens. En escalier, la simulation les écarte des liens comme
+  les autres. Le décalage s'écarte un peu de la date : la carte et l'infobulle donnent la
+  vraie.
 - **Publications non datées** (#288, `layout.js`, `band.js`) : sur une rangée sous la
   frise, séparée par une ligne pointillée libellée « Non daté ». Elles traversaient toute
   la frise depuis une colonne à gauche, avec des liens dont le sens ne se lisait plus.
@@ -193,20 +228,52 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   rapide que par défaut (`coolingFactor` 0,9 : 66 itérations au lieu de 690), avec une
   répulsion doublée qui compense une partie des recouvrements : 2,9 s au lieu de 27 s sur
   1 797 publications, 20 ms sur 76 ([banc-graphe.md](banc-graphe.md)). Les groupes sans
-  lien sont rangés par `cose` lui-même, côte à côte. **Au-delà de 600 éléments** (#202,
-  même seuil que les grands graphes), `cose` tourne dans un **Web Worker**
-  (`network-worker.js`, Cytoscape sans affichage, chargé depuis la même URL que la page) :
+  lien sont rangés par `cose` lui-même, côte à côte. **Moins de croisements** (#323,
+  `crown.js`) : les **feuilles** (une publication reliée à une seule autre, elle-même
+  reliée à d'autres : une référence citée par une seule publication du corpus) ne passent
+  pas par `cose`, où chacune avait sa place au milieu des autres. `cose` dispose le reste,
+  chaque publication grossie de la place de sa couronne, puis ses feuilles vont autour
+  d'elle dans les plus grands angles libres entre ses liens, à l'écart du reste du
+  graphe : leurs liens ne croisent plus rien, et les feuilles de deux voisines ne se
+  mêlent plus. Les références partagées par les deux mêmes publications (et elles seules)
+  sont alignées sur la médiatrice de ces deux-là : leurs liens ne se croisent pas. Le
+  dessin est ensuite **tourné** (par pas de 15°) pour remplir au mieux le cadre : un
+  réseau n'a pas de sens, et un dessin plus large que le cadre laissait des bandes vides
+  au-dessus et au-dessous. `cose` part d'**autant de départs que le temps de calcul le
+  permet** (la spirale dans l'ordre des données, puis dans des ordres mêlés d'après les
+  graines 1, 2, 3… ; un départ de plus tant qu'il tient avant l'échéance, au temps moyen
+  des précédents ; au moins un), et le dessin qui a le moins de croisements est gardé
+  (`crossings.js`, compté seulement si un second départ tient). Sur « Mon graphe » : 58 à
+  67 croisements à 0,1 s, 47 à 10 s. **Au-delà de 600 éléments** (#202, même seuil que
+  les grands graphes), ou avec plus de 0,1 s, la disposition tourne dans un **Web Worker**
+  (`layout_aside.js`, `layout-worker.js`, Cytoscape sans affichage, chargé depuis la même URL que la page) :
   le cadre affiche « Disposition du graphe… » (`data-graph-waiting`, `role="status"`),
   « Vue d'ensemble » et « Exporter (PNG) » sont désactivés jusqu'à ce que le graphe existe, et
   la page reste utilisable ; le graphe est créé avec les positions reçues. Les positions
-  sont **les mêmes** qu'en disposant dans la page (vérifié sur la base du banc) : le worker
+  sont **les mêmes** qu'en disposant dans la page (la même fonction, `networkPositions`) : le worker
   reçoit les tailles des nœuds (`LAYOUT_STYLE`, celles de `style.js` au zoom 1, bordure
   comprise) et la taille du cadre, vers le centre duquel `cose` attire les nœuds ; il part
   de la spirale par une disposition `preset` (sans elle, Cytoscape poserait tous les nœuds
   en (0, 0), que `cose` séparerait au hasard). Si le worker échoue (navigateur sans worker
   de module, script introuvable), la disposition se fait dans la page, comme sous le
-  seuil. Sous 600 éléments, `cose` prend moins de 100 ms environ : la disposition reste
-  dans la page, sans message qui ne ferait que clignoter.
+  seuil. Sous 600 éléments et à 0,1 s, la disposition reste dans la page, sans message
+  qui ne ferait que clignoter. La frise suit la même règle, avec le même worker.
+- **Temps de calcul** (#323, `layout_time.js`) : un champ « Temps de calcul » du panneau,
+  sous le tag, en secondes, de 0,1 à 10 (au dixième), 0,1 par défaut (le temps que
+  prenaient les dispositions). Plus il est long, moins les liens se croisent : la frise et
+  le réseau vont jusqu'à ce temps et gardent leur meilleur dessin (au moins un essai : un
+  grand graphe peut le dépasser). Il est mémorisé par le navigateur (`localStorage`, pour
+  tous les graphes de citations ; sans stockage, le défaut). Le changer relance la
+  disposition, toujours dans le Web Worker : la page répond, et « Calcul en cours… »
+  (icône qui tourne, en verre dépoli, en haut à droite du cadre, `data-graph-computing`,
+  `role="status"`) s'affiche jusqu'au résultat ; une nouvelle valeur arrête le calcul en
+  cours (une valeur attend 400 ms la suivante, les flèches du champ en donnent
+  plusieurs). Puis la sélection est retirée et les nœuds **glissent** vers leurs
+  nouvelles positions en 600 ms (au travers des positions de la disposition,
+  `stretch.moveLayout`, si bien que le retour d'une sélection suit), et la vue revient à
+  l'ensemble, mesuré à nouveau. D'un coup sur un grand graphe ou si les animations sont
+  réduites, comme une sélection. Le dessin dépend du nombre d'essais qui tiennent dans le
+  temps, donc un peu de la machine et de sa charge ; les graines, elles, sont fixes.
 - **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
   les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
   `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
@@ -362,7 +429,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
   `export.js` (export PNG), `export_labels.js` (noms des nœuds sur l'image),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
-  `network-worker.js` (la même dans un Web Worker, chargé comme module),
+  `layout_aside.js` et `layout-worker.js` (la disposition dans un Web Worker, chargé comme module),
+  `layout_time.js` (champ « Temps de calcul »), `random.js` (graines des départs),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
   un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
   réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`

@@ -55,5 +55,13 @@ export function makeStretch(cy) {
         // y of the graph for a y of the layout (the band of the publications without a date).
         y: (y) => current.cy + (y - current.cy) * current.sy,
         apply,
+        // New positions of the layout (by id), the current stretch applied to them: a new
+        // layout (layout_time.js), frame by frame.
+        moveLayout: (positions) => {
+            for (const [id, point] of positions) {
+                layout.set(id, point);
+            }
+            apply(current);
+        },
     };
 }

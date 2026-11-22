@@ -351,3 +351,91 @@ Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #
    tant que les données du graphe ne changent pas restent à décider.
 6. **Graphe de la base** : au-delà d'un seuil, proposer de le limiter (corpus, tag,
    composante) plutôt que de tout dessiner.
+
+## Moins de croisements de liens (#322, #323)
+
+Frise : échanges de hauteurs après la simulation (`untangle.js`, groupes d'au plus
+300 liens) et références de la même date décalées vers la gauche. Réseau : feuilles en
+couronne, références partagées alignées, dessin tourné, six départs de `cose` jusqu'à
+300 éléments (`crown.js`, `crossings.js`). Mesuré le 22 novembre 2026, Chrome headless
+à 1 400 px.
+
+**Croisements** (liens droits, comptés sur les positions affichées), sur une copie de la
+base de l'utilisateur :
+
+| Graphe | Vue | Avant | Après | Disposition avant | après |
+|---|---|---|---|---|---|
+| « Mon graphe » (96 publications, 130 citations) | Frise | 376 | **151** | 23 ms | 76 ms |
+| | Réseau | 302 | **57** (94 avec un seul départ) | 38 ms | 65 ms |
+| Tag « ASTERICS › MT28 » (41, 58) | Frise | 140 | **29** | 10 ms | 19 ms |
+| | Réseau | 68 | **22** | 16 ms | 34 ms |
+| « Attention Is All You Need » (23, 22) | Frise | 0 | 0 | 12 ms | 6 ms |
+
+Sur « Attention », la frise n'avait pas de croisement au sens strict, mais ses sept
+références de 2017 formaient une colonne sous lui, les liens confondus et passant sur les
+nœuds : elles sont maintenant en escalier vers la gauche.
+
+**Base du banc** (`bench.py`, médiane de 3 chargements). Le graphe de la base et le
+corpus de `bench` dépassent 1 000 nœuds et sont maintenant une image calculée sur le
+serveur (#328) : mesurés sur les plus grands graphes de publication et les graphes
+synthétiques.
+
+| Graphe | Vue | Disposition avant | après | `untangle` | Plus longue image pendant la disposition |
+|---|---|---|---|---|---|
+| « Hallmarks of Cancer » (240 nœuds, 239 liens) | Frise | 81 ms | 91 ms | 5 ms | 200 → 217 ms |
+| | Réseau | 121 ms | **7 ms** | — | 233 → 117 ms |
+| « Fast heavy ion induced desorption » (109, 108) | Frise | 20 ms | 23 ms | 1 ms | 83 → 83 ms |
+| | Réseau | 39 ms | **6 ms** | — | 100 → 17 ms |
+| Publication la plus citée (35, 34) | Frise | 10 ms | 11 ms | 0,1 ms | 50 → 17 ms |
+| | Réseau | 12 ms | 8 ms | — | 33 → 50 ms |
+| Synthétique 500 (1 240 liens) | `placeNodes` | 722 ms | 941 ms | 198 ms | — |
+| Synthétique 1 000 (2 471 liens) | `placeNodes` | 2,29 s | 2,43 s | 136 ms | — |
+
+- Le réseau d'une publication et de ses références est presque tout en feuilles : `cose`
+  ne dispose plus que le cœur, d'où 7 ms au lieu de 121.
+- Les échanges coûtent peu sur les vrais graphes (moins de 6 ms) ; sur les graphes
+  synthétiques, très denses, ils coûtent 0,1 à 0,2 s. Avec une limite de 600 liens par
+  groupe, c'était 1,2 s sur 500 nœuds : la limite est donc de 300.
+- Les animations ne changent pas : images de la sélection à 17 ms en médiane partout
+  (maximum 22 à 29 ms), zoom des graphes synthétiques inchangé.
+
+## Temps de calcul (#323)
+
+Les dispositions vont jusqu'au temps donné par le champ « Temps de calcul » et gardent le
+dessin le moins croisé (voir [graphes.md](graphes.md)). Mesuré le 22 novembre 2026,
+Chrome headless à 1 400 px, sur une copie de la base de l'utilisateur : `placeNodes` et
+`networkPositions` appelés dans la page avec chaque temps, croisements comptés sur les
+positions finales (bande « Non daté » comprise). Le « Avant » est cette même PR avant le
+temps de calcul (six départs de `cose`, échanges sur 8 voisins sans contrôle des
+chevauchements).
+
+| Croisements | Avant | 0,1 s (défaut) | 0,5 s | 2 s | 10 s |
+|---|---|---|---|---|---|
+| « Mon graphe », frise | 174 | 171 | 130 | 127 | **100** |
+| « Mon graphe », réseau | 67 | 58 | 58 | 55 | **47** |
+| Tag MT28, frise | 34 | 38 | 35 | 20 | **20** |
+| Tag MT28, réseau | 26 | 21 | 17 | 17 | **17** |
+
+- Les nombres d'avant diffèrent de la section précédente : la base de l'utilisateur a
+  changé depuis, et la feuille Tailwind manquait alors à la copie de travail (le cadre
+  du graphe n'avait pas de hauteur).
+- Frise : les nœuds qui se recouvrent à l'écran passent de 48 à 25 sur « Mon graphe »
+  (11 à 10 s) et de 7 à 0 sur le tag (au plus 3 selon le temps) : un échange ne serre plus les nœuds. D'où, au temps
+  par défaut, un peu plus de croisements sur le tag (38 au lieu de 34).
+- Le résultat dépend du nombre d'essais qui tiennent dans le temps : dans la page, au
+  chargement, le réseau de « Mon graphe » à 0,1 s a 67 croisements (moins de départs, le
+  code n'étant pas encore compilé), 58 appelé ensuite.
+- Sur « Mon graphe », l'ordre de départ de la simulation fait varier ses croisements de
+  156 à 367, et après les premiers échanges de 103 à 213 : les autres départs sont ce
+  qui gagne le plus. Élargir seulement la fenêtre (24 voisins, blocs) gagnait peu (192 →
+  180), et sans contrôle de la hauteur du groupe les nœuds se recouvraient davantage
+  (39 au lieu de 19 à 2 s).
+- Un groupe de plus de 300 liens (graphe aléatoire de 1 000 nœuds, 2 509 liens) : à 2 s,
+  la simulation seule prend le temps et le groupe n'est pas démêlé ; à 10 s, 8 s
+  d'échanges, 398 307 → 392 774 croisements, et l'échéance est tenue (10,03 s).
+- Animations : pendant le calcul (dans le Web Worker), la page reste à 16,7 ms par image
+  (maximum 17) ; les nœuds glissent vers leurs nouvelles positions à 16,7 ms par image en
+  médiane (maximum 17), en frise comme en réseau, sur « Mon graphe » (226 éléments).
+
+Captures côte à côte, 0,1 s à gauche et 10 s à droite : `~/revue-app/work/b5/compare/`
+(`corpus-frise.png`, `corpus-reseau.png`, `tag-frise.png`, `tag-reseau.png`).
