@@ -88,6 +88,11 @@
         </dl>
     </div>
     <p class="text-gray-600" data-card="cited-by"></p>
+    {# Its references to identify (#452), and the identification in series. #}
+    <div class="flex flex-wrap items-center gap-2" data-card-row="identify" hidden>
+        <span class="text-amber-900">{% include "references/_graph_warning_icon.html" %}<span data-card="to-identify"></span></span>
+        <span data-card="identify">{% button "Identifier" url="#" variant="warning-light" icon="playlist_play" %}</span>
+    </div>
     {% if graph_level %}
         {# Its level (#451); a publication of level 1 is developed or reduced alone: its references and the publications citing it. #}
         <p class="text-gray-600" data-card-row="level">

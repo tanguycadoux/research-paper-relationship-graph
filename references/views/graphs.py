@@ -37,6 +37,8 @@ def graph_context(request, graph, kind, variants=VARIANTS, **extra):
         "graph_layout": graph_layout(request.GET),
         "graph_variants": variant_links(request.GET, variants),
         "graph_kept_params": kept_params(request.GET, variants),
+        # The legend explains the mark of the references to identify, when there is one (#452).
+        "graph_to_identify": any("toIdentify" in node["data"] for node in graph["nodes"]),
         **extra,
     }
 
@@ -136,7 +138,7 @@ def tag_context(request):
 
 def pub_graph(request, pk):
     pub = get_object_or_404(Publication, pk=pk)
-    graph = publication_graph(pub, Expansion.of(request.GET), request.GET)
+    graph = publication_graph(pub, Expansion.of(request.GET), request.GET, request.user)
     context = graph_context(
         request,
         graph,
