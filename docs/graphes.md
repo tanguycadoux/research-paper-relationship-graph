@@ -60,6 +60,23 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   rangées par blocs de 32 dates voisines, triés par y (`nearEdges`). Sur la base du banc
   (1 797 publications) : 0,3 s au lieu de 11,2 s, pour un résultat équivalent
   (49 838 croisements, contre 50 436 avec une recherche exacte à chaque itération).
+- **Moins de croisements** (#323, `untangle.js`) : après la simulation, deux publications
+  proches dans l'ordre vertical (chacune contre les 8 suivantes, depuis le haut)
+  échangent leurs hauteurs quand moins de liens se croisent ainsi, comme dans le dessin
+  d'un graphe en couches ; chacune emmène ses feuilles (les publications reliées à elle
+  seule), dont l'éventail reste groupé. Au plus 6 passes, et seulement les liens qui
+  partagent des dates (x ne bouge pas) ; un groupe de plus de 300 liens garde le
+  résultat de la simulation. Sur « Mon graphe » (96 publications, 130 citations) :
+  151 croisements au lieu de 376, et 29 au lieu de 140 sur un tag de 41 publications ;
+  60 ms de plus pour la disposition ([banc-graphe.md](banc-graphe.md)).
+- **Références de la même date** (#322) : une référence qui a la même date qu'une
+  publication qui la cite est décalée vers sa gauche, de 20 px pour la première, 40 pour
+  la deuxième, etc. (dans l'ordre des rangées de départ). Sans cela, les liens étaient
+  verticaux : les références de 2017 d'« Attention Is All You Need » (dates sans mois ni
+  jour, toutes au 1er janvier) faisaient une colonne sous lui, chaque lien passant sur
+  les nœuds et les autres liens. En escalier, la simulation les écarte des liens comme
+  les autres. Le décalage s'écarte un peu de la date : la carte et l'infobulle donnent la
+  vraie.
 - **Publications non datées** (#288, `layout.js`, `band.js`) : sur une rangée sous la
   frise, séparée par une ligne pointillée libellée « Non daté ». Elles traversaient toute
   la frise depuis une colonne à gauche, avec des liens dont le sens ne se lisait plus.
@@ -96,13 +113,28 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   rapide que par défaut (`coolingFactor` 0,9 : 66 itérations au lieu de 690), avec une
   répulsion doublée qui compense une partie des recouvrements : 2,9 s au lieu de 27 s sur
   1 797 publications, 20 ms sur 76 ([banc-graphe.md](banc-graphe.md)). Les groupes sans
-  lien sont rangés par `cose` lui-même, côte à côte. **Au-delà de 600 éléments** (#202,
-  même seuil que les grands graphes), `cose` tourne dans un **Web Worker**
+  lien sont rangés par `cose` lui-même, côte à côte. **Moins de croisements** (#323,
+  `crown.js`) : les **feuilles** (une publication reliée à une seule autre, elle-même
+  reliée à d'autres : une référence citée par une seule publication du corpus) ne passent
+  pas par `cose`, où chacune avait sa place au milieu des autres. `cose` dispose le reste,
+  chaque publication grossie de la place de sa couronne, puis ses feuilles vont autour
+  d'elle dans les plus grands angles libres entre ses liens, à l'écart du reste du
+  graphe : leurs liens ne croisent plus rien, et les feuilles de deux voisines ne se
+  mêlent plus. Les références partagées par les deux mêmes publications (et elles seules)
+  sont alignées sur la médiatrice de ces deux-là : leurs liens ne se croisent pas. Le
+  dessin est ensuite **tourné** (par pas de 15°) pour remplir au mieux le cadre : un
+  réseau n'a pas de sens, et un dessin plus large que le cadre laissait des bandes vides
+  au-dessus et au-dessous. Jusqu'à 300 éléments, `cose` part de **six départs** (la
+  spirale dans l'ordre des données, puis dans cinq ordres mêlés d'après une graine fixe :
+  le même graphe est toujours disposé de la même façon), et le dessin qui a le moins de
+  croisements est gardé (`crossings.js`). Sur « Mon graphe » : 57 croisements au lieu de
+  302 (94 avec un seul départ), 65 ms au lieu de 38. **Au-delà de 600 éléments** (#202,
+  même seuil que les grands graphes), la disposition tourne dans un **Web Worker**
   (`network-worker.js`, Cytoscape sans affichage, chargé depuis la même URL que la page) :
   le cadre affiche « Disposition du graphe… » (`data-graph-waiting`, `role="status"`),
   « Vue d'ensemble » et « Exporter (PNG) » sont désactivés jusqu'à ce que le graphe existe, et
   la page reste utilisable ; le graphe est créé avec les positions reçues. Les positions
-  sont **les mêmes** qu'en disposant dans la page (vérifié sur la base du banc) : le worker
+  sont **les mêmes** qu'en disposant dans la page (la même fonction, `networkPositions`) : le worker
   reçoit les tailles des nœuds (`LAYOUT_STYLE`, celles de `style.js` au zoom 1, bordure
   comprise) et la taille du cadre, vers le centre duquel `cose` attire les nœuds ; il part
   de la spirale par une disposition `preset` (sans elle, Cytoscape poserait tous les nœuds

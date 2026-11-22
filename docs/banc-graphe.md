@@ -342,3 +342,50 @@ Classées par gain attendu pour l'effort. Les pistes 1 à 4 sont faites (#319, #
    tant que les données du graphe ne changent pas restent à décider.
 6. **Graphe de la base** : au-delà d'un seuil, proposer de le limiter (corpus, tag,
    composante) plutôt que de tout dessiner.
+
+## Moins de croisements de liens (#322, #323)
+
+Frise : échanges de hauteurs après la simulation (`untangle.js`, groupes d'au plus
+300 liens) et références de la même date décalées vers la gauche. Réseau : feuilles en
+couronne, références partagées alignées, dessin tourné, six départs de `cose` jusqu'à
+300 éléments (`crown.js`, `crossings.js`). Mesuré le 22 novembre 2026, Chrome headless
+à 1 400 px.
+
+**Croisements** (liens droits, comptés sur les positions affichées), sur une copie de la
+base de l'utilisateur :
+
+| Graphe | Vue | Avant | Après | Disposition avant | après |
+|---|---|---|---|---|---|
+| « Mon graphe » (96 publications, 130 citations) | Frise | 376 | **151** | 23 ms | 76 ms |
+| | Réseau | 302 | **57** (94 avec un seul départ) | 38 ms | 65 ms |
+| Tag « ASTERICS › MT28 » (41, 58) | Frise | 140 | **29** | 10 ms | 19 ms |
+| | Réseau | 68 | **22** | 16 ms | 34 ms |
+| « Attention Is All You Need » (23, 22) | Frise | 0 | 0 | 12 ms | 6 ms |
+
+Sur « Attention », la frise n'avait pas de croisement au sens strict, mais ses sept
+références de 2017 formaient une colonne sous lui, les liens confondus et passant sur les
+nœuds : elles sont maintenant en escalier vers la gauche.
+
+**Base du banc** (`bench.py`, médiane de 3 chargements). Le graphe de la base et le
+corpus de `bench` dépassent 1 000 nœuds et sont maintenant une image calculée sur le
+serveur (#328) : mesurés sur les plus grands graphes de publication et les graphes
+synthétiques.
+
+| Graphe | Vue | Disposition avant | après | `untangle` | Plus longue image pendant la disposition |
+|---|---|---|---|---|---|
+| « Hallmarks of Cancer » (240 nœuds, 239 liens) | Frise | 81 ms | 91 ms | 5 ms | 200 → 217 ms |
+| | Réseau | 121 ms | **7 ms** | — | 233 → 117 ms |
+| « Fast heavy ion induced desorption » (109, 108) | Frise | 20 ms | 23 ms | 1 ms | 83 → 83 ms |
+| | Réseau | 39 ms | **6 ms** | — | 100 → 17 ms |
+| Publication la plus citée (35, 34) | Frise | 10 ms | 11 ms | 0,1 ms | 50 → 17 ms |
+| | Réseau | 12 ms | 8 ms | — | 33 → 50 ms |
+| Synthétique 500 (1 240 liens) | `placeNodes` | 722 ms | 941 ms | 198 ms | — |
+| Synthétique 1 000 (2 471 liens) | `placeNodes` | 2,29 s | 2,43 s | 136 ms | — |
+
+- Le réseau d'une publication et de ses références est presque tout en feuilles : `cose`
+  ne dispose plus que le cœur, d'où 7 ms au lieu de 121.
+- Les échanges coûtent peu sur les vrais graphes (moins de 6 ms) ; sur les graphes
+  synthétiques, très denses, ils coûtent 0,1 à 0,2 s. Avec une limite de 600 liens par
+  groupe, c'était 1,2 s sur 500 nœuds : la limite est donc de 300.
+- Les animations ne changent pas : images de la sélection à 17 ms en médiane partout
+  (maximum 22 à 29 ms), zoom des graphes synthétiques inchangé.
