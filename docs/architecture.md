@@ -139,7 +139,8 @@ references/          application principale
       bibliography_files.py  identifiants des entrées d'un fichier BibTeX ou RIS (Zotero…)
       import_reports.py  compte rendu du dernier import de fichier, gardé en session
     discovery/       découverte d'articles
-      suggestions.py  publications citées par plusieurs articles du corpus ou d'un tag
+      suggestions.py  publications citées par les articles du corpus ou d'un tag, et leurs tris
+      importance.py  PageRank du graphe des citations (toute la base, en cache, ou un contexte)
       incoming_citations.py  publications qui en citent une selon OpenAlex, à la demande
       title_search.py  publication cherchée par son titre pour l'ajouter (base, Crossref, DataCite)
     display/         affichage
@@ -221,6 +222,8 @@ references/          application principale
     _tag_link, _tag_filter_items  morceaux partagés par les tableaux de publications,
                      les suggestions, « Mon corpus » et la fiche (#296)
     _note_filter     champ « Chercher dans mes notes » de « Mon corpus » (#443)
+    _suggestion_counts, _suggestion_columns_help  colonnes des suggestions (citations,
+                     par an, importance) et leur explication (#432)
   templates/components/  gabarits des composants de ui/
   tests/           tests ; sources.py simule les sources externes, fixtures/ leurs réponses
 templates/base.html  gabarit commun (en-tête, navigation, <main>, notifications)
