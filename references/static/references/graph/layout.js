@@ -49,7 +49,7 @@ export const BAND_GAP = 56;
 const MAX_BAND_ROWS = 4;
 // Up to this many edges in a group, crossings are removed by exchanges (untangle.js,
 // #323): beyond, they would take too long.
-const UNTANGLE_MAX_LINKS = 600;
+const UNTANGLE_MAX_LINKS = 300;
 // A reference of the same date as a publication citing it goes this far to its left, in
 // pixels (#322): the edge would be vertical, and the edges of several such references
 // would lie on one another, through their nodes.
