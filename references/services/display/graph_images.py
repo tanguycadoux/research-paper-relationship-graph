@@ -5,7 +5,8 @@ Graphs too large to be drawn in the page (#328): the graph of all the authors ha
 the page draws nothing and offers the full graph as an image, computed in the
 background on the server and kept as SVG:
 
-- layout by igraph (Fruchterman-Reingold: 0.7 s for the 9 500 authors);
+- layout by igraph, group by group, the leaves in crowns around their node
+  (large_graph_layout.py);
 - one circle per node, its size from its publications (authors) or its citations
   (publications), a link to its page and its name on hover; the names of the largest
   nodes written beside them;
@@ -20,7 +21,6 @@ import math
 import threading
 from xml.sax.saxutils import escape, quoteattr
 
-import igraph
 from django.contrib.auth.models import AnonymousUser
 from django.db import close_old_connections, connection
 from django.db.models import Max
@@ -38,6 +38,7 @@ from ..imports import fetch_queue
 from . import wording
 from .author_graph import LARGE_COLLABORATION, all_authors_graph
 from .graph import base_graph
+from .large_graph_layout import positions
 
 Kind = GraphImage.Kind
 Action = FetchRequest.Action
@@ -182,50 +183,6 @@ def render_svg(graph, kind, when):
         "</g></svg>",
     ]
     return "\n".join(parts)
-
-
-def positions(count, edges, radii):
-    """
-    The position of each node, the width of the image and the height of the drawing.
-    Each connected group is laid out by igraph on its own, in a square as large as it
-    needs, and the squares are packed in rows, the largest first; the nodes without
-    link follow in a grid. Laid out together, the small groups and the lonely nodes
-    were spread over the whole image around a small linked heart (most authors of the
-    bench base sign only large collaborations, which link nobody).
-    """
-    graph = igraph.Graph(n=count, edges=[(a, b) for a, b, _ in edges])
-    groups = sorted(graph.connected_components(), key=len, reverse=True)
-    linked = [group for group in groups if len(group) > 1]
-    alone = sorted((group[0] for group in groups if len(group) == 1), key=lambda n: -radii[n])
-    width = max(1600, 80 * math.sqrt(sum(len(group) for group in linked) or 1))
-    points = [None] * count
-    x = y = row_height = 0
-    gap = 40
-    for group in linked:
-        side = min(width, max(120, 80 * math.sqrt(len(group))))
-        if x + side > width:
-            x, y, row_height = 0, y + row_height + gap, 0
-        coords = graph.induced_subgraph(group).layout("fr").coords
-        for node, (px, py) in zip(group, fitted(coords, side), strict=True):
-            points[node] = (x + px, y + py)
-        x += side + gap
-        row_height = max(row_height, side)
-    top = (y + row_height + gap + 40) if linked else 0
-    step = 2 * max((radii[node] for node in alone), default=0) + 6
-    per_row = max(1, int(width // step))
-    for rank, node in enumerate(alone):
-        points[node] = ((rank % per_row) * step + step / 2, top + (rank // per_row) * step)
-    height = top + (math.ceil(len(alone) / per_row) * step if alone else 0)
-    return points, width, height, (top - 40 if alone and linked else None), len(alone)
-
-
-def fitted(coords, side):
-    """The coordinates of the layout, scaled into a square of the side, in pixels."""
-    if not coords:
-        return []
-    xs, ys = [x for x, _ in coords], [y for _, y in coords]
-    span = max(max(xs) - min(xs), max(ys) - min(ys)) or 1
-    return [((x - min(xs)) / span * side, (y - min(ys)) / span * side) for x, y in coords]
 
 
 def alone_caption(count, y, noun):

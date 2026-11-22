@@ -162,6 +162,7 @@ references/          application principale
       graph_levels.py  niveaux d'un graphe de citations (niveau 2, nœud développé ou réduit,
                        bibliographies manquantes)
       graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
+      large_graph_layout.py  disposition de ces images : composante par composante, feuilles en couronne
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       keyword_graph.py  carte des mots-clés ou des thèmes d'OpenAlex d'un corpus (co-occurrence,
                      seuil), et le filtre de « Mon corpus » sur un terme
@@ -246,7 +247,7 @@ static/
   js/graph_image.js  image d'un grand graphe : état demandé jusqu'à ce qu'elle soit prête
   vendor/cytoscape/  Cytoscape.js embarqué
 tools/check_js.sh    syntaxe de chaque fichier JavaScript (node --check), lancée par la CI (#341)
-tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202)
+tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202), libellés de l'export PNG (labels.py, #421)
 docs/                cette documentation
 ```
 
