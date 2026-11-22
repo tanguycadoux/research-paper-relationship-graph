@@ -10,6 +10,7 @@
 
 import { fractionalYear } from "./scale.js";
 import { nodeSizes } from "./style.js";
+import { seeded } from "./random.js";
 import { untangle } from "./untangle.js";
 
 // Passes of the barycentre method; the order is stable well before.
@@ -47,13 +48,13 @@ export const BAND_GAP = 56;
 // The band of the undated publications has at most MAX_BAND_ROWS rows (#318); beyond,
 // the publications are pushed along the rows.
 const MAX_BAND_ROWS = 4;
-// Up to this many edges in a group, crossings are removed by exchanges (untangle.js,
-// #323): beyond, they would take too long.
-const UNTANGLE_MAX_LINKS = 300;
 // A reference of the same date as a publication citing it goes this far to its left, in
 // pixels (#322): the edge would be vertical, and the edges of several such references
 // would lie on one another, through their nodes.
 const SAME_DATE_SHIFT = 20;
+// The share of the time of a group given to other starts of its simulation (#323), the
+// rest to the exchanges on the best one (untangle.js).
+const START_SHARE = 0.5;
 
 function linkPairs(nodes, edges) {
     const index = new Map(nodes.map((n, i) => [n.data.id, i]));
@@ -107,13 +108,13 @@ function components(nodes, edges) {
 // Each publication moves towards the average row of the publications it cites or is
 // cited by, then the rows are numbered again. Ties keep the previous order, so the
 // result does not depend on chance. Returns the row of each index.
-export function barycentreOrder(count, links) {
+export function barycentreOrder(count, links, start = null) {
     const around = Array.from({ length: count }, () => []);
     for (const [a, b] of links) {
         around[a].push(b);
         around[b].push(a);
     }
-    let row = Array.from({ length: count }, (_, i) => i);
+    let row = start ?? Array.from({ length: count }, (_, i) => i);
     for (let pass = 0; pass < ORDER_PASSES; pass++) {
         const target = around.map((others, i) =>
             others.length ? others.reduce((sum, other) => sum + row[other], 0) / others.length : row[i],
@@ -334,17 +335,32 @@ function apartFromCiters(xs, links, rows) {
     return shifted;
 }
 
-// One group of linked publications laid out alone, in the order of their dates: x is the
-// date, y the result of the barycentre order and of the vertical simulation, not yet
-// fitted to the frame.
-function layOutGroup(group, edges, scale, sizeOf, timings) {
+// The starting rows of the barycentre method for the start `seed` of a group (#323): the
+// order of the dates for the first (0), then orders shuffled from the seed.
+function startingRows(count, seed) {
+    const rows = Array.from({ length: count }, (_, i) => i);
+    if (seed === 0) {
+        return rows;
+    }
+    const random = seeded(seed);
+    for (let i = count - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [rows[i], rows[j]] = [rows[j], rows[i]];
+    }
+    return rows;
+}
+
+// One start of a group: the barycentre order from the starting rows of the seed, the
+// vertical simulation, then the first exchanges that remove crossings (untangle.js; wide:
+// all the exchanges until the deadline). Returns x and y of each publication, and the
+// number of crossings left (null if the group was too large to untangle in time).
+function startGroup(group, seed, deadline, timings) {
+    const { byDate, links, scale, sizes } = group;
     const yearOf = (n) => fractionalYear(n.data.date);
-    // From the order by date, as before, so that the result is reproducible.
-    const byDate = [...group].sort((a, b) => yearOf(a) - yearOf(b));
-    const links = linkPairs(byDate, edges);
-    const rows = timed(timings, "barycentreOrder", () => barycentreOrder(byDate.length, links));
+    const rows = timed(timings, "barycentreOrder", () =>
+        barycentreOrder(byDate.length, links, startingRows(byDate.length, seed)),
+    );
     const xs = apartFromCiters(byDate.map((n) => scale.x(yearOf(n))), links, rows);
-    const sizes = byDate.map(sizeOf);
     const ys = verticalPositions(
         xs,
         rows.map((row) => row * ROW_SPACING),
@@ -352,10 +368,50 @@ function layOutGroup(group, edges, scale, sizeOf, timings) {
         links,
         timings,
     );
-    if (links.length <= UNTANGLE_MAX_LINKS) {
-        timed(timings, "untangle", () => untangle(xs, ys, links));
+    const crossings = timed(timings, "untangle", () => untangle(xs, ys, links, sizes, untangling(group, deadline)));
+    return { xs, ys, crossings };
+}
+
+// The options of untangle.js.
+function untangling(group, deadline, wide = false) {
+    return { deadline, wide, anchors: group.anchors, closeX: CLOSE_X, spacing: NODE_SPACING };
+}
+
+// One group of linked publications laid out alone, in the order of their dates: x is the
+// date, y the result of the barycentre order and of the vertical simulation, not yet
+// fitted to the frame. Fewer crossings until the deadline (#323): the simulation starts
+// again from other orders for up to START_SHARE of the time, the one with the fewest
+// crossings is kept, then the exchanges go on with it (untangle.js).
+function layOutGroup(nodes, edges, context, timings, deadline) {
+    const { scale, sizeOf, bandEnds } = context;
+    const yearOf = (n) => fractionalYear(n.data.date);
+    // From the order by date, so that the result is reproducible.
+    const byDate = [...nodes].sort((a, b) => yearOf(a) - yearOf(b));
+    const anchors = byDate.flatMap((n, i) => (bandEnds.get(n.data.id) || []).map((x) => [i, x]));
+    const group = { byDate, links: linkPairs(byDate, edges), anchors, scale, sizes: byDate.map(sizeOf) };
+    const began = performance.now();
+    const startsEnd = began + Math.max(0, deadline - began) * START_SHARE;
+    let best = startGroup(group, 0, startsEnd, timings);
+    let seed = 1;
+    // Another start while one fits, at the average time of the starts so far.
+    const fits = () => performance.now() + (performance.now() - began) / seed <= startsEnd;
+    for (; best.crossings > 0 && fits(); seed++) {
+        const next = startGroup(group, seed, startsEnd, timings);
+        if (next.crossings < best.crossings) {
+            best = next;
+        }
     }
-    return byDate.map((node, i) => ({ node, x: xs[i], y: ys[i], size: sizes[i] }));
+    const { xs, ys } = best;
+    const started = best.crossings;
+    if (best.crossings > 0) {
+        best.crossings = timed(timings, "untangle", () =>
+            untangle(xs, ys, group.links, group.sizes, untangling(group, deadline, true)),
+        );
+    }
+    if (timings) {
+        (timings.untangleStats ||= []).push({ links: group.links.length, starts: seed, started, crossings: best.crossings });
+    }
+    return byDate.map((node, i) => ({ node, x: xs[i], y: ys[i], size: group.sizes[i] }));
 }
 
 // The groups stacked from the top, the largest first, together filling the height
@@ -459,12 +515,9 @@ function placeAlone(alone, scale, sizeOf, rowsTop) {
     return alone.map((n, i) => element(n, xs[i], rowsTop + rows[i] * pitch, sizes[i]));
 }
 
-// The publications without a date on a band under the timeline (#288), each placed by
-// bandX; those without any dated link are spread over the width, in their order. They
-// go on as many rows as they need, up to MAX_BAND_ROWS, each as close as possible to
-// where it should be (#318). Returns their elements.
-function placeOnBand(undated, placed, edges, sizeOf, left, right, bandY) {
-    const xOf = new Map(placed.map((element) => [element.data.id, element.position.x]));
+// Where each publication without a date goes on the band (bandX), by id, from the x of
+// the dated publications (xOf, by id).
+function bandXs(undated, xOf, edges) {
     // An edge goes from the citing publication to the cited one.
     const referencesOf = new Map();
     const citersOf = new Map();
@@ -474,9 +527,36 @@ function placeOnBand(undated, placed, edges, sizeOf, left, right, bandY) {
         referencesOf.get(data.source).push(data.target);
         citersOf.get(data.target).push(data.source);
     }
-    const wantedX = new Map(
-        undated.map((n) => [n.data.id, bandX(n.data.id, xOf, referencesOf, citersOf)]),
-    );
+    return new Map(undated.map((n) => [n.data.id, bandX(n.data.id, xOf, referencesOf, citersOf)]));
+}
+
+// For each dated publication linked to some without a date, the x of these on the band,
+// about (from the dates, before any shift): the links to the band count among the
+// crossings of its group (untangle.js).
+function linksToBand(dated, undated, edges, scale) {
+    const xOf = new Map(dated.map((n) => [n.data.id, scale.x(fractionalYear(n.data.date))]));
+    const wanted = bandXs(undated, xOf, edges);
+    const ends = new Map();
+    for (const { data } of edges) {
+        for (const [a, b] of [
+            [data.source, data.target],
+            [data.target, data.source],
+        ]) {
+            if (xOf.has(a) && wanted.get(b) != null) {
+                ends.set(a, [...(ends.get(a) || []), wanted.get(b)]);
+            }
+        }
+    }
+    return ends;
+}
+
+// The publications without a date on a band under the timeline (#288), each placed by
+// bandX; those without any dated link are spread over the width, in their order. They
+// go on as many rows as they need, up to MAX_BAND_ROWS, each as close as possible to
+// where it should be (#318). Returns their elements.
+function placeOnBand(undated, placed, edges, sizeOf, left, right, bandY) {
+    const xOf = new Map(placed.map((element) => [element.data.id, element.position.x]));
+    const wantedX = bandXs(undated, xOf, edges);
     const alone = undated.filter((n) => wantedX.get(n.data.id) === null);
     const step = (right - left) / (alone.length + 1);
     const spread = (n) => left + step * (alone.indexOf(n) + 1);
@@ -487,18 +567,43 @@ function placeOnBand(undated, placed, edges, sizeOf, left, right, bandY) {
     return undated.map((n, i) => element(n, xs[i], bandY + rows[i] * pitch, sizes[i]));
 }
 
+// The groups laid out one after the other, the time left until the deadline shared
+// among them in proportion to their edges. The smallest first: the time a group does not
+// need goes to the larger ones. In the order of the groups.
+function layOutGroups(groups, edges, context, timings, deadline) {
+    const counts = groups.map((group) => linkPairs(group, edges).length);
+    let left = counts.reduce((sum, n) => sum + n, 0);
+    const laidOut = new Array(groups.length);
+    for (let k = groups.length - 1; k >= 0; k--) {
+        const now = performance.now();
+        const share = left > 0 ? counts[k] / left : 0;
+        left -= counts[k];
+        const groupDeadline = now + Math.max(0, deadline - now) * share;
+        laidOut[k] = layOutGroup(groups[k], edges, context, timings, groupDeadline);
+    }
+    return laidOut;
+}
+
 // The elements of the nodes, placed, and the height of the band of the publications
-// without a date (null without any). timings: see timed.
-export function placeNodes(nodes, edges, scale, timings = null) {
+// without a date (null without any). timings: see timed. budget: the time given to the
+// layout, in milliseconds, spent removing crossings (untangle.js) once the simulation is
+// done; without any, only the first exchanges.
+export function placeNodes(nodes, edges, scale, timings = null, budget = 0) {
+    const deadline = performance.now() + budget;
     const all = nodeSizes(nodes);
     const sizes = new Map(nodes.map((n, i) => [n.data.id, all[i]]));
     const sizeOf = (n) => sizes.get(n.data.id);
     const dated = nodes.filter((n) => n.data.date);
     const undated = nodes.filter((n) => !n.data.date);
     const groups = components(dated, edges);
-    const linked = groups
-        .filter((group) => group.length > 1)
-        .map((group) => layOutGroup(group, edges, scale, sizeOf, timings));
+    const context = { scale, sizeOf, bandEnds: linksToBand(dated, undated, edges, scale) };
+    const linked = layOutGroups(
+        groups.filter((group) => group.length > 1),
+        edges,
+        context,
+        timings,
+        deadline,
+    );
     const top = scale.y(0);
     const bottom = linked.length ? scale.y(nodes.length - 1) : top;
     stackGroups(linked, top, bottom);

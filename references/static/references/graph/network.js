@@ -1,13 +1,13 @@
 // The network view (#195): no time axis, the positions come from Cytoscape's own
 // force-directed layout (cose), built in: no dependency. Linked publications are drawn
 // close together, in both directions: a selection zooms uniformly (focus.js), without
-// the stretch of the timeline. A large network is laid out in a Web Worker
-// (network-worker.js, #202): the page keeps responding, with a message in the frame.
+// the stretch of the timeline. A large network, or one given more time, is laid out in a
+// Web Worker (layout_aside.js, #202): the page keeps responding.
 
 import { findCrowns, hubSize, lineUpShared, placeCrowns, turnToFrame } from "./crown.js";
 import { countCrossings } from "./crossings.js";
+import { seeded } from "./random.js";
 import { nodeSizes } from "./style.js";
-import { LIVE_SIZES_MAX_ELEMENTS } from "./viewport.js";
 
 // Distance between two consecutive starting points on the spiral, in pixels.
 const START_SPACING = 30;
@@ -59,24 +59,6 @@ export const LAYOUT_STYLE = [
     { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 2 } },
 ];
 
-// Up to this many elements (nodes and edges), cose takes less than about 100 ms: it runs in
-// the page, without a message that would only flash. Beyond, in a Web Worker: 2.9 s for a
-// graph of 1 800 publications, during which the page would not respond.
-const WORKER_MIN_ELEMENTS = LIVE_SIZES_MAX_ELEMENTS;
-// Up to this many elements, cose runs from STARTS starting points, and the drawing with the
-// fewest crossings is kept (#323): 60 ms for 226 elements instead of 30 for one. Beyond,
-// the starts would hold the page too long.
-const MULTI_START_MAX_ELEMENTS = 300;
-const STARTS = 6;
-
-function startWorker() {
-    try {
-        return new Worker(new URL("./network-worker.js", import.meta.url), { type: "module" });
-    } catch {
-        return null;
-    }
-}
-
 // cose on a headless Cytoscape, in the page as in the Web Worker: the positions do not
 // depend on where it runs. frame: its width and height, towards whose centre cose pulls the
 // nodes (cy.width(), cy.height(), which a headless Cytoscape does not have). Returns the
@@ -117,17 +99,6 @@ function arrange(nodes, edges, frame, leavesOf) {
     return positions;
 }
 
-// A pseudo-random generator from a seed (mulberry32): the same starts at each visit.
-function seeded(seed) {
-    let state = seed >>> 0;
-    return () => {
-        state = (state + 0x6d2b79f5) >>> 0;
-        let t = Math.imul(state ^ (state >>> 15), state | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
 // The nodes on the starting spiral in another order than that of the data, shuffled from
 // the seed.
 function restarted(nodes, seed) {
@@ -148,16 +119,22 @@ function crossingsAt(positions, edges) {
     return countCrossings(links, (id) => positions.get(id));
 }
 
-// The drawing with the fewest crossings among the starts of cose (#323): several on a
-// small graph, one on a large one. Stops at a drawing without any crossing.
-function fewestCrossings(nodes, edges, frame) {
+// The drawing with the fewest crossings among the starts of cose (#323): the spiral in
+// the order of the data, then in orders shuffled from the seeds 1, 2, 3…, as long as
+// another start fits before the deadline (at the average time of the starts so far). Stops
+// at a drawing without any crossing. The crossings are only counted when a second start
+// fits: on a large graph, they would take long too.
+function fewestCrossings(nodes, edges, frame, deadline) {
     const leavesOf = findCrowns(nodes, edges);
+    const start = performance.now();
     const first = arrange(nodes, edges, frame, leavesOf);
-    if (nodes.length + edges.length > MULTI_START_MAX_ELEMENTS) {
+    // The time of a start, on average so far.
+    const perStart = (starts) => (performance.now() - start) / starts;
+    if (performance.now() + perStart(1) > deadline) {
         return first;
     }
     let best = { positions: first, crossings: crossingsAt(first, edges) };
-    for (let seed = 1; seed < STARTS && best.crossings > 0; seed++) {
+    for (let seed = 1; best.crossings > 0 && performance.now() + perStart(seed) <= deadline; seed++) {
         const positions = arrange(restarted(nodes, seed), edges, frame, leavesOf);
         const crossings = crossingsAt(positions, edges);
         if (crossings < best.crossings) {
@@ -168,49 +145,14 @@ function fewestCrossings(nodes, edges, frame) {
 }
 
 // The positions of the nodes of networkNodes, by id (#323), the drawing turned to fill the
-// frame.
-export function networkPositions(nodes, edges, frame) {
-    const positions = fewestCrossings(nodes, edges, frame);
+// frame. budget: the time given to the layout, in milliseconds (at least one start of cose).
+export function networkPositions(nodes, edges, frame, budget = 0) {
+    const positions = fewestCrossings(nodes, edges, frame, performance.now() + budget);
     const sizes = new Map(nodes.map((node) => [node.data.id, node.data.size]));
     return turnToFrame(positions, sizes, frame);
 }
 
 // The nodes placed at the given positions (by id).
-function placed(nodes, positions) {
+export function placedAt(nodes, positions) {
     return nodes.map((node) => ({ ...node, position: positions.get(node.data.id) }));
-}
-
-// The nodes of networkNodes placed in the page, at once.
-export function layOutHere(nodes, edges, container) {
-    const frame = { width: container.clientWidth, height: container.clientHeight };
-    return placed(nodes, networkPositions(nodes, edges, frame));
-}
-
-// The nodes of networkNodes placed in a Web Worker while `waiting` (the message in the
-// frame) shows; container: the frame of the graph, whose size the layout reads. Resolves
-// to null on a small graph, or if the worker fails: the caller then lays the graph out in
-// the page (layOutHere).
-export function layOutAside(nodes, edges, container, waiting) {
-    const worker = nodes.length + edges.length > WORKER_MIN_ELEMENTS ? startWorker() : null;
-    if (!worker) {
-        return Promise.resolve(null);
-    }
-    waiting.hidden = false;
-    return new Promise((resolve) => {
-        const done = (positions) => {
-            worker.terminate();
-            waiting.hidden = true;
-            resolve(positions ? placed(nodes, new Map(Object.entries(positions))) : null);
-        };
-        const failed = (error) => {
-            console.error("Network layout failed in the Web Worker, done in the page instead:", error);
-            done(null);
-        };
-        worker.onmessage = ({ data }) => (data.positions ? done(data.positions) : failed(data.error));
-        worker.onerror = (event) => failed(event.message);
-        // The worker loads the same Cytoscape as the page.
-        const library = document.querySelector('script[src$="/cytoscape.min.js"]').src;
-        const frame = { width: container.clientWidth, height: container.clientHeight };
-        worker.postMessage({ library, frame, nodes, edges });
-    });
 }
