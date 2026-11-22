@@ -5,15 +5,18 @@
 
 // The longest side of the minimap, in pixels: at most a third of the width of the frame.
 const SIDE = 180;
-// A node of level 1, --color-graph-cited (assets/css/source.css, #470) in sRGB.
-const DOT_COLOR = "#59b47d";
+// The colour of the nodes of the image (services/display/graph_images.py, NODE_COLORS), by
+// kind of graph, in sRGB: an author of level 1, --color-graph-cited (#470); a publication
+// of the base, the neutral grey --color-graph-base (#477).
+const DOT_COLORS = { authors: "#59b47d", base: "#9b9ea5" };
 
-export function createMinimap(box, nodes, view) {
+// kind: that of the graph (data-kind of the page).
+export function createMinimap(box, nodes, view, kind) {
     const canvas = box.querySelector("canvas");
     const rectangle = box.querySelector("[data-image-minimap-view]");
     const { width, height } = view.size;
     const scale = Math.min(SIDE, view.frame().width / 3) / Math.max(width, height);
-    drawDots(canvas, nodes, scale, width, height);
+    drawDots(canvas, nodes, scale, width, height, DOT_COLORS[kind] ?? DOT_COLORS.authors);
     box.hidden = false;
 
     function update(current) {
@@ -33,7 +36,7 @@ export function createMinimap(box, nodes, view) {
     update(view.current());
 }
 
-function drawDots(canvas, nodes, scale, width, height) {
+function drawDots(canvas, nodes, scale, width, height, color) {
     const ratio = window.devicePixelRatio || 1;
     canvas.style.width = `${width * scale}px`;
     canvas.style.height = `${height * scale}px`;
@@ -41,7 +44,7 @@ function drawDots(canvas, nodes, scale, width, height) {
     canvas.height = Math.round(height * scale * ratio);
     const context = canvas.getContext("2d");
     context.scale(ratio * scale, ratio * scale);
-    context.fillStyle = DOT_COLOR;
+    context.fillStyle = color;
     // At least half a pixel of the minimap: the smallest nodes stay visible.
     const least = 0.5 / scale;
     for (const node of nodes) {

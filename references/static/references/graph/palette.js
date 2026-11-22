@@ -1,8 +1,9 @@
 // Colours of the graphs (#470), in OKLCH: the hue says the role of a node, its lightness
-// its level. Three groups: the centre (the publication of the graph, the publications of
-// the corpus, the author), the past (the publications cited) and the future (those
-// citing). Their hue and chroma are the theme variables of assets/css/source.css
-// (--color-graph-source, -cited, -citing, written oklch(L C H)), shared with the legend;
+// its level. Four groups: the centre (the publication of the graph, the publications of
+// the corpus, the author), the past (the publications cited), the future (those citing),
+// and the neutral grey of the other publications of the graph of the base (#477). Their
+// hue and chroma are the theme variables of assets/css/source.css (--color-graph-source,
+// -cited, -citing, -base, written oklch(L C H)), shared with the legend;
 // the lightness of each level is computed here, the same curve as the legend's swatches.
 // Cytoscape does not read oklch(): the colours are converted to sRGB, the chroma lowered
 // until the colour fits (the hue and the lightness are kept).
@@ -15,7 +16,7 @@ const RATIO = 2 / 3;
 // The contour of a node: its colour, this much darker.
 const CONTOUR_DROP = 0.2;
 
-const GROUPS = { source: "source", cited: "cited", citing: "citing" };
+const GROUPS = { source: "source", cited: "cited", citing: "citing", base: "base" };
 
 export function levelLightness(level) {
     return CEILING - (CEILING - FLOOR) * RATIO ** Math.max(0, level);
@@ -108,7 +109,8 @@ export function groupColor(group, level, contour = false) {
 }
 
 // The group of a node by its role (services/display/graph.py, author_graph.py): the
-// centre, the future, or the past (cited, and the « other » of the graph of the base).
+// centre, the future, the neutral publications of the graph of the base, or the past
+// (cited, and the « other » authors).
 export function nodeGroup(node) {
     return GROUPS[node.data("role")] ?? "cited";
 }

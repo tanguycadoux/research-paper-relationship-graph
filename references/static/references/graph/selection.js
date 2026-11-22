@@ -91,11 +91,20 @@ function selectPublication(node, card) {
     return node.union(neighbours);
 }
 
+// Without a selection, the tooltip gives the distance to the corpus (#477): the level of
+// the publication (#451). Nothing for the centre (level 0), nor on the graph of the base,
+// whose publications have no level.
+function levelText(node) {
+    const level = node.data("level");
+    return level ? `Niveau ${level}` : null;
+}
+
 // focus: what bindFocus returns. Returns what bindSelection returns.
 export function bindCitationSelection(cy, card, focus) {
     return bindSelection(cy, card, focus, {
         selector: "node[url]",
         classes: `faded selected reference citing reference-node citing-node ${DISTANCE_CLASSES}`,
         select: selectPublication,
+        atRest: levelText,
     });
 }

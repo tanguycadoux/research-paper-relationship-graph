@@ -49,10 +49,13 @@ Status = GraphImage.Status
 LARGE_GRAPH = 1000
 # Names written beside the nodes: the largest ones only, the others on hover.
 LABELED_NODES = 150
-# Colours of the graph (assets/css/source.css, --color-graph-*, #470): a publication or
-# an author of level 1, oklch(0.7 0.12 155), and its contour 0.2 darker, in sRGB.
-NODE_COLOR = "#59b47d"
-NODE_CONTOUR = "#0b7643"
+# Colours of the nodes (assets/css/source.css, --color-graph-*, #470), fill and contour
+# 0.2 darker, in sRGB: an author of level 1, oklch(0.7 0.12 155); a publication of the
+# base, the neutral grey oklch(0.7 0.01 264) of the graph of the base (#477).
+NODE_COLORS = {
+    Kind.AUTHORS: ("#59b47d", "#0b7643"),
+    Kind.BASE: ("#9b9ea5", "#606369"),
+}
 EDGE_COLOR = "#8a8983"
 # Space around the drawing, and above it for its title, in pixels.
 MARGIN = 40
@@ -172,7 +175,7 @@ def render(graph, kind, when):
         f"{escape(header(kind, nodes, edges, when))}</text>",
         f'<g transform="translate({MARGIN} {TOP})">',
         *edge_paths(edges, points),
-        *node_circles(nodes, points, radii),
+        *node_circles(nodes, points, radii, NODE_COLORS[kind]),
         *node_labels(nodes, points, radii),
         *alone_caption(alone_count, alone_title_y, noun),
         "</g></svg>",
@@ -268,14 +271,18 @@ def edge_paths(edges, points, widths=(0.4, 0.8, 1.6, 3.0)):
     ]
 
 
-def node_circles(nodes, points, radii):
-    """A circle per node, the largest last (on top), each a link to its page."""
+def node_circles(nodes, points, radii, colors):
+    """
+    A circle per node, the largest last (on top), each a link to its page; colors: its
+    fill and its contour.
+    """
+    fill, contour = colors
     order = sorted(range(len(nodes)), key=lambda i: radii[i])
     return [
         f"<a href={quoteattr(nodes[i]['url'])}>"
         f'<circle data-node="{i}" cx="{points[i][0]:.1f}" cy="{points[i][1]:.1f}" '
         f'r="{radii[i]:.1f}" '
-        f'fill="{NODE_COLOR}" stroke="{NODE_CONTOUR}" stroke-width="1">'
+        f'fill="{fill}" stroke="{contour}" stroke-width="1">'
         f"<title>{escape(nodes[i]['label'])}</title></circle></a>"
         for i in order
     ]

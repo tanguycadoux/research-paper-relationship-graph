@@ -15,13 +15,15 @@
  * nodes), -lighter at level 3; with -light and the colour itself, the three steps away
  * from a selected node (#472, graph/distance.js); -border 0.2 darker (the contour of a
  * node). 155 and 345 rather than 164 and 4: the past and the future stay apart for a
- * red-green colour-blind reader (validated, #470).
+ * red-green colour-blind reader (validated, #470). A fourth group, neutral: the other
+ * publications of the graph of the base (base), grey, its chroma almost nil (#477).
  * "static": always emitted.
  */
 @theme static {
     --color-graph-source: oklch(0.6 0.2 264);
     --color-graph-cited: oklch(0.7 0.12 155);
     --color-graph-citing: oklch(0.7 0.12 345);
+    --color-graph-base: oklch(0.7 0.01 264);
     --color-graph-cited-light: oklch(0.767 0.12 155);
     --color-graph-citing-light: oklch(0.767 0.12 345);
     --color-graph-cited-lighter: oklch(0.811 0.12 155);
@@ -29,6 +31,7 @@
     --color-graph-source-border: oklch(0.4 0.2 264);
     --color-graph-cited-border: oklch(0.5 0.12 155);
     --color-graph-citing-border: oklch(0.5 0.12 345);
+    --color-graph-base-border: oklch(0.5 0.01 264);
     --color-graph-cited-light-border: oklch(0.567 0.12 155);
     --color-graph-edge: #8a8983;
     --color-graph-edge-strong: #3f3e3b;

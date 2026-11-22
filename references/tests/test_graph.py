@@ -239,9 +239,10 @@ class BaseGraphTests(TestCase):
     def test_the_corpus_of_the_user_stands_out(self):
         self.assertEqual(
             self.roles(base_graph(self.user)),
-            {"Source": "other", "Cité": "source", "Seule": "other"},
+            {"Source": "base", "Cité": "source", "Seule": "base"},
         )
-        self.assertEqual(set(self.roles(base_graph(AnonymousUser())).values()), {"other"})
+        # The others in a neutral grey, not in the green of the past (#477).
+        self.assertEqual(set(self.roles(base_graph(AnonymousUser())).values()), {"base"})
 
     def test_query_count_does_not_depend_on_size(self):
         with self.assertNumQueries(3):
@@ -262,6 +263,12 @@ class BaseGraphTests(TestCase):
         self.assertContains(response, "Publication de la base")
         self.assertNotContains(response, "Publication de mon corpus")
         self.assertNotContains(response, "Publication qui la cite")
+        # Its publications in the neutral grey, not in the green of the past (#477).
+        self.assertContains(response, "bg-graph-base")
+        self.assertNotContains(response, "border-graph-cited-border bg-graph-cited")
+        # The groups of distance of a selection, in the card of every graph (#477).
+        self.assertContains(response, "data-distance-groups", count=1)
+        self.assertContains(response, "Distance à la sélection")
 
     def test_legend_with_a_corpus(self):
         self.client.force_login(self.user)

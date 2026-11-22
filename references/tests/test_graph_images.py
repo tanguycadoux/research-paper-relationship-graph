@@ -125,6 +125,11 @@ class GraphImageTests(TestCase):
         self.generate(Kind.BASE)
         image = GraphImage.objects.get(kind=Kind.BASE)
         self.assertEqual((image.status, image.nodes, image.edges), ("done", 4, 2))
+        # Its publications in the neutral grey of the graph of the base (#477), the
+        # authors in the green of level 1.
+        self.assertIn('fill="#9b9ea5" stroke="#606369"', image.svg)
+        self.generate(Kind.AUTHORS)
+        self.assertIn('fill="#59b47d"', GraphImage.objects.get(kind=Kind.AUTHORS).svg)
 
     def test_an_image_is_old_once_the_base_changes(self):
         self.generate(Kind.BASE)

@@ -67,7 +67,7 @@ function wire(root, svg, layer, list) {
     const highlight = createHighlight(layer, nodes, list.edges);
     view.onDraw(highlight.rescale);
     highlight.rescale(view.current());
-    createMinimap(root.querySelector("[data-image-minimap]"), nodes, view);
+    createMinimap(root.querySelector("[data-image-minimap]"), nodes, view, root.dataset.kind);
     const centre = (index) => {
         highlight.hover(index);
         view.centreOn(nodes[index].x, nodes[index].y, { unit: CENTRE_UNIT });

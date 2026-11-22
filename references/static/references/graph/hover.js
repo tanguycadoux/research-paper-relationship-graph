@@ -1,5 +1,7 @@
 // Hovering a publication shows its title in an HTML tooltip over the frame, on every graph:
-// easier to read than a label drawn in the canvas, which other nodes may cover. On a small
+// easier to read than a label drawn in the canvas, which other nodes may cover; under the
+// title, its distance (#477): to the selected node, or without a selection its level, its
+// distance to the author of the graph… (card.js). Only text: nothing is drawn again. On a small
 // graph, the edges of the publication are darkened too (class `hovered`, style.js). On a
 // large one (#202), any change of class draws the whole canvas again (40 ms at 1 000
 // publications, 140 ms at 2 000): the canvas is left as it is.
@@ -43,8 +45,44 @@ function bindEdgeHover(cy) {
     cy.container().addEventListener("mouseleave", clear);
 }
 
-function bindTooltip(cy, tooltip) {
+// The lines of the tooltip: the title, or the longer text the graph gives (the variants of
+// gathered authors, #419; the references to identify, #452, its last line), its distance
+// under the title. Each line is [text, icon]: the distance and the references to identify
+// begin with their icon (the [data-tooltip-icon] templates of _graph_frame.html).
+function tooltipLines(node, describe) {
+    const lines = (node.data("tooltip") ?? node.data("label")).split("\n").map((text) => [text, null]);
+    if (node.data("toIdentify") && lines.length > 1) {
+        lines[lines.length - 1][1] = "to-identify";
+    }
+    const distance = describe(node);
+    if (distance) {
+        lines.splice(1, 0, [distance, "distance"]);
+    }
+    return lines;
+}
+
+function fillTooltip(tooltip, lines, icons) {
+    tooltip.replaceChildren(
+        ...lines.map(([text, icon]) => {
+            const line = document.createElement("div");
+            const template = icon && icons.get(icon);
+            if (template) {
+                line.append(template.content.firstElementChild.cloneNode(true));
+            }
+            line.append(text);
+            return line;
+        }),
+    );
+}
+
+function bindTooltip(cy, tooltip, describe) {
     const container = cy.container();
+    const icons = new Map(
+        Array.from(container.parentElement.querySelectorAll("[data-tooltip-icon]"), (template) => [
+            template.dataset.tooltipIcon,
+            template,
+        ]),
+    );
     const hide = () => {
         tooltip.hidden = true;
     };
@@ -53,8 +91,7 @@ function bindTooltip(cy, tooltip) {
         if (event.originalEvent?.buttons) {
             return;
         }
-        // A longer text when the graph gives one (the variants of gathered authors, #419).
-        tooltip.textContent = event.target.data("tooltip") ?? event.target.data("label");
+        fillTooltip(tooltip, tooltipLines(event.target, describe), icons);
         tooltip.hidden = false;
         place(tooltip, event.target, container);
     });
@@ -65,10 +102,11 @@ function bindTooltip(cy, tooltip) {
 }
 
 // The tooltip is the [data-graph-tooltip] element beside the container of the graph.
-export function bindHover(cy) {
+// describe(node): the distance of the node, or null.
+export function bindHover(cy, describe = () => null) {
     const tooltip = cy.container().parentElement.querySelector("[data-graph-tooltip]");
     if (tooltip) {
-        bindTooltip(cy, tooltip);
+        bindTooltip(cy, tooltip, describe);
     }
     if (cy.elements().length <= LIVE_SIZES_MAX_ELEMENTS) {
         bindEdgeHover(cy);
