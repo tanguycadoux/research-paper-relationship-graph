@@ -159,6 +159,8 @@ references/          application principale
       dashboard.py   tableau de bord de l'accueil
       graph.py       construction des données des graphes
       graph_variants.py  variantes d'un graphe choisies dans l'URL (frise ou réseau…)
+      graph_levels.py  niveaux d'un graphe de citations (niveau 2, nœud développé ou réduit,
+                       bibliographies manquantes)
       graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       keyword_graph.py  carte des mots-clés ou des thèmes d'OpenAlex d'un corpus (co-occurrence,
@@ -205,6 +207,7 @@ references/          application principale
     stretch.js       étirement des positions à la sélection
     axis.js          axe des années
     selection.js     sélection d'une publication (carte commune de card.js)
+    expand.js        développer ou réduire le graphe sans recharger la page, en animation
     hover.js         survol : infobulle, liens foncés sur un petit graphe
     style.js         style des nœuds et des liens
     export.js        export PNG (partagé avec le graphe des auteurs)

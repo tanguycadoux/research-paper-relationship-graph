@@ -20,12 +20,85 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   corpus avec un message (`views/tag_context.requested_tag`, partagé avec les
   suggestions). « Mon corpus » filtré par un tag renvoie au graphe de ce tag, et le
   nom de l'image exportée le dit (`graphe-corpus-tag-projet`).
+- **Niveaux** (#451, `services/display/graph_levels.py`) : les graphes d'une publication,
+  de « Mon corpus » et d'un tag montrent le **niveau 1** par défaut (les publications liées
+  au point de départ : ses références, et sur le graphe d'une publication celles qui la
+  citent). Le choix « Niveau : 1 · 2 » du panneau, sous « Disposition » (`?niveau=2`, une
+  variante de `graph_variants.py`, que le formulaire du tag garde), développe **tout le
+  graphe** : le niveau 2 est fait des publications liées au niveau 1 **dans les deux sens**,
+  ses références et les publications qui le citent (décision de l'utilisateur). Les liens
+  sont ceux du niveau 1 et ceux de chaque publication développée (une requête de plus).
+  Seulement ce qui est en base : aucune requête aux sources. Une publication du niveau 1 se
+  développe seule : sa carte propose **« Développer »** (`?developper=<id>`), ou
+  **« Réduire »** une fois développée (au niveau 2, `?reduire=<id>`), sans toucher au reste
+  du graphe ; la publication reste sélectionnée (`?noeud=<id>`, que `main.js` relit au
+  chargement). Changer de niveau oublie ces choix. Niveau 2 au plus pour
+  l'instant : une publication du niveau 2 ne se développe pas. Le niveau se lit sur le
+  nœud (**creux**, un anneau de la couleur de son rôle, `style.js`, avec sa ligne dans la
+  légende et sur l'image exportée) et dans l'infobulle (« Niveau 2 ») dès que le graphe
+  dépasse le niveau 1 ; la carte le dit aussi. Le graphe de la base n'a pas de niveau.
+- **Développer sans recharger** (#451, `expand.js`) : « Développer », « Réduire » et le
+  choix du niveau gardent leur lien (sans JavaScript, la page se recharge), mais la page
+  demande à la **même vue**, avec la même URL et l'en-tête `Accept: application/json`, les
+  éléments du nouveau graphe (`views/graphs.render_graph`) : les nœuds avec leur niveau et
+  leur lien de bascule, le niveau, les compteurs, les bibliographies manquantes, et les
+  parties du panneau rendues comme dans la page (`_citation_graph_summary.html`,
+  `_citation_graph_legend.html`, `_graph_variants.html`) et les variantes que garde le
+  formulaire du tag. Cette réponse n'est jamais gardée par le navigateur (`no-store`), et
+  les deux réponses varient selon `Accept` : Précédent montre toujours la page. La nouvelle
+  disposition est calculée hors écran : la frise par `layout.js` (déterministe, la même
+  qu'au rechargement de l'URL), le réseau par `cose` **à partir des positions affichées**
+  (dans la page, ou dans le Web Worker au-delà de 600 éléments), les nouveaux nœuds autour
+  de celui dont ils sortent : le réseau bouge le moins possible, mais diffère de celui qu'on
+  obtient en rechargeant l'URL. Puis **une seule animation** (500 ms, la boucle de
+  `focus.js`) : les nouveaux nœuds et liens sortent de la publication développée (à défaut,
+  d'un voisin déjà affiché) en apparaissant en fondu, ceux qui partent rentrent dans leur
+  publication en s'effaçant, puis sont retirés ; les autres glissent à leur nouvelle place,
+  leur taille suit (le maximum des citations change) ; l'axe des années (échelle
+  interpolée) et la bande « Non daté » suivent. La vue va en même temps vers la sélection
+  et ses voisins dans le nouveau graphe, ou vers la vue d'ensemble sans sélection ; la vue
+  d'ensemble et ses bornes sont remesurées sur la nouvelle disposition avant l'animation.
+  La sélection reste sur la publication (sa carte compte ses voisins du nouveau graphe) ; un
+  zoom ou un clic pendant l'animation la termine d'un coup. L'URL suit (`history.pushState`)
+  et Précédent ou Suivant refont le même chemin (`popstate`). Sur un grand graphe (plus de
+  600 éléments), le nouveau graphe s'affiche d'un coup, sans animation, comme la sélection ;
+  un graphe qui franchit ce seuil, ou qui n'a plus de lien, recharge la page (ses règles
+  sont fixées à sa création). Mesures (`frames.py` adapté, Chrome headless, 1 400 px,
+  médiane de 5 passages, intervalle entre images médiane / 90e centile / maximum) :
+  publication n° 9 (9 publications, 25 au niveau 2) : 17 / 19 / 25 ms en développant,
+  17 / 19 / 22 ms au niveau 2, aucune image de plus de 50 ms ; « Mon graphe » (96
+  publications, 244 au niveau 2) : 17 / 21 / 75 ms en développant une publication, 17 /
+  38 / 107 ms en passant au niveau 2, avec une seule image longue, la première (réponse,
+  disposition et remesure de la vue).
+- **Bibliographies manquantes** (#451) : un niveau est incomplet quand des bibliographies
+  du niveau d'avant ne sont pas en base (celles du point de départ pour le niveau 1, des
+  publications développées pour le niveau 2). Le panneau les compte (« 41 bibliographies
+  manquent pour le niveau 2 », `bibliography_levels.to_import` : avec un DOI et quelque
+  chose à lire aux sources) et propose, à un utilisateur connecté, « Récupérer les
+  bibliographies… » (#431) depuis le même point de départ, jusqu'au niveau 2.
+- **Taille au niveau 2** (mesures du 21 novembre 2026, Chrome headless, 1 400 px) :
+
+  | Graphe | Niveau | Publications | Citations | JSON | Serveur | Page jusqu'à `DOMContentLoaded` |
+  |---|---|---|---|---|---|---|
+  | Mon graphe, copie de la base de l'utilisateur | 1 | 96 | 130 | 43 Ko | 23 ms | 0,41 s |
+  | Mon graphe, copie de la base de l'utilisateur | 2 | 219 | 310 | 115 Ko | 46 ms | 0,22 s (réseau 0,33 s) |
+  | Mon graphe, base du banc | 1 | 1 775 | 2 517 | 836 Ko | 0,48 s | 1,7 s |
+  | Mon graphe, base du banc | 2 | 1 776 | 2 518 | 1,0 Mo | 0,51 s | 1,3 s (réseau 4,1 s, dans un worker) |
+
+  41 bibliographies manquent au niveau 2 sur la base de l'utilisateur (1 433 sur le banc) :
+  l'estimation de #431 (environ 1 000 publications) les comptait déjà récupérées. Au-delà
+  de `LARGE_GRAPH` (1 000), les graphes de citations à niveaux ne passent **pas** à l'image
+  calculée sur le serveur (#328, réservée au graphe de la base et à celui de tous les
+  auteurs) : la page dessine le graphe avec les règles des grands graphes (tailles
+  réévaluées à l'arrêt du zoom, sélection sans animation, réseau dans un worker). « Mon
+  graphe » du banc dépasse déjà ce seuil au niveau 1.
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
   publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
   citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
-- La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
+- La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée
+  (la même vue les donne seules en JSON pour développer le graphe sans recharger, #451).
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
   bande sous la frise. Ou en **réseau**, sans axe du temps (#195, voir plus bas).
@@ -263,7 +336,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
   `network-worker.js` (la même dans un Web Worker, chargé comme module),
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
-  un clic sur une publication et le remplissage de sa carte), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
+  un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
+  réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
   (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
   JavaScript dans l'application : la CI vérifie seulement la syntaxe de chaque fichier
   (`tools/check_js.sh`, `node --check`, sans npm, #341) ; le comportement se vérifie dans

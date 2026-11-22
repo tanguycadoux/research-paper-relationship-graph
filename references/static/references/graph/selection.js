@@ -6,6 +6,25 @@
 
 import { bindSelection, cardField } from "./card.js";
 
+// The level of the publication (#451), and for one of level 1, the link that develops its
+// neighbours or reduces them (the query string given by the server, graph.py). Only on
+// the graphs with levels (_citation_graph.html).
+function fillLevel(card, data) {
+    const row = card.querySelector('[data-card-row="level"]');
+    if (!row) {
+        return;
+    }
+    row.hidden = !data.level;
+    cardField(card, "level").textContent = `Niveau ${data.level}`;
+    const toggle = data.toggle !== undefined;
+    card.querySelector('[data-card-row="toggle"]').hidden = !toggle;
+    for (const [name, shown] of [["develop", !data.expanded], ["reduce", Boolean(data.expanded)]]) {
+        const wrapper = cardField(card, name);
+        wrapper.hidden = !toggle || !shown;
+        wrapper.querySelector("a").href = toggle ? `?${data.toggle}` : "#";
+    }
+}
+
 function fillCard(card, data, referenceCount, citingCount) {
     const field = (name) => cardField(card, name);
     const showRow = (name, visible) => {
@@ -25,6 +44,7 @@ function fillCard(card, data, referenceCount, citingCount) {
     field("citing").textContent = `citée par ${citingCount}`;
     const citations = data.citedBy;
     field("cited-by").textContent = `${citations} citation${citations > 1 ? "s" : ""} dans la base`;
+    fillLevel(card, data);
 }
 
 // An edge goes from the citing publication to the cited one. Returns the nodes the view
@@ -44,9 +64,9 @@ function selectPublication(node, card) {
     return kept.union(citing.sources()).nodes();
 }
 
-// focus: what bindFocus returns.
+// focus: what bindFocus returns. Returns what bindSelection returns.
 export function bindCitationSelection(cy, card, focus) {
-    bindSelection(cy, card, focus, {
+    return bindSelection(cy, card, focus, {
         selector: "node[url]",
         classes: "faded selected reference citing reference-node citing-node",
         select: selectPublication,

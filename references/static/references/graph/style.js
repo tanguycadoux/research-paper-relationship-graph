@@ -51,6 +51,11 @@ function nodeRules() {
         },
         { selector: 'node[role = "source"]', style: { "background-color": color("source") } },
         { selector: 'node[role = "citing"]', style: { "background-color": color("citing") } },
+        // Level 2 (#451): hollow, a ring of the colour of its role.
+        {
+            selector: "node[level = 2]",
+            style: { "background-color": "white", "border-width": onScreen(2.5), "border-color": color("cited") },
+        },
         {
             selector: "node.hovered",
             style: {

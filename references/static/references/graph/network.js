@@ -63,6 +63,45 @@ export const LAYOUT_STYLE = [
     { selector: "node", style: { width: "data(size)", height: "data(size)", "border-width": 2 } },
 ];
 
+// The positions of cose, {id: point}, for the elements (nodes with their size and starting
+// position, edges), in a Cytoscape without any page: in the Web Worker, or in the page for a
+// graph developed or reduced (#451). width, height: the frame of the page, towards the
+// centre of which cose pulls the nodes.
+export function positionsByCose(elements, width, height) {
+    const cy = cytoscape({
+        headless: true,
+        // cose reads the sizes of the nodes from the style.
+        styleEnabled: true,
+        style: LAYOUT_STYLE,
+        elements,
+        // Otherwise the null layout would put every node at (0, 0), and cose would
+        // separate them at random.
+        layout: { name: "preset", fit: false },
+    });
+    // A headless Cytoscape has no size of its own.
+    cy.width = () => width;
+    cy.height = () => height;
+    cy.layout(COSE).run();
+    const positions = {};
+    cy.nodes().forEach((node) => {
+        positions[node.id()] = { ...node.position() };
+    });
+    cy.destroy();
+    return positions;
+}
+
+// The graph developed or reduced (#451, expand.js): the nodes of networkNodes, from the
+// starting positions given (those of the graph shown, for the nodes it has: the network
+// changes as little as it can), placed by cose; a large graph in the Web Worker.
+export async function layOutAgain(nodes, edges, container, waiting) {
+    const aside = await layOutAside(nodes, edges, container, waiting);
+    if (aside) {
+        return aside;
+    }
+    const positions = positionsByCose([...nodes, ...edges], container.clientWidth, container.clientHeight);
+    return nodes.map((node) => ({ ...node, position: positions[node.data.id] }));
+}
+
 // Up to this many elements (nodes and edges), cose takes less than about 100 ms: it runs in
 // the page, without a message that would only flash. Beyond, in a Web Worker: 2.9 s for a
 // graph of 1 800 publications, during which the page would not respond.
