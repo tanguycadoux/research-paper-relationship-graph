@@ -32,6 +32,13 @@ urlpatterns = [
         name="graph_image_generate",
     ),
     path("graph/image/<str:kind>.svg", graph_images.graph_image_svg, name="graph_image_svg"),
+    # The page that browses the image, and the list of its nodes (#453)
+    path("graph/image/<str:kind>/", graph_images.graph_image_viewer, name="graph_image_viewer"),
+    path(
+        "graph/image/<str:kind>/nodes.json",
+        graph_images.graph_image_nodes,
+        name="graph_image_nodes",
+    ),
     path(
         "graph/image/<str:kind>/status/",
         graph_images.graph_image_status,

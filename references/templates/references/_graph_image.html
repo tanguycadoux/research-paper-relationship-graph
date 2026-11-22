@@ -21,10 +21,10 @@ background on the server and kept for everyone. Context: large_graph
                 </p>
             {% elif image.status == "done" %}
                 <div class="flex flex-wrap items-center gap-3">
-                    {% url 'graph_image_svg' state.kind as image_url %}
-                    {% button "Ouvrir l'image complète" url=image_url icon="hub" %}
+                    {% url 'graph_image_viewer' state.kind as viewer_url %}
+                    {% button "Ouvrir l'image complète" url=viewer_url icon="hub" %}
                     <p class="text-sm text-gray-600">
-                        Image du {{ image.finished_at|date:"j F Y à H:i" }} : {{ image.nodes }} {{ state.noun }}, {{ image.edges }} liens (SVG, zoomable).
+                        Image du {{ image.finished_at|date:"j F Y à H:i" }} : {{ image.nodes }} {{ state.noun }}, {{ image.edges }} liens (<a href="{% url 'graph_image_svg' state.kind %}">fichier SVG</a>).
                     </p>
                 </div>
                 {% if state.outdated %}

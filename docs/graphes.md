@@ -519,9 +519,54 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
   les liens en quelques chemins, un par épaisseur (quartiles du poids), pour que le
   fichier reste léger. Servi avec `Content-Security-Policy: default-src 'none'`.
 - **Mesures** (base de banc, disposition seule) : graphe des auteurs, 4,6 s (0,7 s avant
-  #420) et 3,0 Mo ; graphe de la base, 0,7 s (0,2 s avant) et 0,5 Mo. L'image, plus
+  #420) et 3,1 Mo ; graphe de la base, 0,7 s (0,2 s avant) et 0,5 Mo. L'image, plus
   compacte, passe de 6 246 × 9 362 à 3 947 × 6 310 px pour les auteurs.
 - **Fraîcheur** : la signature de l'image (nombres et derniers identifiants des
   publications, des créneaux d'auteurs, des citations) dit quand la base a changé depuis ;
   la page le signale et propose « Recalculer l'image ».
 - L'image est commune : le corpus de la personne connectée n'y est pas distingué.
+- **Parcourir l'image** (#453, `/graph/image/<kind>/`, `graph_image_viewer.html`) :
+  « Ouvrir l'image complète » mène à une page qui la parcourt (le fichier SVG reste
+  téléchargeable). Le calcul produit, avec l'image, la **liste de ses nœuds**
+  (`GraphImage.node_list`, JSON servi par `/graph/image/<kind>/nodes.json`) : nom, taille,
+  page, centre et rayon, et les liens en liste de paires ; chaque cercle du SVG porte le
+  rang de son nœud (`data-node`). Une image calculée avant n'a pas de liste : la page
+  demande de la recalculer. Le SVG est récupéré (`fetch`) et inséré dans la page, sans
+  `<script>` ni `<foreignObject>` ; dessiné par le serveur, il n'a pour texte que des noms
+  échappés.
+  - **Vue** (`image_view.js`) : la vue d'ensemble à l'ouverture ; zoom à la molette centré
+    sur le pointeur, déplacement par glisser, boutons + / − / « Tout voir ». La vue est le
+    `viewBox` du SVG, aux proportions du cadre, bornée entre l'image entière et 8 pixels
+    par unité. Pendant un geste, le SVG déjà dessiné est seulement déplacé et agrandi par
+    une transformation CSS ; le `viewBox` suit 150 ms après le dernier mouvement, et
+    l'image est redessinée nette.
+  - **Pointeur** (`image_pointer.js`) : le SVG ne reçoit aucun événement. Un calque
+    transparent au-dessus prend la molette et la souris, et trouve lui-même le nœud sous
+    le pointeur dans une grille des nœuds (cases de 64 unités, 3 pixels de tolérance) :
+    infobulle du nom (verre dépoli), anneau, ligne de la liste, clic vers la page (nouvel
+    onglet avec Ctrl, ⌘ ou le bouton du milieu). Sous un gestionnaire de molette, Chrome
+    enregistrait chacun des 66 000 éléments du SVG des auteurs comme une zone de ce
+    gestionnaire, et les parcourait à chaque image où la page changeait : 90 ms par image
+    au survol. Pour la même raison, les liens et les noms du SVG ont
+    `pointer-events="none"`.
+  - **Surbrillance** (`image_highlight.js`) : un second SVG, vide, posé sur l'image avec le
+    même `viewBox`, porte l'anneau du nœud survolé (bleu) et ceux des nœuds cochés
+    (orange), avec leurs liens tracés à partir de la liste. Les anneaux gardent 6 pixels
+    d'écart et 3 pixels d'épaisseur quel que soit le zoom (`non-scaling-stroke`) : un nœud
+    de 3 pixels se voit dans la vue d'ensemble.
+  - **Minicarte** (`image_minimap.js`) : les nœuds dessinés une fois en points dans un
+    `<canvas>` (180 pixels au plus, un tiers du cadre sur petit écran), plutôt qu'une
+    seconde copie du SVG ; un rectangle montre la partie vue. Un clic ou un glisser y
+    centre la vue. En verre dépoli, en bas à droite du cadre.
+  - **Liste** (`image_nodes.js`), à droite du cadre à partir de `xl`, dessous sinon :
+    recherche sans casse ni accents, tri par taille (publications d'un auteur, citations
+    d'une publication) ou par nom, compte des nœuds trouvés. Seules les lignes visibles
+    sont dessinées, à leur rang dans une liste aussi haute que toutes. Survoler une ligne
+    allume son nœud ; la cocher le garde allumé avec ses liens ; « Centrer » l'amène au
+    milieu de la vue, au moins à la taille réelle. Survoler un nœud de l'image allume sa
+    ligne et la fait défiler jusqu'à elle.
+  - **Mesures** (`tools/graph_bench/image_frames.py`, base de banc, graphe des auteurs :
+    9 507 nœuds, SVG de 3,1 Mo, liste de 1,1 Mo ; Chrome sans interface, 1 400 × 1 000,
+    médiane de 3 séries) : page prête en 0,5 s ; zoom de 30 crans, déplacement, survol de
+    40 nœuds et de 12 lignes, zoom avec 3 nœuds cochés : 17 ms par image, aucune de plus de
+    50 ms, sauf le redessin net à la fin d'un zoom (une image de 280 ms).
