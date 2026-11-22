@@ -114,7 +114,9 @@ class LevelTests(TestCase):
         self.assertEqual(missing_bibliographies(graph), [(2, 1)])
 
 
-class LevelPageTests(TestCase):
+class LevelPageData:
+    """start cites ref, which cites old, and lacking, without bibliography; start has the tag."""
+
     @classmethod
     def setUpTestData(cls):
         cls.user = get_user_model().objects.create_user("bob")
@@ -128,6 +130,8 @@ class LevelPageTests(TestCase):
         entry = UserPublication.objects.create(user=cls.user, publication=cls.start)
         tags.tag_entry(entry, "Projet")
 
+
+class LevelPageTests(LevelPageData, TestCase):
     def test_level_choice_in_the_panel(self):
         response = self.client.get(reverse("publication_graph", args=[self.start.pk]))
         self.assertContains(response, "Niveau</span>")
@@ -171,3 +175,60 @@ class LevelPageTests(TestCase):
         response = self.client.get(reverse("base_graph"))
         self.assertNotContains(response, "Niveau</span>")
         self.assertNotContains(response, 'data-card="develop"')
+
+
+class ElementsTests(LevelPageData, TestCase):
+    """
+    The elements of the graph for another expansion, without reloading the page (#451):
+    the same view, asked with Accept: application/json by graph/expand.js.
+    """
+
+    def elements(self, url, params):
+        return self.client.get(url, params, headers={"Accept": "application/json"})
+
+    def test_the_elements_of_a_developed_publication(self):
+        url = reverse("publication_graph", args=[self.start.pk])
+        response = self.elements(url, {"developper": self.ref.pk, "noeud": self.ref.pk})
+        self.assertEqual(response["Content-Type"], "application/json")
+        data = response.json()
+        nodes = {node["data"]["label"]: node["data"] for node in data["graph"]["nodes"]}
+        self.assertEqual(set(nodes), {"Départ", "Réf", "Ancienne", "Sans bibliographie"})
+        self.assertTrue(nodes["Réf"]["expanded"])
+        # The toggle reduces it now, and selects it again.
+        self.assertEqual(nodes["Réf"]["toggle"], f"noeud={self.ref.pk}")
+        self.assertEqual(nodes["Ancienne"]["level"], 2)
+        self.assertEqual(data["level"], 1)
+        self.assertEqual(data["counts"], {"publications": 4, "citations": 3})
+        # Réf has its bibliography; the one of « Sans bibliographie » counts at level 2 only.
+        self.assertEqual(data["missing_bibliographies"], [])
+        self.assertEqual(data["kept_params"], {})
+
+    def test_the_panel_rendered_as_on_the_page(self):
+        url = reverse("publication_graph", args=[self.start.pk])
+        data = self.elements(url, {"niveau": "2"}).json()
+        self.assertIn("4 publications, 3 citations", data["summary"])
+        self.assertEqual(data["missing_bibliographies"], [[2, 1]])
+        self.assertIn("1 bibliographie manque pour le niveau 2.", data["summary"])
+        # Anonymous: no request of the bibliographies.
+        self.assertNotIn("Récupérer les bibliographies", data["summary"])
+        self.assertIn("Niveau 2 : reliée à une publication du niveau 1", data["legend"])
+        self.assertIn('data-variant="niveau"', data["variants"])
+        self.assertIn('aria-current="true">2</a>', data["variants"])
+        self.assertEqual(data["kept_params"], {"niveau": "2"})
+
+    def test_the_elements_of_a_tag_at_level_two(self):
+        self.client.force_login(self.user)
+        data = self.elements(reverse("corpus_graph"), {"tag": "Projet", "niveau": "2"}).json()
+        self.assertEqual(data["counts"]["publications"], 4)
+        self.assertIn("Récupérer les bibliographies…", data["summary"])
+        self.assertIn("Publication de mon corpus", data["legend"])
+
+    def test_never_kept_by_the_browser(self):
+        url = reverse("publication_graph", args=[self.start.pk])
+        response = self.elements(url, {})
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertIn("Accept", response["Vary"])
+        # The page varies with Accept too: Back never shows the elements.
+        page = self.client.get(url)
+        self.assertEqual(page["Content-Type"], "text/html; charset=utf-8")
+        self.assertIn("Accept", page["Vary"])

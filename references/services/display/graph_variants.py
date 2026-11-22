@@ -82,5 +82,5 @@ def variant_links(query, variants=VARIANTS):
             options.append(
                 {"label": label, "query": params.urlencode(), "current": value == current}
             )
-        links.append({"label": variant.label, "options": options})
+        links.append({"param": variant.param, "label": variant.label, "options": options})
     return links
