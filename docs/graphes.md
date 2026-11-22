@@ -92,20 +92,25 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   auteurs) : la page dessine le graphe avec les règles des grands graphes (tailles
   réévaluées à l'arrêt du zoom, sélection sans animation, réseau dans un worker). « Mon
   graphe » du banc dépasse déjà ce seuil au niveau 1.
-- **Références à identifier** (#452) : une publication du **corpus de l'utilisateur
-  connecté** qui a des références à identifier (`to_identify_q`, #293) porte une petite
-  icône d'attention ambre en haut à droite du nœud (l'ambre attend une action,
-  CONTRIBUTING). Les autres n'en ont pas : une publication seulement citée n'a souvent pas
-  de bibliographie en base (choix retenu). L'infobulle et la carte disent « n références à
-  identifier », la carte avec « Identifier », qui ouvre l'identification en série à la
-  première (`?serie=1`, #242). Sur les graphes d'une publication, du corpus, d'un tag et de
-  la base. Le compte, la présence dans le corpus et la position de la première sont des
-  sous-requêtes de la requête des nœuds (`graph.to_identify_annotations`) : aucune requête
-  de plus, et le nombre de citations n'est pas multiplié. L'icône est dessinée une fois,
-  en SVG (`_graph_warning_icon.html`, couleurs écrites en clair) : la légende l'affiche,
-  `style.js` la pose sur les nœuds comme image de fond (`background-image`, hors du nœud,
-  `bounds-expansion` pour ne pas la couper), et `export.js` la redessine dans la légende
-  de l'image exportée. La légende ne l'explique que si un nœud la porte. Durées de frame
+- **Références à identifier** (#452) : **toute publication** du graphe qui a des
+  références à identifier (`to_identify_q`, #293), dans le corpus ou non (décision de
+  l'utilisateur : une référence à identifier est un lien qui manque au graphe), porte une
+  petite icône d'attention ambre en haut à droite du nœud (l'ambre attend une action,
+  CONTRIBUTING). Sur la base de l'utilisateur, 157 publications en ont, dont 15 de son
+  corpus. Seulement pour un utilisateur connecté : « Identifier » le demande. L'infobulle et
+  la carte disent « n références à identifier », la carte avec « Identifier », qui ouvre
+  l'identification en série à la première (`?serie=1`, #242). Sur les graphes d'une
+  publication, du corpus, d'un tag et de la base. Le compte et la position de la première
+  sont des sous-requêtes de la requête des nœuds (`graph.to_identify_annotations`) : aucune
+  requête de plus, et le nombre de citations n'est pas multiplié. L'icône est celle de
+  Material Symbols, `warning` (`static/icons/warning.svg`), en ambre foncé sur son
+  triangle rempli d'ambre clair, lisible sur tout nœud : un seul SVG
+  (`{% graph_warning_icon %}`, `templatetags/ui/icons.py`, couleurs écrites en clair car
+  l'image est lue sans la feuille de style), que la légende et la carte affichent
+  (`_graph_warning_icon.html`), que `style.js` pose sur les nœuds comme image de fond
+  (`background-image`, hors du nœud, `bounds-expansion` pour ne pas la couper), et que
+  `export.js` redessine dans la légende de l'image exportée. La légende (« Références à
+  identifier ») ne l'explique que si un nœud la porte. Durées de frame
   inchangées sur « Mon graphe » (96 publications, 15 marquées) et sur le graphe d'une
   publication (9) : médiane 17 ms, aucune frame au-delà de 50 ms (`frames.py`). Les grands
   graphes calculés en image (#328) ne la montrent pas. Une arête qui passe sous la pointe

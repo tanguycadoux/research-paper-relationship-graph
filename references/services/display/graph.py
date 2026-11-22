@@ -1,9 +1,9 @@
-from django.db.models import CharField, Count, Exists, OuterRef, Q, Subquery
+from django.db.models import CharField, Count, OuterRef, Q, Subquery
 from django.db.models.fields.json import KeyTextTransform, KeyTransform
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 
-from ...models import CitedReference, ExternalRecord, Publication, UserPublication, to_identify_q
+from ...models import CitedReference, ExternalRecord, Publication, to_identify_q
 from ..corpus.tags import context_publications
 from ..sources.external_records import Source
 from .graph_levels import Expansion, levels_of
@@ -15,7 +15,7 @@ def publication_graph(pub, expansion=None, query=None, user=None):
     Graph of a publication, the publications it cites and those of the base that
     cite it (#186): a publication without identified references is not empty. Beyond,
     as far as expansion goes (#451); query: that of the page, for the links of the nodes;
-    user: the one whose corpus shows its references to identify (#452).
+    user: logged in, the references to identify are shown (#452).
     """
     return citation_graph([pub.pk], with_citing=True, expansion=expansion, query=query, user=user)
 
@@ -135,15 +135,14 @@ def to_identify_text(count):
     return f"{count} référence{'s' if count > 1 else ''} à identifier"
 
 
-def to_identify_annotations(user):
+def to_identify_annotations():
     """
-    Whether a publication is in the corpus of user, its number of references to identify
-    and the position of the first one (#452): in the query of the nodes, without any
-    query per node. Subqueries, so as not to multiply the citations counted beside.
+    The number of references to identify of a publication and the position of the first
+    one (#452): in the query of the nodes, without any query per node. Subqueries, so as
+    not to multiply the citations counted beside.
     """
     references = CitedReference.objects.filter(to_identify_q(), source=OuterRef("pk")).order_by()
     return {
-        "in_corpus": Exists(UserPublication.objects.filter(user=user, publication=OuterRef("pk"))),
         "to_identify": Coalesce(
             Subquery(references.values("source").annotate(n=Count("pk")).values("n")), 0
         ),
@@ -153,11 +152,11 @@ def to_identify_annotations(user):
 
 def add_to_identify(data, pub):
     """
-    The references to identify of a publication of the corpus of the user (#452): the
-    others carry no mark, a publication only cited often having no bibliography in the
-    base. The link starts the identification in series at the first one (#242).
+    The references to identify of a publication (#452), whether it is in the corpus of the
+    user or not (decided by the user): a reference to identify is a link the graph lacks.
+    The link starts the identification in series at the first one (#242).
     """
-    if getattr(pub, "in_corpus", False) and pub.to_identify:
+    if getattr(pub, "to_identify", 0):
         data["toIdentify"] = pub.to_identify
         url = reverse("reference_identify", args=[pub.pk, pub.first_to_identify])
         data["identifyUrl"] = f"{url}?serie=1"
@@ -166,11 +165,11 @@ def add_to_identify(data, pub):
 def elements(publications, edges, role_of, user=None):
     """
     The nodes of the publications, with the role role_of gives each, and the edges; for
-    a logged-in user, the references to identify of the corpus (#452).
+    a logged-in user, who alone can identify them, the references to identify (#452).
     """
     publications = publications.annotate(cited_by=Count("citations"), venue=venue())
     if user is not None and user.is_authenticated:
-        publications = publications.annotate(**to_identify_annotations(user))
+        publications = publications.annotate(**to_identify_annotations())
     publications = publications.with_author_slots()
     return {
         "nodes": [node_data(pub, role_of(pub.pk)) for pub in publications],

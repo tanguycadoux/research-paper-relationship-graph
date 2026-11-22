@@ -25,8 +25,7 @@ function fillLevel(card, data) {
     }
 }
 
-// Its references to identify, in the corpus of the user (#452), and the link to identify
-// them in series.
+// Its references to identify (#452), and the link to identify them in series.
 function fillToIdentify(card, data) {
     const row = card.querySelector('[data-card-row="identify"]');
     if (!row) {

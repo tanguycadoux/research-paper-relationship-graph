@@ -216,7 +216,7 @@ references/          application principale
     keywords.js      point d'entrée de la carte des mots-clés (co-occurrence)
     keyword_selection.js  sélection d'un mot-clé : ses publications, ses voisins les plus liés
     keyword_labels.js  noms des mots-clés dessinés là où ils ne se chevauchent pas
-  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph ; _graph_warning_icon : icône des références à identifier d'un nœud…)
+  templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph ; _graph_warning_icon : icône Material `warning` des références à identifier d'un nœud…)
     publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
                      _authors, _abstract, _note, _information, _references, _cited_by,
                      _incoming_citations…), assemblées par publication_detail.html
