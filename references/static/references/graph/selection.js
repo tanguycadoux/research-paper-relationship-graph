@@ -1,10 +1,13 @@
 // Selection of a publication (#61): its references and the publications citing it
-// stand out, each with the colour of its relation (nodes and edges), and the compact
-// information card beside the graph describes it (#187, #291); the view zooms on them,
-// and goes back on deselection (#142). Without a selection, the card says how to select.
-// The gestures and the card are those of every graph (card.js).
+// stand out, each with the colour of its relation (nodes and edges), then the references
+// of its references and the publications citing those that cite it, lighter at each step
+// (#472, distance.js); the compact information card beside the graph describes it (#187,
+// #291); the view zooms on its neighbours, and goes back on deselection (#142). Without a
+// selection, the card says how to select. The gestures and the card are those of every
+// graph (card.js).
 
 import { bindSelection, cardField } from "./card.js";
+import { DISTANCE_CLASSES, markDistances, reach } from "./distance.js";
 
 // The level of the publication (#451), and for one of level 1, the link that develops its
 // neighbours or reduces them (the query string given by the server, graph.py). Only on
@@ -60,28 +63,39 @@ function fillCard(card, data, referenceCount, citingCount) {
     fillToIdentify(card, data);
 }
 
-// An edge goes from the citing publication to the cited one. Returns the nodes the view
-// zooms on: the publication, its references and the publications citing it.
+// The distance follows the citations in the direction of its group only (#472): the
+// references of the references (the past), the publications citing those that cite it
+// (the future). BOTH_WAYS: every citation, either way, the hue that of the last step.
+const BOTH_WAYS = false;
+
+// An edge goes from the citing publication to the cited one: one step to a target is
+// towards the past (cited), to a source towards the future (citing).
+function citationSteps(node, hue) {
+    const past = node.outgoers("edge").map((edge) => [edge, edge.target(), "cited"]);
+    const future = node.incomers("edge").map((edge) => [edge, edge.source(), "citing"]);
+    if (BOTH_WAYS || !hue) {
+        return [...past, ...future];
+    }
+    return hue === "cited" ? past : future;
+}
+
+// Returns the nodes the view zooms on: the publication, its references and the
+// publications citing it (distance 1).
 function selectPublication(node, card) {
-    const cy = node.cy();
-    const references = node.outgoers("edge");
-    const citing = node.incomers("edge");
-    const kept = node.union(references).union(references.targets());
-    cy.elements().not(kept.union(citing).union(citing.sources())).addClass("faded");
     node.addClass("selected");
-    references.addClass("reference");
-    references.targets().not(node).addClass("reference-node");
-    citing.addClass("citing");
-    citing.sources().not(node).addClass("citing-node");
-    fillCard(card, node.data(), references.length, citing.length);
-    return kept.union(citing.sources()).nodes();
+    const neighbours = markDistances(node, reach(node, citationSteps), {
+        edgeClass: (hue) => (hue === "citing" ? "citing" : "reference"),
+        nearClass: (hue) => (hue === "citing" ? "citing-node" : "reference-node"),
+    });
+    fillCard(card, node.data(), node.outgoers("edge").length, node.incomers("edge").length);
+    return node.union(neighbours);
 }
 
 // focus: what bindFocus returns. Returns what bindSelection returns.
 export function bindCitationSelection(cy, card, focus) {
     return bindSelection(cy, card, focus, {
         selector: "node[url]",
-        classes: "faded selected reference citing reference-node citing-node",
+        classes: `faded selected reference citing reference-node citing-node ${DISTANCE_CLASSES}`,
         select: selectPublication,
     });
 }

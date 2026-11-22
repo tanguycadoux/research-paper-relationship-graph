@@ -1,11 +1,13 @@
 // Selection of an author in a coauthorship graph (#222): their coauthors and their links
-// stand out, the rest fades, and the card of the panel describes them (their name links
-// to their page, their publications, their coauthors in this graph and the strongest
-// links, and the variants of a node of gathered duplicates, #419). The view zooms on
-// them uniformly (focus.js), and goes back on deselection.
+// stand out, then the coauthors of their coauthors, lighter at each step (#472,
+// distance.js), the rest fades, and the card of the panel describes them (their name
+// links to their page, their publications, their coauthors in this graph and the
+// strongest links, and the variants of a node of gathered duplicates, #419). The view
+// zooms on them uniformly (focus.js), and goes back on deselection.
 // The gestures, the card and the hover are those of every graph (card.js, hover.js).
 
 import { bindSelection, cardField } from "./card.js";
+import { DISTANCE_CLASSES, markDistances, reach, undirectedSteps } from "./distance.js";
 
 // Coauthors listed on the card, the strongest links first.
 const STRONGEST_SHOWN = 3;
@@ -93,15 +95,14 @@ function fillCard(card, node) {
     card.querySelector('[data-card-row="strongest"]').hidden = links.length === 0;
 }
 
-// Returns the nodes the view zooms on: the author and their coauthors.
+// Returns the nodes the view zooms on: the author and their coauthors (distance 1);
+// the coauthors of their coauthors, and so on, lighter with the distance (#472).
 function selectAuthor(node, card) {
-    const links = node.connectedEdges();
-    const coauthors = links.connectedNodes().not(node);
-    const kept = node.union(links).union(coauthors);
-    node.cy().elements().not(kept).addClass("faded");
     node.addClass("selected");
-    links.addClass("coauthor");
-    coauthors.addClass("coauthor-node");
+    const coauthors = markDistances(node, reach(node, undirectedSteps), {
+        edgeClass: () => "coauthor",
+        nearClass: () => "coauthor-node",
+    });
     fillCard(card, node);
     return node.union(coauthors);
 }
@@ -110,7 +111,7 @@ function selectAuthor(node, card) {
 export function bindCoauthorSelection(cy, card, focus) {
     bindSelection(cy, card, focus, {
         selector: "node",
-        classes: "faded selected coauthor coauthor-node",
+        classes: `faded selected coauthor coauthor-node ${DISTANCE_CLASSES}`,
         select: selectAuthor,
     });
 }

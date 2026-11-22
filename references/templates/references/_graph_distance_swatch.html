@@ -1,0 +1,17 @@
+{% comment %}
+    The nodes of a selection, lighter at each step away from the selected node (#472,
+    graph/distance.js): three dots at distances 1, 2 and 3, of the past (cited, also the
+    coauthors and the keywords) or of the future (group="citing"); the links take the same
+    colours. Each dot is a swatch that the exported image draws again (graph/export.js).
+{% endcomment %}
+{% if group == "citing" %}
+    <span class="mr-0.5 inline-block size-2.5 rounded-full align-middle bg-graph-citing"
+          aria-hidden="true"></span><span class="mr-0.5 inline-block size-2.5 rounded-full align-middle bg-graph-citing-light"
+      aria-hidden="true"></span><span class="inline-block size-2.5 rounded-full align-middle bg-graph-citing-lighter"
+      aria-hidden="true"></span>
+{% else %}
+    <span class="mr-0.5 inline-block size-2.5 rounded-full align-middle bg-graph-cited"
+          aria-hidden="true"></span><span class="mr-0.5 inline-block size-2.5 rounded-full align-middle bg-graph-cited-light"
+      aria-hidden="true"></span><span class="inline-block size-2.5 rounded-full align-middle bg-graph-cited-lighter"
+      aria-hidden="true"></span>
+{% endif %}

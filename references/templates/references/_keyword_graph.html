@@ -48,8 +48,8 @@
     <li>Taille : nombre de publications qui le portent</li>
     <li>Épaisseur : nombre de publications qui portent les deux</li>
     <li>
-        Après un clic :
-        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses liens
+        Après un clic, plus clair à chaque pas, jusqu'à&nbsp;3 :
+        {% include "references/_graph_distance_swatch.html" %}ses voisins et les leurs
     </li>
 {% endblock legend %}
 {% block script %}
