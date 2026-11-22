@@ -263,7 +263,7 @@ class HandlersTests(TestCase):
         request = fetch_queue.enqueue_action(
             Action.GRAPH_IMAGE, self.user, identifier=GraphImage.Kind.BASE
         )
-        with patch.object(graph_images, "render_svg", return_value="<svg/>"):
+        with patch.object(graph_images, "render", return_value=("<svg/>", "{}")):
             self.assertEqual(self.outcome(request), (Status.DONE, ""))
         self.assertEqual(GraphImage.objects.get().status, GraphImage.Status.DONE)
 
@@ -272,7 +272,7 @@ class HandlersTests(TestCase):
         request = fetch_queue.enqueue_action(
             Action.GRAPH_IMAGE, self.user, identifier=GraphImage.Kind.BASE
         )
-        with patch.object(graph_images, "render_svg", side_effect=ValueError("trop grand")):
+        with patch.object(graph_images, "render", side_effect=ValueError("trop grand")):
             status, error = self.outcome(request)
         self.assertEqual(status, Status.FAILED)
         self.assertIn("trop grand", error)

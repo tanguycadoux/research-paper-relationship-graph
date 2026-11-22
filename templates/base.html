@@ -13,7 +13,12 @@
         <script src="{% static 'js/busy.js' %}" defer></script>
         {% block head %}{% endblock head %}
     </head>
-    <body class="flex min-h-screen flex-col bg-gray-50 text-gray-900 antialiased">
+    {% comment %}
+        The page grows with its content and the window scrolls; a page that must fit in the
+        window (the browsing of an image, #453) sets page_height, and only its panels scroll.
+        The min-h-0 below let it shrink to the window; they change nothing elsewhere.
+    {% endcomment %}
+    <body class="flex {% block page_height %}min-h-screen{% endblock page_height %} flex-col bg-gray-50 text-gray-900 antialiased">
         <a href="#contenu"
            class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:shadow">Aller au contenu</a>
         <header class="border-b border-gray-200 bg-white">
@@ -71,10 +76,11 @@
                 </div>
             </div>
         </header>
-        <div class="flex flex-1 flex-col md:flex-row">
+        <div class="flex min-h-0 flex-1 flex-col md:flex-row">
             {% main_navigation %}
-            <main id="contenu" class="flex min-w-0 flex-1 flex-col p-4 md:p-8">
-                <div class="mx-auto flex w-full max-w-5xl flex-1 flex-col">
+            {# The whole width, for the tables and the graphs (no max-w): only the texts keep theirs. #}
+            <main id="contenu" class="flex min-h-0 min-w-0 flex-1 flex-col p-4 md:py-6 lg:px-6">
+                <div class="flex min-h-0 w-full flex-1 flex-col">
                     {% block content %}{% endblock content %}
                 </div>
             </main>

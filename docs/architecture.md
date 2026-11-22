@@ -218,6 +218,13 @@ references/          application principale
     keywords.js      point d'entrée de la carte des mots-clés (co-occurrence)
     keyword_selection.js  sélection d'un mot-clé : ses publications, ses voisins les plus liés
     keyword_labels.js  noms des mots-clés dessinés là où ils ne se chevauchent pas
+    image_viewer.js  point d'entrée de la page qui parcourt l'image d'un grand graphe (#453)
+    image_view.js    sa vue : zoom à la molette, déplacement, « Tout voir » (viewBox)
+    image_pointer.js  le nœud sous le pointeur : infobulle, surbrillance, clic qui le sélectionne
+    image_highlight.js  nœuds en surbrillance (survolé, sélectionnés et leurs liens), dans un SVG à part
+    image_selection.js  nœuds sélectionnés, listés au-dessus de tous : centrer, page, retirer, tout désélectionner
+    image_minimap.js  minicarte (points dans un canvas, rectangle de la partie vue)
+    image_nodes.js   liste des nœuds : recherche, tri, seules les lignes visibles dessinées
   templates/references/  pages et gabarits partiels (_publication_table, _citation_graph, _graph_frame : cadre commun des graphes, étendu par _citation_graph, _author_graph et _keyword_graph ; _graph_warning_icon : icône Material `warning` des références à identifier d'un nœud…)
     publication_detail/  sections de la fiche publication, une par partiel (_header, _actions,
                      _authors, _abstract, _note, _information, _references, _cited_by,
@@ -247,7 +254,7 @@ static/
   js/graph_image.js  image d'un grand graphe : état demandé jusqu'à ce qu'elle soit prête
   vendor/cytoscape/  Cytoscape.js embarqué
 tools/check_js.sh    syntaxe de chaque fichier JavaScript (node --check), lancée par la CI (#341)
-tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202), libellés de l'export PNG (labels.py, #421)
+tools/graph_bench/   banc d'essai des graphes : base grossie, mesures de la disposition (bench.py) et du dessin pendant un geste (frames.py) dans Chrome headless (#202), libellés de l'export PNG (labels.py, #421), images de la page qui parcourt un grand graphe (image_frames.py, #453)
 docs/                cette documentation
 ```
 
