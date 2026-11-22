@@ -159,6 +159,7 @@ references/          application principale
       graph.py       construction des données des graphes
       graph_variants.py  variantes d'un graphe choisies dans l'URL (frise ou réseau…)
       graph_images.py  image SVG d'un grand graphe, calculée sur le serveur (igraph)
+      large_graph_layout.py  disposition de ces images : composante par composante, feuilles en couronne
       author_graph.py  graphe des auteurs (coautorat pondéré, grandes collaborations écartées)
       keyword_graph.py  carte des mots-clés ou des thèmes d'OpenAlex d'un corpus (co-occurrence,
                      seuil), et le filtre de « Mon corpus » sur un terme

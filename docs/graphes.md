@@ -490,17 +490,33 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
   comme mort et peut être relancé (une demande déjà en file n'est pas dédoublée).
   Pendant le calcul, `static/js/graph_image.js` interroge l'état toutes les 2 s
   (`/graph/image/<kind>/status/`) et recharge la page une fois l'image prête.
-- **Disposition** : igraph (dépendance du projet), Fruchterman-Reingold, **composante par
-  composante** : chaque groupe relié dans un carré à sa mesure, les carrés rangés par
-  taille décroissante, puis les nœuds sans lien en grille. Disposés ensemble, les petits
-  groupes et les auteurs isolés (ceux des grandes collaborations, qui ne relient personne)
-  s'étalaient sur toute l'image autour d'un petit cœur relié.
+- **Disposition** (`services/display/large_graph_layout.py`, #420) : igraph (dépendance
+  du projet), **composante par composante** : chaque groupe relié dans une boîte à sa
+  mesure, les boîtes rangées par taille décroissante, puis les nœuds sans lien en grille.
+  Disposés ensemble, les petits groupes et les auteurs isolés (ceux des grandes
+  collaborations, qui ne relient personne) s'étalaient sur toute l'image autour d'un petit
+  cœur relié. Dans un groupe :
+  - les **feuilles** (nœuds d'un seul lien : la plupart des références, citées une fois)
+    sont mises de côté, puis rangées **en couronne** autour de leur nœud, les plus grosses
+    à l'intérieur, chaque anneau aussi plein que son périmètre le permet. Disposées avec les
+    autres, elles serraient chaque article dans un « pissenlit » ;
+  - le **cœur** (les autres nœuds) est disposé par Fruchterman-Reingold (3 000 itérations,
+    au lieu de 500), ses **liens pondérés** (rapportés à leur médiane, bornés entre 0,25 et
+    8) : deux auteurs qui signent souvent ensemble sont plus proches que les cosignataires
+    d'un seul gros article ;
+  - **plus de place** : le cœur est agrandi pour que son lien médian vaille 4 fois le
+    diamètre de ses extrémités (couronnes comprises) et que ses disques couvrent au plus un
+    sixième de son carré ; puis les nœuds dont les couronnes se chevauchent sont écartés,
+    paire par paire (grille de voisinage, 80 passes au plus).
+  Le générateur d'igraph est fixé : la même base donne la même image. DrL, essayé, tassait
+  chaque groupe en un point (78 s pour les auteurs).
 - **SVG** : un cercle par nœud (taille selon les publications ou les citations), lien vers
   sa page et nom au survol (`<title>`) ; les noms des 150 plus gros nœuds écrits à côté ;
   les liens en quelques chemins, un par épaisseur (quartiles du poids), pour que le
   fichier reste léger. Servi avec `Content-Security-Policy: default-src 'none'`.
-- **Mesures** (base de banc) : graphe des auteurs, 1,2 s et 2,9 Mo ; graphe de la base,
-  0,6 s et 0,5 Mo.
+- **Mesures** (base de banc, disposition seule) : graphe des auteurs, 4,6 s (0,7 s avant
+  #420) et 3,0 Mo ; graphe de la base, 0,7 s (0,2 s avant) et 0,5 Mo. L'image, plus
+  compacte, passe de 6 246 × 9 362 à 3 947 × 6 310 px pour les auteurs.
 - **Fraîcheur** : la signature de l'image (nombres et derniers identifiants des
   publications, des créneaux d'auteurs, des citations) dit quand la base a changé depuis ;
   la page le signale et propose « Recalculer l'image ».
