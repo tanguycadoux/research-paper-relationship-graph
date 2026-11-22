@@ -393,7 +393,11 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   base de 76 publications et 85 citations, 161 éléments, anime et zoome comme avant).
   Au-delà :
   - les tailles fixes à l'écran sont réévaluées **une fois le zoom arrêté** (150 ms sans
-    changement) ; pendant le geste, elles grandissent avec le zoom, comme une image ;
+    changement) ; pendant le geste, elles grandissent avec le zoom, comme une image. Puis
+    par parties (#326, `screen_size.js`) : les éléments dans la vue d'abord, d'un coup,
+    puis les autres, 8 ms par image, sans redessiner pour eux ; un nouveau zoom arrête
+    cette passe. La vue d'ensemble, qui réévalue tout pour se mesurer (`measure`), ne la
+    relance pas ;
   - la **sélection va directement à sa vue**, sans animation, les tailles réévaluées une
     fois : sans réévaluation à chaque image, l'animation ferait gonfler les nœuds jusqu'à
     4 fois (le zoom de la sélection) avant de les réduire ;
@@ -409,8 +413,10 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
     tout le canevas (40 ms à 1 000 publications, 140 ms à 2 000) : l'infobulle seule, les
     liens ne foncent pas. Le survol revient à 17 ms par image ;
   - en vue réseau, la disposition se fait dans un Web Worker (voir « Vue Réseau »).
-  Limite connue : la réévaluation unique à la fin d'un zoom ou d'une sélection reste une
-  image longue (190 ms sur 1 800 publications).
+  Limite connue : quand la vue montre presque tout le graphe (retour à la vue
+  d'ensemble), la réévaluation à la fin du zoom reste une image longue (210 ms sur 1 800
+  publications) ; zoomé, elle ne porte que sur ce qui est vu (130 ms au lieu de 190 à
+  2,5 fois la vue d'ensemble). Mesures dans [banc-graphe.md](banc-graphe.md).
 - **Export en image** (#175, `export.js`) : le bouton « Exporter (PNG) » du panneau
   télécharge le graphe affiché en PNG (`cy.png`, deux fois la taille à l'écran,
   multipliée par la densité de pixels), tel qu'à l'écran, sélection comprise. L'axe des
@@ -438,7 +444,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   chargé avec `type="module"` après Cytoscape), `graph.js` (commun à tous les graphes :
   éléments du cadre, création du graphe Cytoscape, puis vue, sélection et export),
   `card.js` (commun aussi : carte de la sélection et gestes de la sélection), `scale.js` (dates et échelle),
-  `viewport.js` (cadrage, bornes de la vue, tailles fixes à l'écran), `focus.js`
+  `viewport.js` (cadrage, bornes de la vue), `screen_size.js` (tailles fixes à l'écran,
+  réévaluées par parties sur un grand graphe), `focus.js`
   (recentrage à la sélection), `stretch.js` (étirement des positions à la sélection),
   `export.js` (export PNG), `export_labels.js` (noms des nœuds sur l'image),
   `layout.js` (position des nœuds sur la frise), `network.js` (disposition en réseau),
@@ -452,7 +459,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   (`tools/check_js.sh`, `node --check`, sans npm, #341) ; le comportement se vérifie dans
   Chrome headless (banc). Fonctions courtes, comme en Python : la vue
   (`viewport.js`) sépare la vue d'ensemble et ses bornes (`makeWholeView`), le bouton
-  « Vue d'ensemble » (`bindShowAllButton`) et les tailles à l'écran (`keepScreenSize`) ;
+  « Vue d'ensemble » (`bindShowAllButton`), et les tailles à l'écran ont leur module
+  (`keepScreenSize`, `screen_size.js`) ;
   le recentrage (`focus.js`) sépare l'animation (`makeMover`) de la sélection ; le style
   est fait de trois groupes de règles (nœuds, liens, sélection).
 - **Cytoscape.js est embarqué** dans `static/vendor/cytoscape/` (version épinglée,
