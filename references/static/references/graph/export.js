@@ -71,7 +71,7 @@ function swatchOutline(style) {
     return { width, offset: parseFloat(style.outlineOffset) || 0, color: style.outlineColor };
 }
 
-// The border of a round swatch (a publication of level 2, hollow, #451), or null.
+// The border of a round swatch (the contour of a node, #470), or null.
 function swatchBorder(style) {
     const width = parseFloat(style.borderTopWidth);
     return width ? { width, color: style.borderTopColor } : null;

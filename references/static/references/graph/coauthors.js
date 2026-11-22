@@ -6,7 +6,7 @@
 import { bindCoauthorSelection } from "./coauthor_selection.js";
 import { bindGraph, createGraph, graphFrame, LAYOUT_MEASURE } from "./graph.js";
 import { COSE, spiralPosition } from "./network.js";
-import { color, graphStyle } from "./style.js";
+import { color, graphStyle, linkColor } from "./style.js";
 
 // Diameter of a node on the screen: its area follows the number of publications.
 const MIN_SIZE = 14;
@@ -91,7 +91,7 @@ function coauthorStyle() {
         },
         {
             selector: "edge.coauthor",
-            style: { width: width(1), "line-color": color("cited-light"), opacity: 1, "z-index": 5 },
+            style: { width: width(1), "line-color": linkColor("cited"), opacity: 1, "z-index": 5 },
         },
     ];
 }

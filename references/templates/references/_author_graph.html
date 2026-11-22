@@ -49,13 +49,13 @@
 {% block legend %}
     {% if author %}
         <li>
-            <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
+            <span class="mr-1 inline-block size-3 rounded-full border border-graph-source-border bg-graph-source align-middle"
                   aria-hidden="true"></span>
             Cet auteur
         </li>
     {% endif %}
     <li>
-        <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+        <span class="mr-1 inline-block size-3 rounded-full border border-graph-cited-border bg-graph-cited align-middle"
               aria-hidden="true"></span>
         {% if author %}
             Coauteur
@@ -70,7 +70,7 @@
     {% if duplicates_grouped and graph.groups %}
         <li>
             {# The outline of graph/coauthors.js, also drawn on the exported image (graph/export.js). #}
-            <span class="mr-1.5 ml-0.5 inline-block size-3 rounded-full bg-graph-cited align-middle outline-2 outline-offset-1 outline-graph-edge-strong"
+            <span class="mr-1.5 ml-0.5 inline-block size-3 rounded-full border border-graph-cited-border bg-graph-cited align-middle outline-2 outline-offset-1 outline-graph-edge-strong"
                   aria-hidden="true"></span>
             Doublons probables regroupés ({{ graph.groups }})
         </li>

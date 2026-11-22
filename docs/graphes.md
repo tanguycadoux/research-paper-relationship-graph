@@ -10,8 +10,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   public comme la liste des publications, ouvert depuis elle par « Graphe des
   publications », sans entrée de menu comme celui des auteurs, #391) montre toutes les publications, y compris
   celles sans citation identifiée, et toutes les citations identifiées. Les publications
-  du corpus de la personne connectée y sont en bleu (`source`), les autres en vert d'eau
-  (`other`). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
+  du corpus de la personne connectée y sont en bleu (`source`), les autres en vert
+  (`other`, comme une publication citée). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
   la position rendait distinctes deux citations d'une même publication.
 - **Graphe d'un tag** (#290) : « Mon graphe » peut se limiter à un tag et ses sous-tags
   (`?tag=Projet`), choisi dans une liste du panneau du graphe (envoyée dès qu'elle change,
@@ -34,7 +34,7 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   du graphe ; la publication reste sélectionnée (`?noeud=<id>`, que `main.js` relit au
   chargement). Changer de niveau oublie ces choix. Niveau 2 au plus pour
   l'instant : une publication du niveau 2 ne se développe pas. Le niveau se lit sur le
-  nœud (**creux**, un anneau de la couleur de son rôle, `style.js`, avec sa ligne dans la
+  nœud (**plus clair** à chaque niveau, #470, `palette.js`, avec sa ligne dans la
   légende et sur l'image exportée) et dans l'infobulle (« Niveau 2 ») dès que le graphe
   dépasse le niveau 1 ; la carte le dit aussi. Le graphe de la base n'a pas de niveau.
 - **Développer sans recharger** (#451, `expand.js`) : « Développer », « Réduire » et le
@@ -108,7 +108,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   (`{% graph_warning_icon %}`, `templatetags/ui/icons.py`, couleurs écrites en clair car
   l'image est lue sans la feuille de style), que la légende et la carte affichent
   (`_graph_warning_icon.html`), que `style.js` pose sur les nœuds comme image de fond
-  (`background-image`, hors du nœud, `bounds-expansion` pour ne pas la couper), et que
+  (`background-image`, son centre sur le cercle du nœud à 45° en haut à droite, #470,
+  `bounds-expansion` pour ne pas la couper), et que
   `export.js` redessine dans la légende de l'image exportée. La légende (« Références à
   identifier ») ne l'explique que si un nœud la porte. Durées de frame
   inchangées sur « Mon graphe » (96 publications, 15 marquées) et sur le graphe d'une
@@ -274,18 +275,29 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   l'ensemble, mesuré à nouveau. D'un coup sur un grand graphe ou si les animations sont
   réduites, comme une sélection. Le dessin dépend du nombre d'essais qui tiennent dans le
   temps, donc un peu de la machine et de sa charge ; les graines, elles, sont fixes.
-- **Style** (#139, #140, `style.js`) : la couleur d'un nœud dit son **rôle** (`role` dans
-  les données) : `source` en bleu (la publication du graphe, ou celles du corpus),
-  `citing` en orange (une publication qui la cite), `cited` en vert d'eau (citée
-  seulement). Sa **taille** suit
+- **Style** (#139, #140, #470, `style.js`, `palette.js`) : en OKLCH, la **teinte** d'un
+  nœud dit son **rôle** (`role` dans les données) et sa **luminance** son **niveau**.
+  Le centre, `source` (la publication du graphe, celles du corpus, l'auteur), est en bleu,
+  oklch(0.6 0.2 264). Le passé, `cited` (citée seulement, ou une autre publication de la
+  base), est en vert, teinte 155 ; l'avenir, `citing` (une publication qui la cite), en
+  rose framboise, teinte 345, tous deux de chroma 0,12. La luminance suit
+  L(n) = 0,9 − 0,3 × (2/3)ⁿ : 0,6 pour le centre (niveau 0), 0,70 au niveau 1, 0,767
+  au niveau 2, vers 0,9 sans atteindre le blanc. Le **contour** du nœud a la même teinte,
+  0,2 plus sombre ; le nœud sélectionné garde un anneau noir. Les **liens d'une
+  sélection** prennent la couleur du groupe vers lequel ils mènent, à la luminance du
+  niveau suivant celui du nœud voisin. Teintes 155 et 345 plutôt que 164 et 4 : le passé
+  et l'avenir restent distincts pour un daltonien rouge-vert (écart ΔE de 6,3 à 6,6 du
+  niveau 1 au niveau 4, contre 1,0). Cytoscape ne lit pas `oklch()` : `palette.js`
+  convertit en sRGB, en baissant seulement la chroma d'une couleur hors gamut. Sa **taille** suit
   son nombre de citations dans la base (aire proportionnelle). Tailles des nœuds, épaisseurs
   des liens et libellés sont **fixes à l'écran** (#185) : divisées par le zoom, réévaluées
   au plus une fois par image (`requestAnimationFrame`) quand le zoom change, ou à l'arrêt
   du zoom sur un grand graphe (voir « Grands graphes »). Zoomer écarte
-  donc les nœuds sans les grossir, ce qui sépare les publications proches en date. Les couleurs sont définies
+  donc les nœuds sans les grossir, ce qui sépare les publications proches en date. Les teintes et les chromas sont définies
   une seule fois, en variables de thème Tailwind (`--color-graph-*` dans
-  `assets/css/source.css`) : la légende HTML utilise les classes, Cytoscape lit les
-  variables. Palette vérifiée (daltonisme, contraste d'au moins 3:1 sur blanc). Liens au repos
+  `assets/css/source.css`) : la légende HTML utilise les classes, `palette.js` lit les
+  variables et calcule la luminance de chaque niveau. L'image SVG des grands graphes, sa
+  minicarte et sa surbrillance écrivent leurs couleurs en sRGB, avec un commentaire. Liens au repos
   droits, gris, sans flèche : une
   publication cite des publications plus anciennes, à sa gauche. Survoler un nœud affiche
   son titre dans une **infobulle HTML** (`hover.js`, `data-graph-tooltip`) au-dessus du
@@ -309,8 +321,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   sélection (voir plus bas), qu'elle suit : les années restent sous les nœuds. Le pas des graduations dépend de
   la place à l'écran (au moins 60 px entre deux libellés), pas de la plage d'années (#62).
 - **Sélection** (#61) : un clic sur un article met en évidence ses références (nœuds
-  vert d'eau) et les articles qui le citent (nœuds orange), chaque lien dans une nuance
-  plus claire de son nœud, et estompe le reste. La carte d'informations HTML
+  verts) et les articles qui le citent (nœuds roses), chaque lien dans la couleur de son
+  groupe à la luminance du niveau suivant (#470), et estompe le reste. La carte d'informations HTML
   (`#citation-graph-card`) est compacte (#187) : le titre est le lien vers la fiche, puis
   la revue (lue dans la réponse stockée de Crossref ou de DataCite, dans la même
   requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la
@@ -434,7 +446,7 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   `axis.js` (axe des années), `selection.js` (ce que sélectionne
   un clic sur une publication et le remplissage de sa carte), `expand.js` (développer ou
   réduire sans recharger la page, #451), `hover.js` (survol : infobulle, et liens foncés sous 600 éléments), `style.js`
-  (couleurs et feuille de style Cytoscape). Pas de Node ni de tests
+  (feuille de style Cytoscape), `palette.js` (couleurs OKLCH par rôle et par niveau, #470). Pas de Node ni de tests
   JavaScript dans l'application : la CI vérifie seulement la syntaxe de chaque fichier
   (`tools/check_js.sh`, `node --check`, sans npm, #341) ; le comportement se vérifie dans
   Chrome headless (banc). Fonctions courtes, comme en Python : la vue
@@ -500,7 +512,7 @@ dessin que les graphes de citations, en vue réseau seulement.
   PNG. Les éléments de la page portent les mêmes identifiants
   (`citation-graph`, `citation-graph-data`…), que lisent aussi les outils du banc.
 - **Sélection** (`coauthor_selection.js`) : un clic sur un auteur met en avant ses
-  coauteurs et leurs liens (vert d'eau clair), estompe le reste et zoome sur eux. La carte
+  coauteurs et leurs liens (vert clair, la luminance du niveau suivant, #470), estompe le reste et zoome sur eux. La carte
   du panneau donne son nom (lien vers sa fiche), son nombre de publications dans la base,
   son nombre de coauteurs dans ce graphe, et ses trois liens les plus forts (avec le
   nombre de publications communes). Survol : le nom, dans l'infobulle en verre dépoli des
@@ -718,7 +730,7 @@ calculée sur le serveur et gardée pour tous (`services/display/graph_images.py
     `pointer-events="none"`.
   - **Surbrillance** (`image_highlight.js`) : un second SVG, vide, posé sur l'image avec le
     même `viewBox`, porte l'anneau du nœud survolé (bleu) et ceux des nœuds sélectionnés
-    (orange), avec leurs liens tracés à partir de la liste. Les anneaux gardent 6 pixels
+    (rose, `--color-graph-citing`), avec leurs liens tracés à partir de la liste. Les anneaux gardent 6 pixels
     d'écart et 3 pixels d'épaisseur quel que soit le zoom (`non-scaling-stroke`) : un nœud
     de 3 pixels se voit dans la vue d'ensemble.
   - **Minicarte** (`image_minimap.js`) : les nœuds dessinés une fois en points dans un

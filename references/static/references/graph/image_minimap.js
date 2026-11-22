@@ -5,7 +5,8 @@
 
 // The longest side of the minimap, in pixels: at most a third of the width of the frame.
 const SIDE = 180;
-const DOT_COLOR = "#179e6e";
+// A node of level 1, --color-graph-cited (assets/css/source.css, #470) in sRGB.
+const DOT_COLOR = "#59b47d";
 
 export function createMinimap(box, nodes, view) {
     const canvas = box.querySelector("canvas");

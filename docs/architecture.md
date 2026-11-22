@@ -217,6 +217,7 @@ references/          application principale
     expand.js        développer ou réduire le graphe sans recharger la page, en animation
     hover.js         survol : infobulle, liens foncés sur un petit graphe
     style.js         style des nœuds et des liens
+    palette.js       couleurs OKLCH : teinte du rôle, luminance du niveau, conversion en sRGB
     export.js        export PNG (partagé avec le graphe des auteurs)
     export_labels.js  placement des noms des nœuds sur l'image exportée
     coauthors.js     point d'entrée du graphe des auteurs (coautorat)

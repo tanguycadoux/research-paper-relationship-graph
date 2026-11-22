@@ -5,8 +5,8 @@
 
 const SVG = "http://www.w3.org/2000/svg";
 const HOVER_COLOR = "#1d4ed8";
-// --color-graph-citing (assets/css/source.css).
-const CHECKED_COLOR = "#eb6834";
+// --color-graph-citing (assets/css/source.css, #470) in sRGB.
+const CHECKED_COLOR = "#d37faf";
 // The ring around a node: this many pixels of the screen beyond it, whatever the zoom,
 // so that a node of a few pixels shows in the view of the whole image.
 const RING_GAP = 6;
