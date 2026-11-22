@@ -3,11 +3,12 @@
 // (services/display/keyword_graph.py), in the network view only. Entry point, loaded as
 // an ES module after cytoscape.min.js (global `cytoscape`). The frame, the view, the
 // uniform zoom on a selection and the export are those of every graph (graph.js); the
-// names are drawn where they fit (keyword_labels.js).
+// names are drawn where they fit (node_labels.js), and the page says how many are hidden.
 
+import { turnGraphToFrame } from "./crown.js";
 import { bindGraph, createGraph, graphFrame, LAYOUT_MEASURE } from "./graph.js";
-import { bindKeywordLabels, labelRules } from "./keyword_labels.js";
 import { bindKeywordSelection } from "./keyword_selection.js";
+import { bindNodeLabels, labelRules } from "./node_labels.js";
 import { COSE, spiralPosition } from "./network.js";
 import { graphStyle, linkColor } from "./style.js";
 
@@ -79,6 +80,8 @@ function layOut(cy) {
         idealEdgeLength: (edge) => lerp(LONGEST_EDGE, SHORTEST_EDGE, edge.data("strength")),
         edgeElasticity: (edge) => lerp(SOFTEST_EDGE, STIFFEST_EDGE, edge.data("strength")),
     }).run();
+    // A network has no direction: turned to fill the frame (#468).
+    turnGraphToFrame(cy);
     performance.measure(LAYOUT_MEASURE, LAYOUT_MEASURE);
 }
 
@@ -92,7 +95,7 @@ function render() {
     // Never stretched: the network keeps its distances (#195).
     const bindSelection = bindKeywordSelection(frame.data.publications);
     bindGraph(cy, frame, { bindSelection, uniform: true });
-    bindKeywordLabels(cy, fontFamily);
+    bindNodeLabels(cy, fontFamily);
 }
 
 render();

@@ -12,7 +12,8 @@ const MIN_SHORTENED = 4;
 // neighbours; otherwise the sources (the publication of the graph, or the corpus). The
 // selected publication first, then the most cited: they keep their label when two
 // labels would overlap. On a coauthorship graph (#222): the selected author and their
-// coauthors, or the author of the graph; the most published first.
+// coauthors, or the author of the graph; the most published first. Those already named
+// in the canvas (class `labelled`, node_labels.js, #468) are not named twice.
 function labelledNodes(cy) {
     const selected = cy.nodes(".selected");
     const nodes = selected.nonempty()
@@ -20,6 +21,7 @@ function labelledNodes(cy) {
         : cy.nodes('[role = "source"]');
     const rank = (node) => node.data("citedBy") ?? node.data("publications");
     return nodes
+        .not(".labelled")
         .filter((node) => node.data("shortLabel"))
         .sort(
             (a, b) =>
@@ -98,16 +100,20 @@ function shortenedPlaces(context, text, x, y, radius, frameWidth, height) {
 // there is none, in the first that covers no other label nor a labelled node (an
 // unlabelled node may then be partly hidden); if there is none either, shortened to the
 // room beside the node. A label without such a place is left out: none crosses the edge
-// of the image (#421).
+// of the image (#421). Nor does any cover a name drawn in the canvas (node_labels.js).
 export function placeLabels(context, cy, nodes, width, height) {
     const labelled = inView(nodes, width, height);
     const allDiscs = discs(inView(cy.nodes(), width, height));
     const labelledDiscs = discs(labelled);
+    const drawn = cy
+        .nodes(".labelled")
+        .map((node) => node.renderedBoundingBox({ includeNodes: false, includeOverlays: false }));
     const fits = (candidate, obstacles) =>
         candidate.x1 >= 0 &&
         candidate.x2 <= width &&
         candidate.y1 >= 0 &&
         candidate.y2 <= height &&
+        !drawn.some((other) => overlaps(candidate, other)) &&
         !obstacles.some((other) => overlaps(candidate, other));
     const placed = [];
     for (const node of labelled) {

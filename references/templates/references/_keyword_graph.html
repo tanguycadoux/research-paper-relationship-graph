@@ -6,6 +6,14 @@
 {% endcomment %}
 {% block graph_label %}Graphe des {{ terms.plural }}{% endblock graph_label %}
 {% block export_name %}{{ graph_export }}{% endblock export_name %}
+{% block frame_overlays %}
+    {# How many names are hidden so as not to overlap (#468), said by graph/node_labels.js. #}
+    <p class="pointer-events-none absolute bottom-2 left-2 z-10 mr-2 max-w-sm px-2 py-1 text-xs text-gray-700 select-none {% glass_classes %}"
+       data-graph-hidden-labels
+       data-singular="1 nom masqué : zoomez, ou survolez son nœud"
+       data-plural="{n} noms masqués : zoomez, ou survolez les nœuds"
+       hidden></p>
+{% endblock frame_overlays %}
 {% block help %}
     {% include "references/_graph_help.html" with help="keywords" %}
 {% endblock help %}

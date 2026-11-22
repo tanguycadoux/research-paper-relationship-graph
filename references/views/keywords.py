@@ -22,11 +22,14 @@ def kind_links(query, current):
 
 
 def kept_params(terms, minimum):
-    """What the forms of the page keep (the tag, the threshold): the choices made."""
+    """
+    What the forms of the page keep (the tag, the threshold): the choices made. A
+    threshold only when one was asked: the default depends on the corpus or the tag (#468).
+    """
     kept = {}
     if terms is not keyword_graph.KEYWORDS:
         kept["kind"] = terms.field
-    if minimum != keyword_graph.DEFAULT_MINIMUM:
+    if minimum is not None:
         kept["min"] = minimum
     return kept
 
@@ -35,12 +38,14 @@ def kept_params(terms, minimum):
 def corpus_keywords(request):
     tag, tag_tree = requested_tag(request)
     terms = keyword_graph.requested_kind(request.GET)
-    minimum = keyword_graph.requested_minimum(request.GET)
-    kept = kept_params(terms, minimum)
+    requested = keyword_graph.requested_minimum(request.GET)
+    graph = keyword_graph.keyword_graph(request.user, tag, terms, requested)
+    kept = kept_params(terms, requested and graph["minimum"])
     context = {
-        "graph": keyword_graph.keyword_graph(request.user, tag, terms, minimum),
+        "graph": graph,
         "terms": terms,
-        "minimum": minimum,
+        "minimum": graph["minimum"],
+        "most_terms": keyword_graph.MOST_TERMS,
         "graph_variants": kind_links(request.GET, terms),
         "variants_label": "Mots-clés ou thèmes",
         # The tag form keeps the kind and the threshold, the threshold form the kind.

@@ -17,7 +17,7 @@ export function color(name) {
 }
 
 // A length in pixels on the screen, whatever the zoom. Cytoscape evaluates it again when
-// the style is updated (keepScreenSize in viewport.js).
+// the style is updated (keepScreenSize in screen_size.js).
 function onScreen(pixels) {
     return (element) => pixels / element.cy().zoom();
 }

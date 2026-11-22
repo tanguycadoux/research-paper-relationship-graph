@@ -1,8 +1,10 @@
 // A layout of a citation graph out of the page, in a Web Worker (layout-worker.js, #202,
 // #323): the page keeps responding, and shows that it waits. A small graph given little
-// time is laid out in the page, without a message that would only flash. One layout at a
-// time: a new one stops the one in progress.
+// time is laid out in the page, without a message that would only flash. A layout already
+// done for the same data is taken from the browser (layout_cache.js, #327). One layout at
+// a time: a new one stops the one in progress.
 
+import { keepLayout, keptLayout, layoutKey } from "./layout_cache.js";
 import { LIVE_SIZES_MAX_ELEMENTS } from "./viewport.js";
 
 // Beyond this many elements (nodes and edges), the layout goes to the worker, whatever the
@@ -16,6 +18,8 @@ const IN_PAGE_MAX_BUDGET = 100;
 export const CANCELLED = Symbol("cancelled");
 
 let running = null;
+// The last layout asked for (layOutKept): an earlier one still reading the browser gives way.
+let latest = 0;
 
 function startWorker() {
     try {
@@ -61,4 +65,28 @@ export function layOutAside(message, waiting, always = false) {
         const library = document.querySelector('script[src$="/cytoscape.min.js"]').src;
         worker.postMessage({ ...message, library });
     });
+}
+
+// A layout of the graph of message (see layOutAside), taken from the browser when it was
+// done before for the same data, else done in the Web Worker or, through inPage(), in the
+// page, then kept. inPage() returns the reply the worker would give. Resolves to that
+// reply, or to CANCELLED when a newer layout was asked for meanwhile.
+export async function layOutKept(message, waiting, { always = false, inPage }) {
+    const ticket = ++latest;
+    running?.cancel();
+    const key = layoutKey(message);
+    const kept = await keptLayout(key, message);
+    if (ticket !== latest) {
+        return CANCELLED;
+    }
+    if (kept) {
+        return kept;
+    }
+    const reply = await layOutAside(message, waiting, always);
+    if (reply === CANCELLED || ticket !== latest) {
+        return CANCELLED;
+    }
+    const done = reply ?? inPage();
+    keepLayout(key, done);
+    return done;
 }
