@@ -25,6 +25,19 @@ function fillLevel(card, data) {
     }
 }
 
+// Its references to identify, in the corpus of the user (#452), and the link to identify
+// them in series.
+function fillToIdentify(card, data) {
+    const row = card.querySelector('[data-card-row="identify"]');
+    if (!row) {
+        return;
+    }
+    const count = data.toIdentify ?? 0;
+    row.hidden = !count;
+    cardField(card, "to-identify").textContent = `${count} référence${count > 1 ? "s" : ""} à identifier`;
+    cardField(card, "identify").querySelector("a").href = data.identifyUrl ?? "#";
+}
+
 function fillCard(card, data, referenceCount, citingCount) {
     const field = (name) => cardField(card, name);
     const showRow = (name, visible) => {
@@ -45,6 +58,7 @@ function fillCard(card, data, referenceCount, citingCount) {
     const citations = data.citedBy;
     field("cited-by").textContent = `${citations} citation${citations > 1 ? "s" : ""} dans la base`;
     fillLevel(card, data);
+    fillToIdentify(card, data);
 }
 
 // An edge goes from the citing publication to the cited one. Returns the nodes the view

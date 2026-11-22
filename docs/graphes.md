@@ -59,11 +59,30 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   auteurs) : la page dessine le graphe avec les règles des grands graphes (tailles
   réévaluées à l'arrêt du zoom, sélection sans animation, réseau dans un worker). « Mon
   graphe » du banc dépasse déjà ce seuil au niveau 1.
+- **Références à identifier** (#452) : une publication du **corpus de l'utilisateur
+  connecté** qui a des références à identifier (`to_identify_q`, #293) porte une petite
+  icône d'attention ambre en haut à droite du nœud (l'ambre attend une action,
+  CONTRIBUTING). Les autres n'en ont pas : une publication seulement citée n'a souvent pas
+  de bibliographie en base (choix retenu). L'infobulle et la carte disent « n références à
+  identifier », la carte avec « Identifier », qui ouvre l'identification en série à la
+  première (`?serie=1`, #242). Sur les graphes d'une publication, du corpus, d'un tag et de
+  la base. Le compte, la présence dans le corpus et la position de la première sont des
+  sous-requêtes de la requête des nœuds (`graph.to_identify_annotations`) : aucune requête
+  de plus, et le nombre de citations n'est pas multiplié. L'icône est dessinée une fois,
+  en SVG (`_graph_warning_icon.html`, couleurs écrites en clair) : la légende l'affiche,
+  `style.js` la pose sur les nœuds comme image de fond (`background-image`, hors du nœud,
+  `bounds-expansion` pour ne pas la couper), et `export.js` la redessine dans la légende
+  de l'image exportée. La légende ne l'explique que si un nœud la porte. Durées de frame
+  inchangées sur « Mon graphe » (96 publications, 15 marquées) et sur le graphe d'une
+  publication (9) : médiane 17 ms, aucune frame au-delà de 50 ms (`frames.py`). Les grands
+  graphes calculés en image (#328) ne la montrent pas. Une arête qui passe sous la pointe
+  de l'icône peut en masquer le haut à certains zooms (rendu de Cytoscape).
 - `services/display/graph.py` produit les éléments Cytoscape. Les nœuds portent le titre lisible (#264), la date,
   la revue, le premier auteur et le nombre d'auteurs, le nombre de citations dans la
   base et le lien vers la fiche. Les arêtes vont de la publication qui cite vers la
   publication citée. Trois requêtes, quelle que soit la taille du graphe (publications,
-  citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base.
+  citations, auteurs par `Prefetch`), une de plus pour le corpus sur le graphe de la base ;
+  les références à identifier sont dans celle des publications (#452).
 - La vue intègre ces données dans la page avec `json_script`, sans route JSON séparée.
   Les modules ES de `references/static/references/graph/` les affichent sur une frise
   chronologique : l'axe horizontal suit la date, et les articles non datés sont dans une
