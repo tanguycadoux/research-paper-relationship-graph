@@ -1,5 +1,7 @@
 // Hovering a publication shows its title in an HTML tooltip over the frame, on every graph:
-// easier to read than a label drawn in the canvas, which other nodes may cover. On a small
+// easier to read than a label drawn in the canvas, which other nodes may cover; under the
+// title, its distance (#477): to the selected node, or without a selection its level, its
+// distance to the author of the graph… (card.js). Only text: nothing is drawn again. On a small
 // graph, the edges of the publication are darkened too (class `hovered`, style.js). On a
 // large one (#202), any change of class draws the whole canvas again (40 ms at 1 000
 // publications, 140 ms at 2 000): the canvas is left as it is.
@@ -43,7 +45,18 @@ function bindEdgeHover(cy) {
     cy.container().addEventListener("mouseleave", clear);
 }
 
-function bindTooltip(cy, tooltip) {
+// The text of the tooltip: the title, or the longer text the graph gives (the variants of
+// gathered authors, #419; the references to identify, #452), its distance under the title.
+function tooltipText(node, describe) {
+    const lines = (node.data("tooltip") ?? node.data("label")).split("\n");
+    const distance = describe(node);
+    if (distance) {
+        lines.splice(1, 0, distance);
+    }
+    return lines.join("\n");
+}
+
+function bindTooltip(cy, tooltip, describe) {
     const container = cy.container();
     const hide = () => {
         tooltip.hidden = true;
@@ -53,8 +66,7 @@ function bindTooltip(cy, tooltip) {
         if (event.originalEvent?.buttons) {
             return;
         }
-        // A longer text when the graph gives one (the variants of gathered authors, #419).
-        tooltip.textContent = event.target.data("tooltip") ?? event.target.data("label");
+        tooltip.textContent = tooltipText(event.target, describe);
         tooltip.hidden = false;
         place(tooltip, event.target, container);
     });
@@ -65,10 +77,11 @@ function bindTooltip(cy, tooltip) {
 }
 
 // The tooltip is the [data-graph-tooltip] element beside the container of the graph.
-export function bindHover(cy) {
+// describe(node): the distance of the node, or null.
+export function bindHover(cy, describe = () => null) {
     const tooltip = cy.container().parentElement.querySelector("[data-graph-tooltip]");
     if (tooltip) {
-        bindTooltip(cy, tooltip);
+        bindTooltip(cy, tooltip, describe);
     }
     if (cy.elements().length <= LIVE_SIZES_MAX_ELEMENTS) {
         bindEdgeHover(cy);

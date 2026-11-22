@@ -98,6 +98,12 @@ function selectTerm(publications) {
     };
 }
 
+// Without a selection, the tooltip of a term (#477): the map has no centre to be far
+// from; the number of terms it appears with, the size of its distance 1.
+function linkedText(node) {
+    return `lié à ${plural(node.degree(), "terme")}`;
+}
+
 // focus: what bindFocus returns.
 export function bindKeywordSelection(publications) {
     return (cy, card, focus) =>
@@ -105,5 +111,6 @@ export function bindKeywordSelection(publications) {
             selector: "node",
             classes: `faded selected linked linked-node ${DISTANCE_CLASSES}`,
             select: selectTerm(publications),
+            atRest: linkedText,
         });
 }

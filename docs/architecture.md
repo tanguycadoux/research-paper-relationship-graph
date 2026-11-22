@@ -215,6 +215,7 @@ references/          application principale
     axis.js          axe des années
     selection.js     sélection d'une publication (carte commune de card.js)
     distance.js      distance au nœud sélectionné (parcours en largeur, 3 au plus) et ses classes, tous les graphes
+    distance_groups.js  groupes de distance de la sélection dans le panneau : comptes, mise en avant au survol ou au clic
     expand.js        développer ou réduire le graphe sans recharger la page, en animation
     hover.js         survol : infobulle, liens foncés sur un petit graphe
     style.js         style des nœuds et des liens

@@ -72,6 +72,18 @@
                         </div>
                         {% block card_content %}
                         {% endblock card_content %}
+                        {# The groups of distance to the selected node (#477), filled by graph/distance_groups.js: one lights its nodes and links. #}
+                        <div class="grid gap-1" data-distance-groups>
+                            <p id="graph-distance-groups"
+                               class="text-xs font-medium tracking-wide text-gray-500 uppercase select-none">
+                                Distance à la sélection
+                            </p>
+                            <ul class="grid gap-0.5 select-none"
+                                aria-labelledby="graph-distance-groups"
+                                data-distance-list>
+                            </ul>
+                            <p class="text-xs text-gray-500" data-distance-hint></p>
+                        </div>
                     </div>
                 </section>
                 <div class="grid gap-2 border-t border-gray-100 pt-3">

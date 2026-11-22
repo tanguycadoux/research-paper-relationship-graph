@@ -7,7 +7,7 @@
 // The gestures, the card and the hover are those of every graph (card.js, hover.js).
 
 import { bindSelection, cardField } from "./card.js";
-import { DISTANCE_CLASSES, markDistances, reach, undirectedSteps } from "./distance.js";
+import { DISTANCE_CLASSES, DISTANCE_LIMIT, markDistances, reach, undirectedSteps } from "./distance.js";
 
 // Coauthors listed on the card, the strongest links first.
 const STRONGEST_SHOWN = 3;
@@ -107,11 +107,33 @@ function selectAuthor(node, card) {
     return node.union(coauthors);
 }
 
+// Without a selection, the tooltip of an author (#477): on the graph of an author, their
+// distance to that author (the same walk as a selection, done once, at the first hover);
+// on a graph without centre (all the authors, those of the corpus), their number of
+// coauthors in it, the size of their distance 1.
+function atRestOf(cy) {
+    const centre = cy.nodes('[role = "source"]');
+    if (centre.length !== 1) {
+        return (node) => `${plural(node.degree(), "coauteur")} dans ce graphe`;
+    }
+    const name = centre.data("label");
+    let reached = null;
+    return (node) => {
+        if (node.same(centre)) {
+            return null;
+        }
+        reached ??= reach(centre[0], undirectedSteps);
+        const distance = reached.get(node.id())?.distance;
+        return distance ? `à ${distance} pas de ${name}` : `à plus de ${DISTANCE_LIMIT} pas de ${name}`;
+    };
+}
+
 // focus: what bindFocus returns.
 export function bindCoauthorSelection(cy, card, focus) {
     bindSelection(cy, card, focus, {
         selector: "node",
         classes: `faded selected coauthor coauthor-node ${DISTANCE_CLASSES}`,
         select: selectAuthor,
+        atRest: atRestOf(cy),
     });
 }

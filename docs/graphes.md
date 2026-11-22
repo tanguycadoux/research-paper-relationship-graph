@@ -10,8 +10,11 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   public comme la liste des publications, ouvert depuis elle par « Graphe des
   publications », sans entrée de menu comme celui des auteurs, #391) montre toutes les publications, y compris
   celles sans citation identifiée, et toutes les citations identifiées. Les publications
-  du corpus de la personne connectée y sont en bleu (`source`), les autres en vert
-  (`other`, comme une publication citée). Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
+  du corpus de la personne connectée y sont en bleu (`source`), les autres en **gris**
+  (`base`, #477 : chroma presque nulle, à la luminance du niveau 1 ; en vert, elles se
+  confondaient avec le passé, alors qu'elles n'ont pas de relation à un centre). La
+  légende, l'export PNG, l'image SVG du grand graphe de la base et sa minicarte prennent
+  ce gris. Les liens sont dédoublonnés sans le tri par défaut (`order_by()`), sans quoi
   la position rendait distinctes deux citations d'une même publication.
 - **Graphe d'un tag** (#290) : « Mon graphe » peut se limiter à un tag et ses sous-tags
   (`?tag=Projet`), choisi dans une liste du panneau du graphe (envoyée dès qu'elle change,
@@ -35,8 +38,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   chargement). Changer de niveau oublie ces choix. Niveau 2 au plus pour
   l'instant : une publication du niveau 2 ne se développe pas. Le niveau se lit sur le
   nœud (**plus clair** à chaque niveau, #470, `palette.js`, avec sa ligne dans la
-  légende et sur l'image exportée) et dans l'infobulle (« Niveau 2 ») dès que le graphe
-  dépasse le niveau 1 ; la carte le dit aussi. Le graphe de la base n'a pas de niveau.
+  légende et sur l'image exportée) et dans l'infobulle (« Niveau 1 », « Niveau 2 », écrit
+  par la page, #477, voir « Sélection ») ; la carte le dit aussi. Le graphe de la base n'a pas de niveau.
 - **Développer sans recharger** (#451, `expand.js`) : « Développer », « Réduire » et le
   choix du niveau gardent leur lien (sans JavaScript, la page se recharge), mais la page
   demande à la **même vue**, avec la même URL et l'en-tête `Accept: application/json`, les
@@ -280,7 +283,8 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   Le centre, `source` (la publication du graphe, celles du corpus, l'auteur), est en bleu,
   oklch(0.6 0.2 264). Le passé, `cited` (citée seulement, ou une autre publication de la
   base), est en vert, teinte 155 ; l'avenir, `citing` (une publication qui la cite), en
-  rose framboise, teinte 345, tous deux de chroma 0,12. La luminance suit
+  rose framboise, teinte 345, tous deux de chroma 0,12. Les autres publications du graphe
+  de la base, `base`, sont d'un gris neutre, oklch(0.7 0.01 264) (#477). La luminance suit
   L(n) = 0,9 − 0,3 × (2/3)ⁿ : 0,6 pour le centre (niveau 0), 0,70 au niveau 1, 0,767
   au niveau 2, vers 0,9 sans atteindre le blanc. Le **contour** du nœud a la même teinte,
   0,2 plus sombre ; le nœud sélectionné garde un anneau noir. Pendant une **sélection**,
@@ -346,7 +350,35 @@ Les graphes de citations, le [graphe des auteurs](#graphe-des-auteurs-222) (coau
   le graphe) ; la carte des mots-clés du banc (1 396 éléments) passe de 8 à 18 ms pour le
   terme le plus relié, sa plus longue image de 116 à 133 ms. Sur les petits graphes
   (`frames.py`), la sélection reste à 17 ms en médiane,
-  aucune image de plus de 50 ms. La carte d'informations HTML
+  aucune image de plus de 50 ms. **Groupes de distance** (#477, `distance_groups.js`) :
+  les luminances des distances 1 à 3 sont trop proches pour qu'on reconnaisse une
+  distance à l'œil. Sous la carte, le panneau liste donc « Distance 1 : 13 »… jusqu'à la
+  limite, puis « Au-delà : n », chacun avec les pastilles de ses couleurs (une par teinte
+  présente, à la luminance de la distance). Survoler un groupe met en avant ses nœuds et
+  les liens qui les atteignent (au plus loin, aussi ceux entre deux de ses nœuds), le nœud
+  choisi restant visible ; le reste passe à l'opacité 0,05 (classes `group-lit` et
+  `group-dim`, règles ajoutées après celles de chaque graphe). Un clic garde le groupe
+  (`aria-pressed`), un second l'enlève ; un groupe vide est désactivé. Les comptes sont
+  lus sur les classes de `distance.js`, sans nouveau parcours. Au-delà de 2 500 éléments
+  (`PREVIEW_MAX_ELEMENTS`), seul le clic met un groupe en avant : chaque changement de
+  classe redessine tout le canevas (voir « Grands graphes »), et glisser le long de la
+  liste saccaderait. Mesures (Chrome headless, 1 400 px, plus longue image après la mise
+  en avant d'un groupe) : 17 ms jusqu'à 300 éléments (n° 53 au niveau 2, « Mon graphe »,
+  mots-clés du corpus), 33 ms pour les auteurs du corpus (1 384) et les mots-clés du banc
+  (1 396), 50 ms pour la base (2 406) ; au clic, 83 ms pour « Mon graphe » du banc
+  (4 292), 150 ms pour le graphe de P. Ferracin (5 287), 350 à 400 ms pour les auteurs du
+  corpus du banc (11 995), moins que la sélection elle-même (1 s). `frames.py` ne bouge
+  pas sur les petits graphes (sélection à 17 ms en médiane, aucune image de plus de
+  50 ms).
+  **Infobulle** (#477, `hover.js`, `card.js`) : sous le titre, la distance du nœud
+  survolé. Avec une sélection, « à 2 pas de la sélection » ou « au-delà de 3 pas de la
+  sélection » (lu sur les classes). Sans sélection, ce que dit chaque graphe : le niveau
+  (« Niveau 1 », rien pour le centre ni sur le graphe de la base, qui n'a pas de niveau) ;
+  sur le graphe d'un auteur, la distance à cet auteur (« à 1 pas de Paolo Ferracin », par
+  `reach` une fois au premier survol) ; sur les graphes d'auteurs sans centre (tous les
+  auteurs, ceux du corpus), le nombre de coauteurs dans le graphe ; sur la carte des
+  mots-clés, « lié à n termes ». Le serveur n'écrit plus le niveau dans `tooltip`. Ce
+  n'est que du texte : le survol ne redessine rien de plus. La carte d'informations HTML
   (`#citation-graph-card`) est compacte (#187) : le titre est le lien vers la fiche, puis
   la revue (lue dans la réponse stockée de Crossref ou de DataCite, dans la même
   requête), le premier auteur et l'année, et les compteurs. Un double-clic ouvre la
@@ -675,11 +707,15 @@ sa disposition, son style et ce que dit sa carte.
   {bindSelection, uniform, bindAxes})` (vue, recentrage, sélection, export, puis la
   marque `citation-graph-shown` du banc), et `LAYOUT_MEASURE`, le nom de la mesure de la
   disposition.
-- **`card.js`** : `bindSelection(cy, card, focus, {selector, classes, select})` lie les
+- **`card.js`** : `bindSelection(cy, card, focus, {selector, classes, select, atRest})` lie les
   gestes communs (appui : sélection et recentrage ; double appui : la fiche ; Échap, clic
   dans le vide ou « Désélectionner » : retour à la vue d'avant) et le survol (`hover.js`).
   Le graphe ne donne que `select(node, card)`, qui pose ses classes, remplit la carte et
-  renvoie les nœuds à montrer ; `cardField(card, name)` lit un champ `[data-card=name]`.
+  renvoie les nœuds à montrer, et `atRest(node)`, la ligne de l'infobulle sans sélection
+  (#477) ; `cardField(card, name)` lit un champ `[data-card=name]`. Sous la carte,
+  **`distance_groups.js`** (#477) liste les groupes de distance de la sélection
+  (`[data-distance-groups]` de `_graph_frame.html`) et met en avant celui qu'on survole
+  ou qu'on clique.
   **`distance.js`** (#472) : `reach(node, steps)` parcourt le graphe en largeur jusqu'à
   `DISTANCE_LIMIT` (les pas d'un nœud : `undirectedSteps`, ou ceux des citations dans
   `selection.js`), `markDistances` pose les classes (`near`, `distance-<d>`, `past` ou

@@ -222,6 +222,8 @@ class AuthorGraphPageTests(TestCase):
         self.assertContains(response, f'data-graph-export="graphe-auteur-{self.ada.pk}"')
         # The name of the hovered author in the frosted tooltip of the citation graphs (#202).
         self.assertContains(response, "data-graph-tooltip", count=1)
+        # The groups of distance of a selection (#477, graph/distance_groups.js).
+        self.assertContains(response, "data-distance-groups", count=1)
         self.assertContains(response, "backdrop-blur-md")
         self.assertContains(response, "Cet auteur")
         self.assertContains(response, "2 auteurs, 1 lien de coautorat")

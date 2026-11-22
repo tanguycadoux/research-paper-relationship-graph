@@ -34,7 +34,7 @@ def base_graph(user):
     """
     Graph of the whole base (#131), publications without identified citations
     included: the corpus of a logged-in user stands out (source), the others are
-    plain publications of the base (other).
+    plain publications of the base (base: a neutral grey, #477).
     """
     corpus_ids = (
         set(user.userpublication_set.values_list("publication_id", flat=True))
@@ -51,11 +51,11 @@ def base_graph(user):
     graph = elements(
         Publication.objects.all(),
         edges,
-        lambda pk: "source" if pk in corpus_ids else "other",
+        lambda pk: "source" if pk in corpus_ids else "base",
         user,
     )
     for node in graph["nodes"]:
-        add_tooltip(node["data"], show_level=False)
+        add_tooltip(node["data"])
     return graph
 
 
@@ -100,7 +100,7 @@ def citation_graph(source_ids, with_citing=False, expansion=None, query=None, us
     )
     for node in graph["nodes"]:
         add_level(node["data"], levels.get(int(node["data"]["id"]), 2), expansion, expanded, query)
-        add_tooltip(node["data"], show_level=bool(expanded))
+        add_tooltip(node["data"])
     return graph
 
 
@@ -117,14 +117,13 @@ def add_level(data, level, expansion, expanded, query):
             data["toggle"] = expansion.toggle_query(query, pk, pk in expanded)
 
 
-def add_tooltip(data, show_level):
+def add_tooltip(data):
     """
-    A longer tooltip than the title when the node has more to say: its level, once the
-    graph goes beyond level 1 (#451), and its references to identify (#452).
+    A longer tooltip than the title when the node has more to say: its references to
+    identify (#452). Its level, or its distance to the selected node, is added by the page
+    (graph/hover.js, #477).
     """
     lines = [data["label"]]
-    if show_level and data.get("level"):
-        lines.append(f"Niveau {data['level']}")
     if data.get("toIdentify"):
         lines.append(to_identify_text(data["toIdentify"]))
     if len(lines) > 1:

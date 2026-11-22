@@ -52,7 +52,8 @@ class LevelTests(TestCase):
         self.assertEqual(nodes["Autre"]["level"], 2)
         self.assertEqual(nodes["Autre"]["role"], "cited")
         self.assertTrue(nodes["Réf"]["expanded"])
-        self.assertEqual(nodes["Ancienne"]["tooltip"], "Ancienne\nNiveau 2")
+        # The level is written in the tooltip by the page (graph/hover.js, #477).
+        self.assertNotIn("tooltip", nodes["Ancienne"])
         self.assertEqual(len(graph["edges"]), 5)
 
     def test_level_two_costs_one_query_more(self):

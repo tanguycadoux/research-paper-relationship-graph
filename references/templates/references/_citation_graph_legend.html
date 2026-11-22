@@ -1,7 +1,8 @@
 {% comment %}
     The legend of a citation graph (_citation_graph.html): also sent to graph/expand.js once
     the graph is developed or reduced (#451). The roles of services/display/graph.py: the publication or the corpus (source), the
-    publications citing it (citing, only on the graph of a publication), the others.
+    publications citing it (citing, only on the graph of a publication), the others (cited,
+    or base on the graph of the base, #477).
     On the graph of the base (#131), only a logged-in user has a corpus.
 {% endcomment %}
 {% if graph_kind != "base" or user.is_authenticated %}
@@ -22,17 +23,24 @@
         Publication qui la cite
     </li>
 {% endif %}
-<li>
-    <span class="mr-1 inline-block size-3 rounded-full border border-graph-cited-border bg-graph-cited align-middle"
-          aria-hidden="true"></span>
-    {% if graph_kind != "base" %}
+{% if graph_kind != "base" %}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full border border-graph-cited-border bg-graph-cited align-middle"
+              aria-hidden="true"></span>
         Publication citée
-    {% elif user.is_authenticated %}
-        Autre publication de la base
-    {% else %}
-        Publication de la base
-    {% endif %}
-</li>
+    </li>
+{% else %}
+    {# The other publications of the base, in a neutral grey (#477): no relation to a centre. #}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full border border-graph-base-border bg-graph-base align-middle"
+              aria-hidden="true"></span>
+        {% if user.is_authenticated %}
+            Autre publication de la base
+        {% else %}
+            Publication de la base
+        {% endif %}
+    </li>
+{% endif %}
 {% if graph_beyond %}
     {# Level 2 (#451): the colour of its role, lighter (#470, graph/palette.js). #}
     <li>
