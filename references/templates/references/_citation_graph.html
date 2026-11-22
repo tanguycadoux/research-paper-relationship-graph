@@ -42,7 +42,8 @@
     {% if corpus_graphs %}
         {% include "references/_corpus_graph_choice.html" %}
     {% endif %}
-    {% include "references/_graph_variants.html" %}
+    {# Replaced by graph/expand.js once the level changes without reloading the page (#451). #}
+    <div class="contents" data-graph-variants>{% include "references/_graph_variants.html" %}</div>
     {% if tag_choices %}
         {% include "references/_graph_tag_form.html" %}
     {% endif %}
@@ -50,10 +51,7 @@
 {# Filled by graph/selection.js with the selected publication (#61). #}
 {% block card_label %}Publication sélectionnée{% endblock card_label %}
 {% block card_empty %}
-    <p class="font-medium text-gray-900">
-        {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize_fr }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize_fr }}
-    </p>
-    <p class="text-gray-500">Cliquez sur un article du graphe pour le décrire ici.</p>
+    {% include "references/_citation_graph_summary.html" %}
 {% endblock card_empty %}
 {% block card_title %}Publication sélectionnée{% endblock card_title %}
 {% block card_content %}
@@ -90,48 +88,27 @@
         </dl>
     </div>
     <p class="text-gray-600" data-card="cited-by"></p>
+    {# Its references to identify (#452), and the identification in series. #}
+    <div class="flex flex-wrap items-center gap-2" data-card-row="identify" hidden>
+        <span class="text-amber-900">{% include "references/_graph_warning_icon.html" %}<span data-card="to-identify"></span></span>
+        <span data-card="identify">{% button "Identifier" url="#" variant="warning-light" icon="playlist_play" %}</span>
+    </div>
+    {% if graph_level %}
+        {# Its level (#451); a publication of level 1 is developed or reduced alone: its references and the publications citing it. #}
+        <p class="text-gray-600" data-card-row="level">
+            <span data-card="level"></span>
+        </p>
+        <div class="grid gap-1" data-card-row="toggle">
+            <div class="flex flex-wrap gap-2">
+                <span data-card="develop">{% button "Développer" url="#" variant="secondary" icon="add" %}</span>
+                <span data-card="reduce">{% button "Réduire" url="#" variant="secondary" icon="remove" %}</span>
+            </div>
+            <p class="text-xs text-gray-500">Ses références et les publications qui la citent, le reste du graphe inchangé.</p>
+        </div>
+    {% endif %}
 {% endblock card_content %}
 {% block legend %}
-    {% comment %}
-        The roles of services/display/graph.py: the publication or the corpus (source), the
-        publications citing it (citing, only on the graph of a publication), the others.
-        On the graph of the base (#131), only a logged-in user has a corpus.
-    {% endcomment %}
-    {% if graph_kind != "base" or user.is_authenticated %}
-        <li>
-            <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
-                  aria-hidden="true"></span>
-            {% if graph_kind == "publication" %}
-                Cette publication
-            {% else %}
-                Publication de mon corpus
-            {% endif %}
-        </li>
-    {% endif %}
-    {% if graph_kind == "publication" %}
-        <li>
-            <span class="mr-1 inline-block size-3 rounded-full bg-graph-citing align-middle"
-                  aria-hidden="true"></span>
-            Publication qui la cite
-        </li>
-    {% endif %}
-    <li>
-        <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
-              aria-hidden="true"></span>
-        {% if graph_kind != "base" %}
-            Publication citée
-        {% elif user.is_authenticated %}
-            Autre publication de la base
-        {% else %}
-            Publication de la base
-        {% endif %}
-    </li>
-    <li>Taille : nombre de citations dans la base</li>
-    <li>
-        Après un clic :
-        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses références,
-        <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span>ses citants
-    </li>
+    {% include "references/_citation_graph_legend.html" %}
 {% endblock legend %}
 {% block data %}
     {{ graph_layout|json_script:"citation-graph-layout" }}

@@ -26,18 +26,29 @@ export function clearSelection(cy, card, classes) {
 
 // Binds the selection on the nodes matching `selector`, and the hover (hover.js).
 // select(node, card): marks the node and its neighbours with `classes`, fills the card,
-// and returns the nodes the view zooms on. focus: what bindFocus returns.
+// and returns the nodes the view zooms on. focus: what bindFocus returns. Returns the
+// selected node (or null), and how to select a node again or clear the selection without
+// moving the view: once the graph is developed or reduced (#451, expand.js), which moves it.
 export function bindSelection(cy, card, focus, { selector, classes, select }) {
-    const deselect = () => {
+    let selected = null;
+    const clear = () => {
         clearSelection(cy, card, classes);
+        selected = null;
+    };
+    const deselect = () => {
+        clear();
         focus.release();
+    };
+    const mark = (node) => {
+        clearSelection(cy, card, classes);
+        selected = node;
+        const shown = select(node, card);
+        showCard(card, true);
+        return shown;
     };
     bindHover(cy);
     cy.on("tap", selector, (event) => {
-        clearSelection(cy, card, classes);
-        const shown = select(event.target, card);
-        showCard(card, true);
-        focus.show(shown);
+        focus.show(mark(event.target));
     });
     cy.on("tap", (event) => {
         if (event.target === cy) {
@@ -53,4 +64,5 @@ export function bindSelection(cy, card, focus, { selector, classes, select }) {
         }
     });
     card.querySelector("[data-card-close] button").addEventListener("click", deselect);
+    return { selected: () => selected, mark, clear };
 }
