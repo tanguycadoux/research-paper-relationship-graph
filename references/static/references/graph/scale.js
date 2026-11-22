@@ -33,3 +33,19 @@ export function makeScale(years, rowCount, container) {
         y: (row) => MARGIN + (row / Math.max(rowCount - 1, 1)) * height,
     };
 }
+
+// The scale between two others, at progress e (#451): x is linear in the year in both, and
+// so in between; the timeline starts at the earlier start.
+export function blendScale(from, to, e) {
+    const line = (scale) => ({ slope: scale.x(1) - scale.x(0), origin: scale.x(0) });
+    const a = line(from);
+    const b = line(to);
+    const slope = a.slope + (b.slope - a.slope) * e;
+    const origin = a.origin + (b.origin - a.origin) * e;
+    return {
+        start: Math.min(from.start, to.start),
+        x: (year) => origin + slope * year,
+        year: (x) => (x - origin) / slope,
+        y: to.y,
+    };
+}

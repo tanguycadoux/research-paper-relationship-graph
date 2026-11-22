@@ -1,0 +1,20 @@
+{% load ui %}
+{% comment %}
+    What a citation graph shows, in its panel without a selection (_citation_graph.html):
+    also sent to graph/expand.js once the graph is developed or reduced (#451).
+{% endcomment %}
+<p class="font-medium text-gray-900">
+    {{ graph.nodes|length }} publication{{ graph.nodes|length|pluralize_fr }}, {{ graph.edges|length }} citation{{ graph.edges|length|pluralize_fr }}
+</p>
+{# The bibliographies the shown levels lack (#451), fetched from the same start (#431). #}
+{% if missing_bibliographies %}
+    <p class="text-gray-600" data-graph-missing>
+        {% for level, count in missing_bibliographies %}
+            {{ count }} bibliographie{{ count|pluralize_fr }} manque{{ count|pluralize_fr:"nt" }} pour le niveau {{ level }}{% if forloop.last %}.{% else %} ;{% endif %}
+        {% endfor %}
+    </p>
+    {% if bibliography_request_url %}
+        <div>{% button "Récupérer les bibliographies…" url=bibliography_request_url variant="secondary" icon="download" %}</div>
+    {% endif %}
+{% endif %}
+<p class="text-gray-500">Cliquez sur un article du graphe pour le décrire ici.</p>

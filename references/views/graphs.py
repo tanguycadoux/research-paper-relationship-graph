@@ -1,6 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.cache import add_never_cache_headers, patch_vary_headers
 from django.utils.http import urlencode
 from django.utils.text import slugify
 
@@ -55,6 +58,56 @@ def levels_context(request, graph, **start):
     }
 
 
+# The parts of the panel that change with the level or a publication developed (#451),
+# rendered as on the page: their template, by the key of the JSON answer.
+PANEL_PARTS = {
+    "summary": "references/_citation_graph_summary.html",
+    "legend": "references/_citation_graph_legend.html",
+    "variants": "references/_graph_variants.html",
+}
+
+
+def wants_elements(request):
+    """
+    graph/expand.js asks for the elements of the graph, not the page (#451): same view,
+    same query string, Accept: application/json.
+    """
+    return request.headers.get("Accept", "").startswith("application/json")
+
+
+def graph_elements(request, context):
+    """
+    The graph for another expansion, without reloading the page (#451): its elements
+    (each node with its level and toggle), its level, its counts, the bibliographies it
+    lacks, and the parts of the panel rendered as on the page.
+    """
+    graph = context["graph"]
+    response = JsonResponse(
+        {
+            "graph": graph,
+            "level": context["graph_level"],
+            "counts": {"publications": len(graph["nodes"]), "citations": len(graph["edges"])},
+            "missing_bibliographies": context["missing_bibliographies"],
+            "kept_params": context["graph_kept_params"],
+            **{key: render_to_string(name, context, request) for key, name in PANEL_PARTS.items()},
+        }
+    )
+    # Never kept by the browser: Back shows the page of the URL, not these elements.
+    add_never_cache_headers(response)
+    return response
+
+
+def render_graph(request, template, context):
+    """The page of a graph with levels, or its elements for graph/expand.js (#451)."""
+    response = (
+        graph_elements(request, context)
+        if wants_elements(request)
+        else render(request, template, context)
+    )
+    patch_vary_headers(response, ["Accept"])
+    return response
+
+
 def corpus_graph_choices(tag, current):
     """
     The two graphs of the corpus, or of a tag (#422): its publications (« Mon graphe »)
@@ -93,7 +146,7 @@ def pub_graph(request, pk):
         publication=pub,
         **levels_context(request, graph, publication=pub),
     )
-    return render(request, "references/publication_graph.html", context)
+    return render_graph(request, "references/publication_graph.html", context)
 
 
 @login_required
@@ -110,7 +163,7 @@ def my_refs_graph(request):
         **tagging,
         **levels_context(request, graph, tag=tag),
     )
-    return render(request, "references/user_references_graph.html", context)
+    return render_graph(request, "references/user_references_graph.html", context)
 
 
 def base_graph_view(request):

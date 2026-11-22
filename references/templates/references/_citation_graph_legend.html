@@ -1,0 +1,52 @@
+{% comment %}
+    The legend of a citation graph (_citation_graph.html): also sent to graph/expand.js once
+    the graph is developed or reduced (#451). The roles of services/display/graph.py: the publication or the corpus (source), the
+    publications citing it (citing, only on the graph of a publication), the others.
+    On the graph of the base (#131), only a logged-in user has a corpus.
+{% endcomment %}
+{% if graph_kind != "base" or user.is_authenticated %}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
+              aria-hidden="true"></span>
+        {% if graph_kind == "publication" %}
+            Cette publication
+        {% else %}
+            Publication de mon corpus
+        {% endif %}
+    </li>
+{% endif %}
+{% if graph_kind == "publication" %}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full bg-graph-citing align-middle"
+              aria-hidden="true"></span>
+        Publication qui la cite
+    </li>
+{% endif %}
+<li>
+    <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+          aria-hidden="true"></span>
+    {% if graph_kind != "base" %}
+        Publication citée
+    {% elif user.is_authenticated %}
+        Autre publication de la base
+    {% else %}
+        Publication de la base
+    {% endif %}
+</li>
+{% if graph_beyond %}
+    {# Level 2 (#451): the colour of its role, hollow. #}
+    <li>
+        <span class="mr-1 inline-block size-3 rounded-full border-2 border-graph-cited bg-white align-middle"
+              aria-hidden="true"></span>
+        Niveau 2 : reliée à une publication du niveau 1
+    </li>
+{% endif %}
+{% if graph_to_identify %}
+    <li>{% include "references/_graph_warning_icon.html" %}Références à identifier (mon corpus)</li>
+{% endif %}
+<li>Taille : nombre de citations dans la base</li>
+<li>
+    Après un clic :
+    <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-cited-light" aria-hidden="true"></span>ses références,
+    <span class="mr-1 inline-block h-0.5 w-4 align-middle bg-graph-citing-light" aria-hidden="true"></span>ses citants
+</li>

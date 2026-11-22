@@ -78,9 +78,9 @@ function selectPublication(node, card) {
     return kept.union(citing.sources()).nodes();
 }
 
-// focus: what bindFocus returns.
+// focus: what bindFocus returns. Returns what bindSelection returns.
 export function bindCitationSelection(cy, card, focus) {
-    bindSelection(cy, card, focus, {
+    return bindSelection(cy, card, focus, {
         selector: "node[url]",
         classes: "faded selected reference citing reference-node citing-node",
         select: selectPublication,
