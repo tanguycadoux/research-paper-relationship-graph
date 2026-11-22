@@ -6,7 +6,7 @@
 {% endcomment %}
 {% if graph_kind != "base" or user.is_authenticated %}
     <li>
-        <span class="mr-1 inline-block size-3 rounded-full bg-graph-source align-middle"
+        <span class="mr-1 inline-block size-3 rounded-full border border-graph-source-border bg-graph-source align-middle"
               aria-hidden="true"></span>
         {% if graph_kind == "publication" %}
             Cette publication
@@ -17,13 +17,13 @@
 {% endif %}
 {% if graph_kind == "publication" %}
     <li>
-        <span class="mr-1 inline-block size-3 rounded-full bg-graph-citing align-middle"
+        <span class="mr-1 inline-block size-3 rounded-full border border-graph-citing-border bg-graph-citing align-middle"
               aria-hidden="true"></span>
         Publication qui la cite
     </li>
 {% endif %}
 <li>
-    <span class="mr-1 inline-block size-3 rounded-full bg-graph-cited align-middle"
+    <span class="mr-1 inline-block size-3 rounded-full border border-graph-cited-border bg-graph-cited align-middle"
           aria-hidden="true"></span>
     {% if graph_kind != "base" %}
         Publication citée
@@ -34,9 +34,9 @@
     {% endif %}
 </li>
 {% if graph_beyond %}
-    {# Level 2 (#451): the colour of its role, hollow. #}
+    {# Level 2 (#451): the colour of its role, lighter (#470, graph/palette.js). #}
     <li>
-        <span class="mr-1 inline-block size-3 rounded-full border-2 border-graph-cited bg-white align-middle"
+        <span class="mr-1 inline-block size-3 rounded-full border border-graph-cited-light-border bg-graph-cited-light align-middle"
               aria-hidden="true"></span>
         Niveau 2 : reliée à une publication du niveau 1
     </li>

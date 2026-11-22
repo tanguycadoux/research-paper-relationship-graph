@@ -49,8 +49,10 @@ Status = GraphImage.Status
 LARGE_GRAPH = 1000
 # Names written beside the nodes: the largest ones only, the others on hover.
 LABELED_NODES = 150
-# Colours of the graph (assets/css/source.css, --color-graph-*).
-NODE_COLOR = "#179e6e"
+# Colours of the graph (assets/css/source.css, --color-graph-*, #470): a publication or
+# an author of level 1, oklch(0.7 0.12 155), and its contour 0.2 darker, in sRGB.
+NODE_COLOR = "#59b47d"
+NODE_CONTOUR = "#0b7643"
 EDGE_COLOR = "#8a8983"
 # Space around the drawing, and above it for its title, in pixels.
 MARGIN = 40
@@ -273,7 +275,7 @@ def node_circles(nodes, points, radii):
         f"<a href={quoteattr(nodes[i]['url'])}>"
         f'<circle data-node="{i}" cx="{points[i][0]:.1f}" cy="{points[i][1]:.1f}" '
         f'r="{radii[i]:.1f}" '
-        f'fill="{NODE_COLOR}" stroke="white" stroke-width="1">'
+        f'fill="{NODE_COLOR}" stroke="{NODE_CONTOUR}" stroke-width="1">'
         f"<title>{escape(nodes[i]['label'])}</title></circle></a>"
         for i in order
     ]
